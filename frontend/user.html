@@ -160,6 +160,30 @@
     gap: 16px;
     align-items: flex-end;
   }
+  
+  .autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    max-height: 240px;
+    overflow: auto;
+    display: none;
+    z-index: 10;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    margin-top: 4px;
+  }
+  .autocomplete-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .autocomplete-item:hover {
+    background: var(--border);
+  }
 
   .input-group { display: flex; flex-direction: column; gap: 8px; }
   .input-group label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
@@ -704,11 +728,24 @@ window.showSection = (name, el) => {
   if (name === 'tickets') loadMyTickets();
 };
 
+window.selectLocation = (inputId, id, name) => {
+    document.getElementById(inputId).dataset.id = id;
+    document.getElementById(inputId).value = name;
+    document.getElementById(inputId + '-dropdown').classList.add('hidden');
+    filterBuses();
+};
+
 window.quickSearch = (fromName, toName) => {
     const f = locations.find(l => l.name === fromName);
     const t = locations.find(l => l.name === toName);
-    if(f) document.getElementById('s-from').value = f.id;
-    if(t) document.getElementById('s-to').value = t.id;
+    if(f) {
+      document.getElementById('s-from-input').dataset.id = f.id;
+      document.getElementById('s-from-input').value = f.name;
+    }
+    if(t) {
+      document.getElementById('s-to-input').dataset.id = t.id;
+      document.getElementById('s-to-input').value = t.name;
+    }
     filterBuses();
 };
 

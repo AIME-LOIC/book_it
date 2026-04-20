@@ -3,7 +3,7 @@
 ## Progress Tracker
 - [x] 1. Update global theme to BookIt blue (#4f8ef7) across all HTML files (CSS vars/fonts).
 - [x] 2. Add universal loading skeletons and empty/error states.
-- [ ] 3. Enhance user.html: Autocomplete search, inline seat map expand, seat pulse anim, QR download.
+- [x] 3. Enhance user.html: Autocomplete search, inline seat map expand, seat pulse anim, QR download.
 - [ ] 4. operator.html: Integrate Chart.js for revenue/overview charts, route timeline accordion, fleet drawer, DataTables for tickets/fleet.
 - [ ] 5. driver.html & admin.html: Theme consistency/blue polish.
 - [ ] 6. api.js: Debounce autocomplete, optimize live polls.
