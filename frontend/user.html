@@ -2,266 +2,546 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BookIt — Book Your Ticket</title>
-<!-- Font Awesome for icons -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BookIt — Travel Simplified</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<!-- Font Awesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<!-- Toastr for notifications -->
+<!-- Toastr -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
-<!-- QR Scanner (html5-qrcode) -->
-<script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<!-- Tailwind (CDN) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          forest: {
+            50:  '#f0fdf4',
+            100: '#dcfce7',
+            200: '#bbf7d0',
+            300: '#86efac',
+            400: '#4ade80',
+            500: '#22c55e',
+            600: '#16a34a',
+            700: '#15803d',
+            800: '#166534',
+            900: '#14532d'
+          },
+          brandOrange: {
+            50:  '#fff7ed',
+            100: '#ffedd5',
+            200: '#fed7aa',
+            300: '#fdba74',
+            400: '#fb923c',
+            500: '#f97316',
+            600: '#ea580c',
+            700: '#c2410c',
+            800: '#9a3412',
+            900: '#7c2d12'
+          }
+        }
+      }
+    }
+  }
+</script>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Segoe UI',sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; }
+  :root {
+    --primary: #166534;           /* forest green */
+    --primary-hover: #14532d;
+    --secondary: #f97316;         /* orange */
+    --secondary-hover: #ea580c;
+    --bg-main: #0f172a;
+    --bg-card: #1e293b;
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --accent-green: #22c55e;
+    --accent-orange: #f97316;
+    --border: #334155;
+    --glass: rgba(30, 41, 59, 0.7);
+  }
 
-  /* AUTH */
-  .auth-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; }
-  .auth-card { background:#1e293b; border-radius:16px; padding:48px 40px; width:420px; box-shadow:0 25px 50px rgba(0,0,0,.5); }
-  .auth-card h1 { font-size:28px; color:#f472b6; margin-bottom:4px; }
-  .auth-card p  { color:#94a3b8; margin-bottom:24px; }
-  .tabs { display:flex; gap:0; margin-bottom:24px; background:#0f172a; border-radius:8px; padding:4px; }
-  .tab { flex:1; padding:8px; text-align:center; cursor:pointer; border-radius:6px; font-size:14px; color:#64748b; }
-  .tab.active { background:#1e293b; color:#f472b6; font-weight:600; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  body { 
+    font-family: 'Plus Jakarta Sans', sans-serif; 
+    background: var(--bg-main); 
+    color: var(--text-main); 
+    line-height: 1.5;
+    overflow-x: hidden;
+  }
 
-  /* DASHBOARD */
-  #dashboard { display:none; }
-  .topbar { background:#1e293b; border-bottom:1px solid #334155; padding:16px 32px; display:flex; align-items:center; justify-content:space-between; }
-  .topbar h1 { color:#f472b6; font-size:20px; }
-  .topbar-right { display:flex; align-items:center; gap:16px; position:relative; }
+  /* --- AUTH STYLES --- */
+  .auth-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; padding: 20px; background: radial-gradient(circle at top right, rgba(249,115,22,0.22), #0f172a), radial-gradient(circle at bottom left, rgba(34,197,94,0.18), #0f172a); }
+  .auth-card { background: var(--bg-card); border-radius: 24px; padding: 40px; width: 100%; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid var(--border); }
+  .auth-logo { text-align: center; margin-bottom: 32px; }
+  .auth-logo h1 { font-size: 32px; font-weight: 900; color: var(--primary); letter-spacing: -1px; display:flex; align-items:center; justify-content:center; gap: 12px; }
+  .auth-logo img { width: 44px; height: 44px; object-fit: contain; }
+  .tabs { display: flex; background: var(--bg-main); padding: 6px; border-radius: 12px; margin-bottom: 24px; }
+  .tab { flex: 1; padding: 10px; text-align: center; cursor: pointer; border-radius: 8px; font-weight: 600; font-size: 14px; color: var(--text-muted); transition: 0.3s; }
+  .tab.active { background: var(--bg-card); color: var(--secondary); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
 
-  /* NOTIFICATION BELL */
-  .bell-btn { position:relative; background:#334155; border:none; color:#e2e8f0; width:40px; height:40px; border-radius:50%; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; }
-  .bell-count { position:absolute; top:-4px; right:-4px; background:#ef4444; color:white; font-size:10px; font-weight:700; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
-  .notif-dropdown { display:none; position:absolute; top:50px; right:0; background:#1e293b; border:1px solid #334155; border-radius:12px; width:360px; max-height:400px; overflow-y:auto; z-index:100; box-shadow:0 20px 40px rgba(0,0,0,.4); }
-  .notif-dropdown.open { display:block; }
-  .notif-header { padding:16px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; }
-  .notif-item { padding:14px 16px; border-bottom:1px solid #1e293b; cursor:pointer; transition:background .2s; }
-  .notif-item:hover { background:#334155; }
-  .notif-item.unread { border-left:3px solid #f472b6; }
-  .notif-item p { font-size:13px; color:#cbd5e1; }
-  .notif-item small { color:#64748b; font-size:11px; }
+  /* --- MAIN LAYOUT --- */
+  #dashboard { display: none; }
+  .layout { display: flex; min-height: 100vh; }
+  
+  /* Sidebar - Desktop */
+  .sidebar {
+    width: 260px;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    padding: 32px 16px;
+    position: fixed;
+    height: 100vh;
+    z-index: 50;
+  }
 
-  /* LAYOUT */
-  .layout { display:flex; height:calc(100vh - 65px); }
-  .sidebar { width:200px; background:#1e293b; border-right:1px solid #334155; padding:24px 0; flex-shrink:0; }
-  .nav-item { padding:12px 24px; cursor:pointer; color:#94a3b8; transition:all .2s; display:flex; align-items:center; gap:10px; font-size:14px; }
-  .nav-item:hover, .nav-item.active { background:#334155; color:#f472b6; }
-  .main { flex:1; padding:32px; overflow-y:auto; }
-  .section { display:none; }
-  .section.active { display:block; }
-  .section-title { font-size:22px; font-weight:700; color:#f1f5f9; margin-bottom:24px; }
+  .main-content {
+    flex: 1;
+    margin-left: 260px;
+    padding-bottom: 100px;
+  }
 
-  /* CARDS */
-  .card { background:#1e293b; border-radius:12px; padding:24px; border:1px solid #334155; margin-bottom:24px; }
-  .card h3 { font-size:16px; color:#94a3b8; margin-bottom:16px; }
+  /* Bottom Nav - Mobile */
+  .bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+    padding: 12px 24px;
+    z-index: 100;
+    justify-content: space-around;
+  }
 
-  /* FORMS */
-  .form-row { display:flex; gap:12px; flex-wrap:wrap; }
-  input, select { background:#0f172a; border:1px solid #334155; color:#e2e8f0; padding:10px 14px; border-radius:8px; font-size:14px; flex:1; min-width:160px; outline:none; transition:border .2s; }
-  input:focus, select:focus { border-color:#f472b6; }
-  .btn { padding:10px 20px; border-radius:8px; border:none; cursor:pointer; font-size:14px; font-weight:600; transition:all .2s; }
-  .btn-primary { background:#f472b6; color:#0f172a; }
-  .btn-primary:hover { background:#ec4899; }
-  .btn-danger  { background:#ef4444; color:white; }
-  .btn-danger:hover { background:#dc2626; }
-  .btn-ghost   { background:#334155; color:#e2e8f0; }
-  .btn-ghost:hover { background:#475569; }
-  .btn-sm { padding:6px 12px; font-size:12px; }
+  /* Nav Items */
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s;
+    margin-bottom: 8px;
+  }
+  .nav-item i { font-size: 20px; }
+  .nav-item:hover, .nav-item.active { background: rgba(249, 115, 22, 0.10); color: var(--secondary); }
 
-  /* ALERTS */
-  .alert { padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:14px; display:none; }
-  .alert-err  { background:#450a0a; color:#f87171; border:1px solid #7f1d1d; }
-  .alert-ok   { background:#052e16; color:#4ade80; border:1px solid #14532d; }
+  /* --- HERO SEARCH SECTION --- */
+  .hero-section {
+    padding: 40px;
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  .search-card {
+    background: var(--bg-card);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);
+    margin-top: -80px;
+    position: relative;
+    border: 1px solid var(--border);
+  }
+  .hero-title { font-size: 36px; font-weight: 800; margin-bottom: 40px; text-align: center; }
+  .hero-title span { color: var(--secondary); }
 
-  /* BADGES */
-  .badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
-  .badge-green  { background:#052e16; color:#4ade80; }
-  .badge-red    { background:#450a0a; color:#f87171; }
-  .badge-yellow { background:#431407; color:#fb923c; }
+  .search-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 180px 180px;
+    gap: 16px;
+    align-items: flex-end;
+  }
 
-  /* BUS CARDS */
-  .buses-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px,1fr)); gap:16px; }
-  .bus-card { background:#1e293b; border-radius:12px; padding:20px; border:1px solid #334155; transition:border .2s; }
-  .bus-card:hover { border-color:#f472b6; }
-  .bus-card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
-  .bus-card-title { font-size:15px; font-weight:700; color:#f1f5f9; }
-  .bus-card-sub { font-size:12px; color:#64748b; margin-top:4px; line-height:1.6; }
-  .price-tag { font-size:22px; font-weight:700; color:#f472b6; white-space:nowrap; }
-  .price-sub { font-size:11px; color:#64748b; text-align:right; }
-  .avail-count { font-size:12px; color:#4ade80; margin-bottom:10px; }
+  .input-group { display: flex; flex-direction: column; gap: 8px; }
+  .input-group label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  
+  select, input {
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    padding: 14px 16px;
+    border-radius: 12px;
+    color: white;
+    font-size: 15px;
+    width: 100%;
+    outline: none;
+    transition: 0.2s;
+  }
+  select:focus, input:focus { border-color: var(--secondary); box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.12); }
 
-  /* SEATS */
-  .seats-grid { display:flex; flex-wrap:wrap; gap:5px; margin:10px 0; }
-  .seat { width:32px; height:32px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; cursor:pointer; border:2px solid transparent; transition:all .15s; }
-  .seat.free     { background:#0f172a; color:#94a3b8; border-color:#334155; }
-  .seat.free:hover { background:#f472b6; color:#0f172a; border-color:#f472b6; }
-  .seat.taken    { background:#1e293b; color:#334155; cursor:not-allowed; }
-  .seat.selected { background:#f472b6; color:#0f172a; border-color:#ec4899; }
-  .seat-legend { display:flex; gap:12px; font-size:11px; color:#64748b; margin-top:6px; }
+  .quick-chips {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+  }
+  .quick-chips::-webkit-scrollbar { display: none; }
+  .chip {
+    white-space: nowrap;
+    background: var(--border);
+    padding: 8px 16px;
+    border-radius: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .chip:hover { background: var(--secondary); color: var(--bg-main); }
 
-  /* BOOK PANEL */
-  .book-panel { background:#1e293b; border-radius:12px; padding:24px; border:2px solid #f472b6; margin-bottom:24px; display:none; }
-  .book-panel h3 { font-size:16px; color:#f472b6; margin-bottom:4px; }
-  .book-panel p  { font-size:13px; color:#64748b; margin-bottom:16px; }
+  /* --- BUS CARDS --- */
+  .results-container { padding: 40px; max-width: 900px; margin: 0 auto; }
+  .bus-card {
+    background: var(--bg-card);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    transition: transform 0.2s, border-color 0.2s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .bus-card:hover { border-color: var(--secondary); transform: translateY(-2px); }
+  
+  .bus-card-main { display: flex; justify-content: space-between; align-items: center; }
+  .bus-info { flex: 1; }
+  .operator-name { font-size: 18px; font-weight: 800; color: white; margin-bottom: 4px; }
+  .bus-meta { font-size: 13px; color: var(--text-muted); display: flex; gap: 16px; }
+  
+  .time-price { text-align: right; }
+  .departure-time { font-size: 24px; font-weight: 900; color: var(--secondary); }
+  .price { font-size: 18px; font-weight: 700; color: white; }
 
-  /* TICKET CARDS */
-  .ticket-card { background:#1e293b; border-radius:12px; padding:20px; border:1px solid #334155; margin-bottom:16px; }
-  .ticket-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
-  .ticket-num   { font-size:20px; font-weight:700; color:#f472b6; }
-  .ticket-route { font-size:13px; color:#94a3b8; margin-top:2px; }
-  .ticket-info  { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px; margin-top:12px; }
-  .ticket-info-item label { font-size:10px; color:#64748b; text-transform:uppercase; letter-spacing:.5px; }
-  .ticket-info-item p     { font-size:14px; color:#f1f5f9; font-weight:600; margin-top:2px; }
-  .ticket-actions { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
-  .qr-container { text-align:center; margin-top:16px; }
-  .qr-container img { border-radius:8px; border:4px solid #f472b6; }
+  .occupancy-bar-container { margin-top: 20px; }
+  .occupancy-label { display: flex; justify-content: space-between; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
+  .occupancy-bar { height: 6px; background: var(--bg-main); border-radius: 10px; overflow: hidden; }
+  .occupancy-fill { height: 100%; background: linear-gradient(90deg, var(--accent-green), var(--accent-orange)); border-radius: 10px; transition: 1s ease; }
 
-  /* LOADING */
-  .loading { text-align:center; padding:40px; color:#64748b; }
-  .loading-spinner { font-size:32px; animation:spin 1s linear infinite; display:inline-block; }
-  @keyframes spin { to { transform:rotate(360deg); } }
+  /* --- SEAT MAP --- */
+  .seat-map-container {
+    background: #e2e8f0;
+    padding: 30px;
+    border-radius: 40px 40px 20px 20px;
+    max-width: 300px;
+    margin: 24px auto;
+    position: relative;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.1);
+  }
+  .driver-area {
+    border-bottom: 2px dashed #cbd5e1;
+    margin-bottom: 30px;
+    padding-bottom: 15px;
+    display: flex;
+    justify-content: flex-end;
+  }
+  .driver-wheel { width: 30px; height: 30px; border: 4px solid #64748b; border-radius: 50%; display: flex; align-items:center; justify-content: center; color: #64748b; }
 
-  /* EMPTY STATE */
-  .empty { text-align:center; padding:48px 24px; color:#64748b; }
-  .empty-icon { font-size:48px; margin-bottom:16px; }
-  .empty p    { font-size:15px; }
-  .empty small { font-size:13px; margin-top:8px; display:block; }
+  .bus-seats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 40px 1fr 1fr;
+    gap: 12px;
+  }
+  .aisle { grid-column: 3; }
+  .seat {
+    aspect-ratio: 1;
+    background: white;
+    border-radius: 8px;
+    border-bottom: 4px solid #cbd5e1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+    transition: 0.2s;
+  }
+  .seat.taken { background: #cbd5e1; border-bottom-color: #94a3b8; cursor: not-allowed; color: #94a3b8; }
+  .seat.free:hover { background: var(--secondary); color: white; border-bottom-color: var(--secondary-hover); transform: scale(1.1); }
+  .seat.selected { background: var(--secondary); color: white; border-bottom-color: var(--secondary-hover); box-shadow: 0 0 15px rgba(249, 115, 22, 0.35); }
 
-  /* SECTION HEADER */
-  .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
-  .section-header .section-title { margin-bottom:0; }
+  /* --- REAL TICKET UI --- */
+  .ticket-wrapper {
+    background: #ffffff;
+    color: #0f172a;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+    position: relative;
+    border: 1px solid #e2e8f0;
+  }
+  .ticket-wrapper::before, .ticket-wrapper::after {
+    content: ''; position: absolute; width: 30px; height: 30px; background: var(--bg-main); border-radius: 50%;
+    top: 65%; transform: translateY(-50%); z-index: 10;
+  }
+  .ticket-wrapper::before { left: -15px; }
+  .ticket-wrapper::after { right: -15px; }
 
-  .logout-btn { background:#334155; border:none; color:#94a3b8; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:14px; }
-  .logout-btn:hover { color:#e2e8f0; background:#475569; }
+  .ticket-main { padding: 24px; border-bottom: 2px dashed #e2e8f0; }
+  .ticket-footer { padding: 24px; text-align: center; background: #fafafa; }
+  
+  .ticket-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+  .ticket-logo { font-weight: 900; color: var(--primary); font-size: 20px; }
+  .ticket-id { font-family: 'JetBrains Mono', monospace; font-size: 14px; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; }
 
-  /* FILTER STRIP */
-  .filter-strip { background:#1e293b; border-radius:12px; padding:16px 20px; border:1px solid #334155; margin-bottom:24px; }
-  .filter-strip .form-row { align-items:center; }
-  .filter-strip select, .filter-strip input { background:#0f172a; }
+  .ticket-timeline { display: flex; align-items: center; justify-content: space-between; margin: 30px 0; position: relative; }
+  .ticket-timeline::before { content: ''; position: absolute; height: 2px; background: #e2e8f0; left: 10px; right: 10px; top: 11px; z-index: 0; }
+  .stop { position: relative; z-index: 1; text-align: center; }
+  .stop-dot { width: 24px; height: 24px; background: #fff; border: 4px solid var(--secondary); border-radius: 50%; margin: 0 auto 8px; }
+  .stop-name { font-size: 14px; font-weight: 700; }
+  .stop-time { font-size: 11px; color: var(--text-muted); }
 
-  /* ROUTE TAG */
-  .route-tag { display:inline-flex; align-items:center; gap:6px; background:#0f172a; border-radius:20px; padding:4px 12px; font-size:12px; color:#94a3b8; margin-bottom:8px; }
-  .route-tag span { color:#f472b6; font-weight:600; }
+  .ticket-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px; }
+  .ticket-item label { font-size: 10px; text-transform: uppercase; color: var(--text-muted); font-weight: 700; display: block; margin-bottom: 2px; }
+  .ticket-item p { font-size: 15px; font-weight: 700; }
+
+  /* --- NOTIFICATIONS --- */
+  .notif-panel {
+    position: fixed;
+    top: 0; right: -400px;
+    width: 380px; height: 100vh;
+    background: var(--bg-card);
+    border-left: 1px solid var(--border);
+    z-index: 200;
+    transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 24px;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+  }
+  .notif-panel.open { right: 0; }
+  .notif-item {
+    background: var(--bg-main);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    gap: 12px;
+    border: 1px solid transparent;
+    cursor: pointer;
+  }
+  .notif-item.unread { border-left: 4px solid var(--secondary); background: rgba(249,115,22,0.06); }
+  .notif-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+
+  /* --- MOBILE ADAPTATIONS --- */
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .bottom-nav { display: flex; }
+    .main-content { margin-left: 0; }
+    .hero-section { padding: 20px; }
+    .search-grid { grid-template-columns: 1fr; }
+    .hero-title { font-size: 28px; margin-bottom: 20px; }
+    .search-card { margin-top: 0; padding: 20px; border-radius: 16px; }
+    .results-container { padding: 20px; }
+    .notif-panel { width: 100%; right: -100%; }
+    .ticket-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* BUTTONS */
+  .btn {
+    padding: 14px 24px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 15px;
+  }
+  .btn-primary { background: var(--secondary); color: var(--bg-main); }
+  .btn-primary:hover { background: var(--secondary-hover); transform: translateY(-1px); }
+  .btn-block { width: 100%; }
+  .btn-ghost { background: var(--border); color: white; }
+
+  .alert { padding: 12px; border-radius: 12px; font-size: 14px; margin-bottom: 16px; display: none; border-left: 4px solid; }
+  .alert-err { background: #450a0a; color: #f87171; border-color: #ef4444; }
+
+  /* UTILS */
+  .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+  .badge-paid { background: #dcfce7; color: #166534; }
+  .badge-pending { background: #fef9c3; color: #854d0e; }
+
+  .loading-shimmer { animation: shimmer 2s infinite linear; background: linear-gradient(90deg, var(--bg-card) 0%, #334155 50%, var(--bg-card) 100%); background-size: 200% 100%; height: 100px; border-radius: 20px; margin-bottom: 20px; }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+  .bell-btn { position: relative; cursor: pointer; }
+  .bell-count { position: absolute; top: -5px; right: -5px; background: var(--secondary); color: var(--bg-main); width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items:center; justify-content:center; font-weight: 900; border: 2px solid var(--bg-card); }
 </style>
 </head>
 <body>
 
-<!-- AUTH -->
+<!-- AUTH SCREEN -->
 <div class="auth-screen" id="auth-screen">
   <div class="auth-card">
-    <h1><img src="logo.png" alt="BookIt Logo" style="height:36px;vertical-align:middle;margin-right:8px;">BookIt</h1>
-    <p>Your bus ticket, simplified</p>
+    <div class="auth-logo">
+      <h1>
+        <img src="./logo.png" alt="BookIt" onerror="this.style.display='none'">
+        <span>BookIt</span>
+      </h1>
+      <p style="color:var(--text-muted); font-size: 14px;">Travel Rwanda with ease</p>
+    </div>
     <div class="tabs">
       <div class="tab active" onclick="switchTab('login', this)">Login</div>
-      <div class="tab"        onclick="switchTab('register', this)">Register</div>
+      <div class="tab" onclick="switchTab('register', this)">Register</div>
     </div>
-    <div class="alert alert-err" id="auth-err"></div>
+    <div id="auth-err" class="alert alert-err"></div>
 
-    <div id="tab-login" style="display:flex; flex-direction:column; gap:12px;">
-      <input id="log-email"    type="email"    placeholder="Email" />
-      <input id="log-password" type="password" placeholder="Password" />
-      <button class="btn btn-primary" onclick="doLogin()">Login</button>
+    <div id="tab-login" style="display:flex; flex-direction:column; gap:16px;">
+      <div class="input-group">
+        <label>Email Address</label>
+        <input id="log-email" type="email" placeholder="name@email.com" />
+      </div>
+      <div class="input-group">
+        <label>Password</label>
+        <input id="log-password" type="password" placeholder="••••••••" />
+      </div>
+      <button class="btn btn-primary btn-block" onclick="doLogin()">Sign In <i class="fa fa-arrow-right"></i></button>
     </div>
 
-    <div id="tab-register" style="display:none; flex-direction:column; gap:12px;">
-      <input id="reg-name"     placeholder="Full name" />
-      <input id="reg-email"    type="email"    placeholder="Email" />
-      <input id="reg-phone"    placeholder="Phone" />
+    <div id="tab-register" style="display:none; flex-direction:column; gap:16px;">
+      <input id="reg-name" placeholder="Full Name" />
+      <input id="reg-email" type="email" placeholder="Email" />
+      <input id="reg-phone" placeholder="Phone Number" />
       <input id="reg-password" type="password" placeholder="Password" />
-      <button class="btn btn-primary" onclick="doRegister()">Create Account</button>
+      <button class="btn btn-primary btn-block" onclick="doRegister()">Create Account</button>
     </div>
   </div>
 </div>
 
 <!-- DASHBOARD -->
 <div id="dashboard">
-  <div class="topbar">
-    <h1>🚌 BookIt</h1>
-    <div class="topbar-right">
-      <button class="bell-btn" onclick="toggleNotifs()" id="bell-btn">
-        <i class="fa fa-bell"></i>
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div style="margin-bottom: 40px; padding: 0 16px;">
+      <div style="display:flex; align-items:center; gap: 10px;">
+        <img src="./logo.png" alt="BookIt" style="width:28px;height:28px;object-fit:contain;" onerror="this.style.display='none'">
+        <h1 style="color:var(--secondary); font-weight: 900; letter-spacing: -1px;">BookIt</h1>
+      </div>
+    </div>
+    <div class="nav-item active" onclick="showSection('search', this)">
+      <i class="fa-solid fa-compass"></i> Explore
+    </div>
+    <div class="nav-item" onclick="showSection('tickets', this)">
+      <i class="fa-solid fa-ticket"></i> My Tickets
+    </div>
+    <div class="nav-item" onclick="toggleNotifs()">
+      <div class="bell-btn">
+        <i class="fa-solid fa-bell"></i>
         <span class="bell-count" id="bell-count" style="display:none">0</span>
-      </button>
-      <div class="notif-dropdown" id="notif-dropdown">
-        <div class="notif-header">
-          <span>Notifications</span>
-          <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
-        </div>
-        <div id="notif-list"></div>
       </div>
-      <span style="color:#94a3b8; font-size:14px;" id="user-name"></span>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+      Notifications
+    </div>
+    <div style="position: absolute; bottom: 32px; left: 16px; right: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 0 16px;">
+        <div style="width: 40px; height: 40px; border-radius: 14px; background: var(--secondary); display: flex; align-items:center; justify-content: center; color: var(--bg-main); font-weight: 900;" id="user-initial">U</div>
+        <div style="overflow: hidden;">
+          <p id="user-name" style="font-weight: 700; font-size: 14px; white-space: nowrap; text-overflow: ellipsis;"></p>
+          <p style="font-size: 11px; color: var(--text-muted);">Verified Traveler</p>
+        </div>
+      </div>
+      <button class="btn btn-ghost btn-block" onclick="logout()"><i class="fa fa-sign-out"></i> Logout</button>
     </div>
   </div>
 
-  <div class="layout">
-    <div class="sidebar">
-      <div class="nav-item active" onclick="showSection('search', this)"><i class="fa fa-search"></i> Search</div>
-      <div class="nav-item"        onclick="showSection('tickets', this)"><i class="fa fa-ticket-alt"></i> My Tickets</div>
+  <!-- BOTTOM NAV (MOBILE) -->
+  <div class="bottom-nav">
+    <div class="nav-item active" onclick="showSection('search', this)"><i class="fa-solid fa-compass"></i></div>
+    <div class="nav-item" onclick="showSection('tickets', this)"><i class="fa-solid fa-ticket"></i></div>
+    <div class="nav-item" onclick="toggleNotifs()">
+        <div class="bell-btn">
+            <i class="fa-solid fa-bell"></i>
+            <span class="bell-count" id="m-bell-count" style="display:none">0</span>
+        </div>
+    </div>
+    <div class="nav-item" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    
+    <!-- SEARCH SECTION -->
+    <div id="sec-search" class="section active">
+      <div class="hero-section">
+        <h2 class="hero-title">Find your next <span>Adventure.</span></h2>
+        <div class="search-card">
+          <div class="search-grid">
+            <div class="input-group">
+              <label><i class="fa fa-map-marker-alt"></i> From</label>
+              <select id="s-from">
+                <option value="">Select departure</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label><i class="fa fa-location-dot"></i> To</label>
+              <select id="s-to">
+                <option value="">Select destination</option>
+              </select>
+            </div>
+            <div class="input-group">
+              <label><i class="fa fa-calendar-alt"></i> Date</label>
+              <input type="date" id="s-date" />
+            </div>
+            <button class="btn btn-primary" onclick="filterBuses()">Find Buses</button>
+          </div>
+          <div class="quick-chips">
+            <span class="chip" onclick="quickSearch('Kigali', 'Musanze')">Kigali → Musanze</span>
+            <span class="chip" onclick="quickSearch('Kigali', 'Rubavu')">Kigali → Rubavu</span>
+            <span class="chip" onclick="quickSearch('Kigali', 'Huye')">Kigali → Huye</span>
+            <span class="chip" onclick="quickSearch('Musanze', 'Kigali')">Musanze → Kigali</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="results-container" id="search-results">
+          <!-- SHIMMER LOADING -->
+          <div class="loading-shimmer"></div>
+          <div class="loading-shimmer"></div>
+      </div>
     </div>
 
-    <div class="main">
-
-      <!-- SEARCH -->
-      <div class="section active" id="sec-search">
-        <div class="section-title">Find a Bus</div>
-
-        <!-- FILTER STRIP -->
-        <div class="filter-strip">
-          <div class="form-row">
-            <select id="s-from" onchange="filterBuses()">
-              <option value="">All departures</option>
-            </select>
-            <select id="s-to" onchange="filterBuses()">
-              <option value="">All destinations</option>
-            </select>
-            <input type="date" id="s-date" onchange="filterBuses()" />
-            <button class="btn btn-primary" onclick="filterBuses()">🔍 Search</button>
-            <button class="btn btn-ghost"   onclick="resetSearch()">Reset</button>
-          </div>
-        </div>
-
-        <!-- BOOK PANEL -->
-        <div class="book-panel" id="book-panel">
-          <h3>Select Your Seat</h3>
-          <p id="book-bus-label"></p>
-          <div class="seats-grid" id="seats-grid"></div>
-          <div class="seat-legend">
-            <span><i class="fa fa-square" style="color:#3b82f6;"></i> Free</span>
-            <span><i class="fa fa-square" style="color:#334155;"></i> Taken</span>
-            <span style="color:#f472b6;"><i class="fa fa-square" style="color:#f472b6;"></i> Selected</span>
-          </div>
-          <div style="display:flex; align-items:center; gap:12px; margin-top:16px; flex-wrap:wrap;">
-            <span id="selected-seat-label" style="color:#f472b6; font-weight:600; font-size:14px;"></span>
-            <button class="btn btn-primary" id="confirm-book-btn" onclick="confirmBook()" disabled>Confirm Booking</button>
-            <button class="btn btn-ghost"   onclick="closeBookPanel()">Cancel</button>
-          </div>
-          <div class="alert alert-err" id="book-err" style="margin-top:12px;"></div>
-        </div>
-
-        <!-- RESULTS -->
-        <div id="search-results">
-          <div class="loading">
-            <div class="loading-spinner">🚌</div>
-            <p style="margin-top:12px;">Loading available buses...</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- MY TICKETS -->
-      <div class="section" id="sec-tickets">
-        <div class="section-header">
-          <div class="section-title">My Tickets</div>
-          <button class="btn btn-ghost btn-sm" onclick="loadMyTickets()">↻ Refresh</button>
-        </div>
-        <div id="my-tickets-list">
-          <div class="loading"><div class="loading-spinner">🎫</div></div>
-        </div>
-      </div>
-
+    <!-- TICKETS SECTION -->
+    <div id="sec-tickets" class="section" style="display:none; padding: 40px;">
+        <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 32px;">My <span>Tickets</span></h2>
+        <div id="my-tickets-list"></div>
     </div>
   </div>
+
+  <!-- NOTIFICATION PANEL -->
+  <div class="notif-panel" id="notif-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+        <h3 style="font-size: 20px; font-weight: 800;">Notifications</h3>
+        <button class="btn btn-ghost" onclick="toggleNotifs()"><i class="fa fa-times"></i></button>
+    </div>
+    <div id="notif-list"></div>
+  </div>
+
+  <!-- SEAT MODAL (POPUP) -->
+  <div id="seat-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:200; align-items:center; justify-content:center; padding: 20px; backdrop-filter: blur(8px);">
+    <div style="background:var(--bg-card); width:100%; max-width:400px; border-radius:32px; padding:32px; border: 1px solid var(--border);">
+        <h3 id="modal-bus-name" style="font-weight: 800; font-size: 20px; margin-bottom: 8px;">Select Seat</h3>
+        <p id="modal-route" style="color:var(--text-muted); font-size: 14px; margin-bottom: 24px;"></p>
+        
+        <div id="modal-seat-map"></div>
+
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+            <button class="btn btn-primary flex-1" id="confirm-book-btn" disabled onclick="confirmBook()">Confirm Booking</button>
+            <button class="btn btn-ghost" onclick="closeSeatModal()">Cancel</button>
+        </div>
+        <div id="book-err" class="alert alert-err" style="margin-top: 16px;"></div>
+    </div>
+  </div>
+
 </div>
 
 <script type="module">
@@ -273,13 +553,18 @@ let allBuses   = [];
 let selectedBus  = null;
 let selectedSeat = null;
 
-// ── AUTH ──────────────────────────────────────────────
+// --- UTILS ---
+const showToast = (msg, type = 'info') => {
+    toastr.options = { positionClass: "toast-bottom-right", progressBar: true };
+    toastr[type](msg);
+};
+
+// --- AUTH ---
 window.switchTab = (tab, el) => {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   document.getElementById('tab-login').style.display    = tab === 'login'    ? 'flex' : 'none';
   document.getElementById('tab-register').style.display = tab === 'register' ? 'flex' : 'none';
-  document.getElementById('auth-err').style.display     = 'none';
 };
 
 window.doLogin = async () => {
@@ -290,9 +575,10 @@ window.doLogin = async () => {
   try {
     const data = await api.loginUser({ email, password });
     setToken(data.token);
-    document.getElementById('user-name').textContent      = data.user.name;
-    document.getElementById('auth-screen').style.display  = 'none';
-    document.getElementById('dashboard').style.display    = 'block';
+    document.getElementById('user-name').textContent = data.user.name;
+    document.getElementById('user-initial').textContent = data.user.name.charAt(0);
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
     init();
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
@@ -307,464 +593,276 @@ window.doRegister = async () => {
       phone:    document.getElementById('reg-phone').value.trim(),
       password: document.getElementById('reg-password').value,
     });
-    alert('✅ Account created! Please login.');
+    showToast('Account created! Please login.', 'success');
     switchTab('login', document.querySelector('.tab'));
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
 
 window.logout = () => { clearToken(); location.reload(); };
 
-// ── INIT ──────────────────────────────────────────────
+// --- CORE ---
 async function init() {
   document.getElementById('s-date').value = new Date().toISOString().split('T')[0];
-
-  // load locations for filter selects
   locations = await api.getLocations();
   populateSelects();
-
-  // load all buses immediately
   await loadAllBuses();
-
   loadNotifications();
-  setInterval(loadNotifications, 20000);
-}
-
-async function loadAllBuses() {
-  const res = document.getElementById('search-results');
-  res.innerHTML = '<div class="loading"><div class="loading-spinner">🚌</div><p style="margin-top:12px;">Loading buses...</p></div>';
-  try {
-    allBuses = await api.getBuses();
-    renderBuses(allBuses);
-  } catch(e) {
-    res.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div><p style="color:#f87171;">${e.message}</p></div>`;
-  }
+  setInterval(loadNotifications, 30000);
 }
 
 function populateSelects() {
   const opts = locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
-  document.getElementById('s-from').innerHTML = '<option value="">All departures</option>'  + opts;
-  document.getElementById('s-to').innerHTML   = '<option value="">All destinations</option>' + opts;
+  document.getElementById('s-from').innerHTML += opts;
+  document.getElementById('s-to').innerHTML += opts;
 }
 
-// ── NAVIGATION ────────────────────────────────────────
 window.showSection = (name, el) => {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById(`sec-${name}`).classList.add('active');
+  document.getElementById(`sec-${name}`).style.display = 'block';
   el.classList.add('active');
   if (name === 'tickets') loadMyTickets();
 };
 
-// ── SEARCH / FILTER ───────────────────────────────────
+window.quickSearch = (fromName, toName) => {
+    const f = locations.find(l => l.name === fromName);
+    const t = locations.find(l => l.name === toName);
+    if(f) document.getElementById('s-from').value = f.id;
+    if(t) document.getElementById('s-to').value = t.id;
+    filterBuses();
+};
+
+async function loadAllBuses() {
+  const res = document.getElementById('search-results');
+  res.innerHTML = '<div class="loading-shimmer"></div><div class="loading-shimmer"></div>';
+  try {
+    allBuses = await api.getBuses();
+    renderBuses(allBuses);
+  } catch(e) {
+    res.innerHTML = `<p style="color:var(--primary); text-align:center;">${e.message}</p>`;
+  }
+}
+
 window.filterBuses = async () => {
   const from = document.getElementById('s-from').value;
   const to   = document.getElementById('s-to').value;
   const date = document.getElementById('s-date').value;
   const res  = document.getElementById('search-results');
 
-  closeBookPanel();
-
-  // if no filters — show all buses
-  if (!from && !to) {
-    renderBuses(allBuses);
-    return;
-  }
-
-  // if both from and to selected — use segment search
   if (from && to) {
-    if (from === to) {
-      res.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div><p style="color:#f87171;">Origin and destination cannot be the same.</p></div>';
-      return;
-    }
-    if (!date) {
-      res.innerHTML = '<div class="empty"><div class="empty-icon">📅</div><p style="color:#f87171;">Please select a travel date.</p></div>';
-      return;
-    }
-    res.innerHTML = '<div class="loading"><div class="loading-spinner">🔍</div><p style="margin-top:12px;">Searching...</p></div>';
+    if (from === to) { showToast('Origin and destination match', 'error'); return; }
+    res.innerHTML = '<div class="loading-shimmer"></div><div class="loading-shimmer"></div>';
     try {
       const buses = await api.searchTickets({ from, to, date });
       renderSearchResults(buses, from, to, date);
-    } catch(e) {
-      res.innerHTML = `<div class="empty"><div class="empty-icon">😕</div><p style="color:#f87171;">${e.message}</p><small>Make sure stops are configured for this route.</small></div>`;
-    }
-    return;
+    } catch(e) { res.innerHTML = `<p>${e.message}</p>`; }
+  } else {
+    renderBuses(allBuses);
   }
-
-  // partial filter — filter allBuses client-side by location name
-  const fromName = from ? locations.find(l => l.id === from)?.name : null;
-  const toName   = to   ? locations.find(l => l.id === to)?.name   : null;
-
-  const filtered = allBuses.filter(b => {
-    const f = b.route?.fromLocation?.name || '';
-    const t = b.route?.toLocation?.name   || '';
-    if (fromName && !f.toLowerCase().includes(fromName.toLowerCase())) return false;
-    if (toName   && !t.toLowerCase().includes(toName.toLowerCase()))   return false;
-    return true;
-  });
-  renderBuses(filtered);
 };
 
-window.resetSearch = () => {
-  document.getElementById('s-from').value = '';
-  document.getElementById('s-to').value   = '';
-  document.getElementById('s-date').value = new Date().toISOString().split('T')[0];
-  closeBookPanel();
-  renderBuses(allBuses);
-};
-
-// ── RENDER ALL BUSES (no segment, no seat availability yet) ──
 function renderBuses(buses) {
   const res = document.getElementById('search-results');
-  if (!buses.length) {
-    res.innerHTML = `
-      <div class="empty">
-            <div class="empty-icon"><i class="fa fa-bus"></i></div>
-        <p>No buses found.</p>
-        <small>Try adjusting your filters.</small>
-      </div>`;
-    return;
-  }
-
-  res.innerHTML = `
-    <p style="color:#64748b; font-size:13px; margin-bottom:16px;">
-      ${buses.length} bus${buses.length !== 1 ? 'es' : ''} available
-      — select <b style="color:#f472b6;">From</b> and <b style="color:#f472b6;">To</b> to book a specific segment
-    </p>
-    <div class="buses-grid">
-      ${buses.map(b => `
-        <div class="bus-card">
-          <div class="bus-card-top">
-            <div>
-              <div class="route-tag">
-                <span>${b.route?.fromLocation?.name || '?'}</span>
-                →
-                <span>${b.route?.toLocation?.name || '?'}</span>
-              </div>
-              <div class="bus-card-title">${b.operator?.company_name || 'Unknown'}</div>
-              <div class="bus-card-sub">
-                🚌 ${b.plate_number}<br>
-                ⏰ Departs ${b.departure_time}<br>
-                👤 ${b.driver_name}<br>
-                💺 ${b.capacity} seats total
-              </div>
-            </div>
-            <div>
-              <div class="price-tag">${Number(b.route?.price || 0).toLocaleString()}</div>
-              <div class="price-sub">RWF full route</div>
-            </div>
+  res.innerHTML = buses.map(b => `
+    <div class="bus-card" onclick="showToast('Select destination to book', 'info')">
+      <div class="bus-card-main">
+        <div class="bus-info">
+          <div class="operator-name">${b.operator?.company_name || 'BookIt Express'}</div>
+          <div class="bus-meta">
+            <span><i class="fa fa-bus"></i> ${b.plate_number}</span>
+            <span><i class="fa fa-user"></i> ${b.driver_name}</span>
           </div>
-          <p style="font-size:12px; color:#64748b; margin-top:8px;">
-            Select From & To above then click Search to see available seats on this route.
-          </p>
         </div>
-      `).join('')}
-    </div>`;
+        <div class="time-price">
+            <div class="departure-time">${b.departure_time}</div>
+            <div class="price">${Number(b.route?.price || 0).toLocaleString()} RWF</div>
+        </div>
+      </div>
+      <div class="occupancy-bar-container">
+        <div class="occupancy-label"><span>Occupancy</span><span>Full Route</span></div>
+        <div class="occupancy-bar"><div class="occupancy-fill" style="width: 70%"></div></div>
+      </div>
+    </div>
+  `).join('');
 }
 
-// ── RENDER SEARCH RESULTS (with seat availability) ────
 function renderSearchResults(buses, from, to, date) {
-  const res      = document.getElementById('search-results');
-  const fromName = locations.find(l => l.id === from)?.name || from;
-  const toName   = locations.find(l => l.id === to)?.name   || to;
-
-  if (!buses.length) {
-    res.innerHTML = `
-      <div class="empty">
-        <div class="empty-icon">🚌</div>
-        <p>No available buses for <b>${fromName} → ${toName}</b> on <b>${date}</b>.</p>
-        <small>Try a different date or check that stops are configured.</small>
-      </div>`;
-    return;
-  }
-
-  res.innerHTML = `
-    <p style="color:#64748b; font-size:13px; margin-bottom:16px;">
-      ${buses.length} bus${buses.length !== 1 ? 'es' : ''} found —
-      <b style="color:#f472b6;">${fromName} → ${toName}</b> on <b>${date}</b>
-    </p>
-    <div class="buses-grid">
-      ${buses.map(b => {
-        const taken     = b.taken_seats || [];
-        const available = b.available_seats || [];
+    const res = document.getElementById('search-results');
+    if(!buses.length) {
+        res.innerHTML = '<div style="text-align:center; padding:40px;"><i class="fa fa-search" style="font-size:40px; color:var(--border); margin-bottom:16px;"></i><p>No buses found for this route.</p></div>';
+        return;
+    }
+    res.innerHTML = buses.map(b => {
+        const percent = Math.round((b.taken_seats?.length / b.capacity) * 100);
         return `
-          <div class="bus-card">
-            <div class="bus-card-top">
-              <div>
-                <div class="route-tag">
-                  <span>${fromName}</span> → <span>${toName}</span>
+            <div class="bus-card" onclick="openSeatModal('${b.bus_id}', '${b.boarding_stop_id}', '${b.dropoff_stop_id}', '${b.capacity}', '${JSON.stringify(b.taken_seats || [])}', '${b.operator?.company_name}', '${b.price}', '${date}')">
+                <div class="bus-card-main">
+                    <div class="bus-info">
+                        <div class="operator-name">${b.operator?.company_name}</div>
+                        <div class="bus-meta">
+                            <span><i class="fa fa-clock"></i> Departs ${b.departure_time}</span>
+                            <span><i class="fa fa-chair"></i> ${b.available_seats.length} free</span>
+                        </div>
+                    </div>
+                    <div class="time-price">
+                        <div class="departure-time">${Number(b.price).toLocaleString()}</div>
+                        <div class="price" style="font-size:12px; color:var(--text-muted)">RWF / Seat</div>
+                    </div>
                 </div>
-                <div class="bus-card-title">${b.operator?.company_name || 'Unknown'}</div>
-                <div class="bus-card-sub">
-                  🚌 ${b.plate_number}<br>
-                  ⏰ Departs ${b.departure_time}<br>
-                  👤 ${b.driver_name}
+                <div class="occupancy-bar-container">
+                    <div class="occupancy-label"><span>Bus Occupancy</span><span>${percent}% Full</span></div>
+                    <div class="occupancy-bar"><div class="occupancy-fill" style="width: ${percent}%"></div></div>
                 </div>
-              </div>
-              <div>
-                <div class="price-tag">${Number(b.price).toLocaleString()}</div>
-                <div class="price-sub">RWF / person</div>
-              </div>
             </div>
-            <div class="avail-count">✅ ${available.length} seat${available.length !== 1 ? 's' : ''} available</div>
-            <div class="seats-grid">
-              ${Array.from({length: b.capacity}, (_, i) => i + 1).map(n => {
-                const isTaken = taken.includes(n);
-                return `<div class="seat ${isTaken ? 'taken' : 'free'}"
-                  title="Seat ${n}${isTaken ? ' (taken)' : ''}"
-                  onclick="${isTaken ? '' : `pickSeatDirect(this, ${n}, '${b.bus_id}', '${b.boarding_stop_id}', '${b.dropoff_stop_id}', '${b.operator?.company_name} — ${b.plate_number}', '${date}')`}">
-                  ${n}
-                </div>`;
-              }).join('')}
-            </div>
-            <div class="seat-legend">
-              <span>🟦 Free (click to select)</span>
-              <span>⬛ Taken</span>
-            </div>
-          </div>`;
-      }).join('')}
-    </div>`;
+        `;
+    }).join('');
 }
 
-// ── SEAT SELECTION (inline on result cards) ────────────
-window.pickSeatDirect = (el, num, bus_id, boarding_stop_id, dropoff_stop_id, busName, date) => {
-  // deselect all
-  document.querySelectorAll('.seat.selected').forEach(s => {
-    s.classList.remove('selected');
-    s.classList.add('free');
-  });
+// --- SEAT MODAL ---
+window.openSeatModal = (busId, boardId, dropId, capacity, takenSeatsJson, operator, price, date) => {
+    const taken = JSON.parse(takenSeatsJson);
+    selectedBus = { bus_id: busId, boarding_stop_id: boardId, dropoff_stop_id: dropId, date };
+    selectedSeat = null;
 
-  el.classList.remove('free');
-  el.classList.add('selected');
+    document.getElementById('modal-bus-name').textContent = operator;
+    document.getElementById('modal-route').textContent = `Travel Date: ${date} • ${Number(price).toLocaleString()} RWF`;
+    document.getElementById('seat-modal').style.display = 'flex';
+    document.getElementById('confirm-book-btn').disabled = true;
 
-  selectedBus  = { bus_id, boarding_stop_id, dropoff_stop_id, date };
-  selectedSeat = num;
-
-  // show book panel
-  const panel = document.getElementById('book-panel');
-  document.getElementById('book-bus-label').textContent   = `${busName} — Seat ${num}`;
-  document.getElementById('selected-seat-label').textContent = `Seat ${num} selected`;
-  document.getElementById('confirm-book-btn').disabled    = false;
-  document.getElementById('book-err').style.display       = 'none';
-  panel.style.display = 'block';
-  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    let html = `<div class="seat-map-container"><div class="driver-area"><div class="driver-wheel"><i class="fa fa-dharmachakra"></i></div></div><div class="bus-seats">`;
+    for(let i=1; i<=capacity; i++) {
+        const isTaken = taken.includes(i);
+        html += `<div class="seat ${isTaken ? 'taken' : 'free'}" onclick="${isTaken ? '' : `selectSeat(this, ${i})`}" id="seat-${i}">${i}</div>`;
+        if (i % 4 === 2) html += `<div class="aisle"></div>`;
+    }
+    html += `</div></div>`;
+    document.getElementById('modal-seat-map').innerHTML = html;
 };
 
-window.closeBookPanel = () => {
-  document.getElementById('book-panel').style.display = 'none';
-  document.querySelectorAll('.seat.selected').forEach(s => {
-    s.classList.remove('selected');
-    s.classList.add('free');
-  });
-  selectedBus  = null;
-  selectedSeat = null;
+window.selectSeat = (el, num) => {
+    document.querySelectorAll('.seat.selected').forEach(s => s.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedSeat = num;
+    document.getElementById('confirm-book-btn').disabled = false;
 };
+
+window.closeSeatModal = () => { document.getElementById('seat-modal').style.display = 'none'; };
 
 window.confirmBook = async () => {
-  if (!selectedBus || !selectedSeat) return;
-  const err = document.getElementById('book-err');
-  err.style.display = 'none';
-  document.getElementById('confirm-book-btn').disabled = true;
-  document.getElementById('confirm-book-btn').textContent = 'Booking...';
-  try {
-    await api.bookTicket({
-      bus_id:           selectedBus.bus_id,
-      boarding_stop_id: selectedBus.boarding_stop_id,
-      dropoff_stop_id:  selectedBus.dropoff_stop_id,
-      seat_number:      selectedSeat,
-      travel_date:      selectedBus.date,
-    });
-    closeBookPanel();
-    alert(`✅ Seat ${selectedSeat} booked! Go to My Tickets to complete payment.`);
-    // refresh the search to update seat availability
-    filterBuses();
-    // switch to tickets
-    const ticketsNav = document.querySelector('.nav-item:nth-child(2)');
-    showSection('tickets', ticketsNav);
-  } catch(e) {
-    err.textContent = e.message;
-    err.style.display = 'block';
-    document.getElementById('confirm-book-btn').disabled = false;
-    document.getElementById('confirm-book-btn').textContent = 'Confirm Booking';
-  }
+    const btn = document.getElementById('confirm-book-btn');
+    btn.disabled = true;
+    btn.textContent = 'Processing...';
+    try {
+        await api.bookTicket({
+            bus_id: selectedBus.bus_id,
+            boarding_stop_id: selectedBus.boarding_stop_id,
+            dropoff_stop_id: selectedBus.dropoff_stop_id,
+            seat_number: selectedSeat,
+            travel_date: selectedBus.date
+        });
+        showToast('Ticket booked successfully!', 'success');
+        closeSeatModal();
+        showSection('tickets', document.querySelector('.nav-item:nth-child(2)'));
+    } catch(e) {
+        document.getElementById('book-err').textContent = e.message;
+        document.getElementById('book-err').style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Confirm Booking';
+    }
 };
 
-// ── MY TICKETS ────────────────────────────────────────
+// --- TICKETS ---
 window.loadMyTickets = async () => {
-  const list = document.getElementById('my-tickets-list');
-  list.innerHTML = '<div class="loading"><div class="loading-spinner">🎫</div></div>';
-  try {
-    const tickets = await api.getMyTickets();
-    if (!tickets.length) {
-      list.innerHTML = `
-        <div class="empty">
-          <div class="empty-icon"><i class="fa fa-ticket-alt"></i></div>
-          <p>No tickets yet</p>
-          <small>Search for a bus and book your first ticket</small>
-        </div>`;
-      return;
-    }
-
-    const statusColor = { paid:'badge-green', pending:'badge-yellow', cancelled:'badge-red' };
-    list.innerHTML = tickets.map(t => `
-      <div class="ticket-card">
-        <div class="ticket-header">
-          <div>
-            <div class="ticket-num">${t.ticket_number || '—'}</div>
-            <div class="ticket-route">
-              ${t.boardingStop?.location?.name || '?'} → ${t.dropoffStop?.location?.name || '?'}
+    const list = document.getElementById('my-tickets-list');
+    list.innerHTML = '<div class="loading-shimmer"></div>';
+    try {
+        const tickets = await api.getMyTickets();
+        if(!tickets.length) {
+            list.innerHTML = '<div style="text-align:center; padding:60px;"><i class="fa fa-ticket-alt" style="font-size:60px; color:var(--border); margin-bottom:20px;"></i><p>Your tickets will appear here.</p></div>';
+            return;
+        }
+        list.innerHTML = tickets.map(t => `
+            <div class="ticket-wrapper">
+                <div class="ticket-main">
+                    <div class="ticket-header">
+                        <div class="ticket-logo">BOOKIT</div>
+                        <div class="ticket-id">${t.ticket_number || 'PENDING'}</div>
+                    </div>
+                    <div class="ticket-timeline">
+                        <div class="stop">
+                            <div class="stop-dot"></div>
+                            <div class="stop-name">${t.boardingStop?.location?.name}</div>
+                            <div class="stop-time">Boarding</div>
+                        </div>
+                        <div class="stop">
+                            <div class="stop-dot" style="border-color:#e2e8f0;"></div>
+                            <div class="stop-name">${t.dropoffStop?.location?.name}</div>
+                            <div class="stop-time">Destination</div>
+                        </div>
+                    </div>
+                    <div class="ticket-grid">
+                        <div class="ticket-item"><label>Date</label><p>${t.travel_date}</p></div>
+                        <div class="ticket-item"><label>Seat</label><p>${t.seat_number}</p></div>
+                        <div class="ticket-item"><label>Status</label><span class="badge badge-${t.status}">${t.status}</span></div>
+                    </div>
+                </div>
+                <div class="ticket-footer">
+                    ${t.status === 'pending' ? `
+                        <button class="btn btn-primary btn-block" onclick="payTicket('${t.id}')">Complete Payment — ${Number(t.price).toLocaleString()} RWF</button>
+                    ` : `
+                        <div style="margin-bottom: 12px;">Present QR Code for boarding</div>
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${t.ticket_number}" alt="QR" style="border: 1px solid #eee; padding: 10px; border-radius: 8px;">
+                    `}
+                </div>
             </div>
-          </div>
-          <span class="badge ${statusColor[t.status] || ''}">${t.status}</span>
-        </div>
-        <div class="ticket-info">
-          <div class="ticket-info-item">
-            <label>Bus</label>
-            <p>${t.bus?.plate_number || '—'}</p>
-          </div>
-          <div class="ticket-info-item">
-            <label>Seat</label>
-            <p>${t.seat_number}</p>
-          </div>
-          <div class="ticket-info-item">
-            <label>Date</label>
-            <p>${t.travel_date}</p>
-          </div>
-          <div class="ticket-info-item">
-            <label>Departs</label>
-            <p>${t.bus?.departure_time || '—'}</p>
-          </div>
-          <div class="ticket-info-item">
-            <label>Price</label>
-            <p>${Number(t.price).toLocaleString()} RWF</p>
-          </div>
-          <div class="ticket-info-item">
-            <label>Operator</label>
-            <p>${t.operator?.company_name || '—'}</p>
-          </div>
-        </div>
-
-        ${t.status === 'pending' ? `
-          <div class="ticket-actions">
-            <button class="btn btn-primary btn-sm" onclick="payTicket('${t.id}')"><i class="fa fa-credit-card"></i> Pay Now</button>
-            <button class="btn btn-danger btn-sm"  onclick="cancelTicket('${t.id}')"><i class="fa fa-times"></i> Cancel</button>
-          </div>
-        ` : ''}
-
-        ${t.status === 'paid' ? `
-          <div class="ticket-actions">
-            <button class="btn btn-ghost btn-sm" onclick="toggleQR('${t.id}', this)"><i class="fa fa-qrcode"></i> Show QR Code</button>
-          </div>
-          <div id="qr-${t.id}" class="qr-container" style="display:none;"></div>
-        ` : ''}
-      </div>
-    `).join('');
-  } catch(e) {
-    list.innerHTML = `<div class="empty"><p style="color:#f87171;">${e.message}</p></div>`;
-  }
+        `).join('');
+    } catch(e) { list.innerHTML = `<p>${e.message}</p>`; }
 };
 
 window.payTicket = async (id) => {
-  const btn = event.target;
-  btn.disabled    = true;
-  btn.textContent = 'Processing...';
-  try {
-    const data = await api.payTicket(id);
-    alert(`✅ Payment confirmed!\nTicket Number: ${data.ticket_number}\nPresent this at boarding.`);
-    loadMyTickets();
-    loadNotifications();
-  } catch(e) {
-    alert(e.message);
-    btn.disabled    = false;
-    btn.textContent = '💳 Pay Now';
-  }
+    try {
+        await api.payTicket(id);
+        showToast('Payment Successful!', 'success');
+        loadMyTickets();
+        loadNotifications();
+    } catch(e) { showToast(e.message, 'error'); }
 };
 
-window.cancelTicket = async (id) => {
-  if (!confirm('Cancel this ticket? This cannot be undone.')) return;
-  try {
-    await api.cancelTicket(id);
-    loadMyTickets();
-  } catch(e) { alert(e.message); }
-};
+// --- NOTIFICATIONS ---
+window.toggleNotifs = () => document.getElementById('notif-panel').classList.toggle('open');
 
-window.toggleQR = async (id, btn) => {
-  const container = document.getElementById(`qr-${id}`);
-  if (container.style.display !== 'none') {
-    container.style.display = 'none';
-    btn.textContent = '📱 Show QR Code';
-    return;
-  }
-
-  btn.textContent = 'Loading...';
-  btn.disabled    = true;
-
-  try {
-    const token = localStorage.getItem('token');
-    const res   = await fetch(`http://localhost:3000/api/tickets/my/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data  = await res.json();
-
-    if (data.qr_image) {
-      container.innerHTML = `
-        <img src="${data.qr_image}" width="200" height="200" alt="QR Code" />
-        <p style="font-size:12px; color:#64748b; margin-top:8px;">
-          Ticket: <b style="color:#f472b6;">${data.ticket_number}</b>
-        </p>`;
-    } else {
-      container.innerHTML = '<p style="color:#64748b; font-size:13px;">QR not available</p>';
-    }
-    container.style.display = 'block';
-    btn.innerHTML = '<i class="fa fa-qrcode"></i> Hide QR Code';
-  } catch(e) {
-    container.innerHTML = `<p style="color:#f87171; font-size:13px;">${e.message}</p>`;
-    container.style.display = 'block';
-    btn.innerHTML = '<i class="fa fa-qrcode"></i> Show QR Code';
-  }
-  btn.disabled = false;
-};
-
-// ── NOTIFICATIONS ─────────────────────────────────────
 async function loadNotifications() {
-  try {
-    const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
-    const count = unread.unread;
-    const bell  = document.getElementById('bell-count');
-    bell.textContent   = count;
-    bell.style.display = count > 0 ? 'flex' : 'none';
-    document.getElementById('notif-list').innerHTML = notifs.length
-      ? notifs.map(n => `
-          <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${n.id}', this)">
-            <p>${n.message}</p>
-            <small>${new Date(n.createdAt).toLocaleString()}</small>
-          </div>`).join('')
-      : '<div style="padding:24px; text-align:center; color:#64748b;">No notifications</div>';
-  } catch(e) { /* silent fail */ }
+    try {
+        const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
+        const count = unread.unread;
+        document.getElementById('bell-count').textContent = count;
+        document.getElementById('bell-count').style.display = count > 0 ? 'flex' : 'none';
+        document.getElementById('m-bell-count').textContent = count;
+        document.getElementById('m-bell-count').style.display = count > 0 ? 'flex' : 'none';
+
+        const icons = { booked: 'fa-ticket', paid: 'fa-check-circle', cancelled: 'fa-times-circle' };
+
+        document.getElementById('notif-list').innerHTML = notifs.map(n => `
+            <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markRead('${n.id}')">
+                <div class="notif-icon"><i class="fa ${icons[n.type] || 'fa-bell'}"></i></div>
+                <div>
+                    <p style="font-size:13px; font-weight:600;">${n.message}</p>
+                    <small style="color:var(--text-muted); font-size:11px;">${new Date(n.createdAt).toLocaleTimeString()}</small>
+                </div>
+            </div>
+        `).join('');
+    } catch(e) {}
 }
 
-window.toggleNotifs = () => document.getElementById('notif-dropdown').classList.toggle('open');
-
-window.readNotif = async (id, el) => {
-  await api.markRead(id);
-  el.classList.remove('unread');
-  loadNotifications();
+window.markRead = async (id) => {
+    await api.markRead(id);
+    loadNotifications();
 };
 
-window.markAllRead = async () => {
-  await api.markAllRead();
-  loadNotifications();
-};
-
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('#bell-btn') && !e.target.closest('#notif-dropdown')) {
-    document.getElementById('notif-dropdown').classList.remove('open');
-  }
-});
-
-// ── AUTO LOGIN ────────────────────────────────────────
+// --- STARTUP ---
 if (getToken()) {
   document.getElementById('auth-screen').style.display = 'none';
-  document.getElementById('dashboard').style.display   = 'block';
+  document.getElementById('dashboard').style.display = 'block';
   init();
 }
 </script>

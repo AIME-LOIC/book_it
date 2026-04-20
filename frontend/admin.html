@@ -4,236 +4,221 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BookIt — Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          forest: {
+            50:  '#f0fdf4',
+            100: '#dcfce7',
+            200: '#bbf7d0',
+            300: '#86efac',
+            400: '#4ade80',
+            500: '#22c55e',
+            600: '#16a34a',
+            700: '#15803d',
+            800: '#166534',
+            900: '#14532d'
+          },
+          brandOrange: {
+            50:  '#fff7ed',
+            100: '#ffedd5',
+            200: '#fed7aa',
+            300: '#fdba74',
+            400: '#fb923c',
+            500: '#f97316',
+            600: '#ea580c',
+            700: '#c2410c',
+            800: '#9a3412',
+            900: '#7c2d12'
+          }
+        }
+      }
+    }
+  }
+</script>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
-
-  /* LOGIN */
-  #login-screen {
-    display: flex; align-items: center; justify-content: center; min-height: 100vh;
-  }
-  .login-card {
-    background: #1e293b; border-radius: 16px; padding: 48px 40px; width: 400px;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-  }
-  .login-card h1 { font-size: 28px; color: #38bdf8; margin-bottom: 8px; }
-  .login-card p  { color: #94a3b8; margin-bottom: 32px; }
-
-  /* DASHBOARD */
-  #dashboard { display: none; }
-  .topbar {
-    background: #1e293b; border-bottom: 1px solid #334155;
-    padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
-  }
-  .topbar h1 { color: #38bdf8; font-size: 20px; }
-  .topbar-right { display: flex; align-items: center; gap: 16px; }
-
-  /* NOTIFICATION BELL */
-  .bell-btn {
-    position: relative; background: #334155; border: none; color: #e2e8f0;
-    width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .bell-count {
-    position: absolute; top: -4px; right: -4px; background: #ef4444;
-    color: white; font-size: 10px; font-weight: 700; width: 18px; height: 18px;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  }
-  .notif-dropdown {
-    display: none; position: absolute; top: 60px; right: 32px;
-    background: #1e293b; border: 1px solid #334155; border-radius: 12px;
-    width: 360px; max-height: 400px; overflow-y: auto; z-index: 100;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-  }
-  .notif-dropdown.open { display: block; }
-  .notif-header {
-    padding: 16px; border-bottom: 1px solid #334155;
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .notif-header span { font-weight: 600; }
-  .notif-item {
-    padding: 14px 16px; border-bottom: 1px solid #1e293b; cursor: pointer;
-    transition: background 0.2s;
-  }
-  .notif-item:hover { background: #334155; }
-  .notif-item.unread { border-left: 3px solid #38bdf8; }
-  .notif-item p { font-size: 13px; color: #cbd5e1; }
-  .notif-item small { color: #64748b; font-size: 11px; }
-
-  /* LAYOUT */
-  .layout { display: flex; height: calc(100vh - 65px); }
-  .sidebar {
-    width: 220px; background: #1e293b; border-right: 1px solid #334155; padding: 24px 0;
-  }
-  .nav-item {
-    padding: 12px 24px; cursor: pointer; color: #94a3b8; transition: all 0.2s;
-    display: flex; align-items: center; gap: 10px; font-size: 14px;
-  }
-  .nav-item:hover, .nav-item.active { background: #334155; color: #38bdf8; }
-  .main { flex: 1; padding: 32px; overflow-y: auto; }
-
-  /* CARDS */
   .section { display: none; }
   .section.active { display: block; }
-  .section-title { font-size: 22px; font-weight: 700; color: #f1f5f9; margin-bottom: 24px; }
-
-  .card {
-    background: #1e293b; border-radius: 12px; padding: 24px;
-    border: 1px solid #334155; margin-bottom: 24px;
-  }
-  .card h3 { font-size: 16px; color: #94a3b8; margin-bottom: 16px; }
-
-  /* FORM */
-  .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
-  input, select {
-    background: #0f172a; border: 1px solid #334155; color: #e2e8f0;
-    padding: 10px 14px; border-radius: 8px; font-size: 14px; flex: 1; min-width: 180px;
-    outline: none; transition: border 0.2s;
-  }
-  input:focus, select:focus { border-color: #38bdf8; }
-  .btn {
-    padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer;
-    font-size: 14px; font-weight: 600; transition: all 0.2s;
-  }
-  .btn-primary { background: #38bdf8; color: #0f172a; }
-  .btn-primary:hover { background: #0ea5e9; }
-  .btn-danger  { background: #ef4444; color: white; }
-  .btn-danger:hover { background: #dc2626; }
-  .btn-ghost   { background: #334155; color: #e2e8f0; }
-  .btn-ghost:hover { background: #475569; }
-  .btn-sm { padding: 6px 12px; font-size: 12px; }
-
-  /* TABLE */
-  table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; padding: 12px 16px; color: #64748b; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #334155; }
-  td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid #1e293b; }
-  tr:hover td { background: #334155; }
-  .badge {
-    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
-  }
-  .badge-green  { background: #052e16; color: #4ade80; }
-  .badge-red    { background: #450a0a; color: #f87171; }
-
-  /* ALERT */
-  .alert {
-    padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; display: none;
-  }
-  .alert-err  { background: #450a0a; color: #f87171; border: 1px solid #7f1d1d; }
-  .alert-ok   { background: #052e16; color: #4ade80; border: 1px solid #14532d; }
-
-  /* STATS */
-  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 16px; margin-bottom: 24px; }
-  .stat-card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
-  .stat-card .num { font-size: 32px; font-weight: 700; color: #38bdf8; }
-  .stat-card .lbl { font-size: 13px; color: #64748b; margin-top: 4px; }
-
-  .logout-btn { background: #334155; border: none; color: #94a3b8; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; }
-  .logout-btn:hover { background: #475569; color: #e2e8f0; }
-
-  .default-pass { background: #0f172a; border: 1px solid #38bdf8; border-radius: 8px; padding: 12px 16px; margin-top: 12px; display: none; }
-  .default-pass span { color: #38bdf8; font-weight: 700; font-size: 16px; }
+  .notif-dropdown { display: none; }
+  .notif-dropdown.open { display: block; }
+  .alert { display: none; }
 </style>
 </head>
-<body>
+<body class="min-h-screen bg-slate-950 text-slate-100 selection:bg-brandOrange-500/30 selection:text-slate-100">
 
 <!-- LOGIN -->
-<div id="login-screen">
-  <div class="login-card">
-    <h1>🚌 BookIt</h1>
-    <p>Admin Dashboard</p>
-    <div class="alert alert-err" id="login-err"></div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <input type="email"    id="email"    placeholder="Email" />
-      <input type="password" id="password" placeholder="Password" />
-      <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+<div id="login-screen" class="min-h-screen grid place-items-center p-6 bg-[radial-gradient(ellipse_at_top_right,rgba(249,115,22,0.16),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(34,197,94,0.18),transparent_55%)]">
+  <div class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/70 backdrop-blur p-8 shadow-2xl">
+    <div class="flex items-center gap-3 mb-6">
+      <div class="h-12 w-12 rounded-xl border border-slate-800 bg-slate-950/60 grid place-items-center overflow-hidden">
+        <img src="./logo.png" alt="BookIt" class="h-10 w-10 object-contain" onerror="this.style.display='none'">
+        <span class="text-2xl font-black text-brandOrange-400" aria-hidden="true">B</span>
+      </div>
+      <div>
+        <div class="text-xl font-extrabold tracking-tight">BookIt</div>
+        <div class="text-sm text-slate-400">Admin Dashboard</div>
+      </div>
+    </div>
+
+    <div class="alert rounded-xl border border-red-900/60 bg-red-950/50 px-4 py-3 text-sm text-red-200" id="login-err"></div>
+
+    <div class="flex flex-col gap-3">
+      <input type="email" id="email" placeholder="Email" class="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
+      <input type="password" id="password" placeholder="Password" class="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
+      <button class="w-full rounded-xl bg-brandOrange-500 px-4 py-3 text-sm font-extrabold text-slate-950 shadow-lg shadow-brandOrange-500/10 hover:bg-brandOrange-400 active:bg-brandOrange-600 transition" onclick="doLogin()">
+        Sign In
+      </button>
+      <div class="text-xs text-slate-500">
+        Tip: use an <span class="text-slate-300 font-semibold">admin</span> account.
+      </div>
     </div>
   </div>
 </div>
 
 <!-- DASHBOARD -->
-<div id="dashboard">
-  <div class="topbar">
-    <h1>🚌 BookIt Admin</h1>
-    <div class="topbar-right" style="position:relative;">
-      <button class="bell-btn" onclick="toggleNotifs()" id="bell-btn">
-        🔔
-        <span class="bell-count" id="bell-count" style="display:none">0</span>
-      </button>
-      <div class="notif-dropdown" id="notif-dropdown">
-        <div class="notif-header">
-          <span>Notifications</span>
-          <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
+<div id="dashboard" class="hidden">
+  <div class="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/70 backdrop-blur">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="h-9 w-9 rounded-lg border border-slate-800 bg-slate-900 grid place-items-center overflow-hidden">
+          <img src="./logo.png" alt="BookIt" class="h-7 w-7 object-contain" onerror="this.style.display='none'">
+          <span class="text-sm font-black text-brandOrange-400" aria-hidden="true">B</span>
         </div>
-        <div id="notif-list"></div>
+        <div class="font-extrabold tracking-tight">BookIt <span class="text-brandOrange-400">Admin</span></div>
       </div>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+
+      <div class="flex items-center gap-3 relative">
+        <button class="relative h-10 w-10 rounded-full border border-slate-800 bg-slate-900/60 text-slate-200 hover:bg-slate-900 transition" onclick="toggleNotifs()" id="bell-btn" aria-label="Notifications">
+          <span aria-hidden="true">🔔</span>
+          <span class="absolute -top-1 -right-1 hidden h-5 min-w-5 px-1 rounded-full bg-brandOrange-500 text-[11px] font-extrabold text-slate-950 grid place-items-center border-2 border-slate-950" id="bell-count">0</span>
+        </button>
+        <div class="notif-dropdown absolute right-0 top-12 w-[22rem] overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/90 backdrop-blur shadow-2xl" id="notif-dropdown">
+          <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-800">
+            <span class="font-bold">Notifications</span>
+            <button class="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-900 transition" onclick="markAllRead()">Mark all read</button>
+          </div>
+          <div id="notif-list" class="max-h-[24rem] overflow-auto"></div>
+        </div>
+        <button class="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-2 text-sm font-bold text-slate-200 hover:bg-slate-900 transition" onclick="logout()">Logout</button>
+      </div>
     </div>
   </div>
 
-  <div class="layout">
-    <div class="sidebar">
-      <div class="nav-item active" onclick="showSection('overview')">📊 Overview</div>
-      <div class="nav-item" onclick="showSection('operators')">🏢 Operators</div>
-      <div class="nav-item" onclick="showSection('locations')">📍 Locations</div>
-    </div>
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6">
+    <aside class="rounded-2xl border border-slate-800 bg-slate-900/40 p-3 h-fit lg:sticky lg:top-24">
+      <div class="px-3 py-3">
+        <div class="text-xs font-black tracking-widest text-slate-500">NAVIGATION</div>
+      </div>
+      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition active bg-slate-900/70 text-brandOrange-300" onclick="showSection('overview')">📊 Overview</button>
+      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition" onclick="showSection('operators')">🏢 Operators</button>
+      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition" onclick="showSection('locations')">📍 Locations</button>
+    </aside>
 
-    <div class="main">
+    <main class="min-w-0">
 
       <!-- OVERVIEW -->
       <div class="section active" id="sec-overview">
-        <div class="section-title">Overview</div>
-        <div class="stats">
-          <div class="stat-card"><div class="num" id="stat-ops">—</div><div class="lbl">Operators</div></div>
-          <div class="stat-card"><div class="num" id="stat-locs">—</div><div class="lbl">Locations</div></div>
+        <div class="flex items-end justify-between gap-4 mb-6">
+          <div>
+            <div class="text-2xl font-extrabold tracking-tight">Overview</div>
+            <div class="text-sm text-slate-400">Quick snapshot of the platform.</div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
+            <div class="text-sm text-slate-400 font-bold">Operators</div>
+            <div class="mt-2 text-4xl font-black tracking-tight text-brandOrange-300" id="stat-ops">—</div>
+          </div>
+          <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
+            <div class="text-sm text-slate-400 font-bold">Locations</div>
+            <div class="mt-2 text-4xl font-black tracking-tight text-brandOrange-300" id="stat-locs">—</div>
+          </div>
         </div>
       </div>
 
       <!-- OPERATORS -->
       <div class="section" id="sec-operators">
-        <div class="section-title">Operators</div>
-        <div class="card">
-          <h3>Add Operator</h3>
-          <div class="alert alert-err" id="op-err"></div>
-          <div class="alert alert-ok"  id="op-ok"></div>
-          <div class="form-row">
-            <input id="op-name"    placeholder="Company name" />
-            <input id="op-contact" placeholder="Contact" />
-            <button class="btn btn-primary" onclick="createOperator()">Add</button>
-          </div>
-          <div class="default-pass" id="op-pass">
-            Default password: <span id="op-pass-val"></span>
+        <div class="flex items-end justify-between gap-4 mb-6">
+          <div>
+            <div class="text-2xl font-extrabold tracking-tight">Operators</div>
+            <div class="text-sm text-slate-400">Create and manage bus operators.</div>
           </div>
         </div>
-        <div class="card">
-          <h3>All Operators</h3>
-          <table>
-            <thead><tr><th>Company</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead>
-            <tbody id="op-table"></tbody>
-          </table>
+
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 mb-6">
+          <div class="text-sm font-extrabold text-slate-200 mb-4">Add Operator</div>
+          <div class="alert rounded-xl border border-red-900/60 bg-red-950/50 px-4 py-3 text-sm text-red-200 mb-3" id="op-err"></div>
+          <div class="alert rounded-xl border border-forest-900/50 bg-forest-950/30 px-4 py-3 text-sm text-forest-200 mb-3" id="op-ok"></div>
+          <div class="flex flex-col lg:flex-row gap-3">
+            <input id="op-name" placeholder="Company name" class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
+            <input id="op-contact" placeholder="Contact" class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
+            <button class="rounded-xl bg-brandOrange-500 px-5 py-3 text-sm font-extrabold text-slate-950 hover:bg-brandOrange-400 active:bg-brandOrange-600 transition" onclick="createOperator()">Add</button>
+          </div>
+          <div class="hidden mt-4 rounded-xl border border-brandOrange-500/40 bg-slate-950/40 px-4 py-3 text-sm text-slate-200" id="op-pass">
+            Default password: <span class="font-black text-brandOrange-300" id="op-pass-val"></span>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-0 overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-800">
+            <div class="text-sm font-extrabold text-slate-200">All Operators</div>
+          </div>
+          <div class="overflow-auto">
+            <table class="w-full border-collapse">
+              <thead class="bg-slate-950/60">
+                <tr>
+                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Company</th>
+                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Contact</th>
+                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Status</th>
+                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="op-table" class="[&>tr>td]:px-6 [&>tr>td]:py-4 [&>tr]:border-t [&>tr]:border-slate-800/70 [&>tr:hover]:bg-slate-950/40"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       <!-- LOCATIONS -->
       <div class="section" id="sec-locations">
-        <div class="section-title">Locations</div>
-        <div class="card">
-          <h3>Add Location</h3>
-          <div class="alert alert-err" id="loc-err"></div>
-          <div class="form-row">
-            <input id="loc-name" placeholder="City / Town name" />
-            <button class="btn btn-primary" onclick="createLocation()">Add</button>
+        <div class="flex items-end justify-between gap-4 mb-6">
+          <div>
+            <div class="text-2xl font-extrabold tracking-tight">Locations</div>
+            <div class="text-sm text-slate-400">Manage cities/towns used in routes.</div>
           </div>
         </div>
-        <div class="card">
-          <h3>All Locations</h3>
-          <table>
-            <thead><tr><th>Name</th><th>Actions</th></tr></thead>
-            <tbody id="loc-table"></tbody>
-          </table>
+
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 mb-6">
+          <div class="text-sm font-extrabold text-slate-200 mb-4">Add Location</div>
+          <div class="alert rounded-xl border border-red-900/60 bg-red-950/50 px-4 py-3 text-sm text-red-200 mb-3" id="loc-err"></div>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <input id="loc-name" placeholder="City / Town name" class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
+            <button class="rounded-xl bg-brandOrange-500 px-5 py-3 text-sm font-extrabold text-slate-950 hover:bg-brandOrange-400 active:bg-brandOrange-600 transition" onclick="createLocation()">Add</button>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-0 overflow-hidden">
+          <div class="px-6 py-4 border-b border-slate-800">
+            <div class="text-sm font-extrabold text-slate-200">All Locations</div>
+          </div>
+          <div class="overflow-auto">
+            <table class="w-full border-collapse">
+              <thead class="bg-slate-950/60">
+                <tr>
+                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Name</th>
+                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="loc-table" class="[&>tr>td]:px-6 [&>tr>td]:py-4 [&>tr]:border-t [&>tr]:border-slate-800/70 [&>tr:hover]:bg-slate-950/40"></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-    </div>
+    </main>
   </div>
 </div>
 

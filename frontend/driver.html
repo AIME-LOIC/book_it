@@ -3,6 +3,42 @@
 <head>
 <meta charset="UTF-8">
 <title>BookIt — Driver</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          forest: {
+            50:  '#f0fdf4',
+            100: '#dcfce7',
+            200: '#bbf7d0',
+            300: '#86efac',
+            400: '#4ade80',
+            500: '#22c55e',
+            600: '#16a34a',
+            700: '#15803d',
+            800: '#166534',
+            900: '#14532d'
+          },
+          brandOrange: {
+            50:  '#fff7ed',
+            100: '#ffedd5',
+            200: '#fed7aa',
+            300: '#fdba74',
+            400: '#fb923c',
+            500: '#f97316',
+            600: '#ea580c',
+            700: '#c2410c',
+            800: '#9a3412',
+            900: '#7c2d12'
+          }
+        }
+      }
+    }
+  }
+</script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;}
@@ -62,12 +98,20 @@
   .update-form{display:flex;flex-direction:column;gap:12px;}
 </style>
 </head>
-<body>
+<body class="min-h-screen bg-slate-950 text-slate-100">
 
 <div id="login-screen">
   <div class="login-card">
-    <h1>🚗 BookIt</h1>
-    <p>Driver Portal</p>
+    <div class="flex items-center gap-3 mb-3">
+      <div class="h-12 w-12 rounded-xl border border-slate-700 bg-slate-950/60 grid place-items-center overflow-hidden">
+        <img src="./logo.png" alt="BookIt" class="h-10 w-10 object-contain" onerror="this.style.display='none'">
+        <span class="text-2xl font-black text-brandOrange-400" aria-hidden="true">B</span>
+      </div>
+      <div>
+        <div class="text-xl font-extrabold tracking-tight">BookIt</div>
+        <div class="text-sm text-slate-400">Driver Portal</div>
+      </div>
+    </div>
     <div class="alert alert-err" id="login-err"></div>
     <div style="display:flex;flex-direction:column;gap:12px;">
       <input id="phone"    placeholder="Phone number" />
@@ -79,39 +123,60 @@
 
 <div id="dashboard">
   <div class="topbar">
-    <h1>🚗 Driver — <span id="driver-name"></span></h1>
+    <h1 class="flex items-center gap-2">
+      <img src="./logo.png" alt="BookIt" class="h-6 w-6 object-contain" onerror="this.style.display='none'">
+      <span>Driver — <span id="driver-name"></span></span>
+    </h1>
     <div class="topbar-right">
-      <button class="bell-btn" onclick="toggleNotifs()" id="bell-btn">
-        🔔<span class="bell-count" id="bell-count" style="display:none">0</span>
-      </button>
-      <div class="notif-dropdown" id="notif-dropdown">
-        <div class="notif-header">
-          <span>Notifications</span>
-          <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
-        </div>
-        <div id="notif-list"></div>
-      </div>
       <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </div>
 
   <div class="layout">
     <div class="sidebar">
-      <div class="nav-item active" onclick="showSection('passengers',this)">👥 Passengers</div>
-      <div class="nav-item" onclick="showSection('validate',this)">📷 Validate</div>
+      <div class="nav-item active" onclick="showSection('home',this)">🏁 Home</div>
+      <div class="nav-item" onclick="showSection('passengers',this)">👥 Passengers</div>
+      <div class="nav-item" onclick="showSection('validate',this)">✅ Validate</div>
       <div class="nav-item" onclick="showSection('profile',this)">⚙️ Profile</div>
     </div>
 
     <div class="main">
+
+      <!-- ALWAYS-VISIBLE NOTIFICATION BANNER -->
+      <div id="notif-banner" style="display:none;background:#0b1220;border:1px solid #334155;border-radius:12px;padding:16px 18px;margin-bottom:16px;color:#e2e8f0;font-size:16px;font-weight:800;">
+        <span id="notif-banner-text"></span>
+      </div>
 
       <!-- UPDATE PROFILE BANNER -->
       <div id="update-banner" style="display:none;background:#431407;border:1px solid #ea580c;border-radius:8px;padding:14px 20px;margin-bottom:24px;color:#fb923c;font-size:14px;">
         ⚠️ Please update your profile (email, phone, password) before continuing.
       </div>
 
+      <!-- HOME -->
+      <div class="section active" id="sec-home">
+        <div class="section-title" style="font-size:28px;">Today</div>
+        <div class="card" style="border-width:2px;">
+          <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start;">
+            <div>
+              <div style="color:#64748b;font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:0.18em;">Bus</div>
+              <div id="home-plate" style="font-size:46px;font-weight:900;letter-spacing:-1px;line-height:1.0;margin-top:8px;color:#fb923c;">—</div>
+              <div id="home-route" style="margin-top:10px;font-size:18px;font-weight:800;color:#e2e8f0;">—</div>
+              <div id="home-depart" style="margin-top:6px;font-size:16px;font-weight:800;color:#94a3b8;">Departure: —</div>
+              <div id="home-countdown" style="margin-top:10px;font-size:18px;font-weight:900;color:#22c55e;">—</div>
+            </div>
+            <div style="min-width:240px;">
+              <div style="color:#64748b;font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:0.18em;">Passengers</div>
+              <div id="home-passengers" style="font-size:64px;font-weight:950;letter-spacing:-2px;line-height:1.0;margin-top:8px;color:#22c55e;">0</div>
+              <div style="margin-top:8px;font-size:14px;color:#94a3b8;font-weight:700;">tickets for selected date</div>
+              <button class="btn btn-primary" style="width:100%;margin-top:14px;padding:14px 18px;font-size:16px;font-weight:900;" onclick="showSection('passengers', document.querySelector('.sidebar .nav-item:nth-child(2)'))">View passenger list</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- PASSENGERS -->
-      <div class="section active" id="sec-passengers">
-        <div class="section-title">Today's Passengers</div>
+      <div class="section" id="sec-passengers">
+        <div class="section-title" style="font-size:28px;">Passengers</div>
         <div class="card">
           <div class="form-row" style="margin-bottom:16px;">
             <input type="date" id="pass-date" />
@@ -123,24 +188,49 @@
 
       <!-- VALIDATE -->
       <div class="section" id="sec-validate">
-        <div class="section-title">Validate Ticket</div>
+        <div class="section-title" style="font-size:28px;">Validate</div>
         <div class="card">
-          <h3>By Ticket Number</h3>
+          <h3 style="font-size:14px;">Enter Number</h3>
           <div class="alert alert-err" id="val-err"></div>
           <div class="form-row">
             <input id="val-number" placeholder="e.g. BK-4821-XZ" />
-            <button class="btn btn-primary" onclick="validateNumber()">Validate</button>
+            <button class="btn btn-primary" onclick="validateNumber()" style="font-weight:900;">Validate</button>
           </div>
           <div class="scan-result" id="num-result"></div>
         </div>
         <div class="card">
-          <h3>By QR Token</h3>
-          <div class="scan-box">
-            <p style="color:#64748b;margin-bottom:16px;">Paste QR token string to validate</p>
-            <textarea id="qr-token" style="width:100%;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:10px;font-size:12px;height:80px;resize:none;"></textarea>
-            <button class="btn btn-primary" style="margin-top:12px;" onclick="validateQR()">Validate QR</button>
+          <h3 style="font-size:14px;">QR</h3>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <button class="btn btn-primary" style="flex:1;min-width:220px;padding:16px 18px;font-size:18px;font-weight:950;" onclick="openQrScanner()">Scan QR</button>
+            <button class="btn btn-ghost" style="flex:1;min-width:220px;padding:16px 18px;font-size:18px;font-weight:950;" onclick="toggleQrToken()">Enter Token</button>
           </div>
-          <div class="scan-result" id="qr-result"></div>
+          <div id="qr-token-wrap" style="display:none;margin-top:12px;">
+            <textarea id="qr-token" style="width:100%;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:12px;padding:12px 14px;font-size:14px;height:90px;resize:none;"></textarea>
+            <button class="btn btn-primary" style="margin-top:12px;width:100%;padding:14px 18px;font-size:16px;font-weight:900;" onclick="validateQR()">Validate Token</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- FULLSCREEN VALIDATION RESULT -->
+      <div id="val-overlay" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(2,6,23,0.95);padding:22px;">
+        <div style="max-width:720px;margin:0 auto;border:2px solid #334155;border-radius:18px;background:#0b1220;padding:22px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+            <div id="val-overlay-title" style="font-size:22px;font-weight:950;">Result</div>
+            <button class="btn btn-ghost" style="font-size:16px;font-weight:900;" onclick="closeOverlay()">Close</button>
+          </div>
+          <div id="val-overlay-body" style="margin-top:14px;font-size:18px;font-weight:800;line-height:1.5;"></div>
+        </div>
+      </div>
+
+      <!-- QR SCANNER MODAL -->
+      <div id="qr-modal" style="display:none;position:fixed;inset:0;z-index:310;background:rgba(0,0,0,0.8);padding:18px;">
+        <div style="max-width:520px;margin:0 auto;border:2px solid #334155;border-radius:18px;background:#0b1220;padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+            <div style="font-size:18px;font-weight:950;">Scan QR</div>
+            <button class="btn btn-ghost" onclick="closeQrScanner()">Close</button>
+          </div>
+          <div id="qr-reader" style="margin-top:12px;"></div>
+          <div style="margin-top:10px;color:#94a3b8;font-size:13px;font-weight:700;">If scanning fails, use “Enter Token”.</div>
         </div>
       </div>
 
