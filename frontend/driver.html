@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BookIt — Driver</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;}
+  #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;}
+  .login-card{background:#1e293b;border-radius:16px;padding:48px 40px;width:400px;box-shadow:0 25px 50px rgba(0,0,0,.5);}
+  .login-card h1{font-size:28px;color:#34d399;margin-bottom:8px;}
+  .login-card p{color:#94a3b8;margin-bottom:32px;}
+  #dashboard{display:none;}
+  .topbar{background:#1e293b;border-bottom:1px solid #334155;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;}
+  .topbar h1{color:#34d399;font-size:20px;}
+  .topbar-right{display:flex;align-items:center;gap:16px;position:relative;}
+  .bell-btn{position:relative;background:#334155;border:none;color:#e2e8f0;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;}
+  .bell-count{position:absolute;top:-4px;right:-4px;background:#ef4444;color:white;font-size:10px;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .notif-dropdown{display:none;position:absolute;top:50px;right:0;background:#1e293b;border:1px solid #334155;border-radius:12px;width:360px;max-height:400px;overflow-y:auto;z-index:100;box-shadow:0 20px 40px rgba(0,0,0,.4);}
+  .notif-dropdown.open{display:block;}
+  .notif-header{padding:16px;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center;}
+  .notif-item{padding:14px 16px;border-bottom:1px solid #1e293b;cursor:pointer;}
+  .notif-item:hover{background:#334155;}
+  .notif-item.unread{border-left:3px solid #34d399;}
+  .notif-item p{font-size:13px;color:#cbd5e1;}
+  .notif-item small{color:#64748b;font-size:11px;}
+  .layout{display:flex;height:calc(100vh - 65px);}
+  .sidebar{width:220px;background:#1e293b;border-right:1px solid #334155;padding:24px 0;}
+  .nav-item{padding:12px 24px;cursor:pointer;color:#94a3b8;transition:all .2s;display:flex;align-items:center;gap:10px;font-size:14px;}
+  .nav-item:hover,.nav-item.active{background:#334155;color:#34d399;}
+  .main{flex:1;padding:32px;overflow-y:auto;}
+  .section{display:none;}.section.active{display:block;}
+  .section-title{font-size:22px;font-weight:700;color:#f1f5f9;margin-bottom:24px;}
+  .card{background:#1e293b;border-radius:12px;padding:24px;border:1px solid #334155;margin-bottom:24px;}
+  .card h3{font-size:16px;color:#94a3b8;margin-bottom:16px;}
+  .form-row{display:flex;gap:12px;flex-wrap:wrap;}
+  input,select{background:#0f172a;border:1px solid #334155;color:#e2e8f0;padding:10px 14px;border-radius:8px;font-size:14px;flex:1;min-width:180px;outline:none;}
+  input:focus{border-color:#34d399;}
+  .btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;}
+  .btn-primary{background:#34d399;color:#0f172a;}
+  .btn-danger{background:#ef4444;color:white;}
+  .btn-ghost{background:#334155;color:#e2e8f0;}
+  .btn-sm{padding:6px 12px;font-size:12px;}
+  table{width:100%;border-collapse:collapse;}
+  th{text-align:left;padding:12px 16px;color:#64748b;font-size:12px;text-transform:uppercase;border-bottom:1px solid #334155;}
+  td{padding:14px 16px;font-size:14px;border-bottom:1px solid #1e293b;}
+  tr:hover td{background:#1a2744;}
+  .badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
+  .badge-green{background:#052e16;color:#4ade80;}
+  .badge-red{background:#450a0a;color:#f87171;}
+  .alert{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px;display:none;}
+  .alert-err{background:#450a0a;color:#f87171;border:1px solid #7f1d1d;}
+  .alert-ok{background:#052e16;color:#4ade80;border:1px solid #14532d;}
+  .logout-btn{background:#334155;border:none;color:#94a3b8;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:14px;}
+  .scan-box{background:#0f172a;border:2px dashed #334155;border-radius:12px;padding:32px;text-align:center;}
+  .scan-result{margin-top:16px;padding:16px;border-radius:8px;display:none;}
+  .scan-valid{background:#052e16;border:1px solid #14532d;color:#4ade80;}
+  .scan-invalid{background:#450a0a;border:1px solid #7f1d1d;color:#f87171;}
+  .passenger-card{background:#0f172a;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #334155;display:flex;justify-content:space-between;align-items:center;}
+  .passenger-info p{font-size:14px;font-weight:600;color:#f1f5f9;}
+  .passenger-info small{font-size:12px;color:#64748b;}
+  .update-form{display:flex;flex-direction:column;gap:12px;}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <h1>🚗 BookIt</h1>
+    <p>Driver Portal</p>
+    <div class="alert alert-err" id="login-err"></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input id="phone"    placeholder="Phone number" />
+      <input id="password" type="password" placeholder="Password" />
+      <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="topbar">
+    <h1>🚗 Driver — <span id="driver-name"></span></h1>
+    <div class="topbar-right">
+      <button class="bell-btn" onclick="toggleNotifs()" id="bell-btn">
+        🔔<span class="bell-count" id="bell-count" style="display:none">0</span>
+      </button>
+      <div class="notif-dropdown" id="notif-dropdown">
+        <div class="notif-header">
+          <span>Notifications</span>
+          <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
+        </div>
+        <div id="notif-list"></div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="nav-item active" onclick="showSection('passengers',this)">👥 Passengers</div>
+      <div class="nav-item" onclick="showSection('validate',this)">📷 Validate</div>
+      <div class="nav-item" onclick="showSection('profile',this)">⚙️ Profile</div>
+    </div>
+
+    <div class="main">
+
+      <!-- UPDATE PROFILE BANNER -->
+      <div id="update-banner" style="display:none;background:#431407;border:1px solid #ea580c;border-radius:8px;padding:14px 20px;margin-bottom:24px;color:#fb923c;font-size:14px;">
+        ⚠️ Please update your profile (email, phone, password) before continuing.
+      </div>
+
+      <!-- PASSENGERS -->
+      <div class="section active" id="sec-passengers">
+        <div class="section-title">Today's Passengers</div>
+        <div class="card">
+          <div class="form-row" style="margin-bottom:16px;">
+            <input type="date" id="pass-date" />
+            <button class="btn btn-primary" onclick="loadPassengers()">Load</button>
+          </div>
+          <div id="passenger-list"></div>
+        </div>
+      </div>
+
+      <!-- VALIDATE -->
+      <div class="section" id="sec-validate">
+        <div class="section-title">Validate Ticket</div>
+        <div class="card">
+          <h3>By Ticket Number</h3>
+          <div class="alert alert-err" id="val-err"></div>
+          <div class="form-row">
+            <input id="val-number" placeholder="e.g. BK-4821-XZ" />
+            <button class="btn btn-primary" onclick="validateNumber()">Validate</button>
+          </div>
+          <div class="scan-result" id="num-result"></div>
+        </div>
+        <div class="card">
+          <h3>By QR Token</h3>
+          <div class="scan-box">
+            <p style="color:#64748b;margin-bottom:16px;">Paste QR token string to validate</p>
+            <textarea id="qr-token" style="width:100%;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:10px;font-size:12px;height:80px;resize:none;"></textarea>
+            <button class="btn btn-primary" style="margin-top:12px;" onclick="validateQR()">Validate QR</button>
+          </div>
+          <div class="scan-result" id="qr-result"></div>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="section" id="sec-profile">
+        <div class="section-title">Update Profile</div>
+        <div class="card">
+          <div class="alert alert-err" id="prof-err"></div>
+          <div class="alert alert-ok"  id="prof-ok"></div>
+          <div class="update-form">
+            <input id="prof-name"     placeholder="Full name" />
+            <input id="prof-email"    placeholder="Email" type="email" />
+            <input id="prof-phone"    placeholder="Phone" />
+            <input id="prof-old-pass" placeholder="Current password" type="password" />
+            <input id="prof-new-pass" placeholder="New password (optional)" type="password" />
+            <button class="btn btn-primary" onclick="updateProfile()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { api, setToken, clearToken, getToken } from './api.js';
+window.api = api;
+
+window.doLogin = async () => {
+  const phone    = document.getElementById('phone').value;
+  const password = document.getElementById('password').value;
+  try {
+    const data = await api.loginDriver({ phone, password });
+    setToken(data.token);
+    document.getElementById('driver-name').textContent = data.driver.name;
+    if (data.driver.must_update_profile) {
+      document.getElementById('update-banner').style.display = 'block';
+    }
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display    = 'block';
+    init();
+  } catch(e) {
+    const el = document.getElementById('login-err');
+    el.textContent = e.message; el.style.display = 'block';
+  }
+};
+
+window.logout = () => { clearToken(); location.reload(); };
+
+function init() {
+  document.getElementById('pass-date').value = new Date().toISOString().split('T')[0];
+  loadPassengers();
+  loadNotifications();
+  setInterval(loadNotifications, 20000);
+}
+
+window.showSection = (name, el) => {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`sec-${name}`).classList.add('active');
+  el.classList.add('active');
+};
+
+// ── PASSENGERS ────────────────────────────────────────
+window.loadPassengers = async () => {
+  const date = document.getElementById('pass-date').value;
+  const list = document.getElementById('passenger-list');
+  try {
+    const passengers = await api.getPassengers(date);
+    if (!passengers.length) {
+      list.innerHTML = '<p style="color:#64748b;text-align:center;padding:24px;">No passengers for this date</p>';
+      return;
+    }
+    list.innerHTML = passengers.map(t => `
+      <div class="passenger-card">
+        <div class="passenger-info">
+          <p>Seat ${t.seat_number} — ${t.user?.name || 'Unknown'}</p>
+          <small>
+            Boards: <b style="color:#34d399">${t.boardingStop?.location?.name || '?'}</b> &nbsp;|&nbsp;
+            Exits:  <b style="color:#f87171">${t.dropoffStop?.location?.name  || '?'}</b> &nbsp;|&nbsp;
+            Ticket: ${t.ticket_number || '—'}
+          </small>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="notifyExit('${t.id}')">🔔 Notify Exit</button>
+      </div>
+    `).join('');
+  } catch(e) {
+    list.innerHTML = `<p style="color:#f87171;">${e.message}</p>`;
+  }
+};
+
+window.notifyExit = async (ticket_id) => {
+  try {
+    await api.notifyExit(ticket_id);
+    alert('Exit notification sent to passenger ✅');
+  } catch(e) { alert(e.message); }
+};
+
+// ── VALIDATE ──────────────────────────────────────────
+window.validateNumber = async () => {
+  const ticket_number = document.getElementById('val-number').value.trim();
+  const result        = document.getElementById('num-result');
+  const err           = document.getElementById('val-err');
+  err.style.display   = 'none';
+  try {
+    const data = await api.validateNumber({ ticket_number });
+    result.className   = `scan-result ${data.valid ? 'scan-valid' : 'scan-invalid'}`;
+    result.style.display = 'block';
+    result.innerHTML   = data.valid
+      ? `✅ <b>VALID</b><br>Passenger: ${data.ticket.passenger?.name}<br>Seat: ${data.ticket.seat_number}<br>Boards: ${data.ticket.boarding} → Exits: ${data.ticket.dropoff}<br>Bus: ${data.ticket.plate_number}`
+      : `❌ <b>INVALID</b> — ${data.reason}`;
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
+
+window.validateQR = async () => {
+  const token  = document.getElementById('qr-token').value.trim();
+  const result = document.getElementById('qr-result');
+  try {
+    const data = await api.validateQR({ token });
+    result.className   = `scan-result ${data.valid ? 'scan-valid' : 'scan-invalid'}`;
+    result.style.display = 'block';
+    result.innerHTML   = data.valid
+      ? `✅ <b>VALID</b><br>Passenger: ${data.ticket.passenger?.name}<br>Seat: ${data.ticket.seat_number}<br>Boards: ${data.ticket.boarding} → Exits: ${data.ticket.dropoff}<br>Departure: ${data.ticket.departure_time}`
+      : `❌ <b>INVALID</b> — ${data.reason}`;
+  } catch(e) { result.className = 'scan-result scan-invalid'; result.style.display = 'block'; result.innerHTML = `❌ ${e.message}`; }
+};
+
+// ── PROFILE ───────────────────────────────────────────
+window.updateProfile = async () => {
+  const err = document.getElementById('prof-err');
+  const ok  = document.getElementById('prof-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  try {
+    await api.updateProfile({
+      name:         document.getElementById('prof-name').value     || undefined,
+      email:        document.getElementById('prof-email').value    || undefined,
+      phone:        document.getElementById('prof-phone').value    || undefined,
+      old_password: document.getElementById('prof-old-pass').value || undefined,
+      new_password: document.getElementById('prof-new-pass').value || undefined,
+    });
+    ok.textContent = 'Profile updated successfully'; ok.style.display = 'block';
+    document.getElementById('update-banner').style.display = 'none';
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
+
+// ── NOTIFICATIONS ─────────────────────────────────────
+async function loadNotifications() {
+  const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
+  const count = unread.unread;
+  const bell  = document.getElementById('bell-count');
+  bell.textContent   = count;
+  bell.style.display = count > 0 ? 'flex' : 'none';
+  document.getElementById('notif-list').innerHTML = notifs.length
+    ? notifs.map(n => `
+        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${n.id}',this)">
+          <p>${n.message}</p>
+          <small>${new Date(n.createdAt).toLocaleString()}</small>
+        </div>
+      `).join('')
+    : '<div style="padding:24px;text-align:center;color:#64748b;">No notifications</div>';
+}
+
+window.toggleNotifs  = () => document.getElementById('notif-dropdown').classList.toggle('open');
+window.readNotif     = async (id, el) => { await api.markRead(id); el.classList.remove('unread'); loadNotifications(); };
+window.markAllRead   = async () => { await api.markAllRead(); loadNotifications(); };
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#bell-btn') && !e.target.closest('#notif-dropdown')) {
+    document.getElementById('notif-dropdown').classList.remove('open');
+  }
+});
+
+if (getToken()) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display    = 'block';
+  init();
+}
+</script>
+</body>
+</html>

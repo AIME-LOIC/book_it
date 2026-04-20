@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BookIt — Admin</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    display: flex; align-items: center; justify-content: center; min-height: 100vh;
+  }
+  .login-card {
+    background: #1e293b; border-radius: 16px; padding: 48px 40px; width: 400px;
+    box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+  }
+  .login-card h1 { font-size: 28px; color: #38bdf8; margin-bottom: 8px; }
+  .login-card p  { color: #94a3b8; margin-bottom: 32px; }
+
+  /* DASHBOARD */
+  #dashboard { display: none; }
+  .topbar {
+    background: #1e293b; border-bottom: 1px solid #334155;
+    padding: 16px 32px; display: flex; align-items: center; justify-content: space-between;
+  }
+  .topbar h1 { color: #38bdf8; font-size: 20px; }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+
+  /* NOTIFICATION BELL */
+  .bell-btn {
+    position: relative; background: #334155; border: none; color: #e2e8f0;
+    width: 40px; height: 40px; border-radius: 50%; cursor: pointer; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .bell-count {
+    position: absolute; top: -4px; right: -4px; background: #ef4444;
+    color: white; font-size: 10px; font-weight: 700; width: 18px; height: 18px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  }
+  .notif-dropdown {
+    display: none; position: absolute; top: 60px; right: 32px;
+    background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+    width: 360px; max-height: 400px; overflow-y: auto; z-index: 100;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+  }
+  .notif-dropdown.open { display: block; }
+  .notif-header {
+    padding: 16px; border-bottom: 1px solid #334155;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .notif-header span { font-weight: 600; }
+  .notif-item {
+    padding: 14px 16px; border-bottom: 1px solid #1e293b; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .notif-item:hover { background: #334155; }
+  .notif-item.unread { border-left: 3px solid #38bdf8; }
+  .notif-item p { font-size: 13px; color: #cbd5e1; }
+  .notif-item small { color: #64748b; font-size: 11px; }
+
+  /* LAYOUT */
+  .layout { display: flex; height: calc(100vh - 65px); }
+  .sidebar {
+    width: 220px; background: #1e293b; border-right: 1px solid #334155; padding: 24px 0;
+  }
+  .nav-item {
+    padding: 12px 24px; cursor: pointer; color: #94a3b8; transition: all 0.2s;
+    display: flex; align-items: center; gap: 10px; font-size: 14px;
+  }
+  .nav-item:hover, .nav-item.active { background: #334155; color: #38bdf8; }
+  .main { flex: 1; padding: 32px; overflow-y: auto; }
+
+  /* CARDS */
+  .section { display: none; }
+  .section.active { display: block; }
+  .section-title { font-size: 22px; font-weight: 700; color: #f1f5f9; margin-bottom: 24px; }
+
+  .card {
+    background: #1e293b; border-radius: 12px; padding: 24px;
+    border: 1px solid #334155; margin-bottom: 24px;
+  }
+  .card h3 { font-size: 16px; color: #94a3b8; margin-bottom: 16px; }
+
+  /* FORM */
+  .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  input, select {
+    background: #0f172a; border: 1px solid #334155; color: #e2e8f0;
+    padding: 10px 14px; border-radius: 8px; font-size: 14px; flex: 1; min-width: 180px;
+    outline: none; transition: border 0.2s;
+  }
+  input:focus, select:focus { border-color: #38bdf8; }
+  .btn {
+    padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer;
+    font-size: 14px; font-weight: 600; transition: all 0.2s;
+  }
+  .btn-primary { background: #38bdf8; color: #0f172a; }
+  .btn-primary:hover { background: #0ea5e9; }
+  .btn-danger  { background: #ef4444; color: white; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-ghost   { background: #334155; color: #e2e8f0; }
+  .btn-ghost:hover { background: #475569; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 12px 16px; color: #64748b; font-size: 12px; text-transform: uppercase; border-bottom: 1px solid #334155; }
+  td { padding: 14px 16px; font-size: 14px; border-bottom: 1px solid #1e293b; }
+  tr:hover td { background: #334155; }
+  .badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  }
+  .badge-green  { background: #052e16; color: #4ade80; }
+  .badge-red    { background: #450a0a; color: #f87171; }
+
+  /* ALERT */
+  .alert {
+    padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; display: none;
+  }
+  .alert-err  { background: #450a0a; color: #f87171; border: 1px solid #7f1d1d; }
+  .alert-ok   { background: #052e16; color: #4ade80; border: 1px solid #14532d; }
+
+  /* STATS */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: #1e293b; border-radius: 12px; padding: 20px; border: 1px solid #334155; }
+  .stat-card .num { font-size: 32px; font-weight: 700; color: #38bdf8; }
+  .stat-card .lbl { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+  .logout-btn { background: #334155; border: none; color: #94a3b8; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .logout-btn:hover { background: #475569; color: #e2e8f0; }
+
+  .default-pass { background: #0f172a; border: 1px solid #38bdf8; border-radius: 8px; padding: 12px 16px; margin-top: 12px; display: none; }
+  .default-pass span { color: #38bdf8; font-weight: 700; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <h1>🚌 BookIt</h1>
+    <p>Admin Dashboard</p>
+    <div class="alert alert-err" id="login-err"></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input type="email"    id="email"    placeholder="Email" />
+      <input type="password" id="password" placeholder="Password" />
+      <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="topbar">
+    <h1>🚌 BookIt Admin</h1>
+    <div class="topbar-right" style="position:relative;">
+      <button class="bell-btn" onclick="toggleNotifs()" id="bell-btn">
+        🔔
+        <span class="bell-count" id="bell-count" style="display:none">0</span>
+      </button>
+      <div class="notif-dropdown" id="notif-dropdown">
+        <div class="notif-header">
+          <span>Notifications</span>
+          <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
+        </div>
+        <div id="notif-list"></div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="nav-item active" onclick="showSection('overview')">📊 Overview</div>
+      <div class="nav-item" onclick="showSection('operators')">🏢 Operators</div>
+      <div class="nav-item" onclick="showSection('locations')">📍 Locations</div>
+    </div>
+
+    <div class="main">
+
+      <!-- OVERVIEW -->
+      <div class="section active" id="sec-overview">
+        <div class="section-title">Overview</div>
+        <div class="stats">
+          <div class="stat-card"><div class="num" id="stat-ops">—</div><div class="lbl">Operators</div></div>
+          <div class="stat-card"><div class="num" id="stat-locs">—</div><div class="lbl">Locations</div></div>
+        </div>
+      </div>
+
+      <!-- OPERATORS -->
+      <div class="section" id="sec-operators">
+        <div class="section-title">Operators</div>
+        <div class="card">
+          <h3>Add Operator</h3>
+          <div class="alert alert-err" id="op-err"></div>
+          <div class="alert alert-ok"  id="op-ok"></div>
+          <div class="form-row">
+            <input id="op-name"    placeholder="Company name" />
+            <input id="op-contact" placeholder="Contact" />
+            <button class="btn btn-primary" onclick="createOperator()">Add</button>
+          </div>
+          <div class="default-pass" id="op-pass">
+            Default password: <span id="op-pass-val"></span>
+          </div>
+        </div>
+        <div class="card">
+          <h3>All Operators</h3>
+          <table>
+            <thead><tr><th>Company</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="op-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- LOCATIONS -->
+      <div class="section" id="sec-locations">
+        <div class="section-title">Locations</div>
+        <div class="card">
+          <h3>Add Location</h3>
+          <div class="alert alert-err" id="loc-err"></div>
+          <div class="form-row">
+            <input id="loc-name" placeholder="City / Town name" />
+            <button class="btn btn-primary" onclick="createLocation()">Add</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>All Locations</h3>
+          <table>
+            <thead><tr><th>Name</th><th>Actions</th></tr></thead>
+            <tbody id="loc-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { api, setToken, clearToken, getToken } from './api.js';
+window.api = api;
+
+// ── AUTH ──────────────────────────────────────────────
+window.doLogin = async () => {
+  const email    = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  try {
+    const data = await api.loginUser({ email, password });
+    if (data.user.role !== 'admin') throw new Error('Not an admin account');
+    setToken(data.token);
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display    = 'block';
+    init();
+  } catch(e) {
+    const el = document.getElementById('login-err');
+    el.textContent = e.message; el.style.display = 'block';
+  }
+};
+
+window.logout = () => {
+  clearToken();
+  location.reload();
+};
+
+// ── INIT ──────────────────────────────────────────────
+async function init() {
+  loadOverview();
+  loadOperators();
+  loadLocations();
+  loadNotifications();
+  setInterval(loadNotifications, 30000);
+}
+
+// ── NAVIGATION ────────────────────────────────────────
+window.showSection = (name) => {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`sec-${name}`).classList.add('active');
+  event.target.classList.add('active');
+};
+
+// ── OVERVIEW ──────────────────────────────────────────
+async function loadOverview() {
+  const [ops, locs] = await Promise.all([api.getOperators(), api.getLocations()]);
+  document.getElementById('stat-ops').textContent  = ops.length;
+  document.getElementById('stat-locs').textContent = locs.length;
+}
+
+// ── OPERATORS ─────────────────────────────────────────
+async function loadOperators() {
+  const ops  = await api.getOperators();
+  const tbody = document.getElementById('op-table');
+  tbody.innerHTML = ops.map(o => `
+    <tr>
+      <td>${o.company_name}</td>
+      <td>${o.contact || '—'}</td>
+      <td><span class="badge ${o.is_active ? 'badge-green' : 'badge-red'}">${o.is_active ? 'Active' : 'Suspended'}</span></td>
+      <td style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="toggleOp('${o.id}')">${o.is_active ? 'Suspend' : 'Activate'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteOp('${o.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+window.createOperator = async () => {
+  const name    = document.getElementById('op-name').value.trim();
+  const contact = document.getElementById('op-contact').value.trim();
+  const err = document.getElementById('op-err');
+  const ok  = document.getElementById('op-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  try {
+    const data = await api.createOperator({ company_name: name, contact });
+    document.getElementById('op-pass-val').textContent = data.default_password;
+    document.getElementById('op-pass').style.display   = 'block';
+    ok.textContent = `Operator "${data.company_name}" created`; ok.style.display = 'block';
+    document.getElementById('op-name').value    = '';
+    document.getElementById('op-contact').value = '';
+    loadOperators(); loadOverview();
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
+
+window.toggleOp = async (id) => {
+  await api.toggleOperator(id);
+  loadOperators();
+};
+
+window.deleteOp = async (id) => {
+  if (!confirm('Delete this operator?')) return;
+  await api.deleteOperator(id);
+  loadOperators(); loadOverview();
+};
+
+// ── LOCATIONS ─────────────────────────────────────────
+async function loadLocations() {
+  const locs  = await api.getLocations();
+  const tbody = document.getElementById('loc-table');
+  tbody.innerHTML = locs.map(l => `
+    <tr>
+      <td>${l.name}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteLoc('${l.id}')">Delete</button></td>
+    </tr>
+  `).join('');
+}
+
+window.createLocation = async () => {
+  const name = document.getElementById('loc-name').value.trim();
+  const err  = document.getElementById('loc-err');
+  err.style.display = 'none';
+  try {
+    await api.createLocation({ name });
+    document.getElementById('loc-name').value = '';
+    loadLocations(); loadOverview();
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
+
+window.deleteLoc = async (id) => {
+  if (!confirm('Delete this location?')) return;
+  await api.deleteLocation(id);
+  loadLocations(); loadOverview();
+};
+
+// ── NOTIFICATIONS ─────────────────────────────────────
+async function loadNotifications() {
+  const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
+  const count = unread.unread;
+  const bell  = document.getElementById('bell-count');
+  bell.textContent  = count;
+  bell.style.display = count > 0 ? 'flex' : 'none';
+
+  document.getElementById('notif-list').innerHTML = notifs.length
+    ? notifs.map(n => `
+        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${n.id}', this)">
+          <p>${n.message}</p>
+          <small>${new Date(n.createdAt).toLocaleString()}</small>
+        </div>
+      `).join('')
+    : '<div style="padding:24px;text-align:center;color:#64748b;">No notifications</div>';
+}
+
+window.toggleNotifs = () => {
+  document.getElementById('notif-dropdown').classList.toggle('open');
+};
+
+window.readNotif = async (id, el) => {
+  await api.markRead(id);
+  el.classList.remove('unread');
+  loadNotifications();
+};
+
+window.markAllRead = async () => {
+  await api.markAllRead();
+  loadNotifications();
+};
+
+// close dropdown on outside click
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#bell-btn') && !e.target.closest('#notif-dropdown')) {
+    document.getElementById('notif-dropdown').classList.remove('open');
+  }
+});
+
+// auto login if token exists
+if (getToken()) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display    = 'block';
+  init();
+}
+</script>
+</body>
+</html>

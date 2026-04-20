@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>BookIt — Debug</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',sans-serif; background:#0f172a; color:#e2e8f0; padding:32px; }
+  h1 { color:#38bdf8; margin-bottom:24px; }
+  h2 { color:#94a3b8; font-size:16px; margin:24px 0 12px; }
+  .card { background:#1e293b; border-radius:12px; padding:20px; border:1px solid #334155; margin-bottom:16px; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; padding:10px 12px; color:#64748b; font-size:12px; text-transform:uppercase; border-bottom:1px solid #334155; }
+  td { padding:10px 12px; font-size:13px; border-bottom:1px solid #1e293b; font-family:monospace; }
+  tr:hover td { background:#334155; }
+  .btn { padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-size:13px; font-weight:600; background:#38bdf8; color:#0f172a; margin-right:8px; margin-bottom:8px; }
+  .btn:hover { background:#0ea5e9; }
+  .btn-red { background:#ef4444; color:white; }
+  .section { margin-bottom:32px; }
+  .id-cell { color:#38bdf8; font-size:11px; }
+  .search-box { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+  input, select { background:#0f172a; border:1px solid #334155; color:#e2e8f0; padding:8px 12px; border-radius:8px; font-size:13px; flex:1; min-width:160px; outline:none; }
+  input:focus, select:focus { border-color:#38bdf8; }
+  .result { background:#0f172a; border-radius:8px; padding:16px; margin-top:12px; font-size:13px; }
+  .ok { border:1px solid #14532d; color:#4ade80; }
+  .err { border:1px solid #7f1d1d; color:#f87171; }
+  pre { white-space:pre-wrap; word-break:break-all; font-size:12px; }
+  .token-input { display:flex; gap:8px; margin-bottom:24px; }
+  .token-input input { flex:1; }
+  .badge { padding:2px 8px; border-radius:12px; font-size:11px; }
+  .badge-blue { background:#0c1a3d; color:#60a5fa; }
+  .badge-green { background:#052e16; color:#4ade80; }
+</style>
+</head>
+<body>
+
+<h1>🔍 BookIt Debug Panel</h1>
+
+<!-- TOKEN -->
+<div class="card">
+  <h2>Auth Token</h2>
+  <div class="token-input">
+    <input id="token" placeholder="Paste your Bearer token here (user token for search)" />
+    <button class="btn" onclick="saveToken()">Save</button>
+    <button class="btn btn-red" onclick="clearToken()">Clear</button>
+  </div>
+  <div id="token-status" style="font-size:13px;color:#64748b;"></div>
+</div>
+
+<!-- LOCATIONS -->
+<div class="section">
+  <h2>📍 Locations</h2>
+  <button class="btn" onclick="loadLocations()">Load</button>
+  <div class="card" id="loc-out" style="display:none;">
+    <table>
+      <thead><tr><th>Name</th><th>ID</th></tr></thead>
+      <tbody id="loc-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ROUTES -->
+<div class="section">
+  <h2>🗺️ Routes</h2>
+  <button class="btn" onclick="loadRoutes()">Load</button>
+  <div class="card" id="rt-out" style="display:none;">
+    <table>
+      <thead><tr><th>From</th><th>To</th><th>Price</th><th>Reverse</th><th>ID</th></tr></thead>
+      <tbody id="rt-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ROUTE STOPS -->
+<div class="section">
+  <h2>🛑 Route Stops</h2>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+    <input id="stops-route-id" placeholder="Paste route ID" />
+    <button class="btn" onclick="loadStops()">Load Stops for Route</button>
+    <button class="btn" onclick="loadAllRoutesThenStops()">Load All Routes + Stops</button>
+  </div>
+  <div class="card" id="stops-out" style="display:none;">
+    <table>
+      <thead><tr><th>Order</th><th>Location</th><th>Location ID</th><th>Price from Origin</th><th>Stop ID</th></tr></thead>
+      <tbody id="stops-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- BUSES -->
+<div class="section">
+  <h2>🚌 Buses</h2>
+  <button class="btn" onclick="loadBuses()">Load</button>
+  <div class="card" id="bus-out" style="display:none;">
+    <table>
+      <thead><tr><th>Plate</th><th>Route ID</th><th>Departure</th><th>Capacity</th><th>Bus ID</th></tr></thead>
+      <tbody id="bus-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SEARCH TEST -->
+<div class="section">
+  <h2>🔍 Search Test</h2>
+  <div class="search-box">
+    <select id="search-from"><option value="">— From location —</option></select>
+    <select id="search-to"><option value="">— To location —</option></select>
+    <input  type="date" id="search-date" />
+    <button class="btn" onclick="testSearch()">Test Search</button>
+  </div>
+  <div id="search-result"></div>
+</div>
+
+<!-- RAW API -->
+<div class="section">
+  <h2>⚡ Raw API Call</h2>
+  <div class="search-box">
+    <select id="raw-method" style="max-width:100px;">
+      <option>GET</option><option>POST</option><option>PATCH</option><option>DELETE</option>
+    </select>
+    <input id="raw-path" placeholder="/api/locations" style="flex:2;" />
+    <button class="btn" onclick="rawCall()">Call</button>
+  </div>
+  <textarea id="raw-body" placeholder='Body JSON (for POST/PATCH)' style="width:100%;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:10px;font-size:12px;height:80px;resize:none;margin-bottom:8px;"></textarea>
+  <div id="raw-result"></div>
+</div>
+
+<script>
+const BASE = 'http://localhost:3000/api';
+
+function getToken() { return document.getElementById('token').value || localStorage.getItem('debug_token') || ''; }
+function saveToken() {
+  localStorage.setItem('debug_token', document.getElementById('token').value);
+  document.getElementById('token-status').textContent = '✅ Token saved';
+}
+function clearToken() {
+  localStorage.removeItem('debug_token');
+  document.getElementById('token').value = '';
+  document.getElementById('token-status').textContent = '🗑 Token cleared';
+}
+
+window.onload = () => {
+  const saved = localStorage.getItem('debug_token');
+  if (saved) {
+    document.getElementById('token').value = saved;
+    document.getElementById('token-status').textContent = '✅ Token loaded from storage';
+  }
+  document.getElementById('search-date').value = new Date().toISOString().split('T')[0];
+};
+
+async function call(method, path, body = null, auth = true) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (auth) headers['Authorization'] = `Bearer ${getToken()}`;
+  const res = await fetch(`${BASE}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : null,
+  });
+  return { status: res.status, data: await res.json() };
+}
+
+function showResult(id, res) {
+  const el  = document.getElementById(id);
+  const ok  = res.status < 400;
+  el.className = `result ${ok ? 'ok' : 'err'}`;
+  el.innerHTML = `<b>Status: ${res.status}</b><br><pre>${JSON.stringify(res.data, null, 2)}</pre>`;
+  el.style.display = 'block';
+}
+
+// ── LOCATIONS ─────────────────────────────────────────
+async function loadLocations() {
+  const { data } = await call('GET', '/locations', null, false);
+  const tbody = document.getElementById('loc-body');
+  tbody.innerHTML = data.map(l => `
+    <tr>
+      <td>${l.name}</td>
+      <td class="id-cell">${l.id}</td>
+    </tr>
+  `).join('');
+  document.getElementById('loc-out').style.display = 'block';
+
+  // populate search selects
+  const opts = data.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  document.getElementById('search-from').innerHTML = '<option value="">— From —</option>' + opts;
+  document.getElementById('search-to').innerHTML   = '<option value="">— To —</option>'   + opts;
+}
+
+// ── ROUTES ────────────────────────────────────────────
+async function loadRoutes() {
+  const { data } = await call('GET', '/routes', null, false);
+  const tbody = document.getElementById('rt-body');
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td>${r.fromLocation?.name || '?'}</td>
+      <td>${r.toLocation?.name   || '?'}</td>
+      <td>${Number(r.price).toLocaleString()} RWF</td>
+      <td><span class="badge ${r.is_reverse ? 'badge-blue' : 'badge-green'}">${r.is_reverse ? 'reverse' : 'main'}</span></td>
+      <td class="id-cell">${r.id}</td>
+    </tr>
+  `).join('');
+  document.getElementById('rt-out').style.display = 'block';
+}
+
+// ── STOPS ─────────────────────────────────────────────
+async function loadStops() {
+  const route_id = document.getElementById('stops-route-id').value.trim();
+  if (!route_id) { alert('Paste a route ID first'); return; }
+  const { data } = await call('GET', `/route-stops/${route_id}`, null, false);
+  renderStopsTable(data.stops || []);
+}
+
+async function loadAllRoutesThenStops() {
+  const { data: routes } = await call('GET', '/routes', null, false);
+  let allRows = [];
+  for (const r of routes) {
+    const { data } = await call('GET', `/route-stops/${r.id}`, null, false);
+    const stops = (data.stops || []).map(s => ({
+      ...s,
+      _route: `${r.fromLocation?.name} → ${r.toLocation?.name}`,
+      _routeId: r.id,
+    }));
+    allRows = allRows.concat(stops);
+  }
+  renderStopsTable(allRows, true);
+}
+
+function renderStopsTable(stops, showRoute = false) {
+  const tbody = document.getElementById('stops-body');
+  if (!stops.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="color:#f87171;text-align:center;">No stops found</td></tr>';
+  } else {
+    tbody.innerHTML = stops.map(s => `
+      <tr>
+        ${showRoute ? `<td style="color:#94a3b8;font-size:11px;">${s._route || ''}</td>` : ''}
+        <td><b>${s.stop_order}</b></td>
+        <td>${s.location?.name || '?'}</td>
+        <td class="id-cell">${s.location_id}</td>
+        <td>${Number(s.price_from_origin).toLocaleString()} RWF</td>
+        <td class="id-cell">${s.id}</td>
+      </tr>
+    `).join('');
+  }
+  document.getElementById('stops-out').style.display = 'block';
+}
+
+// ── BUSES ─────────────────────────────────────────────
+async function loadBuses() {
+  const { data } = await call('GET', '/buses', null, false);
+  const tbody = document.getElementById('bus-body');
+  tbody.innerHTML = data.map(b => `
+    <tr>
+      <td>${b.plate_number}</td>
+      <td class="id-cell">${b.route_id}</td>
+      <td>${b.departure_time}</td>
+      <td>${b.capacity}</td>
+      <td class="id-cell">${b.id}</td>
+    </tr>
+  `).join('');
+  document.getElementById('bus-out').style.display = 'block';
+}
+
+// ── SEARCH TEST ───────────────────────────────────────
+async function testSearch() {
+  const from = document.getElementById('search-from').value;
+  const to   = document.getElementById('search-to').value;
+  const date = document.getElementById('search-date').value;
+  const el   = document.getElementById('search-result');
+
+  if (!from || !to || !date) { alert('Select from, to, and date'); return; }
+
+  el.className = 'result';
+  el.innerHTML = 'Searching...';
+  el.style.display = 'block';
+
+  const res = await call('GET', `/tickets/search?from_location_id=${from}&to_location_id=${to}&travel_date=${date}`, null, false);
+
+  if (res.status >= 400) {
+    el.className = 'result err';
+    el.innerHTML = `
+      <b>❌ Error: ${res.data.message}</b>
+      <br><br>
+      <b>Debugging checklist:</b>
+      <ul style="margin-top:8px;padding-left:16px;color:#fca5a5;font-size:12px;line-height:1.8;">
+        <li>Load locations above and confirm the IDs match what's in route stops</li>
+        <li>Load All Routes + Stops above — check that <b>both</b> from and to location IDs appear in the same route's stops</li>
+        <li>Check stop_order: from stop must have LOWER order than to stop</li>
+        <li>Make sure a bus is assigned to the route that has the stops</li>
+      </ul>
+      <br><b>From location ID:</b> <span style="color:#38bdf8;">${from}</span>
+      <br><b>To location ID:</b>   <span style="color:#38bdf8;">${to}</span>
+    `;
+  } else {
+    el.className = 'result ok';
+    el.innerHTML = `
+      <b>✅ Found ${res.data.length} bus(es)</b>
+      <pre>${JSON.stringify(res.data, null, 2)}</pre>
+    `;
+  }
+}
+
+// ── RAW API ───────────────────────────────────────────
+async function rawCall() {
+  const method = document.getElementById('raw-method').value;
+  const path   = document.getElementById('raw-path').value.replace(/^\/api/, '');
+  const bodyRaw = document.getElementById('raw-body').value.trim();
+  let body = null;
+  if (bodyRaw) {
+    try { body = JSON.parse(bodyRaw); }
+    catch { alert('Invalid JSON in body'); return; }
+  }
+  const res = await call(method, path, body);
+  showResult('raw-result', res);
+}
+</script>
+</body>
+</html>

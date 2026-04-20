@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BookIt — Operator</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; }
+  #login-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  .login-card { background:#1e293b; border-radius:16px; padding:48px 40px; width:400px; box-shadow:0 25px 50px rgba(0,0,0,0.5); }
+  .login-card h1 { font-size:28px; color:#a78bfa; margin-bottom:8px; }
+  .login-card p { color:#94a3b8; margin-bottom:32px; }
+  #dashboard { display:none; }
+  .topbar { background:#1e293b; border-bottom:1px solid #334155; padding:16px 32px; display:flex; align-items:center; justify-content:space-between; }
+  .topbar h1 { color:#a78bfa; font-size:20px; }
+  .topbar-right { display:flex; align-items:center; gap:16px; position:relative; }
+  .bell-btn { position:relative; background:#334155; border:none; color:#e2e8f0; width:40px; height:40px; border-radius:50%; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; }
+  .bell-count { position:absolute; top:-4px; right:-4px; background:#ef4444; color:white; font-size:10px; font-weight:700; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .notif-dropdown { display:none; position:absolute; top:50px; right:0; background:#1e293b; border:1px solid #334155; border-radius:12px; width:360px; max-height:400px; overflow-y:auto; z-index:100; box-shadow:0 20px 40px rgba(0,0,0,0.4); }
+  .notif-dropdown.open { display:block; }
+  .notif-header { padding:16px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; }
+  .notif-item { padding:14px 16px; border-bottom:1px solid #1e293b; cursor:pointer; transition:background 0.2s; }
+  .notif-item:hover { background:#334155; }
+  .notif-item.unread { border-left:3px solid #a78bfa; }
+  .notif-item p { font-size:13px; color:#cbd5e1; }
+  .notif-item small { color:#64748b; font-size:11px; }
+  .layout { display:flex; height:calc(100vh - 65px); }
+  .sidebar { width:220px; background:#1e293b; border-right:1px solid #334155; padding:24px 0; }
+  .nav-item { padding:12px 24px; cursor:pointer; color:#94a3b8; transition:all 0.2s; display:flex; align-items:center; gap:10px; font-size:14px; }
+  .nav-item:hover,.nav-item.active { background:#334155; color:#a78bfa; }
+  .main { flex:1; padding:32px; overflow-y:auto; }
+  .section { display:none; }
+  .section.active { display:block; }
+  .section-title { font-size:22px; font-weight:700; color:#f1f5f9; margin-bottom:24px; }
+  .card { background:#1e293b; border-radius:12px; padding:24px; border:1px solid #334155; margin-bottom:24px; }
+  .card h3 { font-size:16px; color:#94a3b8; margin-bottom:16px; }
+  .form-row { display:flex; gap:12px; flex-wrap:wrap; }
+  input,select { background:#0f172a; border:1px solid #334155; color:#e2e8f0; padding:10px 14px; border-radius:8px; font-size:14px; flex:1; min-width:180px; outline:none; transition:border 0.2s; }
+  input:focus,select:focus { border-color:#a78bfa; }
+  .btn { padding:10px 20px; border-radius:8px; border:none; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.2s; }
+  .btn-primary { background:#a78bfa; color:#0f172a; }
+  .btn-primary:hover { background:#8b5cf6; }
+  .btn-danger { background:#ef4444; color:white; }
+  .btn-ghost { background:#334155; color:#e2e8f0; }
+  .btn-ghost:hover { background:#475569; }
+  .btn-sm { padding:6px 12px; font-size:12px; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; padding:12px 16px; color:#64748b; font-size:12px; text-transform:uppercase; border-bottom:1px solid #334155; }
+  td { padding:14px 16px; font-size:14px; border-bottom:1px solid #1e293b; }
+  tr:hover td { background:#1a2744; }
+  .badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+  .badge-green { background:#052e16; color:#4ade80; }
+  .badge-red { background:#450a0a; color:#f87171; }
+  .badge-yellow { background:#431407; color:#fb923c; }
+  .badge-blue { background:#0c1a3d; color:#60a5fa; }
+  .alert { padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:14px; display:none; }
+  .alert-err { background:#450a0a; color:#f87171; border:1px solid #7f1d1d; }
+  .alert-ok { background:#052e16; color:#4ade80; border:1px solid #14532d; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:16px; margin-bottom:24px; }
+  .stat-card { background:#1e293b; border-radius:12px; padding:20px; border:1px solid #334155; }
+  .stat-card .num { font-size:32px; font-weight:700; color:#a78bfa; }
+  .stat-card .lbl { font-size:13px; color:#64748b; margin-top:4px; }
+  .logout-btn { background:#334155; border:none; color:#94a3b8; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:14px; }
+  .default-pass { background:#0f172a; border:1px solid #a78bfa; border-radius:8px; padding:12px 16px; margin-top:12px; display:none; }
+  .default-pass span { color:#a78bfa; font-weight:700; font-size:16px; }
+  .stops-list { margin-top:12px; }
+  .stop-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #334155; font-size:13px; }
+  .stop-order { background:#334155; color:#a78bfa; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; }
+  .revenue-box { background:#0f172a; border-radius:8px; padding:16px; margin-top:12px; }
+  .revenue-box .total { font-size:28px; font-weight:700; color:#4ade80; }
+  .revenue-box .lbl { color:#64748b; font-size:13px; }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <h1>🚌 BookIt</h1>
+    <p>Operator Dashboard</p>
+    <div class="alert alert-err" id="login-err"></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input id="company"  placeholder="Company name" />
+      <input id="password" type="password" placeholder="Password" />
+      <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="topbar">
+    <h1>🚌 <span id="company-name">Operator</span></h1>
+    <div class="topbar-right">
+      <button class="bell-btn" onclick="toggleNotifs()" id="bell-btn">
+        🔔<span class="bell-count" id="bell-count" style="display:none">0</span>
+      </button>
+      <div class="notif-dropdown" id="notif-dropdown">
+        <div class="notif-header">
+          <span>Notifications</span>
+          <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
+        </div>
+        <div id="notif-list"></div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="nav-item active" onclick="showSection('overview',this)">📊 Overview</div>
+      <div class="nav-item" onclick="showSection('routes',this)">🗺️ Routes</div>
+      <div class="nav-item" onclick="showSection('buses',this)">🚌 Buses</div>
+      <div class="nav-item" onclick="showSection('drivers',this)">👤 Drivers</div>
+      <div class="nav-item" onclick="showSection('tickets',this)">🎫 Tickets</div>
+      <div class="nav-item" onclick="showSection('revenue',this)">💰 Revenue</div>
+      <div class="nav-item" onclick="showSection('locations',this)">📍 Locations</div>
+    </div>
+
+    <div class="main">
+
+      <!-- OVERVIEW -->
+      <div class="section active" id="sec-overview">
+        <div class="section-title">Overview</div>
+        <div class="stats">
+          <div class="stat-card"><div class="num" id="s-routes">—</div><div class="lbl">Routes</div></div>
+          <div class="stat-card"><div class="num" id="s-buses">—</div><div class="lbl">Buses</div></div>
+          <div class="stat-card"><div class="num" id="s-drivers">—</div><div class="lbl">Drivers</div></div>
+          <div class="stat-card"><div class="num" id="s-tickets">—</div><div class="lbl">Tickets Today</div></div>
+          <div class="stat-card"><div class="num" id="s-revenue">—</div><div class="lbl">Revenue (RWF)</div></div>
+        </div>
+      </div>
+
+      <!-- ROUTES -->
+      <div class="section" id="sec-routes">
+        <div class="section-title">Routes & Stops</div>
+        <div class="card">
+          <h3>Create Route</h3>
+          <div class="alert alert-err" id="rt-err"></div>
+          <div class="alert alert-ok"  id="rt-ok"></div>
+          <div class="form-row">
+            <select id="rt-from"></select>
+            <select id="rt-to"></select>
+            <input  id="rt-price" type="number" placeholder="Base price (RWF)" />
+            <button class="btn btn-primary" onclick="createRoute()">Create</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>My Routes</h3>
+          <table>
+            <thead><tr><th>From</th><th>To</th><th>Price</th><th>Stops</th><th>Reverse</th><th>Actions</th></tr></thead>
+            <tbody id="rt-table"></tbody>
+          </table>
+        </div>
+
+        <!-- ADD STOPS PANEL -->
+        <div class="card" id="stops-panel" style="display:none;">
+          <h3>Manage Stops — <span id="stops-route-name"></span></h3>
+          <div class="alert alert-err" id="st-err"></div>
+          <div id="stops-list" class="stops-list"></div>
+          <div style="margin-top:16px;">
+            <p style="color:#64748b;font-size:13px;margin-bottom:12px;">Add new stop:</p>
+            <div class="form-row">
+              <select id="st-loc"></select>
+              <input id="st-order" type="number" placeholder="Order (1,2,3...)" style="max-width:120px;" />
+              <input id="st-price" type="number" placeholder="Price from origin" style="max-width:160px;" />
+              <button class="btn btn-primary" onclick="addStop()">Add Stop</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BUSES -->
+      <div class="section" id="sec-buses">
+        <div class="section-title">Buses</div>
+        <div class="card">
+          <h3>Add Bus</h3>
+          <div class="alert alert-err" id="bus-err"></div>
+          <div class="form-row">
+            <select id="bus-route"></select>
+            <input id="bus-plate"  placeholder="Plate number" />
+            <input id="bus-driver" placeholder="Driver name" />
+            <input id="bus-cap"    type="number" placeholder="Capacity" style="max-width:120px;" />
+            <input id="bus-dep"    type="time" />
+            <button class="btn btn-primary" onclick="createBus()">Add</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>My Buses</h3>
+          <table>
+            <thead><tr><th>Plate</th><th>Route</th><th>Departure</th><th>Capacity</th><th>Actions</th></tr></thead>
+            <tbody id="bus-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DRIVERS -->
+      <div class="section" id="sec-drivers">
+        <div class="section-title">Drivers</div>
+        <div class="card">
+          <h3>Add Driver</h3>
+          <div class="alert alert-err" id="drv-err"></div>
+          <div class="alert alert-ok"  id="drv-ok"></div>
+          <div class="form-row">
+            <input id="drv-name"  placeholder="Full name" />
+            <input id="drv-phone" placeholder="Phone" />
+            <select id="drv-bus"><option value="">— Assign bus (optional) —</option></select>
+            <button class="btn btn-primary" onclick="createDriver()">Add</button>
+          </div>
+          <div class="default-pass" id="drv-pass">
+            Default password: <span id="drv-pass-val"></span>
+          </div>
+        </div>
+        <div class="card">
+          <h3>My Drivers</h3>
+          <table>
+            <thead><tr><th>Name</th><th>Phone</th><th>Bus</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="drv-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TICKETS -->
+      <div class="section" id="sec-tickets">
+        <div class="section-title">All Tickets</div>
+        <div class="card">
+          <table>
+            <thead><tr><th>Ticket #</th><th>Passenger</th><th>Bus</th><th>Boarding</th><th>Dropoff</th><th>Seat</th><th>Date</th><th>Price</th><th>Status</th></tr></thead>
+            <tbody id="tkt-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REVENUE -->
+      <div class="section" id="sec-revenue">
+        <div class="section-title">Revenue</div>
+        <div class="card">
+          <h3>Filter by date</h3>
+          <div class="form-row">
+            <input type="date" id="rev-date" />
+            <button class="btn btn-primary" onclick="calcRevenue()">Calculate</button>
+          </div>
+          <div class="revenue-box" id="rev-box" style="display:none;">
+            <div class="lbl">Total Revenue</div>
+            <div class="total" id="rev-total">0 RWF</div>
+            <div style="margin-top:16px;" id="rev-breakdown"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOCATIONS -->
+      <div class="section" id="sec-locations">
+        <div class="section-title">Locations</div>
+        <div class="card">
+          <h3>Add Location</h3>
+          <div class="alert alert-err" id="oloc-err"></div>
+          <div class="form-row">
+            <input id="oloc-name" placeholder="City / Town name" />
+            <button class="btn btn-primary" onclick="createLocation()">Add</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>All Locations</h3>
+          <table>
+            <thead><tr><th>Name</th></tr></thead>
+            <tbody id="oloc-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { api, setToken, clearToken, getToken } from './api.js';
+window.api = api;
+
+let currentRouteId = null;
+let locations      = [];
+let myRoutes       = [];
+let myBuses        = [];
+
+window.doLogin = async () => {
+  const company_name = document.getElementById('company').value;
+  const password     = document.getElementById('password').value;
+  try {
+    const data = await api.loginOperator({ company_name, password });
+    setToken(data.token);
+    document.getElementById('company-name').textContent = data.operator.company_name;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display    = 'block';
+    init();
+  } catch(e) {
+    const el = document.getElementById('login-err');
+    el.textContent = e.message; el.style.display = 'block';
+  }
+};
+
+window.logout = () => { clearToken(); location.reload(); };
+
+async function init() {
+  locations = await api.getLocations();
+  myRoutes  = await api.getMyRoutes();
+  myBuses   = await api.getMyBuses();
+  loadOverview();
+  loadLocations();
+  populateRouteSelects();
+  renderRoutes();
+  renderBuses();
+  loadDrivers();
+  loadTickets();
+  loadNotifications();
+  setInterval(loadNotifications, 20000);
+}
+
+// ── NAVIGATION ────────────────────────────────────────
+window.showSection = (name, el) => {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`sec-${name}`).classList.add('active');
+  el.classList.add('active');
+  if (name === 'tickets') loadTickets();
+  if (name === 'revenue') calcRevenue();
+};
+
+// ── OVERVIEW ──────────────────────────────────────────
+async function loadOverview() {
+  const tickets = await api.getOperatorTickets();
+  const today   = new Date().toISOString().split('T')[0];
+  const todayT  = tickets.filter(t => t.travel_date === today && t.status === 'paid');
+  const revenue = todayT.reduce((s, t) => s + parseFloat(t.price), 0);
+  document.getElementById('s-routes').textContent  = myRoutes.length;
+  document.getElementById('s-buses').textContent   = myBuses.length;
+  document.getElementById('s-tickets').textContent = todayT.length;
+  document.getElementById('s-revenue').textContent = revenue.toLocaleString();
+  // drivers count loaded separately
+  const drvs = await api.getDrivers();
+  document.getElementById('s-drivers').textContent = drvs.length;
+}
+
+// ── LOCATIONS ─────────────────────────────────────────
+async function loadLocations() {
+  locations = await api.getLocations();
+  document.getElementById('oloc-table').innerHTML = locations.map(l => `<tr><td>${l.name}</td></tr>`).join('');
+  populateRouteSelects();
+  populateStopSelect();
+}
+
+window.createLocation = async () => {
+  const name = document.getElementById('oloc-name').value.trim();
+  try {
+    await api.createLocation({ name });
+    document.getElementById('oloc-name').value = '';
+    await loadLocations();
+  } catch(e) {
+    const el = document.getElementById('oloc-err');
+    el.textContent = e.message; el.style.display = 'block';
+  }
+};
+
+function populateRouteSelects() {
+  const opts = locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  document.getElementById('rt-from').innerHTML = opts;
+  document.getElementById('rt-to').innerHTML   = opts;
+}
+
+function populateStopSelect() {
+  document.getElementById('st-loc').innerHTML = locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+}
+
+function populateBusRouteSelect() {
+  document.getElementById('bus-route').innerHTML = myRoutes.map(r => `<option value="${r.id}">${r.fromLocation.name} → ${r.toLocation.name}</option>`).join('');
+}
+
+function populateDriverBusSelect() {
+  document.getElementById('drv-bus').innerHTML = '<option value="">— Assign bus (optional) —</option>' +
+    myBuses.map(b => `<option value="${b.id}">${b.plate_number}</option>`).join('');
+}
+
+// ── ROUTES ────────────────────────────────────────────
+async function renderRoutes() {
+  myRoutes = await api.getMyRoutes();
+  const tbody = document.getElementById('rt-table');
+  tbody.innerHTML = myRoutes.map(r => `
+    <tr>
+      <td>${r.fromLocation.name}</td>
+      <td>${r.toLocation.name}</td>
+      <td>${Number(r.price).toLocaleString()} RWF</td>
+      <td>${(r.stops||[]).length} stops</td>
+      <td><span class="badge ${r.is_reverse ? 'badge-yellow' : 'badge-blue'}">${r.is_reverse ? 'Reverse' : 'Main'}</span></td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="openStops('${r.id}','${r.fromLocation.name} → ${r.toLocation.name}')">Stops</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteRoute('${r.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+  populateBusRouteSelect();
+}
+
+window.createRoute = async () => {
+  const from  = document.getElementById('rt-from').value;
+  const to    = document.getElementById('rt-to').value;
+  const price = document.getElementById('rt-price').value;
+  const err   = document.getElementById('rt-err');
+  const ok    = document.getElementById('rt-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  try {
+    const data = await api.createRoute({ from_location_id: from, to_location_id: to, price: parseFloat(price) });
+    ok.textContent = `Route created${data.reverse ? ' + reverse auto-generated' : ''}`;
+    ok.style.display = 'block';
+    renderRoutes();
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
+
+window.deleteRoute = async (id) => {
+  if (!confirm('Delete route?')) return;
+  await api.deleteRoute(id);
+  renderRoutes();
+};
+
+// ── STOPS ─────────────────────────────────────────────
+window.openStops = async (route_id, name) => {
+  currentRouteId = route_id;
+  document.getElementById('stops-route-name').textContent = name;
+  document.getElementById('stops-panel').style.display    = 'block';
+  populateStopSelect();
+  renderStops();
+};
+
+async function renderStops() {
+  const data  = await api.getRouteStops(currentRouteId);
+  const stops = (data.stops || []).sort((a,b) => a.stop_order - b.stop_order);
+  document.getElementById('stops-list').innerHTML = stops.length
+    ? stops.map(s => `
+        <div class="stop-row">
+          <div class="stop-order">${s.stop_order}</div>
+          <span style="flex:1">${s.location.name}</span>
+          <span style="color:#a78bfa">${Number(s.price_from_origin).toLocaleString()} RWF</span>
+          <button class="btn btn-danger btn-sm" onclick="deleteStop('${s.id}')">×</button>
+        </div>
+      `).join('')
+    : '<p style="color:#64748b;font-size:13px;">No stops yet</p>';
+}
+
+window.addStop = async () => {
+  const location_id       = document.getElementById('st-loc').value;
+  const stop_order        = parseInt(document.getElementById('st-order').value);
+  const price_from_origin = parseFloat(document.getElementById('st-price').value);
+  try {
+    await api.addStops(currentRouteId, { stops: [{ location_id, stop_order, price_from_origin }] });
+    document.getElementById('st-order').value = '';
+    document.getElementById('st-price').value = '';
+    renderStops();
+  } catch(e) {
+    const el = document.getElementById('st-err');
+    el.textContent = e.message; el.style.display = 'block';
+  }
+};
+
+window.deleteStop = async (id) => {
+  await api.deleteStop(id);
+  renderStops();
+};
+
+// ── BUSES ─────────────────────────────────────────────
+async function renderBuses() {
+  myBuses = await api.getMyBuses();
+  const tbody = document.getElementById('bus-table');
+  tbody.innerHTML = myBuses.map(b => `
+    <tr>
+      <td>${b.plate_number}</td>
+      <td>${b.route?.fromLocation?.name||'?'} → ${b.route?.toLocation?.name||'?'}</td>
+      <td>${b.departure_time}</td>
+      <td>${b.capacity}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteBus('${b.id}')">Delete</button></td>
+    </tr>
+  `).join('');
+  populateDriverBusSelect();
+}
+
+window.createBus = async () => {
+  const err = document.getElementById('bus-err');
+  err.style.display = 'none';
+  try {
+    await api.createBus({
+      route_id:       document.getElementById('bus-route').value,
+      plate_number:   document.getElementById('bus-plate').value,
+      driver_name:    document.getElementById('bus-driver').value,
+      capacity:       parseInt(document.getElementById('bus-cap').value),
+      departure_time: document.getElementById('bus-dep').value,
+    });
+    renderBuses();
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
+
+window.deleteBus = async (id) => {
+  if (!confirm('Delete bus?')) return;
+  await api.deleteBus(id);
+  renderBuses();
+};
+
+// ── DRIVERS ───────────────────────────────────────────
+async function loadDrivers() {
+  const drivers = await api.getDrivers();
+  const tbody   = document.getElementById('drv-table');
+  tbody.innerHTML = drivers.map(d => `
+    <tr>
+      <td>${d.name}</td>
+      <td>${d.phone}</td>
+      <td>${d.bus?.plate_number || '—'}</td>
+      <td><span class="badge ${d.is_active ? 'badge-green' : 'badge-red'}">${d.is_active ? 'Active' : 'Suspended'}</span></td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="toggleDrv('${d.id}')">${d.is_active ? 'Suspend' : 'Activate'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDrv('${d.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+window.createDriver = async () => {
+  const err = document.getElementById('drv-err');
+  const ok  = document.getElementById('drv-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  try {
+    const data = await api.createDriver({
+      name:   document.getElementById('drv-name').value,
+      phone:  document.getElementById('drv-phone').value,
+      bus_id: document.getElementById('drv-bus').value || undefined,
+    });
+    document.getElementById('drv-pass-val').textContent = data.default_password;
+    document.getElementById('drv-pass').style.display   = 'block';
+    ok.textContent = `Driver "${data.name}" created`; ok.style.display = 'block';
+    document.getElementById('drv-name').value  = '';
+    document.getElementById('drv-phone').value = '';
+    loadDrivers();
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
+
+window.toggleDrv = async (id) => { await api.toggleDriver(id); loadDrivers(); };
+window.deleteDrv = async (id) => {
+  if (!confirm('Delete driver?')) return;
+  // no delete driver endpoint yet, skip
+};
+
+// ── TICKETS ───────────────────────────────────────────
+async function loadTickets() {
+  const tickets = await api.getOperatorTickets();
+  const statusColor = { paid:'badge-green', pending:'badge-yellow', cancelled:'badge-red' };
+  document.getElementById('tkt-table').innerHTML = tickets.map(t => `
+    <tr>
+      <td>${t.ticket_number || '—'}</td>
+      <td>${t.user?.name || '—'}</td>
+      <td>${t.bus?.plate_number || '—'}</td>
+      <td>${t.boardingStop?.location?.name || '—'}</td>
+      <td>${t.dropoffStop?.location?.name  || '—'}</td>
+      <td>${t.seat_number}</td>
+      <td>${t.travel_date}</td>
+      <td>${Number(t.price).toLocaleString()} RWF</td>
+      <td><span class="badge ${statusColor[t.status]||''}">${t.status}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ── REVENUE ───────────────────────────────────────────
+window.calcRevenue = async () => {
+  const tickets  = await api.getOperatorTickets();
+  const dateFilter = document.getElementById('rev-date').value;
+  const paid     = tickets.filter(t => t.status === 'paid' && (!dateFilter || t.travel_date === dateFilter));
+  const total    = paid.reduce((s, t) => s + parseFloat(t.price), 0);
+
+  // per bus breakdown
+  const byBus = {};
+  paid.forEach(t => {
+    const key = t.bus?.plate_number || 'Unknown';
+    byBus[key] = (byBus[key] || 0) + parseFloat(t.price);
+  });
+
+  document.getElementById('rev-total').textContent = `${total.toLocaleString()} RWF`;
+  document.getElementById('rev-breakdown').innerHTML = Object.entries(byBus).map(([plate, amount]) => `
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;font-size:13px;">
+      <span style="color:#94a3b8;">Bus ${plate}</span>
+      <span style="color:#4ade80;font-weight:600;">${amount.toLocaleString()} RWF</span>
+    </div>
+  `).join('');
+  document.getElementById('rev-box').style.display = 'block';
+};
+
+// ── NOTIFICATIONS ─────────────────────────────────────
+async function loadNotifications() {
+  const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
+  const count = unread.unread;
+  const bell  = document.getElementById('bell-count');
+  bell.textContent   = count;
+  bell.style.display = count > 0 ? 'flex' : 'none';
+  document.getElementById('notif-list').innerHTML = notifs.length
+    ? notifs.map(n => `
+        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${n.id}',this)">
+          <p>${n.message}</p>
+          <small>${new Date(n.createdAt).toLocaleString()}</small>
+        </div>
+      `).join('')
+    : '<div style="padding:24px;text-align:center;color:#64748b;">No notifications</div>';
+}
+
+window.toggleNotifs = () => document.getElementById('notif-dropdown').classList.toggle('open');
+window.readNotif = async (id, el) => { await api.markRead(id); el.classList.remove('unread'); loadNotifications(); };
+window.markAllRead = async () => { await api.markAllRead(); loadNotifications(); };
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#bell-btn') && !e.target.closest('#notif-dropdown')) {
+    document.getElementById('notif-dropdown').classList.remove('open');
+  }
+});
+
+if (getToken()) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display    = 'block';
+  init();
+}
+</script>
+</body>
+</html>
