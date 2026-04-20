@@ -72,6 +72,6 @@ export const getAllAvailableBuses = async () => {
     const departure = new Date();
     departure.setHours(hours, minutes, 0, 0);
     // show if departure is in the future today, or bus runs on future dates
-    return now < departure;
+    return now > departure;
   });
 };

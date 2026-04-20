@@ -422,11 +422,15 @@ export const validateByQR = async (token) => {
   const ticket = await Ticket.findByPk(decoded.ticket_id, { include: ticketIncludes });
   if (!ticket)                  return { valid: false, reason: 'Ticket not found' };
   if (ticket.status !== 'paid') return { valid: false, reason: `Ticket is ${ticket.status}` };
+  if (ticket.is_used)           return { valid: false, reason: '⚠️ Ticket already used — boarding denied' };
   if (ticket.ticket_number !== decoded.ticket_number) return { valid: false, reason: 'Ticket number mismatch' };
-  if (ticket.bus_id         !== decoded.bus_id)       return { valid: false, reason: 'Wrong bus' };
+  if (ticket.bus_id !== decoded.bus_id) return { valid: false, reason: 'Wrong bus' };
 
   const today = new Date().toISOString().split('T')[0];
   if (ticket.travel_date !== today) return { valid: false, reason: `Ticket is for ${ticket.travel_date}, not today` };
+
+  // mark as used
+  await ticket.update({ is_used: true });
 
   return {
     valid: true,
@@ -446,15 +450,15 @@ export const validateByQR = async (token) => {
 };
 
 export const validateByNumber = async (ticket_number) => {
-  const ticket = await Ticket.findOne({
-    where:   { ticket_number },
-    include: ticketIncludes,
-  });
+  const ticket = await Ticket.findOne({ where: { ticket_number }, include: ticketIncludes });
   if (!ticket)                  return { valid: false, reason: 'Ticket not found' };
   if (ticket.status !== 'paid') return { valid: false, reason: `Ticket is ${ticket.status}` };
+  if (ticket.is_used)           return { valid: false, reason: '⚠️ Ticket already used — boarding denied' };
 
   const today = new Date().toISOString().split('T')[0];
   if (ticket.travel_date !== today) return { valid: false, reason: `Ticket is for ${ticket.travel_date}, not today` };
+
+  await ticket.update({ is_used: true });
 
   return {
     valid: true,

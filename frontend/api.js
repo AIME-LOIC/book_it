@@ -4,6 +4,14 @@ const getToken = () => localStorage.getItem('token');
 const setToken = (t) => localStorage.setItem('token', t);
 const clearToken = () => localStorage.removeItem('token');
 
+const debounce = (fn, delay) => {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), delay);
+  };
+};
+
 const req = async (method, path, body = null, auth = true) => {
   const headers = { 'Content-Type': 'application/json' };
   if (auth) headers['Authorization'] = `Bearer ${getToken()}`;
@@ -81,4 +89,5 @@ const api = {
   markAllRead:       () => req('PATCH', '/notifications/read-all'),
 };
 
+api.debounce = debounce;
 export { api, getToken, setToken, clearToken };

@@ -1,413 +1,858 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>BookIt — Driver</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          forest: {
-            50:  '#f0fdf4',
-            100: '#dcfce7',
-            200: '#bbf7d0',
-            300: '#86efac',
-            400: '#4ade80',
-            500: '#22c55e',
-            600: '#16a34a',
-            700: '#15803d',
-            800: '#166534',
-            900: '#14532d'
-          },
-          brandOrange: {
-            50:  '#fff7ed',
-            100: '#ffedd5',
-            200: '#fed7aa',
-            300: '#fdba74',
-            400: '#fb923c',
-            500: '#f97316',
-            600: '#ea580c',
-            700: '#c2410c',
-            800: '#9a3412',
-            900: '#7c2d12'
-          }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>BookIt — Driver Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
+  <style>
+    :root{
+      --bg: #050b16;
+      --panel: #0b1220;
+      --card: #0f172a;
+      --border: #24314a;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --orange: #fb923c;
+      --orange2: #f97316;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --shadow: 0 18px 50px rgba(0,0,0,0.55);
+    }
+
+    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color: transparent;}
+    body{
+      font-family:'Plus Jakarta Sans',system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background: radial-gradient(circle at top right, rgba(251,146,60,0.18), transparent 55%),
+                  radial-gradient(circle at bottom left, rgba(34,197,94,0.10), transparent 55%),
+                  var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
+    .hidden{display:none !important;}
+
+    /* LOGIN */
+    #login-screen{min-height:100vh;display:grid;place-items:center;padding:18px;}
+    .login-card{
+      width:100%;
+      max-width:520px;
+      background: rgba(15,23,42,0.72);
+      border:1px solid var(--border);
+      border-radius:22px;
+      box-shadow: var(--shadow);
+      padding:28px;
+      backdrop-filter: blur(14px);
+    }
+    .login-title{
+      font-size:22px;
+      font-weight:950;
+      letter-spacing:-0.02em;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .pill{
+      border:1px solid rgba(251,146,60,0.25);
+      background: rgba(251,146,60,0.10);
+      color: #fdba74;
+      border-radius:999px;
+      padding:6px 12px;
+      font-weight:900;
+      font-size:12px;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+    }
+    .login-sub{margin-top:10px;color:var(--muted);font-weight:750;font-size:14px;line-height:1.4;}
+    .field{margin-top:16px;}
+    .label{display:block;margin-bottom:10px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:0.14em;font-size:12px;}
+    .input{
+      width:100%;
+      border:1px solid var(--border);
+      background: rgba(2,6,23,0.38);
+      color: var(--text);
+      padding:16px 16px;
+      border-radius:16px;
+      font-size:18px;
+      font-weight:800;
+      outline:none;
+    }
+    .input:focus{border-color: rgba(251,146,60,0.55); box-shadow: 0 0 0 6px rgba(251,146,60,0.14);}
+    .btn{
+      border:none;
+      border-radius:18px;
+      padding:16px 18px;
+      font-size:18px;
+      font-weight:950;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      transition: 0.15s;
+      user-select:none;
+    }
+    .btn:disabled{opacity:0.55;cursor:not-allowed;}
+    .btn-primary{background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #0b1220; box-shadow: 0 12px 30px rgba(249,115,22,0.20);}
+    .btn-primary:active{transform: translateY(1px);}
+    .btn-ghost{background: rgba(148,163,184,0.14); color: var(--text); border: 1px solid rgba(148,163,184,0.18);}
+    .alert{
+      display:none;
+      margin-top: 16px;
+      padding: 14px 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(239,68,68,0.25);
+      background: rgba(239,68,68,0.10);
+      color: #fecaca;
+      font-weight: 850;
+      font-size: 14px;
+    }
+
+    /* DASHBOARD */
+    #dashboard{display:none; min-height:100vh;}
+    .header{
+      position: sticky;
+      top: 0;
+      z-index: 90;
+      background: rgba(5,11,22,0.82);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .banner{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 14px 16px;
+    }
+    .banner-left{display:flex;flex-direction:column;gap:4px;min-width:0;}
+    .banner-kicker{
+      font-weight:950;
+      letter-spacing:0.12em;
+      text-transform:uppercase;
+      font-size:12px;
+      color: var(--muted);
+    }
+    .banner-msg{
+      font-size:16px;
+      font-weight:950;
+      letter-spacing:-0.01em;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .banner-live{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(34,197,94,0.22);
+      background: rgba(34,197,94,0.10);
+      color: #86efac;
+      font-weight: 950;
+      font-size: 12px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      flex-shrink:0;
+    }
+    .dot{width:8px;height:8px;border-radius:50%;background: var(--green);box-shadow:0 0 0 6px rgba(34,197,94,0.12);}
+    .banner-actions{display:flex;gap:10px;align-items:center;flex-shrink:0;}
+
+    .content{padding: 16px 16px 96px; max-width: 980px; margin: 0 auto;}
+    .tabs{
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 95;
+      background: rgba(5,11,22,0.82);
+      backdrop-filter: blur(14px);
+      border-top: 1px solid var(--border);
+      padding: 12px 12px;
+      display:flex;
+      gap: 10px;
+      justify-content: space-between;
+    }
+    .tabbtn{
+      flex:1;
+      background: rgba(148,163,184,0.12);
+      border: 1px solid rgba(148,163,184,0.18);
+      color: var(--text);
+      border-radius: 18px;
+      padding: 14px 12px;
+      font-weight: 950;
+      font-size: 14px;
+      cursor:pointer;
+    }
+    .tabbtn.active{
+      background: rgba(251,146,60,0.14);
+      border-color: rgba(251,146,60,0.24);
+      color: #fdba74;
+    }
+
+    .section{display:none;}
+    .section.active{display:block;}
+
+    .hero{
+      border: 1px solid var(--border);
+      background: rgba(15,23,42,0.70);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .hero-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .hero-label{color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:0.14em;font-size:12px;}
+    .plate{
+      margin-top: 10px;
+      font-size: 56px;
+      font-weight: 1000;
+      letter-spacing: -0.05em;
+      line-height: 1.0;
+      color: #fdba74;
+    }
+    .route{
+      margin-top: 10px;
+      font-size: 20px;
+      font-weight: 950;
+      letter-spacing: -0.02em;
+    }
+    .meta{
+      margin-top: 10px;
+      color: var(--muted);
+      font-weight: 900;
+      font-size: 15px;
+    }
+    .countdown{
+      margin-top: 10px;
+      font-size: 22px;
+      font-weight: 1000;
+      color: #86efac;
+      letter-spacing: -0.02em;
+    }
+    .bigcount-wrap{
+      min-width: 260px;
+      border: 1px solid rgba(34,197,94,0.22);
+      background: rgba(34,197,94,0.08);
+      border-radius: 22px;
+      padding: 16px;
+    }
+    .bigcount{
+      margin-top: 10px;
+      font-size: 72px;
+      font-weight: 1100;
+      letter-spacing: -0.07em;
+      line-height: 1.0;
+      color: #86efac;
+    }
+    .bigcount-sub{margin-top: 10px; color: var(--muted); font-weight: 900;}
+
+    .toolbar{
+      display:flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin: 16px 0;
+    }
+    .title{
+      font-size: 20px;
+      font-weight: 1000;
+      letter-spacing: -0.02em;
+    }
+
+    .cardlist{display:flex;flex-direction:column;gap:12px;}
+    .pcard{
+      border: 1px solid var(--border);
+      background: rgba(15,23,42,0.72);
+      border-radius: 22px;
+      padding: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 14px;
+    }
+    .seat{
+      width: 84px;
+      height: 84px;
+      border-radius: 22px;
+      border: 1px solid rgba(251,146,60,0.22);
+      background: rgba(251,146,60,0.10);
+      display:grid;
+      place-items:center;
+      color: #fdba74;
+      font-weight: 1100;
+      font-size: 40px;
+      flex-shrink:0;
+    }
+    .pinfo{min-width:0;flex:1;}
+    .pname{font-size: 18px; font-weight: 1000; letter-spacing: -0.02em;}
+    .stops{margin-top: 8px; display:flex; flex-direction:column; gap: 6px; font-weight: 950;}
+    .stopline{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(148,163,184,0.16);
+      background: rgba(2,6,23,0.24);
+    }
+    .stopline.pickup{border-color: rgba(34,197,94,0.22); background: rgba(34,197,94,0.08);}
+    .stopline.dropoff{border-color: rgba(245,158,11,0.22); background: rgba(245,158,11,0.10);}
+    .stopbadge{font-size: 12px; font-weight: 1100; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);}
+    .stopval{font-size: 16px; font-weight: 1100; color: var(--text); letter-spacing: -0.01em;}
+    .btn-notify{min-width: 190px;}
+
+    /* VALIDATE */
+    .validate-grid{display:grid;grid-template-columns: 1fr;gap: 12px;}
+    .bigbtn{
+      width:100%;
+      padding: 18px 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(251,146,60,0.25);
+      background: rgba(251,146,60,0.10);
+      color: #fdba74;
+      font-size: 18px;
+      font-weight: 1050;
+      cursor:pointer;
+    }
+    .bigbtn.secondary{
+      border-color: rgba(148,163,184,0.18);
+      background: rgba(148,163,184,0.10);
+      color: var(--text);
+    }
+    .validate-panel{
+      border: 1px solid var(--border);
+      background: rgba(15,23,42,0.72);
+      border-radius: 22px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+
+    /* OVERLAY RESULT */
+    #result-overlay{
+      position:fixed;
+      inset:0;
+      z-index: 200;
+      display:none;
+      padding: 18px;
+      background: rgba(2,6,23,0.96);
+    }
+    .overlay-card{
+      max-width: 860px;
+      margin: 0 auto;
+      border: 2px solid var(--border);
+      border-radius: 26px;
+      background: rgba(15,23,42,0.86);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+    .overlay-top{display:flex;align-items:center;justify-content:space-between;gap: 12px;}
+    .overlay-title{font-size: 22px;font-weight: 1100;letter-spacing: -0.02em;}
+    .mark{
+      width: 110px;
+      height: 110px;
+      border-radius: 28px;
+      display:grid;
+      place-items:center;
+      font-size: 64px;
+      font-weight: 1100;
+      margin: 16px 0 10px;
+      border: 2px solid transparent;
+    }
+    .mark.ok{background: rgba(34,197,94,0.10); border-color: rgba(34,197,94,0.22); color: #86efac;}
+    .mark.bad{background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.22); color: #fecaca;}
+    .overlay-body{
+      margin-top: 10px;
+      font-size: 20px;
+      font-weight: 1000;
+      line-height: 1.35;
+      letter-spacing: -0.01em;
+    }
+    .overlay-grid{margin-top: 14px;display:grid;grid-template-columns: 1fr;gap: 10px;}
+    .kv{
+      border: 1px solid rgba(148,163,184,0.16);
+      background: rgba(2,6,23,0.24);
+      border-radius: 18px;
+      padding: 12px;
+      display:flex;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    .kv span{color: var(--muted); font-weight: 950; text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px;}
+    .kv b{font-weight: 1100;}
+
+    /* QR MODAL */
+    #qr-modal{
+      position:fixed;
+      inset:0;
+      z-index: 210;
+      display:none;
+      padding: 16px;
+      background: rgba(0,0,0,0.82);
+    }
+    .qr-card{
+      max-width: 620px;
+      margin: 0 auto;
+      border: 2px solid var(--border);
+      border-radius: 26px;
+      background: rgba(15,23,42,0.86);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    #qr-reader{margin-top: 12px;}
+
+    @media (max-width: 720px){
+      .pcard{flex-wrap: wrap; align-items: stretch;}
+      .pinfo{width: 100%;}
+      .btn-notify{width: 100%; min-width: 0;}
+    }
+
+@media (max-width: 520px){
+      .plate{font-size: 46px;}
+      .bigcount{font-size: 64px;}
+      .seat{width: 74px;height: 74px;font-size: 36px;}
+      .btn-notify{width: 100%; min-width: 0;}
+    }
+
+  /* Universal Skeletons - Step 2 */
+  .skeleton { 
+    background: linear-gradient(90deg, var(--panel) 0%, var(--border) 50%, var(--panel) 100%); 
+    background-size: 200% 100%; 
+    animation: shimmer 1.5s infinite linear; 
+    border-radius: 18px; 
+    height: 16px;
+  }
+  .skeleton-card { height: 120px; }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  
+  /* Empty States */
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--muted);
+  }
+  .empty-state i { font-size: 64px; opacity: 0.3; margin-bottom: 20px; display: block; }
+  </style>
+</head>
+<body>
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-title">
+        <span>Driver Portal</span>
+        <span class="pill">High Contrast</span>
+      </div>
+      <div class="login-sub">Built for quick glances between stops: big info, bold actions, no clutter.</div>
+
+      <div id="login-err" class="alert"></div>
+
+      <div class="field">
+        <label class="label" for="phone">Phone</label>
+        <input class="input" id="phone" inputmode="tel" placeholder="+250 7xx xxx xxx" autocomplete="username">
+      </div>
+      <div class="field">
+        <label class="label" for="password">Password</label>
+        <input class="input" id="password" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="field" style="display:flex; gap: 12px;">
+        <button class="btn btn-primary" style="flex:1;" onclick="doLogin()">Sign In</button>
+        <button class="btn btn-ghost" onclick="location.reload()">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="dashboard">
+    <div class="header">
+      <div class="banner">
+        <div class="banner-left">
+          <div class="banner-kicker">Notifications</div>
+          <div class="banner-msg" id="notif-banner-text">Ready.</div>
+        </div>
+        <div class="banner-actions">
+          <div class="banner-live" title="Auto-refreshing">
+            <span class="dot"></span> LIVE
+          </div>
+          <button class="btn btn-ghost" style="padding:12px 14px; border-radius:16px; font-size:14px;" onclick="logout()">Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="toolbar">
+        <div>
+          <div class="title">Driver — <span id="driver-name">—</span></div>
+          <div class="meta">Today: <span class="mono" id="today-date">—</span></div>
+        </div>
+        <div style="display:flex; gap: 10px; align-items:center;">
+          <button class="btn btn-ghost" style="padding:12px 14px; border-radius:16px; font-size:14px;" onclick="refreshAll()">Refresh</button>
+        </div>
+      </div>
+
+      <div class="section active" id="sec-home">
+        <div class="hero">
+          <div class="hero-top">
+            <div style="flex:1; min-width: 260px;">
+              <div class="hero-label">Bus</div>
+              <div id="home-plate" class="plate">—</div>
+              <div id="home-route" class="route">—</div>
+              <div id="home-depart" class="meta">Departure: —</div>
+              <div id="home-countdown" class="countdown">—</div>
+            </div>
+            <div class="bigcount-wrap">
+              <div class="hero-label">Passengers Today</div>
+              <div id="home-passengers" class="bigcount">0</div>
+              <div class="bigcount-sub">paid tickets for selected date</div>
+              <button class="btn btn-primary" style="width:100%; margin-top: 12px;" onclick="showSection('passengers')">View passenger list</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section" id="sec-passengers">
+        <div class="toolbar">
+          <div class="title">Passenger List</div>
+          <div style="display:flex; gap: 12px; align-items:center;">
+            <input class="input" style="max-width: 220px; padding: 12px 14px; font-size: 16px;" type="date" id="pass-date" />
+            <button class="btn btn-primary" style="padding: 12px 14px; border-radius: 16px;" onclick="loadPassengers()">Load</button>
+          </div>
+        </div>
+        <div id="passenger-list" class="cardlist"></div>
+      </div>
+
+      <div class="section" id="sec-validate">
+        <div class="title">Validate Ticket</div>
+        <div class="meta" style="margin-top: 8px;">Two options: scan QR or enter ticket number.</div>
+
+        <div class="validate-grid" style="margin-top: 14px;">
+          <button class="bigbtn" onclick="openQrScanner()">Scan QR</button>
+          <button class="bigbtn secondary" onclick="showNumberValidate()">Enter Number</button>
+        </div>
+
+        <div id="number-validate" class="validate-panel hidden">
+          <div class="hero-label">Ticket Number</div>
+          <div style="display:flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+            <input class="input" id="val-number" placeholder="e.g. BK-4821-XZ" style="flex:1; min-width: 240px;">
+            <button class="btn btn-primary" style="min-width: 180px;" onclick="validateNumber()">Validate</button>
+          </div>
+          <div id="val-err" class="alert" style="margin-top: 12px;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tabbtn active" id="tab-home" onclick="showSection('home')">Home</button>
+      <button class="tabbtn" id="tab-passengers" onclick="showSection('passengers')">Passengers</button>
+      <button class="tabbtn" id="tab-validate" onclick="showSection('validate')">Validate</button>
+    </div>
+
+    <div id="result-overlay">
+      <div class="overlay-card">
+        <div class="overlay-top">
+          <div class="overlay-title" id="result-title">Result</div>
+          <button class="btn btn-ghost" style="padding:12px 14px; border-radius:16px; font-size:14px;" onclick="closeResult()">Close</button>
+        </div>
+        <div id="result-mark" class="mark ok">✓</div>
+        <div id="result-body" class="overlay-body">—</div>
+        <div id="result-grid" class="overlay-grid"></div>
+      </div>
+    </div>
+
+    <div id="qr-modal">
+      <div class="qr-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap: 12px;">
+          <div class="overlay-title">Scan QR</div>
+          <button class="btn btn-ghost" style="padding:12px 14px; border-radius:16px; font-size:14px;" onclick="closeQrScanner()">Close</button>
+        </div>
+        <div id="qr-reader"></div>
+        <div class="meta" style="margin-top: 10px;">If scanning fails, use “Enter Number”.</div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { api, setToken, clearToken, getToken } from './api.js';
+    window.api = api;
+
+    const $ = (sel) => document.querySelector(sel);
+    const todayDateOnly = () => new Date().toISOString().slice(0, 10);
+
+    const driverState = {
+      name: '—',
+      bus: null,
+      lastNotifId: null,
+      countdownTimer: null,
+      qr: null,
+      passengers: [],
+    };
+
+    window.doLogin = async () => {
+      const phone = $('#phone').value;
+      const password = $('#password').value;
+      try {
+        const data = await api.loginDriver({ phone, password });
+        setToken(data.token);
+        driverState.name = data.driver?.name || 'Driver';
+        driverState.bus = data.driver?.bus || null;
+        $('#driver-name').textContent = driverState.name;
+        $('#login-screen').style.display = 'none';
+        $('#dashboard').style.display = 'block';
+        init();
+      } catch (e) {
+        const el = $('#login-err');
+        el.textContent = e.message || 'Login failed';
+        el.style.display = 'block';
+      }
+    };
+
+    window.logout = () => { clearToken(); location.reload(); };
+
+    function init() {
+      $('#today-date').textContent = todayDateOnly();
+      $('#pass-date').value = todayDateOnly();
+      refreshAll();
+      setInterval(loadNotifications, 15000);
+    }
+
+    window.refreshAll = async () => {
+      await loadPassengers();
+      await loadNotifications();
+      updateHomeFromPassengers();
+    };
+
+    window.showSection = (name) => {
+      const page = name === 'home' || name === 'passengers' || name === 'validate' ? name : 'home';
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      $(`#sec-${page}`).classList.add('active');
+      document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
+      $(`#tab-${page}`).classList.add('active');
+      if (page === 'validate') $('#number-validate').classList.add('hidden');
+    };
+
+    window.showNumberValidate = () => {
+      showSection('validate');
+      $('#number-validate').classList.remove('hidden');
+      $('#val-err').style.display = 'none';
+      $('#val-number').focus();
+    };
+
+    window.loadPassengers = async () => {
+      const date = $('#pass-date').value;
+      const list = $('#passenger-list');
+      try {
+        const passengers = await api.getPassengers(date);
+        driverState.passengers = passengers || [];
+        if (!passengers.length) {
+          list.innerHTML = `<div class="hero" style="box-shadow:none; padding: 16px;"><div class="meta" style="margin:0; font-weight: 950;">No passengers for this date.</div></div>`;
+          updateHomeFromPassengers();
+          return;
         }
+        list.innerHTML = passengers
+          .slice()
+          .sort((a, b) => (a.seat_number ?? 0) - (b.seat_number ?? 0))
+          .map(t => `
+            <div class="pcard">
+              <div class="seat">${t.seat_number ?? '—'}</div>
+              <div class="pinfo">
+                <div class="pname">${t.user?.name || 'Unknown passenger'}</div>
+                <div class="stops">
+                  <div class="stopline pickup">
+                    <div>
+                      <div class="stopbadge">Pickup (Boards)</div>
+                      <div class="stopval">${t.boardingStop?.location?.name || '—'}</div>
+                    </div>
+                    <div class="mono" style="font-weight: 1000; color: #86efac;">GO</div>
+                  </div>
+                  <div class="stopline dropoff">
+                    <div>
+                      <div class="stopbadge">Dropoff (Exit)</div>
+                      <div class="stopval">${t.dropoffStop?.location?.name || '—'}</div>
+                    </div>
+                    <div class="mono" style="font-weight: 1000; color: #fcd34d;">EXIT</div>
+                  </div>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-notify" onclick="notifyExit('${t.id}')">🔔 Notify Exit</button>
+            </div>
+          `).join('');
+        updateHomeFromPassengers();
+      } catch (e) {
+        list.innerHTML = `<div class="hero" style="box-shadow:none; padding: 16px;"><div class="meta" style="margin:0; font-weight: 950; color:#fecaca;">${e.message}</div></div>`;
+      }
+    };
+
+    window.notifyExit = async (ticket_id) => {
+      try {
+        await api.notifyExit(ticket_id);
+        $('#notif-banner-text').textContent = 'Exit notification sent ✅';
+      } catch (e) {
+        $('#notif-banner-text').textContent = e.message || 'Failed to notify exit';
+      }
+    };
+
+    window.validateNumber = async () => {
+      const ticket_number = $('#val-number').value.trim();
+      const err = $('#val-err');
+      err.style.display = 'none';
+      try {
+        const data = await api.validateNumber({ ticket_number });
+        showResult(data);
+      } catch (e) {
+        err.textContent = e.message || 'Validation failed';
+        err.style.display = 'block';
+      }
+    };
+
+    async function loadNotifications() {
+      try {
+        const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
+        const latestUnread = (notifs || []).find(n => !n.is_read) || notifs?.[0] || null;
+        const count = unread?.unread ?? 0;
+        $('.banner-kicker').textContent = count > 0 ? `Notifications (${count})` : 'Notifications';
+        if (!latestUnread) {
+          $('#notif-banner-text').textContent = 'Ready.';
+          return;
+        }
+        $('#notif-banner-text').textContent = latestUnread.message || 'Notification received';
+        if (!latestUnread.is_read && latestUnread.id && latestUnread.id !== driverState.lastNotifId) {
+          driverState.lastNotifId = latestUnread.id;
+          try { await api.markRead(latestUnread.id); } catch {}
+        }
+      } catch {
+        // keep previous
       }
     }
-  }
-</script>
-<style>
-  *{margin:0;padding:0;box-sizing:border-box;}
-  body{font-family:'Segoe UI',sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh;}
-  #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;}
-  .login-card{background:#1e293b;border-radius:16px;padding:48px 40px;width:400px;box-shadow:0 25px 50px rgba(0,0,0,.5);}
-  .login-card h1{font-size:28px;color:#34d399;margin-bottom:8px;}
-  .login-card p{color:#94a3b8;margin-bottom:32px;}
-  #dashboard{display:none;}
-  .topbar{background:#1e293b;border-bottom:1px solid #334155;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;}
-  .topbar h1{color:#34d399;font-size:20px;}
-  .topbar-right{display:flex;align-items:center;gap:16px;position:relative;}
-  .bell-btn{position:relative;background:#334155;border:none;color:#e2e8f0;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;}
-  .bell-count{position:absolute;top:-4px;right:-4px;background:#ef4444;color:white;font-size:10px;font-weight:700;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
-  .notif-dropdown{display:none;position:absolute;top:50px;right:0;background:#1e293b;border:1px solid #334155;border-radius:12px;width:360px;max-height:400px;overflow-y:auto;z-index:100;box-shadow:0 20px 40px rgba(0,0,0,.4);}
-  .notif-dropdown.open{display:block;}
-  .notif-header{padding:16px;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center;}
-  .notif-item{padding:14px 16px;border-bottom:1px solid #1e293b;cursor:pointer;}
-  .notif-item:hover{background:#334155;}
-  .notif-item.unread{border-left:3px solid #34d399;}
-  .notif-item p{font-size:13px;color:#cbd5e1;}
-  .notif-item small{color:#64748b;font-size:11px;}
-  .layout{display:flex;height:calc(100vh - 65px);}
-  .sidebar{width:220px;background:#1e293b;border-right:1px solid #334155;padding:24px 0;}
-  .nav-item{padding:12px 24px;cursor:pointer;color:#94a3b8;transition:all .2s;display:flex;align-items:center;gap:10px;font-size:14px;}
-  .nav-item:hover,.nav-item.active{background:#334155;color:#34d399;}
-  .main{flex:1;padding:32px;overflow-y:auto;}
-  .section{display:none;}.section.active{display:block;}
-  .section-title{font-size:22px;font-weight:700;color:#f1f5f9;margin-bottom:24px;}
-  .card{background:#1e293b;border-radius:12px;padding:24px;border:1px solid #334155;margin-bottom:24px;}
-  .card h3{font-size:16px;color:#94a3b8;margin-bottom:16px;}
-  .form-row{display:flex;gap:12px;flex-wrap:wrap;}
-  input,select{background:#0f172a;border:1px solid #334155;color:#e2e8f0;padding:10px 14px;border-radius:8px;font-size:14px;flex:1;min-width:180px;outline:none;}
-  input:focus{border-color:#34d399;}
-  .btn{padding:10px 20px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:600;}
-  .btn-primary{background:#34d399;color:#0f172a;}
-  .btn-danger{background:#ef4444;color:white;}
-  .btn-ghost{background:#334155;color:#e2e8f0;}
-  .btn-sm{padding:6px 12px;font-size:12px;}
-  table{width:100%;border-collapse:collapse;}
-  th{text-align:left;padding:12px 16px;color:#64748b;font-size:12px;text-transform:uppercase;border-bottom:1px solid #334155;}
-  td{padding:14px 16px;font-size:14px;border-bottom:1px solid #1e293b;}
-  tr:hover td{background:#1a2744;}
-  .badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;}
-  .badge-green{background:#052e16;color:#4ade80;}
-  .badge-red{background:#450a0a;color:#f87171;}
-  .alert{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:14px;display:none;}
-  .alert-err{background:#450a0a;color:#f87171;border:1px solid #7f1d1d;}
-  .alert-ok{background:#052e16;color:#4ade80;border:1px solid #14532d;}
-  .logout-btn{background:#334155;border:none;color:#94a3b8;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:14px;}
-  .scan-box{background:#0f172a;border:2px dashed #334155;border-radius:12px;padding:32px;text-align:center;}
-  .scan-result{margin-top:16px;padding:16px;border-radius:8px;display:none;}
-  .scan-valid{background:#052e16;border:1px solid #14532d;color:#4ade80;}
-  .scan-invalid{background:#450a0a;border:1px solid #7f1d1d;color:#f87171;}
-  .passenger-card{background:#0f172a;border-radius:8px;padding:16px;margin-bottom:12px;border:1px solid #334155;display:flex;justify-content:space-between;align-items:center;}
-  .passenger-info p{font-size:14px;font-weight:600;color:#f1f5f9;}
-  .passenger-info small{font-size:12px;color:#64748b;}
-  .update-form{display:flex;flex-direction:column;gap:12px;}
-</style>
-</head>
-<body class="min-h-screen bg-slate-950 text-slate-100">
 
-<div id="login-screen">
-  <div class="login-card">
-    <div class="flex items-center gap-3 mb-3">
-      <div class="h-12 w-12 rounded-xl border border-slate-700 bg-slate-950/60 grid place-items-center overflow-hidden">
-        <img src="./logo.png" alt="BookIt" class="h-10 w-10 object-contain" onerror="this.style.display='none'">
-        <span class="text-2xl font-black text-brandOrange-400" aria-hidden="true">B</span>
-      </div>
-      <div>
-        <div class="text-xl font-extrabold tracking-tight">BookIt</div>
-        <div class="text-sm text-slate-400">Driver Portal</div>
-      </div>
-    </div>
-    <div class="alert alert-err" id="login-err"></div>
-    <div style="display:flex;flex-direction:column;gap:12px;">
-      <input id="phone"    placeholder="Phone number" />
-      <input id="password" type="password" placeholder="Password" />
-      <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
-    </div>
-  </div>
-</div>
+    function updateHomeFromPassengers() {
+      const date = $('#pass-date')?.value || todayDateOnly();
+      const passengers = driverState.passengers || [];
+      $('#home-passengers').textContent = passengers.length;
 
-<div id="dashboard">
-  <div class="topbar">
-    <h1 class="flex items-center gap-2">
-      <img src="./logo.png" alt="BookIt" class="h-6 w-6 object-contain" onerror="this.style.display='none'">
-      <span>Driver — <span id="driver-name"></span></span>
-    </h1>
-    <div class="topbar-right">
-      <button class="logout-btn" onclick="logout()">Logout</button>
-    </div>
-  </div>
+      const first = passengers[0] || null;
+      const plate = first?.bus?.plate_number || driverState.bus?.plate_number || '—';
+      const routeFrom = first?.bus?.route?.fromLocation?.name;
+      const routeTo = first?.bus?.route?.toLocation?.name;
+      const route = routeFrom && routeTo ? `${routeFrom} → ${routeTo}` : '—';
+      const departRaw = first?.bus?.departure_time || driverState.bus?.departure_time || '—';
+      const depart = String(departRaw || '—').slice(0, 5);
 
-  <div class="layout">
-    <div class="sidebar">
-      <div class="nav-item active" onclick="showSection('home',this)">🏁 Home</div>
-      <div class="nav-item" onclick="showSection('passengers',this)">👥 Passengers</div>
-      <div class="nav-item" onclick="showSection('validate',this)">✅ Validate</div>
-      <div class="nav-item" onclick="showSection('profile',this)">⚙️ Profile</div>
-    </div>
+      $('#home-plate').textContent = plate;
+      $('#home-route').textContent = route;
+      $('#home-depart').textContent = `Departure: ${depart} • ${date}`;
 
-    <div class="main">
-
-      <!-- ALWAYS-VISIBLE NOTIFICATION BANNER -->
-      <div id="notif-banner" style="display:none;background:#0b1220;border:1px solid #334155;border-radius:12px;padding:16px 18px;margin-bottom:16px;color:#e2e8f0;font-size:16px;font-weight:800;">
-        <span id="notif-banner-text"></span>
-      </div>
-
-      <!-- UPDATE PROFILE BANNER -->
-      <div id="update-banner" style="display:none;background:#431407;border:1px solid #ea580c;border-radius:8px;padding:14px 20px;margin-bottom:24px;color:#fb923c;font-size:14px;">
-        ⚠️ Please update your profile (email, phone, password) before continuing.
-      </div>
-
-      <!-- HOME -->
-      <div class="section active" id="sec-home">
-        <div class="section-title" style="font-size:28px;">Today</div>
-        <div class="card" style="border-width:2px;">
-          <div style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:flex-start;">
-            <div>
-              <div style="color:#64748b;font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:0.18em;">Bus</div>
-              <div id="home-plate" style="font-size:46px;font-weight:900;letter-spacing:-1px;line-height:1.0;margin-top:8px;color:#fb923c;">—</div>
-              <div id="home-route" style="margin-top:10px;font-size:18px;font-weight:800;color:#e2e8f0;">—</div>
-              <div id="home-depart" style="margin-top:6px;font-size:16px;font-weight:800;color:#94a3b8;">Departure: —</div>
-              <div id="home-countdown" style="margin-top:10px;font-size:18px;font-weight:900;color:#22c55e;">—</div>
-            </div>
-            <div style="min-width:240px;">
-              <div style="color:#64748b;font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:0.18em;">Passengers</div>
-              <div id="home-passengers" style="font-size:64px;font-weight:950;letter-spacing:-2px;line-height:1.0;margin-top:8px;color:#22c55e;">0</div>
-              <div style="margin-top:8px;font-size:14px;color:#94a3b8;font-weight:700;">tickets for selected date</div>
-              <button class="btn btn-primary" style="width:100%;margin-top:14px;padding:14px 18px;font-size:16px;font-weight:900;" onclick="showSection('passengers', document.querySelector('.sidebar .nav-item:nth-child(2)'))">View passenger list</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- PASSENGERS -->
-      <div class="section" id="sec-passengers">
-        <div class="section-title" style="font-size:28px;">Passengers</div>
-        <div class="card">
-          <div class="form-row" style="margin-bottom:16px;">
-            <input type="date" id="pass-date" />
-            <button class="btn btn-primary" onclick="loadPassengers()">Load</button>
-          </div>
-          <div id="passenger-list"></div>
-        </div>
-      </div>
-
-      <!-- VALIDATE -->
-      <div class="section" id="sec-validate">
-        <div class="section-title" style="font-size:28px;">Validate</div>
-        <div class="card">
-          <h3 style="font-size:14px;">Enter Number</h3>
-          <div class="alert alert-err" id="val-err"></div>
-          <div class="form-row">
-            <input id="val-number" placeholder="e.g. BK-4821-XZ" />
-            <button class="btn btn-primary" onclick="validateNumber()" style="font-weight:900;">Validate</button>
-          </div>
-          <div class="scan-result" id="num-result"></div>
-        </div>
-        <div class="card">
-          <h3 style="font-size:14px;">QR</h3>
-          <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <button class="btn btn-primary" style="flex:1;min-width:220px;padding:16px 18px;font-size:18px;font-weight:950;" onclick="openQrScanner()">Scan QR</button>
-            <button class="btn btn-ghost" style="flex:1;min-width:220px;padding:16px 18px;font-size:18px;font-weight:950;" onclick="toggleQrToken()">Enter Token</button>
-          </div>
-          <div id="qr-token-wrap" style="display:none;margin-top:12px;">
-            <textarea id="qr-token" style="width:100%;background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:12px;padding:12px 14px;font-size:14px;height:90px;resize:none;"></textarea>
-            <button class="btn btn-primary" style="margin-top:12px;width:100%;padding:14px 18px;font-size:16px;font-weight:900;" onclick="validateQR()">Validate Token</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- FULLSCREEN VALIDATION RESULT -->
-      <div id="val-overlay" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(2,6,23,0.95);padding:22px;">
-        <div style="max-width:720px;margin:0 auto;border:2px solid #334155;border-radius:18px;background:#0b1220;padding:22px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-            <div id="val-overlay-title" style="font-size:22px;font-weight:950;">Result</div>
-            <button class="btn btn-ghost" style="font-size:16px;font-weight:900;" onclick="closeOverlay()">Close</button>
-          </div>
-          <div id="val-overlay-body" style="margin-top:14px;font-size:18px;font-weight:800;line-height:1.5;"></div>
-        </div>
-      </div>
-
-      <!-- QR SCANNER MODAL -->
-      <div id="qr-modal" style="display:none;position:fixed;inset:0;z-index:310;background:rgba(0,0,0,0.8);padding:18px;">
-        <div style="max-width:520px;margin:0 auto;border:2px solid #334155;border-radius:18px;background:#0b1220;padding:16px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
-            <div style="font-size:18px;font-weight:950;">Scan QR</div>
-            <button class="btn btn-ghost" onclick="closeQrScanner()">Close</button>
-          </div>
-          <div id="qr-reader" style="margin-top:12px;"></div>
-          <div style="margin-top:10px;color:#94a3b8;font-size:13px;font-weight:700;">If scanning fails, use “Enter Token”.</div>
-        </div>
-      </div>
-
-      <!-- PROFILE -->
-      <div class="section" id="sec-profile">
-        <div class="section-title">Update Profile</div>
-        <div class="card">
-          <div class="alert alert-err" id="prof-err"></div>
-          <div class="alert alert-ok"  id="prof-ok"></div>
-          <div class="update-form">
-            <input id="prof-name"     placeholder="Full name" />
-            <input id="prof-email"    placeholder="Email" type="email" />
-            <input id="prof-phone"    placeholder="Phone" />
-            <input id="prof-old-pass" placeholder="Current password" type="password" />
-            <input id="prof-new-pass" placeholder="New password (optional)" type="password" />
-            <button class="btn btn-primary" onclick="updateProfile()">Save Changes</button>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<script type="module">
-import { api, setToken, clearToken, getToken } from './api.js';
-window.api = api;
-
-window.doLogin = async () => {
-  const phone    = document.getElementById('phone').value;
-  const password = document.getElementById('password').value;
-  try {
-    const data = await api.loginDriver({ phone, password });
-    setToken(data.token);
-    document.getElementById('driver-name').textContent = data.driver.name;
-    if (data.driver.must_update_profile) {
-      document.getElementById('update-banner').style.display = 'block';
+      startCountdown(departRaw);
     }
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display    = 'block';
-    init();
-  } catch(e) {
-    const el = document.getElementById('login-err');
-    el.textContent = e.message; el.style.display = 'block';
-  }
-};
 
-window.logout = () => { clearToken(); location.reload(); };
+    function startCountdown(departure_time) {
+      if (driverState.countdownTimer) clearInterval(driverState.countdownTimer);
+      const el = $('#home-countdown');
+      if (!departure_time || departure_time === '—') { el.textContent = '—'; return; }
 
-function init() {
-  document.getElementById('pass-date').value = new Date().toISOString().split('T')[0];
-  loadPassengers();
-  loadNotifications();
-  setInterval(loadNotifications, 20000);
-}
+      const tick = () => {
+        const now = new Date();
+        const [h, m] = String(departure_time).split(':').map(Number);
+        if (Number.isNaN(h) || Number.isNaN(m)) { el.textContent = '—'; return; }
+        const dep = new Date();
+        dep.setHours(h, m, 0, 0);
+        const diff = dep.getTime() - now.getTime();
+        if (diff <= 0) {
+          el.textContent = 'Departed';
+          el.style.color = '#fcd34d';
+          return;
+        }
+        const mins = Math.floor(diff / 60000);
+        const hrs = Math.floor(mins / 60);
+        const rem = mins % 60;
+        el.style.color = '#86efac';
+        el.textContent = `Departs in ${hrs ? `${hrs}h ` : ''}${rem}m`;
+      };
 
-window.showSection = (name, el) => {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById(`sec-${name}`).classList.add('active');
-  el.classList.add('active');
-};
-
-// ── PASSENGERS ────────────────────────────────────────
-window.loadPassengers = async () => {
-  const date = document.getElementById('pass-date').value;
-  const list = document.getElementById('passenger-list');
-  try {
-    const passengers = await api.getPassengers(date);
-    if (!passengers.length) {
-      list.innerHTML = '<p style="color:#64748b;text-align:center;padding:24px;">No passengers for this date</p>';
-      return;
+      tick();
+      driverState.countdownTimer = setInterval(tick, 1000);
     }
-    list.innerHTML = passengers.map(t => `
-      <div class="passenger-card">
-        <div class="passenger-info">
-          <p>Seat ${t.seat_number} — ${t.user?.name || 'Unknown'}</p>
-          <small>
-            Boards: <b style="color:#34d399">${t.boardingStop?.location?.name || '?'}</b> &nbsp;|&nbsp;
-            Exits:  <b style="color:#f87171">${t.dropoffStop?.location?.name  || '?'}</b> &nbsp;|&nbsp;
-            Ticket: ${t.ticket_number || '—'}
-          </small>
-        </div>
-        <button class="btn btn-ghost btn-sm" onclick="notifyExit('${t.id}')">🔔 Notify Exit</button>
-      </div>
-    `).join('');
-  } catch(e) {
-    list.innerHTML = `<p style="color:#f87171;">${e.message}</p>`;
-  }
-};
 
-window.notifyExit = async (ticket_id) => {
-  try {
-    await api.notifyExit(ticket_id);
-    alert('Exit notification sent to passenger ✅');
-  } catch(e) { alert(e.message); }
-};
+    function showResult(data) {
+      const ok = !!data?.valid;
+      $('#result-overlay').style.display = 'block';
+      $('#result-title').textContent = ok ? 'VALID' : 'INVALID';
+      $('#result-mark').className = `mark ${ok ? 'ok' : 'bad'}`;
+      $('#result-mark').textContent = ok ? '✓' : '✕';
 
-// ── VALIDATE ──────────────────────────────────────────
-window.validateNumber = async () => {
-  const ticket_number = document.getElementById('val-number').value.trim();
-  const result        = document.getElementById('num-result');
-  const err           = document.getElementById('val-err');
-  err.style.display   = 'none';
-  try {
-    const data = await api.validateNumber({ ticket_number });
-    result.className   = `scan-result ${data.valid ? 'scan-valid' : 'scan-invalid'}`;
-    result.style.display = 'block';
-    result.innerHTML   = data.valid
-      ? `✅ <b>VALID</b><br>Passenger: ${data.ticket.passenger?.name}<br>Seat: ${data.ticket.seat_number}<br>Boards: ${data.ticket.boarding} → Exits: ${data.ticket.dropoff}<br>Bus: ${data.ticket.plate_number}`
-      : `❌ <b>INVALID</b> — ${data.reason}`;
-  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
-};
+      if (!ok) {
+        $('#result-body').textContent = data?.reason ? String(data.reason) : 'Invalid ticket';
+        $('#result-grid').innerHTML = '';
+        return;
+      }
 
-window.validateQR = async () => {
-  const token  = document.getElementById('qr-token').value.trim();
-  const result = document.getElementById('qr-result');
-  try {
-    const data = await api.validateQR({ token });
-    result.className   = `scan-result ${data.valid ? 'scan-valid' : 'scan-invalid'}`;
-    result.style.display = 'block';
-    result.innerHTML   = data.valid
-      ? `✅ <b>VALID</b><br>Passenger: ${data.ticket.passenger?.name}<br>Seat: ${data.ticket.seat_number}<br>Boards: ${data.ticket.boarding} → Exits: ${data.ticket.dropoff}<br>Departure: ${data.ticket.departure_time}`
-      : `❌ <b>INVALID</b> — ${data.reason}`;
-  } catch(e) { result.className = 'scan-result scan-invalid'; result.style.display = 'block'; result.innerHTML = `❌ ${e.message}`; }
-};
+      const t = data.ticket || {};
+      $('#result-body').textContent = `${t.passenger?.name || 'Passenger'} — Seat ${t.seat_number ?? '—'}`;
+      $('#result-grid').innerHTML = `
+        <div class="kv"><span>Bus</span><b class="mono">${t.plate_number || '—'}</b></div>
+        <div class="kv"><span>Departure</span><b class="mono">${String(t.departure_time || '—').slice(0,5)}</b></div>
+        <div class="kv"><span>Boards</span><b>${t.boarding || '—'}</b></div>
+        <div class="kv"><span>Exit</span><b>${t.dropoff || '—'}</b></div>
+        <div class="kv"><span>Date</span><b class="mono">${t.travel_date || '—'}</b></div>
+        <div class="kv"><span>Ticket #</span><b class="mono">${t.ticket_number || '—'}</b></div>
+      `;
+    }
 
-// ── PROFILE ───────────────────────────────────────────
-window.updateProfile = async () => {
-  const err = document.getElementById('prof-err');
-  const ok  = document.getElementById('prof-ok');
-  err.style.display = 'none'; ok.style.display = 'none';
-  try {
-    await api.updateProfile({
-      name:         document.getElementById('prof-name').value     || undefined,
-      email:        document.getElementById('prof-email').value    || undefined,
-      phone:        document.getElementById('prof-phone').value    || undefined,
-      old_password: document.getElementById('prof-old-pass').value || undefined,
-      new_password: document.getElementById('prof-new-pass').value || undefined,
+    window.closeResult = () => { $('#result-overlay').style.display = 'none'; };
+
+    window.openQrScanner = async () => {
+      $('#qr-modal').style.display = 'block';
+      if (!driverState.qr) driverState.qr = new Html5Qrcode('qr-reader');
+
+      const onScanSuccess = async (decodedText) => {
+        try {
+          const data = await api.validateQR({ token: decodedText });
+          await closeQrScanner();
+          showResult(data);
+        } catch (e) {
+          await closeQrScanner();
+          showResult({ valid: false, reason: e.message || 'QR validation failed' });
+        }
+      };
+
+      try {
+        await driverState.qr.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 260, height: 260 } },
+          onScanSuccess
+        );
+      } catch (e) {
+        await closeQrScanner();
+        showResult({ valid: false, reason: e.message || 'Unable to start camera scanner' });
+      }
+    };
+
+    window.closeQrScanner = async () => {
+      $('#qr-modal').style.display = 'none';
+      try {
+        if (driverState.qr && driverState.qr.isScanning) await driverState.qr.stop();
+      } catch {}
+    };
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && document.activeElement === $('#password')) doLogin();
+      if (e.key === 'Escape') {
+        if ($('#result-overlay').style.display === 'block') closeResult();
+        if ($('#qr-modal').style.display === 'block') closeQrScanner();
+      }
     });
-    ok.textContent = 'Profile updated successfully'; ok.style.display = 'block';
-    document.getElementById('update-banner').style.display = 'none';
-  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
-};
 
-// ── NOTIFICATIONS ─────────────────────────────────────
-async function loadNotifications() {
-  const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
-  const count = unread.unread;
-  const bell  = document.getElementById('bell-count');
-  bell.textContent   = count;
-  bell.style.display = count > 0 ? 'flex' : 'none';
-  document.getElementById('notif-list').innerHTML = notifs.length
-    ? notifs.map(n => `
-        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${n.id}',this)">
-          <p>${n.message}</p>
-          <small>${new Date(n.createdAt).toLocaleString()}</small>
-        </div>
-      `).join('')
-    : '<div style="padding:24px;text-align:center;color:#64748b;">No notifications</div>';
-}
-
-window.toggleNotifs  = () => document.getElementById('notif-dropdown').classList.toggle('open');
-window.readNotif     = async (id, el) => { await api.markRead(id); el.classList.remove('unread'); loadNotifications(); };
-window.markAllRead   = async () => { await api.markAllRead(); loadNotifications(); };
-
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('#bell-btn') && !e.target.closest('#notif-dropdown')) {
-    document.getElementById('notif-dropdown').classList.remove('open');
-  }
-});
-
-if (getToken()) {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('dashboard').style.display    = 'block';
-  init();
-}
-</script>
+    if (getToken()) {
+      $('#login-screen').style.display = 'none';
+      $('#dashboard').style.display = 'block';
+      init();
+    }
+  </script>
 </body>
 </html>

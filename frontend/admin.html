@@ -44,7 +44,18 @@
   .section.active { display: block; }
   .notif-dropdown { display: none; }
   .notif-dropdown.open { display: block; }
-  .alert { display: none; }
+.alert { display: none; }
+
+  /* Universal Skeletons - Step 2 */
+  .skeleton { 
+    @apply bg-gradient-to-r from-slate-800 to-slate-700 bg-[length:200%_100%] animate-shimmer rounded-xl h-4;
+  }
+  .skeleton-card { @apply h-32; }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  
+  /* Empty States */
+  .empty-state { @apply text-center p-16 text-slate-400; }
+  .empty-state i { @apply text-6xl opacity-30 mb-5 block; }
 </style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 selection:bg-brandOrange-500/30 selection:text-slate-100">

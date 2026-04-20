@@ -3,1625 +3,638 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BookIt Central — Operator Hub</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>BookIt — Operator</title>
 <style>
-  :root {
-    --brand: #6366f1;
-    --brand-dark: #4f46e5;
-    --brand-soft: rgba(99, 102, 241, 0.1);
-    --bg: #f8fafc;
-    --sidebar: #0f172a;
-    --card: #ffffff;
-    --text-main: #0f172a;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    --success: #10b981;
-    --warning: #f59e0b;
-    --danger: #ef4444;
-    --radius-lg: 16px;
-    --radius-md: 12px;
-    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
-    --shadow-md: 0 12px 30px rgba(15, 23, 42, 0.10);
-  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; }
+  #login-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  .login-card { background:#1e293b; border-radius:16px; padding:48px 40px; width:400px; box-shadow:0 25px 50px rgba(0,0,0,0.5); }
+  .login-card h1 { font-size:28px; color:#a78bfa; margin-bottom:8px; }
+  .login-card p { color:#94a3b8; margin-bottom:32px; }
+  #dashboard { display:none; }
+  .topbar { background:#1e293b; border-bottom:1px solid #334155; padding:16px 32px; display:flex; align-items:center; justify-content:space-between; }
+  .topbar h1 { color:#a78bfa; font-size:20px; }
+  .topbar-right { display:flex; align-items:center; gap:16px; position:relative; }
+  .bell-btn { position:relative; background:#334155; border:none; color:#e2e8f0; width:40px; height:40px; border-radius:50%; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; }
+  .bell-count { position:absolute; top:-4px; right:-4px; background:#ef4444; color:white; font-size:10px; font-weight:700; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .notif-dropdown { display:none; position:absolute; top:50px; right:0; background:#1e293b; border:1px solid #334155; border-radius:12px; width:360px; max-height:400px; overflow-y:auto; z-index:100; box-shadow:0 20px 40px rgba(0,0,0,0.4); }
+  .notif-dropdown.open { display:block; }
+  .notif-header { padding:16px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; }
+  .notif-item { padding:14px 16px; border-bottom:1px solid #1e293b; cursor:pointer; transition:background 0.2s; }
+  .notif-item:hover { background:#334155; }
+  .notif-item.unread { border-left:3px solid #a78bfa; }
+  .notif-item p { font-size:13px; color:#cbd5e1; }
+  .notif-item small { color:#64748b; font-size:11px; }
+  .layout { display:flex; height:calc(100vh - 65px); }
+  .sidebar { width:220px; background:#1e293b; border-right:1px solid #334155; padding:24px 0; }
+  .nav-item { padding:12px 24px; cursor:pointer; color:#94a3b8; transition:all 0.2s; display:flex; align-items:center; gap:10px; font-size:14px; }
+  .nav-item:hover,.nav-item.active { background:#334155; color:#a78bfa; }
+  .main { flex:1; padding:32px; overflow-y:auto; }
+  .section { display:none; }
+  .section.active { display:block; }
+  .section-title { font-size:22px; font-weight:700; color:#f1f5f9; margin-bottom:24px; }
+  .card { background:#1e293b; border-radius:12px; padding:24px; border:1px solid #334155; margin-bottom:24px; }
+  .card h3 { font-size:16px; color:#94a3b8; margin-bottom:16px; }
+  .form-row { display:flex; gap:12px; flex-wrap:wrap; }
+  input,select { background:#0f172a; border:1px solid #334155; color:#e2e8f0; padding:10px 14px; border-radius:8px; font-size:14px; flex:1; min-width:180px; outline:none; transition:border 0.2s; }
+  input:focus,select:focus { border-color:#a78bfa; }
+  .btn { padding:10px 20px; border-radius:8px; border:none; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.2s; }
+  .btn-primary { background:#a78bfa; color:#0f172a; }
+  .btn-primary:hover { background:#8b5cf6; }
+  .btn-danger { background:#ef4444; color:white; }
+  .btn-ghost { background:#334155; color:#e2e8f0; }
+  .btn-ghost:hover { background:#475569; }
+  .btn-sm { padding:6px 12px; font-size:12px; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; padding:12px 16px; color:#64748b; font-size:12px; text-transform:uppercase; border-bottom:1px solid #334155; }
+  td { padding:14px 16px; font-size:14px; border-bottom:1px solid #1e293b; }
+  tr:hover td { background:#1a2744; }
+  .badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
+  .badge-green { background:#052e16; color:#4ade80; }
+  .badge-red { background:#450a0a; color:#f87171; }
+  .badge-yellow { background:#431407; color:#fb923c; }
+  .badge-blue { background:#0c1a3d; color:#60a5fa; }
+  .alert { padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:14px; display:none; }
+  .alert-err { background:#450a0a; color:#f87171; border:1px solid #7f1d1d; }
+  .alert-ok { background:#052e16; color:#4ade80; border:1px solid #14532d; }
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:16px; margin-bottom:24px; }
+  .stat-card { background:#1e293b; border-radius:12px; padding:20px; border:1px solid #334155; }
+  .stat-card .num { font-size:32px; font-weight:700; color:#a78bfa; }
+  .stat-card .lbl { font-size:13px; color:#64748b; margin-top:4px; }
+  .logout-btn { background:#334155; border:none; color:#94a3b8; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:14px; }
+  .default-pass { background:#0f172a; border:1px solid #a78bfa; border-radius:8px; padding:12px 16px; margin-top:12px; display:none; }
+  .default-pass span { color:#a78bfa; font-weight:700; font-size:16px; }
+  .stops-list { margin-top:12px; }
+  .stop-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #334155; font-size:13px; }
+  .stop-order { background:#334155; color:#a78bfa; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; }
+  .revenue-box { background:#0f172a; border-radius:8px; padding:16px; margin-top:12px; }
+  .revenue-box .total { font-size:28px; font-weight:700; color:#4ade80; }
+.revenue-box .lbl { color:#64748b; font-size:13px; }
 
-  * { margin:0; padding:0; box-sizing:border-box; outline: none; }
-  body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text-main); letter-spacing: -0.01em; }
-
-  /* --- SIDEBAR --- */
-  .sidebar {
-    width: 200px; height: 100vh; background: var(--sidebar); position: fixed;
-    left: 0; top: 0; padding: 26px 12px; color: white; z-index: 120;
-    display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,0.06);
+  /* Universal Skeletons - Step 2 */
+  .skeleton { 
+    background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%); 
+    background-size: 200% 100%; 
+    animation: shimmer 1.5s infinite linear; 
+    border-radius: 8px; 
+    height: 16px;
   }
-  .logo { font-size: 22px; font-weight: 800; color: white; margin-bottom: 40px; padding-left: 12px; display: flex; align-items: center; gap: 10px; }
-  .logo i { color: var(--brand); font-size: 24px; }
+  .skeleton-card { height: 120px; }
+  .skeleton-line { height: 12px; margin-bottom: 8px; }
+  .skeleton-table-row { height: 48px; }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
   
-  .nav-group { margin-bottom: 28px; }
-  .nav-label { font-size: 10px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 12px; padding-left: 12px; letter-spacing: 0.1em; }
-  
-  .nav-link {
-    display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px;
-    color: #94a3b8; text-decoration: none; font-weight: 600; transition: 0.2s; cursor: pointer; margin-bottom: 2px; font-size: 14px;
-  }
-  .nav-link:hover { color: white; background: rgba(255,255,255,0.03); }
-  .nav-link.active { color: white; background: var(--brand); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); }
+  /* Empty States */
+  .empty-state { text-align: center; padding: 60px 20px; color: #64748b; }
+  .empty-state i { font-size: 64px; opacity: 0.3; margin-bottom: 20px; display: block; }
 
-  /* --- MAIN CONTENT --- */
-  .main { margin-left: 200px; min-height: 100vh; }
-  .topbar {
-    height: 64px; background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border); display: flex; align-items: center;
-    justify-content: space-between; padding: 0 28px;
-    position: fixed; top: 0; right: 0; left: 200px; z-index: 110;
-  }
-  .content { padding: 28px; padding-top: 92px; max-width: 1400px; margin: 0 auto; }
-
-  /* --- AUTH --- */
-  .auth-screen {
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-    background:
-      radial-gradient(circle at top right, rgba(99,102,241,0.18), transparent 55%),
-      radial-gradient(circle at bottom left, rgba(16,185,129,0.12), transparent 55%),
-      var(--bg);
-  }
-  .auth-card {
-    width: 100%;
-    max-width: 460px;
-    background: white;
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    box-shadow: var(--shadow-md);
-    padding: 34px;
-  }
-  .auth-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-  .auth-logo .mark {
-    width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
-    background: var(--brand-soft); border: 1px solid rgba(99, 102, 241, 0.18); color: var(--brand);
-    font-weight: 900; font-size: 18px;
-  }
-  .auth-title { font-size: 18px; font-weight: 900; letter-spacing: -0.02em; }
-  .auth-sub { margin-top: 2px; font-size: 13px; color: var(--text-muted); font-weight: 700; }
-  .field { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
-  .field label { font-size: 12px; font-weight: 800; color: #334155; }
-  .input {
-    width: 100%;
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    background: white;
-    font-size: 14px;
-    font-weight: 650;
-    color: var(--text-main);
-    transition: 0.2s;
-  }
-  .input:focus { border-color: rgba(99,102,241,0.55); box-shadow: 0 0 0 4px rgba(99,102,241,0.12); }
-  .auth-actions { display: flex; gap: 10px; margin-top: 16px; }
-  .alert {
-    display: none;
-    margin-top: 14px;
-    padding: 12px 14px;
-    border-radius: 14px;
-    border: 1px solid rgba(239,68,68,0.25);
-    background: rgba(239,68,68,0.06);
-    color: #b91c1c;
-    font-weight: 750;
-    font-size: 13px;
-  }
-  .muted { color: var(--text-muted); }
-
-  /* --- WIDGETS & CARDS --- */
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; margin-bottom: 22px; }
-  .stat-card { background: white; padding: 18px; border-radius: var(--radius-lg); border: 1px solid var(--border); transition: 0.2s; box-shadow: var(--shadow-sm); }
-  .stat-card:hover { border-color: rgba(99,102,241,0.6); transform: translateY(-1px); }
-  .stat-card label { font-size: 12px; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .stat-card h3 { font-size: 32px; font-weight: 800; color: var(--text-main); }
-  .stat-card .trend { font-size: 11px; font-weight: 700; margin-top: 10px; display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px; }
-  .trend.up { background: #dcfce7; color: #15803d; }
-  .trend.neutral { background: #f1f5f9; color: #64748b; }
-
-  .dashboard-layout { display: grid; grid-template-columns: 1.8fr 1.2fr; gap: 16px; }
-  .card { background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow-sm); }
-  .card-header { padding: 20px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-  .card-header h4 { font-weight: 800; font-size: 16px; }
-
-  /* --- DATA TABLES --- */
-  .table-container { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; }
-  th { text-align: left; padding: 14px 24px; font-size: 11px; font-weight: 800; color: var(--text-muted); text-transform: uppercase; background: #fbfcfe; border-bottom: 1px solid var(--border); }
-  td { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 500; }
-  tr:last-child td { border-bottom: none; }
-  tr.clickable:hover td { background: #fbfcfe; }
-  .subrow td { padding-top: 0; }
-  
-  .status-pill { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.02em; }
-  .pill-paid { background: #ecfdf5; color: #059669; }
-  .pill-pending { background: #fffbeb; color: #d97706; }
-  .pill-cancelled { background: #fef2f2; color: #dc2626; }
-  .pill-active { background: #ecfdf5; color: #059669; }
-  .pill-muted { background: #f1f5f9; color: #64748b; }
-
-  /* --- PROGRESS BARS (OCCUPANCY) --- */
-  .progress-wrapper { display: flex; align-items: center; gap: 12px; }
-  .progress-bg { flex: 1; height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
-  .progress-fill { height: 100%; border-radius: 10px; transition: 0.3s; }
-
-  /* --- ROUTES ACCORDION --- */
-  .route-item { border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 16px; overflow: hidden; background: white; transition: 0.2s; }
-  .route-item:hover { border-color: var(--brand); }
-  .route-summary { padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-  .route-details { padding: 24px; display: none; border-top: 1px solid var(--border); background: #fbfcfe; }
-  
-  .timeline { position: relative; padding: 10px 0 10px 40px; }
-  .timeline::before { content:''; position: absolute; left: 20px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
-  .timeline-stop { position: relative; margin-bottom: 32px; }
-  .timeline-stop:last-child { margin-bottom: 0; }
-  .timeline-stop::before { 
-    content:''; position: absolute; left: -24px; top: 4px; width: 10px; height: 10px; 
-    background: white; border: 3px solid var(--brand); border-radius: 50%; z-index: 2;
-  }
-  .timeline-stop strong { display: block; font-size: 15px; margin-bottom: 2px; }
-  .timeline-stop span { font-size: 12px; color: var(--text-muted); font-weight: 600; }
-  .stop-editor { display: grid; grid-template-columns: 1.2fr 0.7fr 0.6fr auto; gap: 10px; margin-top: 10px; }
-  .chip { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius: 999px; font-size:12px; font-weight:800; border: 1px solid var(--border); background: white; color: var(--text-muted); }
-  .divider { height: 1px; background: var(--border); margin: 16px 0; }
-
-  /* --- REVENUE HERO --- */
-  .revenue-hero { 
-    background: white; border: 1px solid var(--border); border-radius: var(--radius-lg); 
-    padding: 40px; margin-bottom: 32px; display: flex; justify-content: space-between; align-items: center;
-  }
-  .rev-amount { font-size: 48px; font-weight: 900; letter-spacing: -0.04em; margin-bottom: 4px; }
-  .rev-amount span { font-size: 20px; color: var(--text-muted); font-weight: 700; margin-left: 8px; }
-
-  /* --- BUTTONS --- */
-  .btn { 
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 10px 18px; border-radius: 10px; font-weight: 700; cursor: pointer; 
-    border: 1px solid var(--border); background: white; transition: 0.2s; font-size: 13px;
-  }
-  .btn:hover { background: #f8fafc; border-color: #cbd5e1; }
-  .btn-primary { background: var(--brand); color: white; border: none; }
-  .btn-primary:hover { background: var(--brand-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); }
-  .btn-danger { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #b91c1c; }
-  .btn-danger:hover { background: rgba(239,68,68,0.14); border-color: rgba(239,68,68,0.32); }
-  .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; box-shadow: none; }
-
-  /* --- UTILS --- */
-  .hidden { display: none !important; }
-  .text-brand { color: var(--brand); }
-  .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-  .kpi { display:flex; align-items:baseline; gap:10px; }
-  .kpi small { font-size: 12px; opacity: 0.65; font-weight: 800; }
-
-  /* --- FILTER BAR --- */
-  .filters { display:flex; gap:10px; align-items:center; flex-wrap: wrap; }
-  .filters .input { max-width: 220px; }
-  .filters .input[type="date"] { max-width: 180px; }
-
-  /* --- DRAWER --- */
-  .drawer-backdrop {
-    position: fixed; inset: 0; z-index: 200;
-    background: rgba(2, 6, 23, 0.36);
-    opacity: 0; pointer-events: none; transition: 0.2s;
-  }
-  .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
-  .drawer {
-    position: fixed; top: 0; right: 0; height: 100vh; width: 420px; z-index: 210;
-    background: white; border-left: 1px solid var(--border); box-shadow: var(--shadow-md);
-    transform: translateX(100%); transition: 0.24s;
-    display:flex; flex-direction: column;
-  }
-  .drawer.open { transform: translateX(0); }
-  .drawer-head { padding: 18px 20px; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content: space-between; }
-  .drawer-body { padding: 18px 20px; overflow: auto; }
-
-  /* --- RESPONSIVE --- */
-  @media (max-width: 980px) {
-    .dashboard-layout { grid-template-columns: 1fr; }
-    .drawer { width: min(92vw, 420px); }
-  }
-  @media (max-width: 820px) {
-    .sidebar { width: 72px; padding: 20px 10px; }
-    .logo { padding-left: 6px; font-size: 14px; }
-    .logo span, .nav-label, .nav-link span { display: none; }
-    .nav-link { justify-content: center; }
-    .main { margin-left: 72px; }
-    .topbar { left: 72px; }
-  }
 </style>
 </head>
 <body>
 
-  <!-- LOGIN -->
-  <div id="login-screen" class="auth-screen">
-    <div class="auth-card">
-      <div class="auth-logo">
-        <div class="mark"><i class="fa fa-compass"></i></div>
-        <div>
-          <div class="auth-title">Operator Dashboard</div>
-          <div class="auth-sub">Sign in to manage routes, fleet, tickets, and revenue.</div>
+<div id="login-screen">
+  <div class="login-card">
+    <h1>🚌 BookIt</h1>
+    <p>Operator Dashboard</p>
+    <div class="alert alert-err" id="login-err"></div>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <input id="company"  placeholder="Company name" />
+      <input id="password" type="password" placeholder="Password" />
+      <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
+    </div>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="topbar">
+    <h1>🚌 <span id="company-name">Operator</span></h1>
+    <div class="topbar-right">
+      <button class="bell-btn" onclick="toggleNotifs()" id="bell-btn">
+        🔔<span class="bell-count" id="bell-count" style="display:none">0</span>
+      </button>
+      <div class="notif-dropdown" id="notif-dropdown">
+        <div class="notif-header">
+          <span>Notifications</span>
+          <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
         </div>
+        <div id="notif-list"></div>
       </div>
-
-      <div id="login-err" class="alert"></div>
-
-      <div class="field">
-        <label for="email">Email</label>
-        <input class="input" id="email" type="email" placeholder="operator@company.com" autocomplete="username">
-      </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input class="input" id="password" type="password" placeholder="••••••••" autocomplete="current-password">
-      </div>
-
-      <div class="auth-actions">
-        <button id="login-btn" class="btn btn-primary" style="flex:1;"><i class="fa fa-right-to-bracket"></i> Sign in</button>
-        <button id="demo-btn" class="btn" title="Loads a UI demo without API data"><i class="fa fa-wand-magic-sparkles"></i> Demo</button>
-      </div>
-
-      <div style="margin-top: 14px; font-size: 12px; font-weight: 700;" class="muted">
-        Tip: if you’re already signed in, this page auto-opens the dashboard.
-      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </div>
 
-  <!-- APP -->
-  <div id="app" class="hidden">
-    <aside class="sidebar">
-      <div class="logo"><i class="fa fa-compass"></i><span>BookIt</span></div>
+  <div class="layout">
+    <div class="sidebar">
+      <div class="nav-item active" onclick="showSection('overview',this)">📊 Overview</div>
+      <div class="nav-item" onclick="showSection('routes',this)">🗺️ Routes</div>
+      <div class="nav-item" onclick="showSection('buses',this)">🚌 Buses</div>
+      <div class="nav-item" onclick="showSection('drivers',this)">👤 Drivers</div>
+      <div class="nav-item" onclick="showSection('tickets',this)">🎫 Tickets</div>
+      <div class="nav-item" onclick="showSection('revenue',this)">💰 Revenue</div>
+      <div class="nav-item" onclick="showSection('locations',this)">📍 Locations</div>
+    </div>
 
-      <div class="nav-group">
-        <div class="nav-label">Overview</div>
-        <div class="nav-link active" data-page="overview"><i class="fa fa-grid-2"></i><span>Overview</span></div>
+    <div class="main">
+
+      <!-- OVERVIEW -->
+      <div class="section active" id="sec-overview">
+        <div class="section-title">Overview</div>
+        <div class="stats">
+          <div class="stat-card"><div class="num" id="s-routes">—</div><div class="lbl">Routes</div></div>
+          <div class="stat-card"><div class="num" id="s-buses">—</div><div class="lbl">Buses</div></div>
+          <div class="stat-card"><div class="num" id="s-drivers">—</div><div class="lbl">Drivers</div></div>
+          <div class="stat-card"><div class="num" id="s-tickets">—</div><div class="lbl">Tickets Today</div></div>
+          <div class="stat-card"><div class="num" id="s-revenue">—</div><div class="lbl">Revenue (RWF)</div></div>
+        </div>
       </div>
 
-      <div class="nav-group">
-        <div class="nav-label">Operations</div>
-        <div class="nav-link" data-page="routes"><i class="fa fa-map-location-dot"></i><span>Routes & Stops</span></div>
-        <div class="nav-link" data-page="fleet"><i class="fa fa-bus-simple"></i><span>Fleet (Buses)</span></div>
-        <div class="nav-link" data-page="drivers"><i class="fa fa-id-card"></i><span>Drivers</span></div>
-        <div class="nav-link" data-page="tickets"><i class="fa fa-ticket"></i><span>Tickets</span></div>
-        <div class="nav-link" data-page="revenue"><i class="fa fa-chart-line"></i><span>Revenue</span></div>
-      </div>
-
-      <div style="margin-top:auto;">
-        <div class="nav-link" data-page="settings"><i class="fa fa-sliders"></i><span>Settings</span></div>
-        <div class="nav-link" id="logout-btn" style="color:#ef4444aa;"><i class="fa fa-power-off"></i><span>Logout</span></div>
-      </div>
-    </aside>
-
-    <main class="main">
-      <header class="topbar">
-        <div style="display:flex; align-items:center; gap:14px;">
-          <div>
-            <h2 id="page-title" style="font-weight: 950; font-size: 18px; line-height:1;">Overview</h2>
-            <div id="page-subtitle" style="margin-top: 4px; font-size: 12px; font-weight: 750; color: var(--text-muted);">Operational snapshot</div>
+      <!-- ROUTES -->
+      <div class="section" id="sec-routes">
+        <div class="section-title">Routes & Stops</div>
+        <div class="card">
+          <h3>Create Route</h3>
+          <div class="alert alert-err" id="rt-err"></div>
+          <div class="alert alert-ok"  id="rt-ok"></div>
+          <div class="form-row">
+            <select id="rt-from"></select>
+            <select id="rt-to"></select>
+            <input  id="rt-price" type="number" placeholder="Base price (RWF)" />
+            <button class="btn btn-primary" onclick="createRoute()">Create</button>
           </div>
         </div>
+        <div class="card">
+          <h3>My Routes</h3>
+          <table>
+            <thead><tr><th>From</th><th>To</th><th>Price</th><th>Stops</th><th>Reverse</th><th>Actions</th></tr></thead>
+            <tbody id="rt-table"></tbody>
+          </table>
+        </div>
 
-        <div style="display:flex; align-items:center; gap:14px;">
-          <input id="global-search" class="input" placeholder="Search tickets, buses, routes…" style="max-width: 320px; height: 40px; padding: 8px 12px;">
-          <button id="notif-btn" class="btn" style="height:40px;"><i class="fa fa-bell"></i> <span id="notif-count" class="chip" style="padding:4px 8px; border-radius: 10px; display:none;">0</span></button>
-          <div style="display:flex; align-items:center; gap:12px; padding-left: 14px; border-left: 1px solid var(--border);">
-            <div style="text-align:right;">
-              <p id="operator-name" style="font-size: 13px; font-weight: 900;">—</p>
-              <p style="font-size: 11px; color: var(--text-muted); font-weight: 700;">Operator</p>
+        <!-- ADD STOPS PANEL -->
+        <div class="card" id="stops-panel" style="display:none;">
+          <h3>Manage Stops — <span id="stops-route-name"></span></h3>
+          <div class="alert alert-err" id="st-err"></div>
+          <div id="stops-list" class="stops-list"></div>
+          <div style="margin-top:16px;">
+            <p style="color:#64748b;font-size:13px;margin-bottom:12px;">Add new stop:</p>
+            <div class="form-row">
+              <select id="st-loc"></select>
+              <input id="st-order" type="number" placeholder="Order (1,2,3...)" style="max-width:120px;" />
+              <input id="st-price" type="number" placeholder="Price from origin" style="max-width:160px;" />
+              <button class="btn btn-primary" onclick="addStop()">Add Stop</button>
             </div>
-            <div id="operator-avatar" style="width: 38px; height: 38px; border-radius: 12px; background: var(--brand-soft); display: flex; align-items:center; justify-content:center; color:var(--brand); font-weight:900;">OP</div>
           </div>
         </div>
-      </header>
-
-      <div class="content">
-        <!-- PAGE: OVERVIEW -->
-        <section id="page-overview">
-          <div class="stats-grid">
-            <div class="stat-card">
-              <label>Total Routes</label>
-              <div class="kpi"><h3 id="stat-routes">—</h3></div>
-              <span class="trend neutral" id="stat-routes-sub">Synced</span>
-            </div>
-            <div class="stat-card">
-              <label>Total Buses</label>
-              <div class="kpi"><h3 id="stat-buses">—</h3></div>
-              <span class="trend neutral" id="stat-buses-sub">Fleet</span>
-            </div>
-            <div class="stat-card">
-              <label>Total Drivers</label>
-              <div class="kpi"><h3 id="stat-drivers">—</h3></div>
-              <span class="trend neutral" id="stat-drivers-sub">Active roster</span>
-            </div>
-            <div class="stat-card">
-              <label>Tickets Today</label>
-              <div class="kpi"><h3 id="stat-today-tickets">—</h3></div>
-              <span class="trend neutral" id="stat-today-tickets-sub">All statuses</span>
-            </div>
-            <div class="stat-card">
-              <label>Revenue Today</label>
-              <div class="kpi"><h3 id="stat-today-revenue">—</h3><small>RWF</small></div>
-              <span class="trend up" id="stat-today-revenue-sub"><i class="fa fa-arrow-trend-up"></i> Paid only</span>
-            </div>
-          </div>
-
-          <div class="dashboard-layout">
-            <div class="card">
-              <div class="card-header">
-                <div>
-                  <h4>Recent Bookings</h4>
-                  <div style="margin-top:4px; font-size:12px; font-weight:750; color: var(--text-muted);">
-                    Auto-refresh <span class="mono">15s</span> • <span id="live-updated">—</span>
-                  </div>
-                </div>
-                <span class="chip" style="border-color: rgba(16,185,129,0.25); color: #059669;">
-                  <i class="fa fa-circle" style="font-size:7px;"></i> LIVE
-                </span>
-              </div>
-              <div class="table-container">
-                <table>
-                  <thead>
-                    <tr><th>Passenger</th><th>Segment</th><th>Bus</th><th>Status</th></tr>
-                  </thead>
-                  <tbody id="live-bookings"></tbody>
-                </table>
-              </div>
-            </div>
-
-            <div class="card">
-              <div class="card-header">
-                <h4>Weekly Revenue</h4>
-                <span class="chip"><i class="fa fa-chart-column"></i> last 7 days</span>
-              </div>
-              <div style="padding: 18px 18px 22px;">
-                <canvas id="miniChart" height="280"></canvas>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- PAGE: ROUTES -->
-        <section id="page-routes" class="hidden">
-          <div style="display:flex; justify-content:space-between; align-items:flex-end; gap: 16px; margin-bottom: 18px;">
-            <div>
-              <h3 style="font-weight:950; font-size:24px; letter-spacing:-0.03em;">Routes & Stops</h3>
-              <p style="color:var(--text-muted); font-size:14px; font-weight:700;">Expandable routes with inline stop management.</p>
-            </div>
-            <div class="filters">
-              <input id="routes-filter" class="input" placeholder="Filter routes…">
-              <button id="routes-refresh" class="btn"><i class="fa fa-rotate"></i> Refresh</button>
-            </div>
-          </div>
-
-          <div id="routes-container"></div>
-        </section>
-
-        <!-- PAGE: FLEET -->
-        <section id="page-fleet" class="hidden">
-          <div class="card">
-            <div class="card-header">
-              <div>
-                <h4>Fleet (Buses)</h4>
-                <div style="margin-top:4px; font-size:12px; font-weight:750; color: var(--text-muted);">Click a row to open details</div>
-              </div>
-              <button id="fleet-refresh" class="btn"><i class="fa fa-rotate"></i> Refresh</button>
-            </div>
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr><th>Plate</th><th>Route</th><th>Driver</th><th>Departure</th><th>Today’s Occupancy</th></tr>
-                </thead>
-                <tbody id="fleet-table"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- PAGE: DRIVERS -->
-        <section id="page-drivers" class="hidden">
-          <div class="card">
-            <div class="card-header">
-              <div>
-                <h4>Drivers</h4>
-                <div style="margin-top:4px; font-size:12px; font-weight:750; color: var(--text-muted);">Roster and assignments</div>
-              </div>
-              <button id="drivers-refresh" class="btn"><i class="fa fa-rotate"></i> Refresh</button>
-            </div>
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr><th>Name</th><th>Phone</th><th>Assigned Bus</th><th>Status</th><th>Profile</th></tr>
-                </thead>
-                <tbody id="drivers-table"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- PAGE: TICKETS -->
-        <section id="page-tickets" class="hidden">
-          <div class="card" style="margin-bottom: 14px;">
-            <div class="card-header">
-              <div>
-                <h4>Tickets</h4>
-                <div style="margin-top:4px; font-size:12px; font-weight:750; color: var(--text-muted);">Sorting, filtering, expandable rows</div>
-              </div>
-              <div class="filters">
-                <input id="tickets-q" class="input" placeholder="Search name / ticket # / bus…">
-                <select id="tickets-status" class="input" style="height:40px; padding: 8px 12px;">
-                  <option value="">All statuses</option>
-                  <option value="paid">Paid</option>
-                  <option value="pending">Pending</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-                <input id="tickets-from" class="input" type="date" title="From date">
-                <input id="tickets-to" class="input" type="date" title="To date">
-                <button id="tickets-reset" class="btn"><i class="fa fa-eraser"></i> Reset</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="table-container">
-              <table>
-                <thead>
-                  <tr>
-                    <th data-sort="createdAt" class="clickable">Created</th>
-                    <th data-sort="travel_date" class="clickable">Travel</th>
-                    <th data-sort="user" class="clickable">Passenger</th>
-                    <th data-sort="segment" class="clickable">Segment</th>
-                    <th data-sort="bus" class="clickable">Bus</th>
-                    <th data-sort="price" class="clickable">Price</th>
-                    <th data-sort="status" class="clickable">Status</th>
-                  </tr>
-                </thead>
-                <tbody id="tickets-table"></tbody>
-              </table>
-            </div>
-          </div>
-        </section>
-
-        <!-- PAGE: REVENUE -->
-        <section id="page-revenue" class="hidden">
-          <div class="revenue-hero">
-            <div>
-              <p style="color:var(--text-muted); font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:0.12em; margin-bottom:8px;">Total Revenue (Paid)</p>
-              <h1 class="rev-amount"><span id="rev-total">—</span><span>RWF</span></h1>
-              <p style="color:var(--text-muted); font-weight:750; font-size:13px;" id="rev-sub">Select a date range to explore trends.</p>
-            </div>
-            <div style="display:flex; flex-direction:column; gap:10px; align-items:flex-end;">
-              <div class="filters">
-                <input id="rev-from" class="input" type="date">
-                <input id="rev-to" class="input" type="date">
-                <button id="rev-apply" class="btn btn-primary"><i class="fa fa-filter"></i> Apply</button>
-              </div>
-              <div style="display:flex; gap:10px;">
-                <button id="rev-download" class="btn"><i class="fa fa-download"></i> Download CSV</button>
-                <button id="rev-refresh" class="btn"><i class="fa fa-rotate"></i> Refresh</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="card" style="margin-bottom: 16px; padding: 18px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; gap: 12px; margin-bottom: 12px;">
-              <h4 style="font-weight:950;">Revenue Over Time</h4>
-              <span class="chip"><i class="fa fa-chart-line"></i> daily</span>
-            </div>
-            <canvas id="revenueLine" height="110"></canvas>
-          </div>
-
-          <div class="dashboard-layout" style="grid-template-columns: 1.2fr 1.8fr; margin-bottom: 16px;">
-            <div class="card">
-              <div class="card-header"><h4>Revenue by Route</h4></div>
-              <div style="padding: 18px 18px 22px;">
-                <canvas id="revenueByRoute" height="260"></canvas>
-              </div>
-            </div>
-            <div class="card">
-              <div class="card-header">
-                <h4>Per-ticket Breakdown</h4>
-                <span class="chip"><i class="fa fa-receipt"></i> paid tickets</span>
-              </div>
-              <div class="table-container">
-                <table>
-                  <thead>
-                    <tr><th>Ticket #</th><th>Passenger</th><th>Bus</th><th>Travel</th><th>Segment</th><th>Price</th></tr>
-                  </thead>
-                  <tbody id="revenue-table"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- PAGE: SETTINGS -->
-        <section id="page-settings" class="hidden">
-          <div class="card">
-            <div class="card-header">
-              <div>
-                <h4>Settings</h4>
-                <div style="margin-top:4px; font-size:12px; font-weight:750; color: var(--text-muted);">Route stop automation</div>
-              </div>
-              <button id="settings-save" class="btn btn-primary"><i class="fa fa-floppy-disk"></i> Save</button>
-            </div>
-            <div style="padding: 18px 22px;">
-              <div style="display:flex; gap: 14px; align-items:flex-start; justify-content: space-between; flex-wrap: wrap;">
-                <div style="flex:1; min-width: 260px;">
-                  <div style="font-weight: 950; margin-bottom: 6px;">Auto-generate reverse stops</div>
-                  <div class="muted" style="font-size:13px; font-weight:750;">When you add/update stops, keep the reverse route in sync.</div>
-                </div>
-                <label class="chip" style="cursor:pointer; user-select:none;">
-                  <input id="set-auto-rev" type="checkbox" style="width:16px; height:16px;">
-                  Enabled
-                </label>
-              </div>
-
-              <div class="divider"></div>
-
-              <div style="display:flex; gap: 14px; align-items:flex-start; justify-content: space-between; flex-wrap: wrap;">
-                <div style="flex:1; min-width: 260px;">
-                  <div style="font-weight: 950; margin-bottom: 6px;">Allow manual reverse</div>
-                  <div class="muted" style="font-size:13px; font-weight:750;">Allow operators to manage reverse routes manually.</div>
-                </div>
-                <label class="chip" style="cursor:pointer; user-select:none;">
-                  <input id="set-manual-rev" type="checkbox" style="width:16px; height:16px;">
-                  Allowed
-                </label>
-              </div>
-
-              <div class="divider"></div>
-
-              <div class="muted" style="font-size:12px; font-weight:750;">These settings map to <span class="mono">/api/route-stops/settings</span>.</div>
-            </div>
-          </div>
-        </section>
       </div>
-    </main>
 
-    <div id="drawer-backdrop" class="drawer-backdrop"></div>
-    <aside id="drawer" class="drawer" aria-hidden="true">
-      <div class="drawer-head">
-        <div>
-          <div id="drawer-title" style="font-weight: 950;">Details</div>
-          <div id="drawer-sub" class="muted" style="font-size: 12px; font-weight: 750;">—</div>
+      <!-- BUSES -->
+      <div class="section" id="sec-buses">
+        <div class="section-title">Buses</div>
+        <div class="card">
+          <h3>Add Bus</h3>
+          <div class="alert alert-err" id="bus-err"></div>
+          <div class="form-row">
+            <select id="bus-route"></select>
+            <input id="bus-plate"  placeholder="Plate number" />
+            <input id="bus-driver" placeholder="Driver name" />
+            <input id="bus-cap"    type="number" placeholder="Capacity" style="max-width:120px;" />
+            <input id="bus-dep"    type="time" />
+            <button class="btn btn-primary" onclick="createBus()">Add</button>
+          </div>
         </div>
-        <button id="drawer-close" class="btn"><i class="fa fa-xmark"></i> Close</button>
+        <div class="card">
+          <h3>My Buses</h3>
+          <table>
+            <thead><tr><th>Plate</th><th>Route</th><th>Departure</th><th>Capacity</th><th>Actions</th></tr></thead>
+            <tbody id="bus-table"></tbody>
+          </table>
+        </div>
       </div>
-      <div id="drawer-body" class="drawer-body"></div>
-    </aside>
+
+      <!-- DRIVERS -->
+      <div class="section" id="sec-drivers">
+        <div class="section-title">Drivers</div>
+        <div class="card">
+          <h3>Add Driver</h3>
+          <div class="alert alert-err" id="drv-err"></div>
+          <div class="alert alert-ok"  id="drv-ok"></div>
+          <div class="form-row">
+            <input id="drv-name"  placeholder="Full name" />
+            <input id="drv-phone" placeholder="Phone" />
+            <select id="drv-bus"><option value="">— Assign bus (optional) —</option></select>
+            <button class="btn btn-primary" onclick="createDriver()">Add</button>
+          </div>
+          <div class="default-pass" id="drv-pass">
+            Default password: <span id="drv-pass-val"></span>
+          </div>
+        </div>
+        <div class="card">
+          <h3>My Drivers</h3>
+          <table>
+            <thead><tr><th>Name</th><th>Phone</th><th>Bus</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="drv-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TICKETS -->
+      <div class="section" id="sec-tickets">
+        <div class="section-title">All Tickets</div>
+        <div class="card">
+          <table>
+            <thead><tr><th>Ticket #</th><th>Passenger</th><th>Bus</th><th>Boarding</th><th>Dropoff</th><th>Seat</th><th>Date</th><th>Price</th><th>Status</th></tr></thead>
+            <tbody id="tkt-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REVENUE -->
+      <div class="section" id="sec-revenue">
+        <div class="section-title">Revenue</div>
+        <div class="card">
+          <h3>Filter by date</h3>
+          <div class="form-row">
+            <input type="date" id="rev-date" />
+            <button class="btn btn-primary" onclick="calcRevenue()">Calculate</button>
+          </div>
+          <div class="revenue-box" id="rev-box" style="display:none;">
+            <div class="lbl">Total Revenue</div>
+            <div class="total" id="rev-total">0 RWF</div>
+            <div style="margin-top:16px;" id="rev-breakdown"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOCATIONS -->
+      <div class="section" id="sec-locations">
+        <div class="section-title">Locations</div>
+        <div class="card">
+          <h3>Add Location</h3>
+          <div class="alert alert-err" id="oloc-err"></div>
+          <div class="form-row">
+            <input id="oloc-name" placeholder="City / Town name" />
+            <button class="btn btn-primary" onclick="createLocation()">Add</button>
+          </div>
+        </div>
+        <div class="card">
+          <h3>All Locations</h3>
+          <table>
+            <thead><tr><th>Name</th></tr></thead>
+            <tbody id="oloc-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
   </div>
+</div>
 
-  <script type="module">
-    import { api, setToken, clearToken, getToken } from './api.js';
+<script type="module">
+import { api, setToken, clearToken, getToken } from './api.js';
+window.api = api;
 
-    const $ = (sel) => document.querySelector(sel);
-    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+let currentRouteId = null;
+let locations      = [];
+let myRoutes       = [];
+let myBuses        = [];
 
-    const fmtRwf = (n) => {
-      const num = Number(n || 0);
-      return num.toLocaleString(undefined, { maximumFractionDigits: 0 });
-    };
+window.doLogin = async () => {
+  const company_name = document.getElementById('company').value;
+  const password     = document.getElementById('password').value;
+  try {
+    const data = await api.loginOperator({ company_name, password });
+    setToken(data.token);
+    document.getElementById('company-name').textContent = data.operator.company_name;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display    = 'block';
+    init();
+  } catch(e) {
+    const el = document.getElementById('login-err');
+    el.textContent = e.message; el.style.display = 'block';
+  }
+};
 
-    const toDateOnly = (d) => {
-      const date = d instanceof Date ? d : new Date(d);
-      if (Number.isNaN(date.getTime())) return '';
-      return date.toISOString().slice(0, 10);
-    };
+window.logout = () => { clearToken(); location.reload(); };
 
-    const pill = (status) => {
-      const s = String(status || '').toLowerCase();
-      if (s === 'paid') return '<span class="status-pill pill-paid">PAID</span>';
-      if (s === 'pending') return '<span class="status-pill pill-pending">PENDING</span>';
-      if (s === 'cancelled') return '<span class="status-pill pill-cancelled">CANCELLED</span>';
-      if (s === 'active') return '<span class="status-pill pill-active">ACTIVE</span>';
-      return '<span class="status-pill pill-muted">—</span>';
-    };
+async function init() {
+  locations = await api.getLocations();
+  myRoutes  = await api.getMyRoutes();
+  myBuses   = await api.getMyBuses();
+  loadOverview();
+  loadLocations();
+  populateRouteSelects();
+  renderRoutes();
+  renderBuses();
+  loadDrivers();
+  loadTickets();
+  loadNotifications();
+  setInterval(loadNotifications, 20000);
+}
 
-    const state = {
-      demoMode: false,
-      operatorName: '—',
-      routes: [],
-      buses: [],
-      drivers: [],
-      tickets: [],
-      settings: null,
-      locations: [],
-      ticketsSort: { key: 'createdAt', dir: 'desc' },
-      charts: { mini: null, line: null, byRoute: null },
-      pollHandle: null,
-    };
+// ── NAVIGATION ────────────────────────────────────────
+window.showSection = (name, el) => {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`sec-${name}`).classList.add('active');
+  el.classList.add('active');
+  if (name === 'tickets') loadTickets();
+  if (name === 'revenue') calcRevenue();
+};
 
-    // ── AUTH ──────────────────────────────────────────────
-    const showLogin = () => {
-      $('#login-screen').classList.remove('hidden');
-      $('#app').classList.add('hidden');
-    };
+// ── OVERVIEW ──────────────────────────────────────────
+async function loadOverview() {
+  const tickets = await api.getOperatorTickets();
+  const today   = new Date().toISOString().split('T')[0];
+  const todayT  = tickets.filter(t => t.travel_date === today && t.status === 'paid');
+  const revenue = todayT.reduce((s, t) => s + parseFloat(t.price), 0);
+  document.getElementById('s-routes').textContent  = myRoutes.length;
+  document.getElementById('s-buses').textContent   = myBuses.length;
+  document.getElementById('s-tickets').textContent = todayT.length;
+  document.getElementById('s-revenue').textContent = revenue.toLocaleString();
+  // drivers count loaded separately
+  const drvs = await api.getDrivers();
+  document.getElementById('s-drivers').textContent = drvs.length;
+}
 
-    const showApp = () => {
-      $('#login-screen').classList.add('hidden');
-      $('#app').classList.remove('hidden');
-    };
+// ── LOCATIONS ─────────────────────────────────────────
+async function loadLocations() {
+  locations = await api.getLocations();
+  document.getElementById('oloc-table').innerHTML = locations.map(l => `<tr><td>${l.name}</td></tr>`).join('');
+  populateRouteSelects();
+  populateStopSelect();
+}
 
-    const setLoginError = (msg) => {
-      const el = $('#login-err');
-      if (!msg) { el.style.display = 'none'; el.textContent = ''; return; }
-      el.textContent = msg;
-      el.style.display = 'block';
-    };
+window.createLocation = async () => {
+  const name = document.getElementById('oloc-name').value.trim();
+  try {
+    await api.createLocation({ name });
+    document.getElementById('oloc-name').value = '';
+    await loadLocations();
+  } catch(e) {
+    const el = document.getElementById('oloc-err');
+    el.textContent = e.message; el.style.display = 'block';
+  }
+};
 
-    async function doLogin() {
-      const email = $('#email').value.trim();
-      const password = $('#password').value;
-      setLoginError('');
-      try {
-        const data = await api.loginOperator({ email, password });
-        setToken(data.token);
-        state.demoMode = false;
-        showApp();
-        await init();
-      } catch (e) {
-        setLoginError(e.message || 'Login failed');
-      }
-    }
+function populateRouteSelects() {
+  const opts = locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  document.getElementById('rt-from').innerHTML = opts;
+  document.getElementById('rt-to').innerHTML   = opts;
+}
 
-    function logout() {
-      clearToken();
-      location.reload();
-    }
+function populateStopSelect() {
+  document.getElementById('st-loc').innerHTML = locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+}
 
-    // ── NAV ───────────────────────────────────────────────
-    const pageMeta = {
-      overview: { title: 'Overview', subtitle: 'Operational snapshot' },
-      routes: { title: 'Routes & Stops', subtitle: 'Stop timelines and inline edits' },
-      fleet: { title: 'Fleet (Buses)', subtitle: 'Capacity, departure, and occupancy' },
-      drivers: { title: 'Drivers', subtitle: 'Roster and assignments' },
-      tickets: { title: 'Tickets', subtitle: 'Sorting, filtering, expandable rows' },
-      revenue: { title: 'Revenue', subtitle: 'Trends, routes, and breakdowns' },
-      settings: { title: 'Settings', subtitle: 'Automation and preferences' },
-    };
+function populateBusRouteSelect() {
+  document.getElementById('bus-route').innerHTML = myRoutes.map(r => `<option value="${r.id}">${r.fromLocation.name} → ${r.toLocation.name}</option>`).join('');
+}
 
-    function setPage(pageId) {
-      const page = pageId in pageMeta ? pageId : 'overview';
-      location.hash = `#${page}`;
-      $$('.nav-link[data-page]').forEach(n => n.classList.toggle('active', n.dataset.page === page));
-      $$('section[id^="page-"]').forEach(s => s.classList.add('hidden'));
-      $(`#page-${page}`).classList.remove('hidden');
-      $('#page-title').textContent = pageMeta[page].title;
-      $('#page-subtitle').textContent = pageMeta[page].subtitle;
-      if (page === 'revenue') renderRevenue();
-      if (page === 'tickets') renderTickets();
-      if (page === 'routes') renderRoutes();
-      if (page === 'fleet') renderFleet();
-      if (page === 'drivers') renderDrivers();
-      if (page === 'settings') renderSettings();
-    }
+function populateDriverBusSelect() {
+  document.getElementById('drv-bus').innerHTML = '<option value="">— Assign bus (optional) —</option>' +
+    myBuses.map(b => `<option value="${b.id}">${b.plate_number}</option>`).join('');
+}
 
-    window.addEventListener('hashchange', () => setPage(location.hash.replace('#', '') || 'overview'));
+// ── ROUTES ────────────────────────────────────────────
+async function renderRoutes() {
+  myRoutes = await api.getMyRoutes();
+  const tbody = document.getElementById('rt-table');
+  tbody.innerHTML = myRoutes.map(r => `
+    <tr>
+      <td>${r.fromLocation.name}</td>
+      <td>${r.toLocation.name}</td>
+      <td>${Number(r.price).toLocaleString()} RWF</td>
+      <td>${(r.stops||[]).length} stops</td>
+      <td><span class="badge ${r.is_reverse ? 'badge-yellow' : 'badge-blue'}">${r.is_reverse ? 'Reverse' : 'Main'}</span></td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="openStops('${r.id}','${r.fromLocation.name} → ${r.toLocation.name}')">Stops</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteRoute('${r.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+  populateBusRouteSelect();
+}
 
-    // ── DRAWER ────────────────────────────────────────────
-    function openDrawer({ title, subtitle, html }) {
-      $('#drawer-title').textContent = title || 'Details';
-      $('#drawer-sub').textContent = subtitle || '';
-      $('#drawer-body').innerHTML = html || '';
-      $('#drawer').classList.add('open');
-      $('#drawer-backdrop').classList.add('open');
-      $('#drawer').setAttribute('aria-hidden', 'false');
-    }
+window.createRoute = async () => {
+  const from  = document.getElementById('rt-from').value;
+  const to    = document.getElementById('rt-to').value;
+  const price = document.getElementById('rt-price').value;
+  const err   = document.getElementById('rt-err');
+  const ok    = document.getElementById('rt-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  try {
+    const data = await api.createRoute({ from_location_id: from, to_location_id: to, price: parseFloat(price) });
+    ok.textContent = `Route created${data.reverse ? ' + reverse auto-generated' : ''}`;
+    ok.style.display = 'block';
+    renderRoutes();
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
 
-    function closeDrawer() {
-      $('#drawer').classList.remove('open');
-      $('#drawer-backdrop').classList.remove('open');
-      $('#drawer').setAttribute('aria-hidden', 'true');
-    }
+window.deleteRoute = async (id) => {
+  if (!confirm('Delete route?')) return;
+  await api.deleteRoute(id);
+  renderRoutes();
+};
 
-    // ── DATA LOAD ─────────────────────────────────────────
-    async function loadAllReal() {
-      const [routes, buses, drivers, tickets, settings, locations] = await Promise.all([
-        api.getMyRoutes(),
-        api.getMyBuses(),
-        api.getDrivers(),
-        api.getOperatorTickets(),
-        api.getSettings(),
-        api.getLocations(),
-      ]);
+// ── STOPS ─────────────────────────────────────────────
+window.openStops = async (route_id, name) => {
+  currentRouteId = route_id;
+  document.getElementById('stops-route-name').textContent = name;
+  document.getElementById('stops-panel').style.display    = 'block';
+  populateStopSelect();
+  renderStops();
+};
 
-      state.routes = routes || [];
-      state.buses = buses || [];
-      state.drivers = drivers || [];
-      state.tickets = tickets || [];
-      state.settings = settings || null;
-      state.locations = locations || [];
-
-      // operator name is included on ticket.operator or route.operator; best-effort:
-      const op = state.tickets[0]?.operator?.company_name || state.routes[0]?.operator?.company_name || 'Operator';
-      state.operatorName = op;
-    }
-
-    function seedDemoData() {
-      state.operatorName = 'Horizon Express';
-      state.locations = [
-        { id: 'loc-1', name: 'Kigali' },
-        { id: 'loc-2', name: 'Musanze' },
-        { id: 'loc-3', name: 'Rubavu' },
-        { id: 'loc-4', name: 'Huye' },
-        { id: 'loc-5', name: 'Kayonza' },
-      ];
-
-      const mkRoute = (id, from, to, price) => ({
-        id,
-        price,
-        fromLocation: { name: from },
-        toLocation: { name: to },
-      });
-
-      state.routes = [
-        mkRoute('r-1', 'Kigali', 'Musanze', 4500),
-        mkRoute('r-2', 'Kigali', 'Rubavu', 5000),
-        mkRoute('r-3', 'Kigali', 'Huye', 4200),
-      ];
-
-      state.buses = [
-        { id: 'b-1', plate_number: 'RAD 401C', driver_name: 'M. Faustin', capacity: 50, departure_time: '07:30', route: state.routes[0] },
-        { id: 'b-2', plate_number: 'RAF 112A', driver_name: 'J. Habimana', capacity: 45, departure_time: '09:00', route: state.routes[1] },
-        { id: 'b-3', plate_number: 'RAG 880B', driver_name: 'S. Kalisa', capacity: 52, departure_time: '13:30', route: state.routes[2] },
-      ];
-
-      state.drivers = [
-        { id: 'd-1', name: 'M. Faustin', phone: '+250 7xx xxx xxx', is_active: true, must_update_profile: false, bus: state.buses[0] },
-        { id: 'd-2', name: 'J. Habimana', phone: '+250 7xx xxx xxx', is_active: true, must_update_profile: true, bus: state.buses[1] },
-        { id: 'd-3', name: 'S. Kalisa', phone: '+250 7xx xxx xxx', is_active: false, must_update_profile: false, bus: null },
-      ];
-
-      const today = new Date();
-      const daysAgo = (n) => new Date(Date.now() - n * 86400000);
-      const mkTicket = (i, status, when, bus, passenger, segmentFrom, segmentTo, price) => ({
-        id: `t-${i}`,
-        createdAt: when.toISOString(),
-        travel_date: toDateOnly(when),
-        status,
-        price,
-        ticket_number: status === 'paid' ? `BK-${1000 + i}-XZ` : null,
-        bus: { ...bus, route: bus.route },
-        operator: { company_name: state.operatorName },
-        user: { name: passenger, email: '—', phone: '—' },
-        boardingStop: { location: { name: segmentFrom } },
-        dropoffStop: { location: { name: segmentTo } },
-        seat_number: 1 + (i % 30),
-      });
-
-      state.tickets = [
-        mkTicket(1, 'paid', today, state.buses[0], 'Kamanzi Olivier', 'Kigali', 'Musanze', 4500),
-        mkTicket(2, 'pending', today, state.buses[1], 'Uwase Aline', 'Kigali', 'Rubavu', 5000),
-        mkTicket(3, 'paid', today, state.buses[2], 'Murenzi Jean', 'Huye', 'Kigali', 4200),
-        mkTicket(4, 'cancelled', today, state.buses[0], 'Ishimwe G.', 'Kigali', 'Kayonza', 3800),
-        mkTicket(5, 'paid', daysAgo(1), state.buses[0], 'Mukamana D.', 'Kigali', 'Musanze', 4500),
-        mkTicket(6, 'paid', daysAgo(2), state.buses[1], 'Habinshuti P.', 'Kigali', 'Rubavu', 5000),
-        mkTicket(7, 'paid', daysAgo(3), state.buses[2], 'Uwimana S.', 'Kigali', 'Huye', 4200),
-        mkTicket(8, 'paid', daysAgo(4), state.buses[1], 'Niyonsenga A.', 'Kigali', 'Rubavu', 5000),
-        mkTicket(9, 'paid', daysAgo(5), state.buses[0], 'Nshuti E.', 'Kigali', 'Musanze', 4500),
-        mkTicket(10, 'paid', daysAgo(6), state.buses[2], 'Kagabo F.', 'Kigali', 'Huye', 4200),
-      ];
-
-      state.settings = { auto_generate_reverse: true, allow_manual_reverse: true };
-    }
-
-    // ── DERIVED ──────────────────────────────────────────
-    function todayDateOnly() {
-      return new Date().toISOString().slice(0, 10);
-    }
-
-    function routeLabelFromTicket(t) {
-      const from = t?.bus?.route?.fromLocation?.name;
-      const to = t?.bus?.route?.toLocation?.name;
-      if (from && to) return `${from} → ${to}`;
-      return '—';
-    }
-
-    function segmentLabel(t) {
-      const b = t?.boardingStop?.location?.name;
-      const d = t?.dropoffStop?.location?.name;
-      return b && d ? `${b} → ${d}` : routeLabelFromTicket(t);
-    }
-
-    function computeOccupancyByBusId(dateOnly) {
-      const busCounts = {};
-      state.tickets
-        .filter(t => t.travel_date === dateOnly && t.status !== 'cancelled')
-        .forEach(t => { busCounts[t.bus_id || t?.bus?.id] = (busCounts[t.bus_id || t?.bus?.id] || 0) + 1; });
-      return busCounts;
-    }
-
-    // ── RENDER: OVERVIEW ─────────────────────────────────
-    function renderOverview() {
-      $('#operator-name').textContent = state.operatorName || 'Operator';
-      const initials = String(state.operatorName || 'OP').split(' ').slice(0, 2).map(s => s[0]).join('').toUpperCase();
-      $('#operator-avatar').textContent = initials || 'OP';
-
-      $('#stat-routes').textContent = state.routes.length;
-      $('#stat-buses').textContent = state.buses.length;
-      $('#stat-drivers').textContent = state.drivers.length;
-
-      const today = todayDateOnly();
-      const todayTickets = state.tickets.filter(t => t.travel_date === today);
-      const todayPaid = todayTickets.filter(t => t.status === 'paid');
-      const todayRevenue = todayPaid.reduce((sum, t) => sum + Number(t.price || 0), 0);
-
-      $('#stat-today-tickets').textContent = todayTickets.length;
-      $('#stat-today-revenue').textContent = fmtRwf(todayRevenue);
-      $('#live-updated').textContent = `Updated ${new Date().toLocaleTimeString()}`;
-
-      renderLiveBookings();
-      renderMiniChart();
-    }
-
-    function renderLiveBookings() {
-      const rows = state.tickets
-        .slice()
-        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-        .slice(0, 8)
-        .map(t => {
-          const passenger = t?.user?.name || '—';
-          const seg = segmentLabel(t);
-          const plate = t?.bus?.plate_number || '—';
-          return `
-            <tr>
-              <td><strong>${passenger}</strong></td>
-              <td style="color:var(--text-muted); font-weight: 750;">${seg}</td>
-              <td><span class="mono" style="font-weight:850;">${plate}</span></td>
-              <td>${pill(t.status)}</td>
-            </tr>
-          `;
-        })
-        .join('');
-
-      $('#live-bookings').innerHTML = rows || `
-        <tr><td colspan="4" style="padding: 18px 24px; color: var(--text-muted); font-weight: 750;">No bookings yet.</td></tr>
-      `;
-    }
-
-    // ── RENDER: ROUTES ───────────────────────────────────
-    async function fetchStops(routeId) {
-      const inMemory = state.routes.find(r => r.id === routeId)?.stops;
-      if (Array.isArray(inMemory) && inMemory.length) return inMemory;
-      try {
-        const route = await api.getRouteStops(routeId);
-        return route?.stops || [];
-      } catch {
-        return [];
-      }
-    }
-
-    function renderRoutes() {
-      const q = ($('#routes-filter')?.value || '').toLowerCase().trim();
-      const routes = state.routes.filter(r => {
-        const from = r?.fromLocation?.name || '';
-        const to = r?.toLocation?.name || '';
-        return `${from} ${to}`.toLowerCase().includes(q);
-      });
-
-      const busesByRoute = {};
-      state.buses.forEach(b => { busesByRoute[b.route_id || b?.route?.id] = (busesByRoute[b.route_id || b?.route?.id] || 0) + 1; });
-
-      $('#routes-container').innerHTML = routes.map(r => {
-        const from = r?.fromLocation?.name || '—';
-        const to = r?.toLocation?.name || '—';
-        const routeId = r.id;
-        const busCount = busesByRoute[routeId] || 0;
-        const price = Number(r.price || 0);
-        return `
-          <div class="route-item" data-route-id="${routeId}">
-            <div class="route-summary">
-              <div style="display:flex; align-items:center; gap:16px;">
-                <div style="background:var(--brand-soft); width:44px; height:44px; border-radius:12px; display:flex; align-items:center; justify-content:center;">
-                  <i class="fa fa-route" style="color:var(--brand); font-size:18px;"></i>
-                </div>
-                <div>
-                  <h4 style="font-weight:900; font-size:16px; letter-spacing:-0.02em;">${from} → ${to}</h4>
-                  <p style="font-size:13px; color:var(--text-muted); font-weight:750;">${busCount} buses • route id <span class="mono">${String(routeId).slice(0, 8)}</span></p>
-                </div>
-              </div>
-              <div style="display:flex; align-items:center; gap:18px;">
-                <div style="text-align:right;">
-                  <div style="font-weight:950; font-size:16px;">${fmtRwf(price)} <small>RWF</small></div>
-                  <div style="font-size:11px; color:var(--text-muted); font-weight:900; text-transform:uppercase; letter-spacing:0.08em;">Base fare</div>
-                </div>
-                <i class="fa fa-chevron-down" style="font-size:12px; color:var(--text-muted); transition:0.3s;"></i>
-              </div>
-            </div>
-            <div class="route-details">
-              <div style="display:grid; grid-template-columns: 1.2fr 1.8fr; gap: 22px;">
-                <div>
-                  <h5 style="font-weight:900; text-transform:uppercase; font-size:11px; color:var(--text-muted); margin-bottom:12px; letter-spacing:0.12em;">Stop Timeline</h5>
-                  <div class="timeline" data-stops="loading">
-                    <div class="muted" style="font-size:13px; font-weight:750;">Loading stops…</div>
-                  </div>
-                </div>
-                <div style="border-left: 1px solid var(--border); padding-left: 18px;">
-                  <h5 style="font-weight:900; text-transform:uppercase; font-size:11px; color:var(--text-muted); margin-bottom:12px; letter-spacing:0.12em;">Manage Stops</h5>
-                  <div class="muted" style="font-size:13px; font-weight:750;">Edit price from origin, order, and add new stops.</div>
-                  <div class="divider"></div>
-                  <div class="stop-editor">
-                    <select class="input" data-add-loc style="height:40px; padding: 8px 12px;">
-                      <option value="">Select location…</option>
-                      ${state.locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('')}
-                    </select>
-                    <input class="input" data-add-price type="number" step="0.01" placeholder="Price from origin">
-                    <input class="input" data-add-order type="number" placeholder="Order">
-                    <button class="btn btn-primary" data-add-btn ${getToken() ? '' : 'disabled'}><i class="fa fa-plus"></i> Add</button>
-                  </div>
-                  ${getToken() ? '' : `<div class="muted" style="margin-top:10px; font-size:12px; font-weight:750;">Sign in to add/update stops.</div>`}
-                  <div class="divider"></div>
-                  <div class="muted" style="font-size:12px; font-weight:750;">Changes call <span class="mono">/api/route-stops</span>.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('') || `<div class="muted" style="font-weight:800;">No routes found.</div>`;
-
-      // bind accordion & lazy stop loading
-      $$('#routes-container .route-summary').forEach((summaryEl) => {
-        summaryEl.addEventListener('click', async () => {
-          const item = summaryEl.closest('.route-item');
-          const details = item.querySelector('.route-details');
-          const icon = summaryEl.querySelector('.fa-chevron-down');
-          const isOpen = details.style.display === 'block';
-          details.style.display = isOpen ? 'none' : 'block';
-          icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-          item.style.borderColor = isOpen ? 'var(--border)' : 'var(--brand)';
-
-          if (!isOpen) {
-            const tl = item.querySelector('.timeline');
-            if (tl && tl.dataset.stops === 'loading') {
-              const routeId = item.dataset.routeId;
-              const stops = state.demoMode ? demoStopsForRoute(routeId) : await fetchStops(routeId);
-              tl.dataset.stops = 'loaded';
-              tl.innerHTML = stops.length
-                ? stops.map(s => renderStopTimelineNode(item, s)).join('')
-                : `<div class="muted" style="font-size:13px; font-weight:750;">No stops set for this route.</div>`;
-              bindStopActions(item, stops);
-            }
-          }
-        });
-      });
-
-      // bind add stop actions
-      $$('#routes-container [data-add-btn]').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          const item = e.target.closest('.route-item');
-          const routeId = item.dataset.routeId;
-          const loc = item.querySelector('[data-add-loc]').value;
-          const price = item.querySelector('[data-add-price]').value;
-          const order = item.querySelector('[data-add-order]').value;
-          if (!loc || !price || !order) return;
-          try {
-            await api.addStops(routeId, { stops: [{ location_id: loc, price_from_origin: Number(price), stop_order: Number(order) }] });
-            // reload stops
-            const tl = item.querySelector('.timeline');
-            tl.dataset.stops = 'loading';
-            tl.innerHTML = `<div class="muted" style="font-size:13px; font-weight:750;">Loading stops…</div>`;
-            item.querySelector('.route-summary').click();
-            item.querySelector('.route-summary').click();
-          } catch (err) {
-            alert(err.message || 'Failed to add stop');
-          }
-        });
-      });
-    }
-
-    function demoStopsForRoute(routeId) {
-      const byId = {
-        'r-1': [
-          { id: 's-1', stop_order: 1, price_from_origin: 0, location: { id: 'loc-1', name: 'Kigali' } },
-          { id: 's-2', stop_order: 2, price_from_origin: 1500, location: { id: 'loc-1a', name: 'Shyorongi' } },
-          { id: 's-3', stop_order: 3, price_from_origin: 3200, location: { id: 'loc-1b', name: 'Gakenke' } },
-          { id: 's-4', stop_order: 4, price_from_origin: 4500, location: { id: 'loc-2', name: 'Musanze' } },
-        ],
-        'r-2': [
-          { id: 's-5', stop_order: 1, price_from_origin: 0, location: { id: 'loc-1', name: 'Kigali' } },
-          { id: 's-6', stop_order: 2, price_from_origin: 2800, location: { id: 'loc-1c', name: 'Muhanga' } },
-          { id: 's-7', stop_order: 3, price_from_origin: 5000, location: { id: 'loc-3', name: 'Rubavu' } },
-        ],
-        'r-3': [
-          { id: 's-8', stop_order: 1, price_from_origin: 0, location: { id: 'loc-1', name: 'Kigali' } },
-          { id: 's-9', stop_order: 2, price_from_origin: 2500, location: { id: 'loc-1d', name: 'Nyanza' } },
-          { id: 's-10', stop_order: 3, price_from_origin: 4200, location: { id: 'loc-4', name: 'Huye' } },
-        ],
-      };
-      return byId[routeId] || [];
-    }
-
-    function renderStopTimelineNode(routeItemEl, stop) {
-      const name = stop?.location?.name || '—';
-      const order = stop?.stop_order ?? '—';
-      const price = Number(stop?.price_from_origin ?? 0);
-      const stopId = stop?.id || '';
-
-      return `
-        <div class="timeline-stop" data-stop-id="${stopId}">
-          <div style="display:flex; justify-content:space-between; gap: 12px; align-items:flex-start;">
-            <div>
-              <strong>${name}</strong>
-              <span>Order <span class="mono">${order}</span> • Price from origin <span class="mono">${fmtRwf(price)}</span> RWF</span>
-            </div>
-            <div style="display:flex; gap: 8px;">
-              <button class="btn" data-edit-stop ${getToken() ? '' : 'disabled'}><i class="fa fa-pen"></i></button>
-              <button class="btn btn-danger" data-del-stop ${getToken() ? '' : 'disabled'}><i class="fa fa-trash"></i></button>
-            </div>
-          </div>
-          <div class="hidden" data-edit-panel style="margin-top: 10px;">
-            <div class="stop-editor">
-              <input class="input" data-edit-price type="number" step="0.01" value="${price}">
-              <input class="input" data-edit-order type="number" value="${order}">
-              <div></div>
-              <button class="btn btn-primary" data-save-stop><i class="fa fa-check"></i> Save</button>
-            </div>
-          </div>
+async function renderStops() {
+  const data  = await api.getRouteStops(currentRouteId);
+  const stops = (data.stops || []).sort((a,b) => a.stop_order - b.stop_order);
+  document.getElementById('stops-list').innerHTML = stops.length
+    ? stops.map(s => `
+        <div class="stop-row">
+          <div class="stop-order">${s.stop_order}</div>
+          <span style="flex:1">${s.location.name}</span>
+          <span style="color:#a78bfa">${Number(s.price_from_origin).toLocaleString()} RWF</span>
+          <button class="btn btn-danger btn-sm" onclick="deleteStop('${s.id}')">×</button>
         </div>
-      `;
-    }
+      `).join('')
+    : '<p style="color:#64748b;font-size:13px;">No stops yet</p>';
+}
 
-    function bindStopActions(routeItemEl) {
-      routeItemEl.querySelectorAll('[data-edit-stop]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const stopEl = e.target.closest('[data-stop-id]');
-          stopEl.querySelector('[data-edit-panel]').classList.toggle('hidden');
-        });
-      });
+window.addStop = async () => {
+  const location_id       = document.getElementById('st-loc').value;
+  const stop_order        = parseInt(document.getElementById('st-order').value);
+  const price_from_origin = parseFloat(document.getElementById('st-price').value);
+  try {
+    await api.addStops(currentRouteId, { stops: [{ location_id, stop_order, price_from_origin }] });
+    document.getElementById('st-order').value = '';
+    document.getElementById('st-price').value = '';
+    renderStops();
+  } catch(e) {
+    const el = document.getElementById('st-err');
+    el.textContent = e.message; el.style.display = 'block';
+  }
+};
 
-      routeItemEl.querySelectorAll('[data-del-stop]').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const stopEl = e.target.closest('[data-stop-id]');
-          const stopId = stopEl.dataset.stopId;
-          if (!confirm('Delete this stop?')) return;
-          try {
-            if (!state.demoMode) await api.deleteStop(stopId);
-            stopEl.remove();
-          } catch (err) {
-            alert(err.message || 'Failed to delete stop');
-          }
-        });
-      });
+window.deleteStop = async (id) => {
+  await api.deleteStop(id);
+  renderStops();
+};
 
-      routeItemEl.querySelectorAll('[data-save-stop]').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const stopEl = e.target.closest('[data-stop-id]');
-          const stopId = stopEl.dataset.stopId;
-          const price = stopEl.querySelector('[data-edit-price]').value;
-          const order = stopEl.querySelector('[data-edit-order]').value;
-          try {
-            if (!state.demoMode) await api.updateStop(stopId, { price_from_origin: Number(price), stop_order: Number(order) });
-            stopEl.querySelector('[data-edit-panel]').classList.add('hidden');
-            // reflect change in summary line
-            const span = stopEl.querySelector('span');
-            span.innerHTML = `Order <span class="mono">${Number(order)}</span> • Price from origin <span class="mono">${fmtRwf(Number(price))}</span> RWF`;
-          } catch (err) {
-            alert(err.message || 'Failed to update stop');
-          }
-        });
-      });
-    }
+// ── BUSES ─────────────────────────────────────────────
+async function renderBuses() {
+  myBuses = await api.getMyBuses();
+  const tbody = document.getElementById('bus-table');
+  tbody.innerHTML = myBuses.map(b => `
+    <tr>
+      <td>${b.plate_number}</td>
+      <td>${b.route?.fromLocation?.name||'?'} → ${b.route?.toLocation?.name||'?'}</td>
+      <td>${b.departure_time}</td>
+      <td>${b.capacity}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="deleteBus('${b.id}')">Delete</button></td>
+    </tr>
+  `).join('');
+  populateDriverBusSelect();
+}
 
-    // ── RENDER: FLEET ────────────────────────────────────
-    function renderFleet() {
-      const today = todayDateOnly();
-      const occ = computeOccupancyByBusId(today);
-      $('#fleet-table').innerHTML = state.buses.map(b => {
-        const busId = b.id;
-        const plate = b.plate_number || '—';
-        const route = b?.route ? `${b.route?.fromLocation?.name || '—'} → ${b.route?.toLocation?.name || '—'}` : '—';
-        const driver = b.driver_name || b?.driver?.name || '—';
-        const dep = b.departure_time ? String(b.departure_time).slice(0,5) : '—';
-        const taken = occ[busId] || 0;
-        const cap = Number(b.capacity || 0);
-        const pct = cap ? Math.round((taken / cap) * 100) : 0;
-        const color = pct >= 80 ? 'var(--success)' : (pct >= 40 ? 'var(--warning)' : 'var(--text-muted)');
-        return `
-          <tr class="clickable" data-bus-id="${busId}" style="cursor:pointer;">
-            <td><span class="mono" style="font-weight:950;">${plate}</span></td>
-            <td style="font-weight:800;">${route}</td>
-            <td><strong>${driver}</strong></td>
-            <td class="mono" style="font-weight:900;">${dep}</td>
-            <td width="280">
-              <div class="progress-wrapper">
-                <div class="progress-bg"><div class="progress-fill" style="width:${pct}%; background:${color};"></div></div>
-                <span style="font-size:12px; font-weight:900; min-width:64px;">${cap ? `${pct}%` : '—'}</span>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('') || `<tr><td colspan="5" style="padding: 18px 24px; color: var(--text-muted); font-weight: 750;">No buses yet.</td></tr>`;
-
-      $$('#fleet-table tr[data-bus-id]').forEach(tr => {
-        tr.addEventListener('click', () => {
-          const busId = tr.dataset.busId;
-          const b = state.buses.find(x => x.id === busId);
-          if (!b) return;
-          const route = b?.route ? `${b.route?.fromLocation?.name || '—'} → ${b.route?.toLocation?.name || '—'}` : '—';
-          const today = todayDateOnly();
-          const occ = computeOccupancyByBusId(today);
-          const taken = occ[busId] || 0;
-          const cap = Number(b.capacity || 0);
-          const pct = cap ? Math.round((taken / cap) * 100) : 0;
-
-          openDrawer({
-            title: b.plate_number || 'Bus',
-            subtitle: route,
-            html: `
-              <div style="display:grid; gap: 12px;">
-                <div class="card" style="box-shadow:none;">
-                  <div class="card-header" style="border-bottom:none; padding: 14px 16px;">
-                    <h4 style="font-size:14px;">Today</h4>
-                    <span class="chip"><span class="mono">${today}</span></span>
-                  </div>
-                  <div style="padding: 0 16px 16px;">
-                    <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                      <div class="muted" style="font-weight:800;">Occupancy</div>
-                      <div style="font-weight:950;">${taken}/${cap || '—'}</div>
-                    </div>
-                    <div style="margin-top: 10px;" class="progress-bg"><div class="progress-fill" style="width:${pct}%; background: var(--brand);"></div></div>
-                    <div class="muted" style="margin-top:8px; font-size:12px; font-weight:750;">Departure: <span class="mono">${String(b.departure_time || '—').slice(0,5)}</span></div>
-                  </div>
-                </div>
-
-                <div class="card" style="box-shadow:none;">
-                  <div class="card-header" style="padding: 14px 16px;"><h4 style="font-size:14px;">Details</h4></div>
-                  <div style="padding: 14px 16px; display:grid; gap: 10px;">
-                    <div style="display:flex; justify-content:space-between;"><span class="muted" style="font-weight:800;">Driver</span><span style="font-weight:900;">${b.driver_name || '—'}</span></div>
-                    <div style="display:flex; justify-content:space-between;"><span class="muted" style="font-weight:800;">Capacity</span><span class="mono" style="font-weight:900;">${b.capacity ?? '—'}</span></div>
-                    <div style="display:flex; justify-content:space-between;"><span class="muted" style="font-weight:800;">Route ID</span><span class="mono" style="font-weight:900;">${String(b.route_id || b?.route?.id || '—').slice(0, 8)}</span></div>
-                  </div>
-                </div>
-              </div>
-            `,
-          });
-        });
-      });
-    }
-
-    // ── RENDER: DRIVERS ──────────────────────────────────
-    function renderDrivers() {
-      $('#drivers-table').innerHTML = state.drivers.map(d => {
-        const status = d.is_active ? 'active' : 'inactive';
-        const bus = d?.bus?.plate_number || '—';
-        const prof = d.must_update_profile ? '<span class="status-pill pill-pending">UPDATE</span>' : '<span class="status-pill pill-paid">OK</span>';
-        return `
-          <tr>
-            <td><strong>${d.name || '—'}</strong></td>
-            <td class="mono" style="font-weight:850;">${d.phone || '—'}</td>
-            <td class="mono" style="font-weight:850;">${bus}</td>
-            <td>${status === 'active' ? '<span class="status-pill pill-paid">ACTIVE</span>' : '<span class="status-pill pill-cancelled">INACTIVE</span>'}</td>
-            <td>${prof}</td>
-          </tr>
-        `;
-      }).join('') || `<tr><td colspan="5" style="padding: 18px 24px; color: var(--text-muted); font-weight: 750;">No drivers yet.</td></tr>`;
-    }
-
-    // ── TICKETS TABLE ────────────────────────────────────
-    function getFilteredTickets() {
-      const q = ($('#tickets-q')?.value || '').toLowerCase().trim();
-      const status = ($('#tickets-status')?.value || '').toLowerCase().trim();
-      const from = $('#tickets-from')?.value || '';
-      const to = $('#tickets-to')?.value || '';
-
-      return state.tickets.filter(t => {
-        if (status && String(t.status).toLowerCase() !== status) return false;
-        if (from && String(t.travel_date || '') < from) return false;
-        if (to && String(t.travel_date || '') > to) return false;
-        if (!q) return true;
-        const hay = [
-          t?.user?.name,
-          t?.ticket_number,
-          t?.bus?.plate_number,
-          segmentLabel(t),
-          routeLabelFromTicket(t),
-        ].filter(Boolean).join(' ').toLowerCase();
-        return hay.includes(q);
-      });
-    }
-
-    function sortTickets(list) {
-      const { key, dir } = state.ticketsSort;
-      const mult = dir === 'asc' ? 1 : -1;
-      const get = (t) => {
-        if (key === 'createdAt') return new Date(t.createdAt || 0).getTime();
-        if (key === 'travel_date') return String(t.travel_date || '');
-        if (key === 'user') return String(t?.user?.name || '');
-        if (key === 'segment') return segmentLabel(t);
-        if (key === 'bus') return String(t?.bus?.plate_number || '');
-        if (key === 'price') return Number(t.price || 0);
-        if (key === 'status') return String(t.status || '');
-        return '';
-      };
-      return list.slice().sort((a, b) => {
-        const av = get(a);
-        const bv = get(b);
-        if (av < bv) return -1 * mult;
-        if (av > bv) return 1 * mult;
-        return 0;
-      });
-    }
-
-    function renderTickets() {
-      const tickets = sortTickets(getFilteredTickets());
-      $('#tickets-table').innerHTML = tickets.map(t => {
-        const created = t.createdAt ? new Date(t.createdAt).toLocaleString() : '—';
-        const travel = t.travel_date || '—';
-        const passenger = t?.user?.name || '—';
-        const seg = segmentLabel(t);
-        const bus = t?.bus?.plate_number || '—';
-        const price = fmtRwf(Number(t.price || 0));
-        const extra = `
-          <div style="display:grid; gap:8px; padding: 10px 0;">
-            <div style="display:flex; justify-content:space-between;"><span class="muted" style="font-weight:800;">Ticket #</span><span class="mono" style="font-weight:900;">${t.ticket_number || '—'}</span></div>
-            <div style="display:flex; justify-content:space-between;"><span class="muted" style="font-weight:800;">Seat</span><span class="mono" style="font-weight:900;">${t.seat_number ?? '—'}</span></div>
-            <div style="display:flex; justify-content:space-between;"><span class="muted" style="font-weight:800;">Passenger phone</span><span class="mono" style="font-weight:900;">${t?.user?.phone || '—'}</span></div>
-            <div style="display:flex; justify-content:space-between;"><span class="muted" style="font-weight:800;">Departure</span><span class="mono" style="font-weight:900;">${String(t?.bus?.departure_time || '—').slice(0,5)}</span></div>
-          </div>
-        `;
-        return `
-          <tr class="clickable" data-ticket-row="${t.id}" style="cursor:pointer;">
-            <td class="mono" style="font-weight:850;">${created}</td>
-            <td class="mono" style="font-weight:850;">${travel}</td>
-            <td><strong>${passenger}</strong></td>
-            <td style="color:var(--text-muted); font-weight: 800;">${seg}</td>
-            <td class="mono" style="font-weight:900;">${bus}</td>
-            <td class="mono" style="font-weight:900;">${price}</td>
-            <td>${pill(t.status)}</td>
-          </tr>
-          <tr class="subrow hidden" data-ticket-sub="${t.id}">
-            <td colspan="7" style="padding: 0 24px 14px;">
-              <div style="border: 1px solid var(--border); border-radius: 14px; background: #fbfcfe; padding: 12px 14px;">
-                ${extra}
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('') || `<tr><td colspan="7" style="padding: 18px 24px; color: var(--text-muted); font-weight: 750;">No tickets match this filter.</td></tr>`;
-
-      $$('#tickets-table tr[data-ticket-row]').forEach(tr => {
-        tr.addEventListener('click', () => {
-          const id = tr.dataset.ticketRow;
-          const sub = $(`#tickets-table tr[data-ticket-sub="${id}"]`);
-          sub.classList.toggle('hidden');
-        });
-      });
-    }
-
-    // ── REVENUE ──────────────────────────────────────────
-    function getRevenueRange() {
-      const today = todayDateOnly();
-      const to = $('#rev-to').value || today;
-      const from = $('#rev-from').value || toDateOnly(new Date(Date.now() - 6 * 86400000));
-      return { from, to };
-    }
-
-    function renderRevenue() {
-      const { from, to } = getRevenueRange();
-      const paid = state.tickets.filter(t => t.status === 'paid' && t.travel_date >= from && t.travel_date <= to);
-      const total = paid.reduce((s, t) => s + Number(t.price || 0), 0);
-      $('#rev-total').textContent = fmtRwf(total);
-      $('#rev-sub').textContent = `${from} → ${to} • ${paid.length} paid tickets`;
-
-      // daily series
-      const labels = [];
-      const daySum = [];
-      for (let d = new Date(from); toDateOnly(d) <= to; d = new Date(d.getTime() + 86400000)) {
-        const key = toDateOnly(d);
-        labels.push(key.slice(5));
-        const sum = paid.filter(t => t.travel_date === key).reduce((s, t) => s + Number(t.price || 0), 0);
-        daySum.push(sum);
-      }
-
-      // by route
-      const byRoute = {};
-      paid.forEach(t => {
-        const r = routeLabelFromTicket(t);
-        byRoute[r] = (byRoute[r] || 0) + Number(t.price || 0);
-      });
-      const routeLabels = Object.keys(byRoute);
-      const routeVals = routeLabels.map(k => byRoute[k]);
-
-      // table
-      $('#revenue-table').innerHTML = paid
-        .slice()
-        .sort((a, b) => (String(b.travel_date || '')).localeCompare(String(a.travel_date || '')))
-        .slice(0, 50)
-        .map(t => `
-          <tr>
-            <td class="mono" style="font-weight:900;">${t.ticket_number || '—'}</td>
-            <td><strong>${t?.user?.name || '—'}</strong></td>
-            <td class="mono" style="font-weight:900;">${t?.bus?.plate_number || '—'}</td>
-            <td class="mono" style="font-weight:900;">${t.travel_date || '—'}</td>
-            <td style="color:var(--text-muted); font-weight:800;">${segmentLabel(t)}</td>
-            <td class="mono" style="font-weight:900;">${fmtRwf(Number(t.price || 0))}</td>
-          </tr>
-        `).join('') || `<tr><td colspan="6" style="padding: 18px 24px; color: var(--text-muted); font-weight: 750;">No paid tickets in range.</td></tr>`;
-
-      renderRevenueCharts({ labels, daySum, routeLabels, routeVals });
-    }
-
-    function renderRevenueCharts({ labels, daySum, routeLabels, routeVals }) {
-      if (!window.Chart) return;
-
-      // line
-      const lineEl = $('#revenueLine');
-      const lineCtx = lineEl.getContext('2d');
-      if (state.charts.line) state.charts.line.destroy();
-      state.charts.line = new Chart(lineCtx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Revenue',
-            data: daySum,
-            borderColor: '#6366f1',
-            borderWidth: 3,
-            tension: 0.35,
-            pointRadius: 0,
-            fill: true,
-            backgroundColor: (context) => {
-              const chart = context.chart;
-              const { ctx, chartArea } = chart;
-              if (!chartArea) return null;
-              const g = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
-              g.addColorStop(0, 'rgba(99, 102, 241, 0.18)');
-              g.addColorStop(1, 'rgba(99, 102, 241, 0)');
-              return g;
-            },
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${fmtRwf(c.parsed.y)} RWF` } } },
-          scales: {
-            y: { grid: { color: '#eef2ff' }, ticks: { font: { size: 11, weight: 700 }, callback: (v) => `${fmtRwf(v)}` } },
-            x: { grid: { display: false }, ticks: { font: { size: 11, weight: 700 } } },
-          },
-        },
-      });
-
-      // bar by route
-      const barEl = $('#revenueByRoute');
-      const barCtx = barEl.getContext('2d');
-      if (state.charts.byRoute) state.charts.byRoute.destroy();
-      state.charts.byRoute = new Chart(barCtx, {
-        type: 'bar',
-        data: {
-          labels: routeLabels,
-          datasets: [{
-            label: 'Revenue',
-            data: routeVals,
-            backgroundColor: 'rgba(99, 102, 241, 0.85)',
-            borderRadius: 10,
-            barThickness: 18,
-          }],
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${fmtRwf(c.parsed.y)} RWF` } } },
-          scales: {
-            y: { grid: { display: false }, ticks: { font: { size: 11, weight: 700 }, callback: (v) => `${fmtRwf(v)}` } },
-            x: { grid: { display: false }, ticks: { font: { size: 10, weight: 800 } } },
-          },
-        },
-      });
-    }
-
-    function downloadRevenueCsv() {
-      const { from, to } = getRevenueRange();
-      const paid = state.tickets.filter(t => t.status === 'paid' && t.travel_date >= from && t.travel_date <= to);
-      const rows = [
-        ['ticket_number', 'passenger', 'bus', 'travel_date', 'segment', 'price_rwf'],
-        ...paid.map(t => [
-          t.ticket_number || '',
-          t?.user?.name || '',
-          t?.bus?.plate_number || '',
-          t.travel_date || '',
-          segmentLabel(t),
-          String(Number(t.price || 0)),
-        ]),
-      ];
-      const csv = rows.map(r => r.map(v => `"${String(v).replaceAll('"', '""')}"`).join(',')).join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `revenue_${from}_to_${to}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(a.href);
-    }
-
-    // ── MINI CHART ───────────────────────────────────────
-    function renderMiniChart() {
-      if (!window.Chart) return;
-      const el = $('#miniChart');
-      const ctx = el.getContext('2d');
-      const { from, to } = { from: toDateOnly(new Date(Date.now() - 6 * 86400000)), to: todayDateOnly() };
-      const paid = state.tickets.filter(t => t.status === 'paid' && t.travel_date >= from && t.travel_date <= to);
-      const labels = [];
-      const vals = [];
-      for (let d = new Date(from); toDateOnly(d) <= to; d = new Date(d.getTime() + 86400000)) {
-        const key = toDateOnly(d);
-        labels.push(key.slice(5));
-        vals.push(paid.filter(t => t.travel_date === key).reduce((s, t) => s + Number(t.price || 0), 0));
-      }
-
-      if (state.charts.mini) state.charts.mini.destroy();
-      state.charts.mini = new Chart(ctx, {
-        type: 'bar',
-        data: { labels, datasets: [{ data: vals, backgroundColor: '#6366f1', borderRadius: 10, barThickness: 14 }] },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${fmtRwf(c.parsed.y)} RWF` } } },
-          scales: {
-            y: { grid: { display: false }, ticks: { font: { size: 10, weight: 700 }, callback: (v) => `${fmtRwf(v)}` } },
-            x: { grid: { display: false }, ticks: { font: { size: 10, weight: 800 } } },
-          },
-        },
-      });
-    }
-
-    // ── SETTINGS ─────────────────────────────────────────
-    function renderSettings() {
-      $('#set-auto-rev').checked = !!state.settings?.auto_generate_reverse;
-      $('#set-manual-rev').checked = !!state.settings?.allow_manual_reverse;
-      $('#settings-save').disabled = !getToken() || state.demoMode;
-    }
-
-    async function saveSettings() {
-      if (state.demoMode) return;
-      try {
-        const auto_generate_reverse = $('#set-auto-rev').checked;
-        const allow_manual_reverse = $('#set-manual-rev').checked;
-        state.settings = await api.updateSettings({ auto_generate_reverse, allow_manual_reverse });
-        alert('Settings saved');
-      } catch (e) {
-        alert(e.message || 'Failed to save settings');
-      }
-    }
-
-    // ── POLL ─────────────────────────────────────────────
-    async function pollTickets() {
-      if (state.demoMode) return;
-      try {
-        const tickets = await api.getOperatorTickets();
-        state.tickets = tickets || [];
-        renderOverview();
-        if (location.hash === '#tickets') renderTickets();
-        if (location.hash === '#revenue') renderRevenue();
-        if (location.hash === '#fleet') renderFleet();
-      } catch {
-        // ignore
-      }
-    }
-
-    // ── INIT ─────────────────────────────────────────────
-    async function init() {
-      if (state.pollHandle) clearInterval(state.pollHandle);
-
-      if (state.demoMode) {
-        seedDemoData();
-      } else {
-        await loadAllReal();
-      }
-
-      renderOverview();
-      renderRoutes();
-      renderFleet();
-      renderDrivers();
-      renderTickets();
-      renderSettings();
-
-      const hashPage = location.hash.replace('#', '') || 'overview';
-      setPage(hashPage);
-
-      // poll bookings
-      state.pollHandle = setInterval(pollTickets, 15000);
-    }
-
-    // ── EVENTS ───────────────────────────────────────────
-    $('#login-btn').addEventListener('click', doLogin);
-    $('#demo-btn').addEventListener('click', async () => {
-      setLoginError('');
-      state.demoMode = true;
-      showApp();
-      await init();
+window.createBus = async () => {
+  const err = document.getElementById('bus-err');
+  err.style.display = 'none';
+  try {
+    await api.createBus({
+      route_id:       document.getElementById('bus-route').value,
+      plate_number:   document.getElementById('bus-plate').value,
+      driver_name:    document.getElementById('bus-driver').value,
+      capacity:       parseInt(document.getElementById('bus-cap').value),
+      departure_time: document.getElementById('bus-dep').value,
     });
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeDrawer();
-      if (e.key === 'Enter' && document.activeElement === $('#password')) doLogin();
+    renderBuses();
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
+
+window.deleteBus = async (id) => {
+  if (!confirm('Delete bus?')) return;
+  await api.deleteBus(id);
+  renderBuses();
+};
+
+// ── DRIVERS ───────────────────────────────────────────
+async function loadDrivers() {
+  const drivers = await api.getDrivers();
+  const tbody   = document.getElementById('drv-table');
+  tbody.innerHTML = drivers.map(d => `
+    <tr>
+      <td>${d.name}</td>
+      <td>${d.phone}</td>
+      <td>${d.bus?.plate_number || '—'}</td>
+      <td><span class="badge ${d.is_active ? 'badge-green' : 'badge-red'}">${d.is_active ? 'Active' : 'Suspended'}</span></td>
+      <td style="display:flex;gap:6px;">
+        <button class="btn btn-ghost btn-sm" onclick="toggleDrv('${d.id}')">${d.is_active ? 'Suspend' : 'Activate'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDrv('${d.id}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+window.createDriver = async () => {
+  const err = document.getElementById('drv-err');
+  const ok  = document.getElementById('drv-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  try {
+    const data = await api.createDriver({
+      name:   document.getElementById('drv-name').value,
+      phone:  document.getElementById('drv-phone').value,
+      bus_id: document.getElementById('drv-bus').value || undefined,
     });
+    document.getElementById('drv-pass-val').textContent = data.default_password;
+    document.getElementById('drv-pass').style.display   = 'block';
+    ok.textContent = `Driver "${data.name}" created`; ok.style.display = 'block';
+    document.getElementById('drv-name').value  = '';
+    document.getElementById('drv-phone').value = '';
+    loadDrivers();
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
 
-    $$('.nav-link[data-page]').forEach(n => n.addEventListener('click', () => setPage(n.dataset.page)));
-    $('#logout-btn').addEventListener('click', logout);
+window.toggleDrv = async (id) => { await api.toggleDriver(id); loadDrivers(); };
+window.deleteDrv = async (id) => {
+  if (!confirm('Delete driver?')) return;
+  // no delete driver endpoint yet, skip
+};
 
-    $('#drawer-close').addEventListener('click', closeDrawer);
-    $('#drawer-backdrop').addEventListener('click', closeDrawer);
+// ── TICKETS ───────────────────────────────────────────
+async function loadTickets() {
+  const tickets = await api.getOperatorTickets();
+  const statusColor = { paid:'badge-green', pending:'badge-yellow', cancelled:'badge-red' };
+  document.getElementById('tkt-table').innerHTML = tickets.map(t => `
+    <tr>
+      <td>${t.ticket_number || '—'}</td>
+      <td>${t.user?.name || '—'}</td>
+      <td>${t.bus?.plate_number || '—'}</td>
+      <td>${t.boardingStop?.location?.name || '—'}</td>
+      <td>${t.dropoffStop?.location?.name  || '—'}</td>
+      <td>${t.seat_number}</td>
+      <td>${t.travel_date}</td>
+      <td>${Number(t.price).toLocaleString()} RWF</td>
+      <td><span class="badge ${statusColor[t.status]||''}">${t.status}</span></td>
+    </tr>
+  `).join('');
+}
 
-    $('#routes-filter').addEventListener('input', renderRoutes);
-    $('#routes-refresh').addEventListener('click', async () => {
-      if (state.demoMode) return renderRoutes();
-      await loadAllReal();
-      renderRoutes();
-      renderOverview();
-    });
-    $('#fleet-refresh').addEventListener('click', async () => {
-      if (state.demoMode) return renderFleet();
-      await loadAllReal();
-      renderFleet();
-      renderOverview();
-    });
-    $('#drivers-refresh').addEventListener('click', async () => {
-      if (state.demoMode) return renderDrivers();
-      await loadAllReal();
-      renderDrivers();
-      renderOverview();
-    });
+// ── REVENUE ───────────────────────────────────────────
+window.calcRevenue = async () => {
+  const tickets  = await api.getOperatorTickets();
+  const dateFilter = document.getElementById('rev-date').value;
+  const paid     = tickets.filter(t => t.status === 'paid' && (!dateFilter || t.travel_date === dateFilter));
+  const total    = paid.reduce((s, t) => s + parseFloat(t.price), 0);
 
-    $('#tickets-q').addEventListener('input', renderTickets);
-    $('#tickets-status').addEventListener('change', renderTickets);
-    $('#tickets-from').addEventListener('change', renderTickets);
-    $('#tickets-to').addEventListener('change', renderTickets);
-    $('#tickets-reset').addEventListener('click', () => {
-      $('#tickets-q').value = '';
-      $('#tickets-status').value = '';
-      $('#tickets-from').value = '';
-      $('#tickets-to').value = '';
-      renderTickets();
-    });
-    $$('th[data-sort]').forEach(th => {
-      th.style.cursor = 'pointer';
-      th.addEventListener('click', () => {
-        const key = th.dataset.sort;
-        if (state.ticketsSort.key === key) state.ticketsSort.dir = state.ticketsSort.dir === 'asc' ? 'desc' : 'asc';
-        else state.ticketsSort = { key, dir: 'asc' };
-        renderTickets();
-      });
-    });
+  // per bus breakdown
+  const byBus = {};
+  paid.forEach(t => {
+    const key = t.bus?.plate_number || 'Unknown';
+    byBus[key] = (byBus[key] || 0) + parseFloat(t.price);
+  });
 
-    $('#rev-apply').addEventListener('click', renderRevenue);
-    $('#rev-refresh').addEventListener('click', async () => {
-      if (state.demoMode) return renderRevenue();
-      await pollTickets();
-      renderRevenue();
-    });
-    $('#rev-download').addEventListener('click', downloadRevenueCsv);
+  document.getElementById('rev-total').textContent = `${total.toLocaleString()} RWF`;
+  document.getElementById('rev-breakdown').innerHTML = Object.entries(byBus).map(([plate, amount]) => `
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;font-size:13px;">
+      <span style="color:#94a3b8;">Bus ${plate}</span>
+      <span style="color:#4ade80;font-weight:600;">${amount.toLocaleString()} RWF</span>
+    </div>
+  `).join('');
+  document.getElementById('rev-box').style.display = 'block';
+};
 
-    $('#settings-save').addEventListener('click', saveSettings);
+// ── NOTIFICATIONS ─────────────────────────────────────
+async function loadNotifications() {
+  const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
+  const count = unread.unread;
+  const bell  = document.getElementById('bell-count');
+  bell.textContent   = count;
+  bell.style.display = count > 0 ? 'flex' : 'none';
+  document.getElementById('notif-list').innerHTML = notifs.length
+    ? notifs.map(n => `
+        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${n.id}',this)">
+          <p>${n.message}</p>
+          <small>${new Date(n.createdAt).toLocaleString()}</small>
+        </div>
+      `).join('')
+    : '<div style="padding:24px;text-align:center;color:#64748b;">No notifications</div>';
+}
 
-    $('#global-search').addEventListener('keydown', (e) => {
-      if (e.key !== 'Enter') return;
-      const q = e.target.value.trim();
-      if (!q) return;
-      setPage('tickets');
-      $('#tickets-q').value = q;
-      renderTickets();
-    });
+window.toggleNotifs = () => document.getElementById('notif-dropdown').classList.toggle('open');
+window.readNotif = async (id, el) => { await api.markRead(id); el.classList.remove('unread'); loadNotifications(); };
+window.markAllRead = async () => { await api.markAllRead(); loadNotifications(); };
 
-    // sensible defaults for revenue range (last 14 days)
-    const today = todayDateOnly();
-    $('#rev-to').value = today;
-    $('#rev-from').value = toDateOnly(new Date(Date.now() - 13 * 86400000));
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#bell-btn') && !e.target.closest('#notif-dropdown')) {
+    document.getElementById('notif-dropdown').classList.remove('open');
+  }
+});
 
-    // auto-login if token exists
-    if (getToken()) {
-      showApp();
-      init().catch(() => showLogin());
-    } else {
-      showLogin();
-    }
-  </script>
+if (getToken()) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('dashboard').style.display    = 'block';
+  init();
+}
+</script>
 </body>
 </html>

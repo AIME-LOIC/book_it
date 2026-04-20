@@ -8,6 +8,7 @@ import {
 import authenticate from '../middleware/auth.js';
 import isAdmin      from '../middleware/admin.js';
 import isOperator   from '../middleware/operator.js';
+import isDriver from '../middleware/driver.js';
 
 const router = Router();
 
@@ -15,8 +16,8 @@ const router = Router();
 router.get('/search',           search);
 
 // validate
-router.post('/validate/qr',     authenticate, isOperator, validateByQR);
-router.post('/validate/number', authenticate, isOperator, validateByNumber);
+router.post('/validate/qr',     authenticate, isDriver, validateByQR);
+router.post('/validate/number', authenticate, isDriver, validateByNumber);
 
 // operator
 router.get('/operator',         authenticate, isOperator, getOperatorTickets);

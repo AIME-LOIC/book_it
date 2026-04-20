@@ -18,6 +18,7 @@ const Ticket = sequelize.define('Ticket', {
   status:           { type: DataTypes.ENUM('pending','paid','cancelled'), defaultValue: 'pending' },
   ticket_number:    { type: DataTypes.STRING(20),   allowNull: true, unique: true },
   qr_token:         { type: DataTypes.TEXT,          allowNull: true },
+  is_used: { type: DataTypes.BOOLEAN, defaultValue: false },
 }, {
   tableName:  'tickets',
   timestamps: true,
