@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -160,30 +159,6 @@
     gap: 16px;
     align-items: flex-end;
   }
-  
-  .autocomplete-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    max-height: 240px;
-    overflow: auto;
-    display: none;
-    z-index: 10;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-    margin-top: 4px;
-  }
-  .autocomplete-item {
-    padding: 12px 16px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .autocomplete-item:hover {
-    background: var(--border);
-  }
 
   .input-group { display: flex; flex-direction: column; gap: 8px; }
   .input-group label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
@@ -343,6 +318,8 @@
     transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     padding: 24px;
     box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
   }
   .notif-panel.open { right: 0; }
   .notif-item {
@@ -402,25 +379,7 @@
   .badge-cancelled { background: rgba(239, 68, 68, 0.14); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.20); }
 
   .loading-shimmer { animation: shimmer 2s infinite linear; background: linear-gradient(90deg, var(--bg-card) 0%, #334155 50%, var(--bg-card) 100%); background-size: 200% 100%; height: 100px; border-radius: 20px; margin-bottom: 20px; }
-@keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-
-  /* Universal Skeletons - Step 2 */
-  .skeleton { 
-    background: linear-gradient(90deg, var(--bg-main) 0%, var(--border) 50%, var(--bg-main) 100%); 
-    background-size: 200% 100%; 
-    animation: shimmer 1.5s infinite linear; 
-    border-radius: 12px; 
-    height: 16px;
-  }
-  .skeleton-card { height: 120px; }
-  .skeleton-line { height: 12px; margin-bottom: 8px; }
-  .skeleton-table-row { height: 48px; }
-  
-  /* Empty States */
-  .empty-state {
-    text-align: center; padding: 60px 20px; color: var(--text-muted);
-  }
-  .empty-state i { font-size: 64px; opacity: 0.3; margin-bottom: 20px; display: block; }
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
   .bell-btn { position: relative; cursor: pointer; }
   .bell-count { position: absolute; top: -5px; right: -5px; background: var(--secondary); color: var(--bg-main); width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items:center; justify-content:center; font-weight: 900; border: 2px solid var(--bg-card); }
@@ -525,19 +484,15 @@
           <div class="search-grid">
             <div class="input-group">
               <label><i class="fa fa-map-marker-alt"></i> From</label>
-        <div class="relative">
-          <input id="s-from-input" class="w-full" placeholder="From..." autocomplete="off" />
-          <div id="s-from-dropdown" class="absolute top-full left-0 right-0 bg-var(--bg-card) border border-var(--border) rounded-lg max-h-60 overflow-auto hidden z-10 shadow-xl">
-          </div>
-        </div>
+              <select id="s-from" style="height: 50px;">
+                <option value="">Select departure</option>
+              </select>
             </div>
             <div class="input-group">
               <label><i class="fa fa-location-dot"></i> To</label>
-        <div class="relative">
-          <input id="s-to-input" class="w-full" placeholder="To..." autocomplete="off" />
-          <div id="s-to-dropdown" class="absolute top-full left-0 right-0 bg-var(--bg-card) border border-var(--border) rounded-lg max-h-60 overflow-auto hidden z-10 shadow-xl">
-          </div>
-        </div>
+              <select id="s-to" style="height: 50px;">
+                <option value="">Select destination</option>
+              </select>
             </div>
             <div class="input-group">
               <label><i class="fa fa-calendar-alt"></i> Date</label>
@@ -574,7 +529,7 @@
         <h3 style="font-size: 20px; font-weight: 800;">Notifications</h3>
         <button class="btn btn-ghost" onclick="toggleNotifs()"><i class="fa fa-times"></i></button>
     </div>
-    <div id="notif-list" style="scroll-behavior: auto;"></div>
+    <div id="notif-list" style="overflow-y: auto; flex: 1; padding-right: 4px; scrollbar-width: thin; scrollbar-color: var(--border) transparent;"></div>
   </div>
 
   <!-- SEAT MODAL (POPUP) -->
@@ -656,68 +611,16 @@ window.logout = () => { clearToken(); location.reload(); };
 async function init() {
   document.getElementById('s-date').value = new Date().toISOString().split('T')[0];
   locations = await api.getLocations();
-  setupAutocomplete();
+  populateSelects();
   await loadAllBuses();
   loadNotifications();
   setInterval(loadNotifications, 30000);
 }
 
-// Autocomplete Utils - Step 3
-const showSkeleton = (container, count = 5, type = 'card') => {
-  container.innerHTML = Array(count).fill(`<div class="skeleton skeleton-${type}"></div>`).join('');
-};
-const showEmpty = (container, icon, msg, cta = '') => {
-  container.innerHTML = `<div class="empty-state"><i class="fa fa-${icon}"></i><p>${msg}</p>${cta ? `<button class="btn btn-primary mt-4">${cta}</button>` : ''}</div>`;
-};
-
-async function setupAutocomplete() {
-  const fromInput = document.getElementById('s-from-input');
-  const toInput = document.getElementById('s-to-input');
-  const fromDrop = document.getElementById('s-from-dropdown');
-  const toDrop = document.getElementById('s-to-dropdown');
-  
-  const debouncedSearch = window.api.debounce(async (query) => {
-    if (!query) return [];
-    const locs = await window.api.getLocations();
-    return locs.filter(l => l.name.toLowerCase().includes(query.toLowerCase()));
-  }, 300);
-  
-  const renderDrop = (drop, locs, input) => {
-    drop.innerHTML = locs.map(l => `<div class="p-3 cursor-pointer hover:bg-var(--border)" onclick="selectLocation('${input.id}', ${l.id}, '${l.name}')">${l.name}</div>`).join('');
-    drop.classList.toggle('hidden', !locs.length);
-  };
-  
-  const selectLocation = (inputId, id, name) => {
-    document.getElementById(inputId.replace('-input', '')).dataset.id = id;
-    document.getElementById(inputId).value = name;
-    fromDrop.classList.add('hidden');
-    toDrop.classList.add('hidden');
-  };
-  
-  const onInput = async (e, drop) => {
-    const query = e.target.value;
-    if (query.length < 2) {
-      drop.classList.add('hidden');
-      return;
-    }
-    const matches = await debouncedSearch(query);
-    renderDrop(drop, matches, e.target);
-  };
-  
-  fromInput.oninput = (e) => onInput(e, fromDrop);
-  toInput.oninput = (e) => onInput(e, toDrop);
-  
-  // Close on outside click
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.relative')) {
-      fromDrop.classList.add('hidden');
-      toDrop.classList.add('hidden');
-    }
-  });
-}
-
 function populateSelects() {
-  // Legacy - autocomplete now primary
+  const opts = locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  document.getElementById('s-from').innerHTML += opts;
+  document.getElementById('s-to').innerHTML += opts;
 }
 
 window.showSection = (name, el) => {
@@ -728,24 +631,11 @@ window.showSection = (name, el) => {
   if (name === 'tickets') loadMyTickets();
 };
 
-window.selectLocation = (inputId, id, name) => {
-    document.getElementById(inputId).dataset.id = id;
-    document.getElementById(inputId).value = name;
-    document.getElementById(inputId + '-dropdown').classList.add('hidden');
-    filterBuses();
-};
-
 window.quickSearch = (fromName, toName) => {
     const f = locations.find(l => l.name === fromName);
     const t = locations.find(l => l.name === toName);
-    if(f) {
-      document.getElementById('s-from-input').dataset.id = f.id;
-      document.getElementById('s-from-input').value = f.name;
-    }
-    if(t) {
-      document.getElementById('s-to-input').dataset.id = t.id;
-      document.getElementById('s-to-input').value = t.name;
-    }
+    if(f) document.getElementById('s-from').value = f.id;
+    if(t) document.getElementById('s-to').value = t.id;
     filterBuses();
 };
 
@@ -761,10 +651,8 @@ async function loadAllBuses() {
 }
 
 window.filterBuses = async () => {
-  const fromInput = document.getElementById('s-from-input');
-  const toInput = document.getElementById('s-to-input');
-  const from = fromInput.dataset.id || '';
-  const to = toInput.dataset.id || '';
+  const from = document.getElementById('s-from').value;
+  const to   = document.getElementById('s-to').value;
   const date = document.getElementById('s-date').value;
   const res  = document.getElementById('search-results');
 
@@ -774,32 +662,64 @@ window.filterBuses = async () => {
     try {
       const buses = await api.searchTickets({ from, to, date });
       renderSearchResults(buses, from, to, date);
-    } catch(e) { res.innerHTML = `<p>${e.message}</p>`; }
+    } catch(e) { 
+      res.innerHTML = '<div style="text-align:center; padding:40px;"><i class="fa fa-search" style="font-size:40px; color:var(--border); margin-bottom:16px;"></i><p>No buses available for this route/date.</p><p style="font-size:12px; color:var(--text-muted);">Try different locations, dates, or contact the operator to assign buses.</p></div>';
+    }
   } else {
     renderBuses(allBuses);
   }
 };
 
+window.openBrowseBus = async (busId) => {
+  const bus = allBuses.find(b => b.id === busId);
+  if (!bus || !bus.route?.fromLocation || !bus.route?.toLocation) {
+    showToast('Route info missing', 'error'); return;
+  }
+  const date = document.getElementById('s-date').value;
+  try {
+    const results = await api.searchTickets({
+      from: bus.route.fromLocation.id,
+      to:   bus.route.toLocation.id,
+      date
+    });
+    const found = results.find(r => r.bus_id === busId);
+    if (!found) { showToast('Bus not available for this date', 'warning'); return; }
+    openSeatModal(
+      found.bus_id, found.boarding_stop_id, found.dropoff_stop_id,
+      found.capacity, JSON.stringify(found.taken_seats || []),
+      found.operator?.company_name, found.price, date
+    );
+  } catch(e) {
+    showToast('Bus not available for selected date', 'warning');
+  }
+};
+
 function renderBuses(buses) {
   const res = document.getElementById('search-results');
-  res.innerHTML = buses.map(b => `
-    <div class="bus-card" onclick="showToast('Select destination to book', 'info')">
+  if (!buses.length) {
+    res.innerHTML = '<div style="text-align:center; padding:40px;"><p style="color:var(--text-muted);">No buses available.</p></div>';
+    return;
+  }
+  res.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin-bottom:16px;">Click a bus to select seats and book. Availability is checked for the selected date.</p>` +
+  buses.map(b => `
+    <div class="bus-card" onclick="openBrowseBus('${b.id}')">
       <div class="bus-card-main">
         <div class="bus-info">
           <div class="operator-name">${b.operator?.company_name || 'BookIt Express'}</div>
           <div class="bus-meta">
             <span><i class="fa fa-bus"></i> ${b.plate_number}</span>
-            <span><i class="fa fa-user"></i> ${b.driver_name}</span>
+            <span><i class="fa fa-map-marker-alt"></i> ${b.route?.fromLocation?.name || '?'} &rarr; ${b.route?.toLocation?.name || '?'}</span>
+            <span><i class="fa fa-clock"></i> ${String(b.departure_time).slice(0,5)}</span>
           </div>
         </div>
         <div class="time-price">
-            <div class="departure-time">${b.departure_time}</div>
-            <div class="price">${Number(b.route?.price || 0).toLocaleString()} RWF</div>
+          <div class="departure-time">${String(b.departure_time).slice(0,5)}</div>
+          <div class="price">${Number(b.route?.price || 0).toLocaleString()} RWF</div>
         </div>
       </div>
       <div class="occupancy-bar-container">
-        <div class="occupancy-label"><span>Occupancy</span><span>Full Route</span></div>
-        <div class="occupancy-bar"><div class="occupancy-fill" style="width: 70%"></div></div>
+        <div class="occupancy-label"><span>Full Route</span><span>${b.capacity} seats total</span></div>
+        <div class="occupancy-bar"><div class="occupancy-fill" style="width: 0%"></div></div>
       </div>
     </div>
   `).join('');
@@ -808,7 +728,7 @@ function renderBuses(buses) {
 function renderSearchResults(buses, from, to, date) {
     const res = document.getElementById('search-results');
     if(!buses.length) {
-        showEmpty(res, 'search', 'No buses found for this route.', 'Try different date');
+        res.innerHTML = '<div style="text-align:center; padding:40px;"><i class="fa fa-search" style="font-size:40px; color:var(--border); margin-bottom:16px;"></i><p>No buses found for this route.</p></div>';
         return;
     }
     res.innerHTML = buses.map(b => {

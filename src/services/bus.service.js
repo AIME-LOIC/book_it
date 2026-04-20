@@ -51,7 +51,7 @@ export const deleteBus = async (operator_id, id) => {
   await bus.destroy();
 };
 export const getAllAvailableBuses = async () => {
-  const buses = await Bus.findAll({
+  return await Bus.findAll({
     include: [
       { model: Operator, as: 'operator', attributes: ['id', 'company_name'] },
       {
@@ -62,16 +62,5 @@ export const getAllAvailableBuses = async () => {
         ],
       },
     ],
-  });
-
-  const now   = new Date();
-  const today = now.toISOString().split('T')[0];
-
-  return buses.filter(b => {
-    const [hours, minutes] = b.departure_time.split(':').map(Number);
-    const departure = new Date();
-    departure.setHours(hours, minutes, 0, 0);
-    // show if departure is in the future today, or bus runs on future dates
-    return now > departure;
   });
 };

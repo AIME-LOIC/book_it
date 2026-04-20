@@ -7,573 +7,387 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
   <style>
-    :root{
-      --bg: #050b16;
-      --panel: #0b1220;
-      --card: #0f172a;
-      --border: #24314a;
-      --text: #e5e7eb;
+    :root {
+      --bg: #020617;
+      --sidebar: #0f172a;
+      --card: #1e293b;
+      --border: rgba(255, 255, 255, 0.06);
+      --text: #f8fafc;
       --muted: #94a3b8;
-      --orange: #fb923c;
-      --orange2: #f97316;
-      --green: #22c55e;
-      --amber: #f59e0b;
-      --red: #ef4444;
-      --shadow: 0 18px 50px rgba(0,0,0,0.55);
+      --primary: #f97316;
+      --primary-glow: rgba(249, 115, 22, 0.2);
+      --success: #22c55e;
+      --error: #ef4444;
+      --radius: 16px;
+      --sidebar-width: 280px;
     }
 
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color: transparent;}
-    body{
-      font-family:'Plus Jakarta Sans',system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background: radial-gradient(circle at top right, rgba(251,146,60,0.18), transparent 55%),
-                  radial-gradient(circle at bottom left, rgba(34,197,94,0.10), transparent 55%),
-                  var(--bg);
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    .mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
-    .hidden{display:none !important;}
+    .hidden { display: none !important; }
+    .mono { font-family: 'JetBrains Mono', monospace; }
 
-    /* LOGIN */
-    #login-screen{min-height:100vh;display:grid;place-items:center;padding:18px;}
-    .login-card{
-      width:100%;
-      max-width:520px;
-      background: rgba(15,23,42,0.72);
-      border:1px solid var(--border);
-      border-radius:22px;
-      box-shadow: var(--shadow);
-      padding:28px;
-      backdrop-filter: blur(14px);
-    }
-    .login-title{
-      font-size:22px;
-      font-weight:950;
-      letter-spacing:-0.02em;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-    }
-    .pill{
-      border:1px solid rgba(251,146,60,0.25);
-      background: rgba(251,146,60,0.10);
-      color: #fdba74;
-      border-radius:999px;
-      padding:6px 12px;
-      font-weight:900;
-      font-size:12px;
-      letter-spacing:0.08em;
-      text-transform:uppercase;
-    }
-    .login-sub{margin-top:10px;color:var(--muted);font-weight:750;font-size:14px;line-height:1.4;}
-    .field{margin-top:16px;}
-    .label{display:block;margin-bottom:10px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:0.14em;font-size:12px;}
-    .input{
-      width:100%;
-      border:1px solid var(--border);
-      background: rgba(2,6,23,0.38);
-      color: var(--text);
-      padding:16px 16px;
-      border-radius:16px;
-      font-size:18px;
-      font-weight:800;
-      outline:none;
-    }
-    .input:focus{border-color: rgba(251,146,60,0.55); box-shadow: 0 0 0 6px rgba(251,146,60,0.14);}
-    .btn{
-      border:none;
-      border-radius:18px;
-      padding:16px 18px;
-      font-size:18px;
-      font-weight:950;
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      transition: 0.15s;
-      user-select:none;
-    }
-    .btn:disabled{opacity:0.55;cursor:not-allowed;}
-    .btn-primary{background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #0b1220; box-shadow: 0 12px 30px rgba(249,115,22,0.20);}
-    .btn-primary:active{transform: translateY(1px);}
-    .btn-ghost{background: rgba(148,163,184,0.14); color: var(--text); border: 1px solid rgba(148,163,184,0.18);}
-    .alert{
-      display:none;
-      margin-top: 16px;
-      padding: 14px 14px;
-      border-radius: 16px;
-      border: 1px solid rgba(239,68,68,0.25);
-      background: rgba(239,68,68,0.10);
-      color: #fecaca;
-      font-weight: 850;
-      font-size: 14px;
+    /* --- LOGIN UI --- */
+    #login-screen {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: radial-gradient(circle at top right, #1e1b4b, var(--bg));
     }
 
-    /* DASHBOARD */
-    #dashboard{display:none; min-height:100vh;}
-    .header{
-      position: sticky;
-      top: 0;
-      z-index: 90;
-      background: rgba(5,11,22,0.82);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border);
+    .login-box {
+      width: 100%;
+      max-width: 400px;
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      padding: 40px;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
     }
-    .banner{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
+
+    .login-title { font-size: 28px; font-weight: 900; margin-bottom: 8px; color: var(--primary); text-align: center; }
+    .login-subtitle { color: var(--muted); text-align: center; margin-bottom: 32px; font-size: 14px; }
+
+    .input-group { margin-bottom: 20px; }
+    .input-label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.05em; }
+    
+    .input {
+      width: 100%;
+      background: rgba(0,0,0,0.2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 14px 16px;
+      color: white;
+      font-size: 16px;
+      transition: all 0.2s;
     }
-    .banner-left{display:flex;flex-direction:column;gap:4px;min-width:0;}
-    .banner-kicker{
-      font-weight:950;
-      letter-spacing:0.12em;
-      text-transform:uppercase;
-      font-size:12px;
-      color: var(--muted);
-    }
-    .banner-msg{
-      font-size:16px;
-      font-weight:950;
-      letter-spacing:-0.01em;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .banner-live{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(34,197,94,0.22);
-      background: rgba(34,197,94,0.10);
-      color: #86efac;
-      font-weight: 950;
-      font-size: 12px;
-      letter-spacing: 0.10em;
-      text-transform: uppercase;
-      flex-shrink:0;
-    }
-    .dot{width:8px;height:8px;border-radius:50%;background: var(--green);box-shadow:0 0 0 6px rgba(34,197,94,0.12);}
-    .banner-actions{display:flex;gap:10px;align-items:center;flex-shrink:0;}
 
-    .content{padding: 16px 16px 96px; max-width: 980px; margin: 0 auto;}
-    .tabs{
+    .input:focus { border-color: var(--primary); outline: none; background: rgba(0,0,0,0.4); }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 800;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 14px var(--primary-glow); }
+    .btn-primary:hover { transform: translateY(-2px); filter: brightness(1.1); }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: rgba(255,255,255,0.05); color: white; }
+
+    /* --- DASHBOARD LAYOUT --- */
+    #dashboard { display: flex; min-height: 100vh; }
+
+    /* SIDEBAR (Desktop) */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 32px 16px;
+      position: fixed;
+      height: 100vh;
+      z-index: 50;
+    }
+
+    .sidebar-logo { font-size: 22px; font-weight: 900; color: var(--primary); margin-bottom: 48px; padding-left: 16px; }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: 12px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .nav-link:hover { background: rgba(255,255,255,0.03); color: white; }
+    .nav-link.active { background: var(--primary-glow); color: var(--primary); }
+
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      padding: 40px;
+      max-width: 1200px;
+    }
+
+    /* MOBILE NAVIGATION */
+    .mobile-nav {
+      display: none;
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      z-index: 95;
-      background: rgba(5,11,22,0.82);
-      backdrop-filter: blur(14px);
+      background: rgba(15, 23, 42, 0.9);
+      backdrop-filter: blur(15px);
       border-top: 1px solid var(--border);
-      padding: 12px 12px;
-      display:flex;
-      gap: 10px;
-      justify-content: space-between;
-    }
-    .tabbtn{
-      flex:1;
-      background: rgba(148,163,184,0.12);
-      border: 1px solid rgba(148,163,184,0.18);
-      color: var(--text);
-      border-radius: 18px;
-      padding: 14px 12px;
-      font-weight: 950;
-      font-size: 14px;
-      cursor:pointer;
-    }
-    .tabbtn.active{
-      background: rgba(251,146,60,0.14);
-      border-color: rgba(251,146,60,0.24);
-      color: #fdba74;
+      padding: 8px 12px;
+      justify-content: space-around;
+      z-index: 100;
     }
 
-    .section{display:none;}
-    .section.active{display:block;}
-
-    .hero{
-      border: 1px solid var(--border);
-      background: rgba(15,23,42,0.70);
-      border-radius: 22px;
-      padding: 18px;
-      box-shadow: var(--shadow);
-    }
-    .hero-top{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-    .hero-label{color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:0.14em;font-size:12px;}
-    .plate{
-      margin-top: 10px;
-      font-size: 56px;
-      font-weight: 1000;
-      letter-spacing: -0.05em;
-      line-height: 1.0;
-      color: #fdba74;
-    }
-    .route{
-      margin-top: 10px;
-      font-size: 20px;
-      font-weight: 950;
-      letter-spacing: -0.02em;
-    }
-    .meta{
-      margin-top: 10px;
-      color: var(--muted);
-      font-weight: 900;
-      font-size: 15px;
-    }
-    .countdown{
-      margin-top: 10px;
-      font-size: 22px;
-      font-weight: 1000;
-      color: #86efac;
-      letter-spacing: -0.02em;
-    }
-    .bigcount-wrap{
-      min-width: 260px;
-      border: 1px solid rgba(34,197,94,0.22);
-      background: rgba(34,197,94,0.08);
-      border-radius: 22px;
-      padding: 16px;
-    }
-    .bigcount{
-      margin-top: 10px;
-      font-size: 72px;
-      font-weight: 1100;
-      letter-spacing: -0.07em;
-      line-height: 1.0;
-      color: #86efac;
-    }
-    .bigcount-sub{margin-top: 10px; color: var(--muted); font-weight: 900;}
-
-    .toolbar{
-      display:flex;
-      gap: 12px;
+    .m-nav-item {
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      margin: 16px 0;
-    }
-    .title{
-      font-size: 20px;
-      font-weight: 1000;
-      letter-spacing: -0.02em;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 8px;
+      border-radius: 12px;
+      cursor: pointer;
     }
 
-    .cardlist{display:flex;flex-direction:column;gap:12px;}
-    .pcard{
+    .m-nav-item.active { color: var(--primary); }
+
+    /* --- TOAST NOTIFICATIONS (Right Aligned) --- */
+    #toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .toast {
+      width: 320px;
+      background: #1e293b;
       border: 1px solid var(--border);
-      background: rgba(15,23,42,0.72);
-      border-radius: 22px;
-      padding: 14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 14px;
+      padding: 16px;
+      border-radius: 16px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);
+      display: flex;
+      gap: 12px;
+      transform: translateX(120%);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: auto;
     }
-    .seat{
-      width: 84px;
-      height: 84px;
-      border-radius: 22px;
-      border: 1px solid rgba(251,146,60,0.22);
-      background: rgba(251,146,60,0.10);
-      display:grid;
-      place-items:center;
-      color: #fdba74;
-      font-weight: 1100;
-      font-size: 40px;
-      flex-shrink:0;
-    }
-    .pinfo{min-width:0;flex:1;}
-    .pname{font-size: 18px; font-weight: 1000; letter-spacing: -0.02em;}
-    .stops{margin-top: 8px; display:flex; flex-direction:column; gap: 6px; font-weight: 950;}
-    .stopline{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 18px;
-      border: 1px solid rgba(148,163,184,0.16);
-      background: rgba(2,6,23,0.24);
-    }
-    .stopline.pickup{border-color: rgba(34,197,94,0.22); background: rgba(34,197,94,0.08);}
-    .stopline.dropoff{border-color: rgba(245,158,11,0.22); background: rgba(245,158,11,0.10);}
-    .stopbadge{font-size: 12px; font-weight: 1100; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);}
-    .stopval{font-size: 16px; font-weight: 1100; color: var(--text); letter-spacing: -0.01em;}
-    .btn-notify{min-width: 190px;}
 
-    /* VALIDATE */
-    .validate-grid{display:grid;grid-template-columns: 1fr;gap: 12px;}
-    .bigbtn{
-      width:100%;
-      padding: 18px 16px;
-      border-radius: 22px;
-      border: 1px solid rgba(251,146,60,0.25);
-      background: rgba(251,146,60,0.10);
-      color: #fdba74;
+    .toast.show { transform: translateX(0); }
+    .toast-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+    .toast-info { flex: 1; }
+    .toast-title { font-weight: 800; font-size: 14px; margin-bottom: 2px; }
+    .toast-body { font-size: 13px; color: var(--muted); font-weight: 500; }
+
+    /* CARDS & ELEMENTS */
+    .glass-card {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid var(--border);
+      padding: 24px;
+      border-radius: 20px;
+      margin-bottom: 24px;
+    }
+
+    .hero-stat { font-size: 48px; font-weight: 900; letter-spacing: -2px; color: var(--primary); margin: 8px 0; }
+    
+    .passenger-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: rgba(30, 41, 59, 0.4);
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      transition: 0.2s;
+    }
+
+    .passenger-card:hover { border-color: var(--primary); background: rgba(30, 41, 59, 0.7); }
+
+    .seat-label {
+      width: 48px;
+      height: 48px;
+      background: var(--primary-glow);
+      color: var(--primary);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
       font-size: 18px;
-      font-weight: 1050;
-      cursor:pointer;
-    }
-    .bigbtn.secondary{
-      border-color: rgba(148,163,184,0.18);
-      background: rgba(148,163,184,0.10);
-      color: var(--text);
-    }
-    .validate-panel{
-      border: 1px solid var(--border);
-      background: rgba(15,23,42,0.72);
-      border-radius: 22px;
-      padding: 16px;
-      margin-top: 12px;
     }
 
-    /* OVERLAY RESULT */
-    #result-overlay{
-      position:fixed;
-      inset:0;
-      z-index: 200;
-      display:none;
-      padding: 18px;
-      background: rgba(2,6,23,0.96);
-    }
-    .overlay-card{
-      max-width: 860px;
-      margin: 0 auto;
-      border: 2px solid var(--border);
-      border-radius: 26px;
-      background: rgba(15,23,42,0.86);
-      padding: 18px;
-      box-shadow: var(--shadow);
-    }
-    .overlay-top{display:flex;align-items:center;justify-content:space-between;gap: 12px;}
-    .overlay-title{font-size: 22px;font-weight: 1100;letter-spacing: -0.02em;}
-    .mark{
-      width: 110px;
-      height: 110px;
-      border-radius: 28px;
-      display:grid;
-      place-items:center;
-      font-size: 64px;
-      font-weight: 1100;
-      margin: 16px 0 10px;
-      border: 2px solid transparent;
-    }
-    .mark.ok{background: rgba(34,197,94,0.10); border-color: rgba(34,197,94,0.22); color: #86efac;}
-    .mark.bad{background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.22); color: #fecaca;}
-    .overlay-body{
-      margin-top: 10px;
-      font-size: 20px;
-      font-weight: 1000;
-      line-height: 1.35;
-      letter-spacing: -0.01em;
-    }
-    .overlay-grid{margin-top: 14px;display:grid;grid-template-columns: 1fr;gap: 10px;}
-    .kv{
-      border: 1px solid rgba(148,163,184,0.16);
-      background: rgba(2,6,23,0.24);
-      border-radius: 18px;
-      padding: 12px;
-      display:flex;
-      justify-content:space-between;
-      gap: 10px;
-    }
-    .kv span{color: var(--muted); font-weight: 950; text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px;}
-    .kv b{font-weight: 1100;}
-
-    /* QR MODAL */
-    #qr-modal{
-      position:fixed;
-      inset:0;
-      z-index: 210;
-      display:none;
-      padding: 16px;
-      background: rgba(0,0,0,0.82);
-    }
-    .qr-card{
-      max-width: 620px;
-      margin: 0 auto;
-      border: 2px solid var(--border);
-      border-radius: 26px;
-      background: rgba(15,23,42,0.86);
-      padding: 16px;
-      box-shadow: var(--shadow);
-    }
-    #qr-reader{margin-top: 12px;}
-
-    @media (max-width: 720px){
-      .pcard{flex-wrap: wrap; align-items: stretch;}
-      .pinfo{width: 100%;}
-      .btn-notify{width: 100%; min-width: 0;}
+    /* --- RESPONSIVENESS --- */
+    @media (max-width: 1024px) {
+      .sidebar { display: none; }
+      .main-content { margin-left: 0; padding: 24px 16px 100px; }
+      .mobile-nav { display: flex; }
+      .hero-stat { font-size: 36px; }
     }
 
-@media (max-width: 520px){
-      .plate{font-size: 46px;}
-      .bigcount{font-size: 64px;}
-      .seat{width: 74px;height: 74px;font-size: 36px;}
-      .btn-notify{width: 100%; min-width: 0;}
+    @media (max-width: 480px) {
+      .toast { width: calc(100vw - 48px); right: 24px; }
     }
-
-  /* Universal Skeletons - Step 2 */
-  .skeleton { 
-    background: linear-gradient(90deg, var(--panel) 0%, var(--border) 50%, var(--panel) 100%); 
-    background-size: 200% 100%; 
-    animation: shimmer 1.5s infinite linear; 
-    border-radius: 18px; 
-    height: 16px;
-  }
-  .skeleton-card { height: 120px; }
-  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-  
-  /* Empty States */
-  .empty-state {
-    text-align: center; padding: 60px 20px; color: var(--muted);
-  }
-  .empty-state i { font-size: 64px; opacity: 0.3; margin-bottom: 20px; display: block; }
   </style>
 </head>
 <body>
+
+  <!-- Login Section -->
   <div id="login-screen">
-    <div class="login-card">
-      <div class="login-title">
-        <span>Driver Portal</span>
-        <span class="pill">High Contrast</span>
-      </div>
-      <div class="login-sub">Built for quick glances between stops: big info, bold actions, no clutter.</div>
+    <div class="login-box">
+      <div class="login-title">BookIt Driver</div>
+      <div class="login-subtitle">Fleet Management System v2.0</div>
+      
+      <div id="login-err" class="hidden" style="color: var(--error); background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; font-weight: 600; text-align: center;"></div>
 
-      <div id="login-err" class="alert"></div>
+      <div class="input-group">
+        <label class="input-label">Phone Number</label>
+        <input class="input" id="phone" type="tel" placeholder="+250 7xx xxx xxx">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Access Pin</label>
+        <input class="input" id="password" type="password" placeholder="••••">
+      </div>
 
-      <div class="field">
-        <label class="label" for="phone">Phone</label>
-        <input class="input" id="phone" inputmode="tel" placeholder="+250 7xx xxx xxx" autocomplete="username">
-      </div>
-      <div class="field">
-        <label class="label" for="password">Password</label>
-        <input class="input" id="password" type="password" placeholder="••••••••" autocomplete="current-password">
-      </div>
-      <div class="field" style="display:flex; gap: 12px;">
-        <button class="btn btn-primary" style="flex:1;" onclick="doLogin()">Sign In</button>
-        <button class="btn btn-ghost" onclick="location.reload()">Reset</button>
+      <div style="margin-top: 32px; display: grid; gap: 12px;">
+        <button class="btn btn-primary" onclick="doLogin()">Log In</button>
+        <button class="btn btn-ghost" onclick="location.reload()">System Check</button>
       </div>
     </div>
   </div>
 
-  <div id="dashboard">
-    <div class="header">
-      <div class="banner">
-        <div class="banner-left">
-          <div class="banner-kicker">Notifications</div>
-          <div class="banner-msg" id="notif-banner-text">Ready.</div>
+  <!-- Dashboard Section -->
+  <div id="dashboard" class="hidden">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">BookIt.</div>
+      <nav style="flex: 1;">
+        <div class="nav-link active" onclick="showSection('home')" id="sd-home">
+          <span>🏠</span> Dashboard
         </div>
-        <div class="banner-actions">
-          <div class="banner-live" title="Auto-refreshing">
-            <span class="dot"></span> LIVE
-          </div>
-          <button class="btn btn-ghost" style="padding:12px 14px; border-radius:16px; font-size:14px;" onclick="logout()">Logout</button>
+        <div class="nav-link" onclick="showSection('passengers')" id="sd-passengers">
+          <span>👥</span> Passenger List
         </div>
+        <div class="nav-link" onclick="showSection('validate')" id="sd-validate">
+          <span>🛡️</span> Security Check
+        </div>
+      </nav>
+      <div class="nav-link" onclick="logout()" style="color: var(--error);">
+        <span>🚪</span> Logout
       </div>
-    </div>
+    </aside>
 
-    <div class="content">
-      <div class="toolbar">
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Section: Home -->
+      <section id="sec-home" class="section">
+        <div style="margin-bottom: 32px;">
+          <h1 style="font-size: 32px; font-weight: 900;">Welcome back, <span id="driver-name" style="color: var(--primary);">Driver</span></h1>
+          <p style="color: var(--muted); font-weight: 500;" id="today-date"></p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+          <div class="glass-card">
+            <div class="input-label">Active Vehicle</div>
+            <div id="home-plate" class="hero-stat">---</div>
+            <div id="home-route" style="font-weight: 700; margin-bottom: 8px;">---</div>
+            <div id="home-depart" style="color: var(--muted); font-size: 14px;">Departure: ---</div>
+          </div>
+          <div class="glass-card">
+            <div class="input-label">Estimated Occupancy</div>
+            <div id="home-passengers" class="hero-stat">0</div>
+            <div id="home-countdown" style="font-weight: 800; color: var(--success); font-size: 20px;">00:00:00</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section: Passengers -->
+      <section id="sec-passengers" class="section hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+          <h1 style="font-size: 28px; font-weight: 900;">Manifest</h1>
+          <input type="date" id="pass-date" class="input" style="width: auto;" onchange="loadPassengers()">
+        </div>
+        <div id="passenger-list">
+          <!-- Injected via JS -->
+        </div>
+      </section>
+
+      <!-- Section: Validate -->
+      <section id="sec-validate" class="section hidden">
+        <h1 style="font-size: 28px; font-weight: 900; margin-bottom: 32px;">Validation Center</h1>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+          <button class="btn btn-primary" style="height: 120px; flex-direction: column;" onclick="openQrScanner()">
+            <span style="font-size: 24px;">📷</span> Open Camera
+          </button>
+          <button class="btn btn-ghost" style="height: 120px; flex-direction: column;" onclick="toggleManualEntry()">
+            <span style="font-size: 24px;">⌨️</span> Manual Code
+          </button>
+        </div>
+
+        <div id="manual-entry" class="glass-card hidden">
+          <div class="input-label">Enter Ticket Number</div>
+          <div style="display: flex; gap: 12px; margin-top: 12px;">
+            <input class="input" id="val-number" placeholder="BK-0000-00" style="text-transform: uppercase;">
+            <button class="btn btn-primary" style="width: auto; padding: 0 32px;" onclick="validateNumber()">Verify</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Mobile Bottom Nav -->
+    <nav class="mobile-nav">
+      <div class="m-nav-item active" id="mb-home" onclick="showSection('home')">
+        <span>🏠</span> Home
+      </div>
+      <div class="m-nav-item" id="mb-passengers" onclick="showSection('passengers')">
+        <span>👥</span> Manifest
+      </div>
+      <div class="m-nav-item" id="mb-validate" onclick="showSection('validate')">
+        <span>🛡️</span> Verify
+      </div>
+      <div class="m-nav-item" onclick="logout()" style="color: #ef4444;">
+        <span>🚪</span> Logout
+      </div>
+    </nav>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- QR Overlay -->
+  <div id="qr-modal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px;">
+    <div style="width: 100%; max-width: 480px; background: var(--sidebar); border: 1px solid var(--border); border-radius: 24px; overflow: hidden;">
+      <div style="padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
         <div>
-          <div class="title">Driver — <span id="driver-name">—</span></div>
-          <div class="meta">Today: <span class="mono" id="today-date">—</span></div>
+          <div style="font-weight: 900; font-size: 18px;">Scan QR Code</div>
+          <div style="color: var(--muted); font-size: 13px; margin-top: 2px;">Point camera at passenger's ticket QR</div>
         </div>
-        <div style="display:flex; gap: 10px; align-items:center;">
-          <button class="btn btn-ghost" style="padding:12px 14px; border-radius:16px; font-size:14px;" onclick="refreshAll()">Refresh</button>
-        </div>
+        <button class="btn btn-ghost" style="width: auto; padding: 8px 16px; font-size: 14px;" onclick="closeQrScanner()">✕ Close</button>
       </div>
-
-      <div class="section active" id="sec-home">
-        <div class="hero">
-          <div class="hero-top">
-            <div style="flex:1; min-width: 260px;">
-              <div class="hero-label">Bus</div>
-              <div id="home-plate" class="plate">—</div>
-              <div id="home-route" class="route">—</div>
-              <div id="home-depart" class="meta">Departure: —</div>
-              <div id="home-countdown" class="countdown">—</div>
-            </div>
-            <div class="bigcount-wrap">
-              <div class="hero-label">Passengers Today</div>
-              <div id="home-passengers" class="bigcount">0</div>
-              <div class="bigcount-sub">paid tickets for selected date</div>
-              <button class="btn btn-primary" style="width:100%; margin-top: 12px;" onclick="showSection('passengers')">View passenger list</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="section" id="sec-passengers">
-        <div class="toolbar">
-          <div class="title">Passenger List</div>
-          <div style="display:flex; gap: 12px; align-items:center;">
-            <input class="input" style="max-width: 220px; padding: 12px 14px; font-size: 16px;" type="date" id="pass-date" />
-            <button class="btn btn-primary" style="padding: 12px 14px; border-radius: 16px;" onclick="loadPassengers()">Load</button>
-          </div>
-        </div>
-        <div id="passenger-list" class="cardlist"></div>
-      </div>
-
-      <div class="section" id="sec-validate">
-        <div class="title">Validate Ticket</div>
-        <div class="meta" style="margin-top: 8px;">Two options: scan QR or enter ticket number.</div>
-
-        <div class="validate-grid" style="margin-top: 14px;">
-          <button class="bigbtn" onclick="openQrScanner()">Scan QR</button>
-          <button class="bigbtn secondary" onclick="showNumberValidate()">Enter Number</button>
-        </div>
-
-        <div id="number-validate" class="validate-panel hidden">
-          <div class="hero-label">Ticket Number</div>
-          <div style="display:flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
-            <input class="input" id="val-number" placeholder="e.g. BK-4821-XZ" style="flex:1; min-width: 240px;">
-            <button class="btn btn-primary" style="min-width: 180px;" onclick="validateNumber()">Validate</button>
-          </div>
-          <div id="val-err" class="alert" style="margin-top: 12px;"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="tabs">
-      <button class="tabbtn active" id="tab-home" onclick="showSection('home')">Home</button>
-      <button class="tabbtn" id="tab-passengers" onclick="showSection('passengers')">Passengers</button>
-      <button class="tabbtn" id="tab-validate" onclick="showSection('validate')">Validate</button>
-    </div>
-
-    <div id="result-overlay">
-      <div class="overlay-card">
-        <div class="overlay-top">
-          <div class="overlay-title" id="result-title">Result</div>
-          <button class="btn btn-ghost" style="padding:12px 14px; border-radius:16px; font-size:14px;" onclick="closeResult()">Close</button>
-        </div>
-        <div id="result-mark" class="mark ok">✓</div>
-        <div id="result-body" class="overlay-body">—</div>
-        <div id="result-grid" class="overlay-grid"></div>
-      </div>
-    </div>
-
-    <div id="qr-modal">
-      <div class="qr-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap: 12px;">
-          <div class="overlay-title">Scan QR</div>
-          <button class="btn btn-ghost" style="padding:12px 14px; border-radius:16px; font-size:14px;" onclick="closeQrScanner()">Close</button>
-        </div>
-        <div id="qr-reader"></div>
-        <div class="meta" style="margin-top: 10px;">If scanning fails, use “Enter Number”.</div>
+      <div style="padding: 24px;">
+        <div id="qr-reader" style="width: 100%; border-radius: 16px; overflow: hidden;"></div>
+        <p style="text-align: center; color: var(--muted); font-size: 13px; margin-top: 16px;">If scanning fails, use Manual Code instead.</p>
       </div>
     </div>
   </div>
@@ -583,274 +397,201 @@
     window.api = api;
 
     const $ = (sel) => document.querySelector(sel);
-    const todayDateOnly = () => new Date().toISOString().slice(0, 10);
-
+    
     const driverState = {
-      name: '—',
+      name: 'Driver',
       bus: null,
-      lastNotifId: null,
-      countdownTimer: null,
-      qr: null,
       passengers: [],
+      qr: null,
+      lastNotifId: null
     };
 
+    // --- UI LOGIC ---
+    window.showSection = (name) => {
+      document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+      $(`#sec-${name}`).classList.remove('hidden');
+      
+      // Update Sidebar
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      $(`#sd-${name}`)?.classList.add('active');
+      
+      // Update Mobile Nav
+      document.querySelectorAll('.m-nav-item').forEach(l => l.classList.remove('active'));
+      $(`#mb-${name}`)?.classList.add('active');
+    };
+
+    window.toggleManualEntry = () => $('#manual-entry').classList.toggle('hidden');
+
+    window.pushToast = (title, body, type = 'info') => {
+      const container = $('#toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      
+      const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : '🔔';
+      const color = type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--error)' : 'var(--primary)';
+
+      toast.innerHTML = `
+        <div class="toast-icon" style="background: ${color}20; color: ${color}">${icon}</div>
+        <div class="toast-info">
+          <div class="toast-title">${title}</div>
+          <div class="toast-body">${body}</div>
+        </div>
+      `;
+      
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+      }, 5000);
+    };
+
+    // --- FUNCTIONALITY ---
     window.doLogin = async () => {
       const phone = $('#phone').value;
       const password = $('#password').value;
+      const err = $('#login-err');
+      err.classList.add('hidden');
+
       try {
         const data = await api.loginDriver({ phone, password });
         setToken(data.token);
         driverState.name = data.driver?.name || 'Driver';
         driverState.bus = data.driver?.bus || null;
         $('#driver-name').textContent = driverState.name;
-        $('#login-screen').style.display = 'none';
-        $('#dashboard').style.display = 'block';
+        $('#login-screen').classList.add('hidden');
+        $('#dashboard').classList.remove('hidden');
         init();
       } catch (e) {
-        const el = $('#login-err');
-        el.textContent = e.message || 'Login failed';
-        el.style.display = 'block';
+        err.textContent = e.message || 'Authentication failed';
+        err.classList.remove('hidden');
       }
     };
 
     window.logout = () => { clearToken(); location.reload(); };
 
     function init() {
-      $('#today-date').textContent = todayDateOnly();
-      $('#pass-date').value = todayDateOnly();
+      $('#today-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+      $('#pass-date').value = new Date().toISOString().split('T')[0];
       refreshAll();
-      setInterval(loadNotifications, 15000);
+      setInterval(loadNotifications, 10000);
     }
 
-    window.refreshAll = async () => {
+    async function refreshAll() {
       await loadPassengers();
       await loadNotifications();
-      updateHomeFromPassengers();
-    };
-
-    window.showSection = (name) => {
-      const page = name === 'home' || name === 'passengers' || name === 'validate' ? name : 'home';
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      $(`#sec-${page}`).classList.add('active');
-      document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
-      $(`#tab-${page}`).classList.add('active');
-      if (page === 'validate') $('#number-validate').classList.add('hidden');
-    };
-
-    window.showNumberValidate = () => {
-      showSection('validate');
-      $('#number-validate').classList.remove('hidden');
-      $('#val-err').style.display = 'none';
-      $('#val-number').focus();
-    };
+      updateDashboard();
+    }
 
     window.loadPassengers = async () => {
       const date = $('#pass-date').value;
-      const list = $('#passenger-list');
+      const listEl = $('#passenger-list');
       try {
         const passengers = await api.getPassengers(date);
         driverState.passengers = passengers || [];
         if (!passengers.length) {
-          list.innerHTML = `<div class="hero" style="box-shadow:none; padding: 16px;"><div class="meta" style="margin:0; font-weight: 950;">No passengers for this date.</div></div>`;
-          updateHomeFromPassengers();
+          listEl.innerHTML = `<div class="glass-card" style="text-align:center;color:var(--muted)">No bookings for today.</div>`;
           return;
         }
-        list.innerHTML = passengers
-          .slice()
-          .sort((a, b) => (a.seat_number ?? 0) - (b.seat_number ?? 0))
-          .map(t => `
-            <div class="pcard">
-              <div class="seat">${t.seat_number ?? '—'}</div>
-              <div class="pinfo">
-                <div class="pname">${t.user?.name || 'Unknown passenger'}</div>
-                <div class="stops">
-                  <div class="stopline pickup">
-                    <div>
-                      <div class="stopbadge">Pickup (Boards)</div>
-                      <div class="stopval">${t.boardingStop?.location?.name || '—'}</div>
-                    </div>
-                    <div class="mono" style="font-weight: 1000; color: #86efac;">GO</div>
-                  </div>
-                  <div class="stopline dropoff">
-                    <div>
-                      <div class="stopbadge">Dropoff (Exit)</div>
-                      <div class="stopval">${t.dropoffStop?.location?.name || '—'}</div>
-                    </div>
-                    <div class="mono" style="font-weight: 1000; color: #fcd34d;">EXIT</div>
-                  </div>
-                </div>
-              </div>
-              <button class="btn btn-primary btn-notify" onclick="notifyExit('${t.id}')">🔔 Notify Exit</button>
+        listEl.innerHTML = passengers.map(t => `
+          <div class="passenger-card">
+            <div class="seat-label">${t.seat_number || '??'}</div>
+            <div style="flex: 1;">
+              <div style="font-weight: 800;">${t.user?.name || 'Guest'}</div>
+              <div style="font-size: 12px; color: var(--muted);">${t.boardingStop?.location?.name} → ${t.dropoffStop?.location?.name}</div>
             </div>
-          `).join('');
-        updateHomeFromPassengers();
+            <button class="btn btn-ghost" style="width: auto; padding: 8px 12px; font-size: 12px;" onclick="notifyExit('${t.id}')">Exit</button>
+          </div>
+        `).join('');
+        updateDashboard();
       } catch (e) {
-        list.innerHTML = `<div class="hero" style="box-shadow:none; padding: 16px;"><div class="meta" style="margin:0; font-weight: 950; color:#fecaca;">${e.message}</div></div>`;
+        pushToast('Sync Error', 'Could not load manifest', 'error');
       }
     };
 
-    window.notifyExit = async (ticket_id) => {
+    window.notifyExit = async (id) => {
       try {
-        await api.notifyExit(ticket_id);
-        $('#notif-banner-text').textContent = 'Exit notification sent ✅';
+        await api.notifyExit(id);
+        pushToast('Success', 'Exit status updated', 'success');
       } catch (e) {
-        $('#notif-banner-text').textContent = e.message || 'Failed to notify exit';
+        pushToast('Error', 'Failed to update exit', 'error');
       }
     };
 
-    window.validateNumber = async () => {
-      const ticket_number = $('#val-number').value.trim();
-      const err = $('#val-err');
-      err.style.display = 'none';
-      try {
-        const data = await api.validateNumber({ ticket_number });
-        showResult(data);
-      } catch (e) {
-        err.textContent = e.message || 'Validation failed';
-        err.style.display = 'block';
+    function updateDashboard() {
+      const p = driverState.passengers;
+      const b = driverState.bus;
+      $('#home-passengers').textContent = p.length;
+      if (b) {
+        $('#home-plate').textContent = b.plate_number;
+        $('#home-route').textContent = b.route?.name || 'Assigned Route';
+        $('#home-depart').textContent = `Scheduled: ${b.departure_time || '--:--'}`;
       }
-    };
+    }
 
     async function loadNotifications() {
       try {
-        const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
-        const latestUnread = (notifs || []).find(n => !n.is_read) || notifs?.[0] || null;
-        const count = unread?.unread ?? 0;
-        $('.banner-kicker').textContent = count > 0 ? `Notifications (${count})` : 'Notifications';
-        if (!latestUnread) {
-          $('#notif-banner-text').textContent = 'Ready.';
-          return;
+        const notifs = await api.getNotifications();
+        const latest = notifs?.[0];
+        if (latest && !latest.is_read && latest.id !== driverState.lastNotifId) {
+          driverState.lastNotifId = latest.id;
+          pushToast('System Alert', latest.message);
+          await api.markRead(latest.id);
         }
-        $('#notif-banner-text').textContent = latestUnread.message || 'Notification received';
-        if (!latestUnread.is_read && latestUnread.id && latestUnread.id !== driverState.lastNotifId) {
-          driverState.lastNotifId = latestUnread.id;
-          try { await api.markRead(latestUnread.id); } catch {}
+      } catch {}
+    }
+
+    // --- VALIDATION ---
+    window.validateNumber = async () => {
+      const num = $('#val-number').value.trim();
+      try {
+        const data = await api.validateNumber({ ticket_number: num });
+        if (data.valid) {
+          pushToast('Verified', `${data.ticket.passenger.name} - Seat ${data.ticket.seat_number}`, 'success');
+          $('#val-number').value = '';
+        } else {
+          pushToast('Invalid', data.reason || 'Ticket not found', 'error');
         }
-      } catch {
-        // keep previous
+      } catch (e) {
+        pushToast('Error', e.message, 'error');
       }
-    }
-
-    function updateHomeFromPassengers() {
-      const date = $('#pass-date')?.value || todayDateOnly();
-      const passengers = driverState.passengers || [];
-      $('#home-passengers').textContent = passengers.length;
-
-      const first = passengers[0] || null;
-      const plate = first?.bus?.plate_number || driverState.bus?.plate_number || '—';
-      const routeFrom = first?.bus?.route?.fromLocation?.name;
-      const routeTo = first?.bus?.route?.toLocation?.name;
-      const route = routeFrom && routeTo ? `${routeFrom} → ${routeTo}` : '—';
-      const departRaw = first?.bus?.departure_time || driverState.bus?.departure_time || '—';
-      const depart = String(departRaw || '—').slice(0, 5);
-
-      $('#home-plate').textContent = plate;
-      $('#home-route').textContent = route;
-      $('#home-depart').textContent = `Departure: ${depart} • ${date}`;
-
-      startCountdown(departRaw);
-    }
-
-    function startCountdown(departure_time) {
-      if (driverState.countdownTimer) clearInterval(driverState.countdownTimer);
-      const el = $('#home-countdown');
-      if (!departure_time || departure_time === '—') { el.textContent = '—'; return; }
-
-      const tick = () => {
-        const now = new Date();
-        const [h, m] = String(departure_time).split(':').map(Number);
-        if (Number.isNaN(h) || Number.isNaN(m)) { el.textContent = '—'; return; }
-        const dep = new Date();
-        dep.setHours(h, m, 0, 0);
-        const diff = dep.getTime() - now.getTime();
-        if (diff <= 0) {
-          el.textContent = 'Departed';
-          el.style.color = '#fcd34d';
-          return;
-        }
-        const mins = Math.floor(diff / 60000);
-        const hrs = Math.floor(mins / 60);
-        const rem = mins % 60;
-        el.style.color = '#86efac';
-        el.textContent = `Departs in ${hrs ? `${hrs}h ` : ''}${rem}m`;
-      };
-
-      tick();
-      driverState.countdownTimer = setInterval(tick, 1000);
-    }
-
-    function showResult(data) {
-      const ok = !!data?.valid;
-      $('#result-overlay').style.display = 'block';
-      $('#result-title').textContent = ok ? 'VALID' : 'INVALID';
-      $('#result-mark').className = `mark ${ok ? 'ok' : 'bad'}`;
-      $('#result-mark').textContent = ok ? '✓' : '✕';
-
-      if (!ok) {
-        $('#result-body').textContent = data?.reason ? String(data.reason) : 'Invalid ticket';
-        $('#result-grid').innerHTML = '';
-        return;
-      }
-
-      const t = data.ticket || {};
-      $('#result-body').textContent = `${t.passenger?.name || 'Passenger'} — Seat ${t.seat_number ?? '—'}`;
-      $('#result-grid').innerHTML = `
-        <div class="kv"><span>Bus</span><b class="mono">${t.plate_number || '—'}</b></div>
-        <div class="kv"><span>Departure</span><b class="mono">${String(t.departure_time || '—').slice(0,5)}</b></div>
-        <div class="kv"><span>Boards</span><b>${t.boarding || '—'}</b></div>
-        <div class="kv"><span>Exit</span><b>${t.dropoff || '—'}</b></div>
-        <div class="kv"><span>Date</span><b class="mono">${t.travel_date || '—'}</b></div>
-        <div class="kv"><span>Ticket #</span><b class="mono">${t.ticket_number || '—'}</b></div>
-      `;
-    }
-
-    window.closeResult = () => { $('#result-overlay').style.display = 'none'; };
+    };
 
     window.openQrScanner = async () => {
-      $('#qr-modal').style.display = 'block';
+      $('#qr-modal').style.display = 'flex';
       if (!driverState.qr) driverState.qr = new Html5Qrcode('qr-reader');
-
-      const onScanSuccess = async (decodedText) => {
-        try {
-          const data = await api.validateQR({ token: decodedText });
-          await closeQrScanner();
-          showResult(data);
-        } catch (e) {
-          await closeQrScanner();
-          showResult({ valid: false, reason: e.message || 'QR validation failed' });
-        }
-      };
-
+      
       try {
         await driverState.qr.start(
           { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 260, height: 260 } },
-          onScanSuccess
+          { fps: 10, qrbox: { width: 240, height: 240 } },
+          async (text) => {
+            try {
+              const data = await api.validateQR({ token: text });
+              await closeQrScanner();
+              if (data.valid) pushToast('Verified ✓', `${data.ticket.passenger.name} — Seat ${data.ticket.seat_number}`, 'success');
+              else pushToast('Invalid', data.reason, 'error');
+            } catch(e) {
+              await closeQrScanner();
+              pushToast('Error', e.message, 'error');
+            }
+          }
         );
       } catch (e) {
         await closeQrScanner();
-        showResult({ valid: false, reason: e.message || 'Unable to start camera scanner' });
+        pushToast('Hardware Error', 'Camera inaccessible', 'error');
       }
     };
 
     window.closeQrScanner = async () => {
       $('#qr-modal').style.display = 'none';
-      try {
-        if (driverState.qr && driverState.qr.isScanning) await driverState.qr.stop();
-      } catch {}
+      try { if (driverState.qr?.isScanning) await driverState.qr.stop(); } catch {}
     };
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && document.activeElement === $('#password')) doLogin();
-      if (e.key === 'Escape') {
-        if ($('#result-overlay').style.display === 'block') closeResult();
-        if ($('#qr-modal').style.display === 'block') closeQrScanner();
-      }
-    });
-
+    // Auto-login if token exists
     if (getToken()) {
-      $('#login-screen').style.display = 'none';
-      $('#dashboard').style.display = 'block';
+      $('#login-screen').classList.add('hidden');
+      $('#dashboard').classList.remove('hidden');
       init();
     }
   </script>

@@ -45,17 +45,12 @@ const ticketIncludes = [
 const isStillAvailable = (departure_time, travel_date) => {
   const now   = new Date();
   const today = now.toISOString().split('T')[0];
-
-  if (travel_date > today) return true;  // future date — always show
-
-  if (travel_date === today) {
-    const [hours, minutes] = departure_time.split(':').map(Number);
-    const departure = new Date();
-    departure.setHours(hours, minutes, 0, 0);
-    return now < departure; // only show if not yet departed
-  }
-
-  return false; // past date — hide
+  if (travel_date > today) return true;
+  if (travel_date < today) return false;
+  const [h, m] = String(departure_time).split(':').map(Number);
+  const dep = new Date();
+  dep.setHours(h, m, 0, 0);
+  return dep > now;
 };
 
 // ── SEAT AVAILABILITY ─────────────────────────────────

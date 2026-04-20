@@ -4,14 +4,6 @@ const getToken = () => localStorage.getItem('token');
 const setToken = (t) => localStorage.setItem('token', t);
 const clearToken = () => localStorage.removeItem('token');
 
-const debounce = (fn, delay) => {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), delay);
-  };
-};
-
 const req = async (method, path, body = null, auth = true) => {
   const headers = { 'Content-Type': 'application/json' };
   if (auth) headers['Authorization'] = `Bearer ${getToken()}`;
@@ -72,7 +64,7 @@ const api = {
   notifyExit:      (tid)    => req('POST',   `/drivers/notify/${tid}`),
 
   // tickets
-  searchTickets:   (p) => req('GET', `/tickets/search?from_location_id=${p.from}&to_location_id=${p.to}&travel_date=${p.date}`, null, false),
+  searchTickets:   (p) => req('GET', `/tickets/search?from_location_id=${p.from}&to_location_id=${p.to}&travel_date=${p.date}`),
   bookTicket:      (b) => req('POST',  '/tickets', b),
   payTicket:       (id)=> req('PATCH', `/tickets/${id}/pay`),
   cancelTicket:    (id)=> req('PATCH', `/tickets/${id}/cancel`),
@@ -89,5 +81,4 @@ const api = {
   markAllRead:       () => req('PATCH', '/notifications/read-all'),
 };
 
-api.debounce = debounce;
 export { api, getToken, setToken, clearToken };
