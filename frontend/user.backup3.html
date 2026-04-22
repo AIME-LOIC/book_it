@@ -54,86 +54,15 @@
     --primary-hover: #047857;
     --secondary: #059669;
     --secondary-hover: #047857;
-    --bg-main: #0a0f1e;
-    --bg-card: #111827;
-    --text-main: #f9fafb;
-    --text-muted: #9ca3af;
-    --accent-green: #10b981;
+    --bg-main: #071217;
+    --bg-card: #0a1f1b;
+    --text-main: #d1fae5;
+    --text-muted: #a7f3d0;
+    --accent-green: #34d399;
     --accent-orange: #059669;
-    --border: #1f2937;
-    --glass: rgba(17, 24, 39, 0.85);
+    --border: #134e4a;
+    --glass: rgba(10, 31, 27, 0.8);
   }
-
-  /* LIGHT MODE — warm, modern, not plain white */
-  body.light {
-    --bg-main: #f0f4f8;
-    --bg-card: #ffffff;
-    --text-main: #0f172a;
-    --text-muted: #475569;
-    --border: #cbd5e1;
-    --glass: rgba(255,255,255,0.9);
-  }
-  body.light { background: var(--bg-main); }
-  body.light .auth-screen { background: radial-gradient(circle at top right, rgba(5,150,105,0.15), #f0f4f8), radial-gradient(circle at bottom left, rgba(16,185,129,0.10), #f0f4f8); }
-  body.light .sidebar { background: #ffffff; border-color: #e2e8f0; }
-  body.light .sidebar .nav-item { color: #475569; }
-  body.light .sidebar .nav-item:hover,
-  body.light .sidebar .nav-item.active { background: rgba(5,150,105,0.10); color: #059669; }
-  body.light .sidebar .nav-item i { color: #475569; }
-  body.light .sidebar .nav-item.active i { color: #059669; }
-  body.light .sidebar h1 { color: #059669; }
-  body.light .hero-section { background: linear-gradient(180deg, #e8f5f0 0%, #f0f4f8 100%); border-color: #e2e8f0; }
-  body.light .hero-title { color: #0f172a; }
-  body.light .hero-title span { color: #059669; }
-  body.light .search-card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
-  body.light .search-card .input-group label { color: #475569; }
-  body.light select, body.light input { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
-  body.light select:focus, body.light input:focus { border-color: #059669; background: #fff; }
-  body.light .custom-select-trigger { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
-  body.light .custom-select-options { background: #ffffff; border-color: #cbd5e1; }
-  body.light .custom-select-option { color: #0f172a; }
-  body.light .custom-select-option:hover { background: rgba(5,150,105,0.08); }
-  body.light .chip { background: #e2e8f0; color: #334155; }
-  body.light .chip:hover { background: #059669; color: white; }
-  body.light .bus-card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-  body.light .bus-card:hover { border-color: #059669; box-shadow: 0 8px 24px rgba(5,150,105,0.15); }
-  body.light .operator-name { color: #0f172a; }
-  body.light .bus-meta { color: #475569; }
-  body.light .bus-meta i { color: #059669; }
-  body.light .departure-time { color: #059669; }
-  body.light .price { color: #0f172a; }
-  body.light .occupancy-bar { background: #e2e8f0; }
-  body.light .notif-panel { background: #ffffff; border-color: #e2e8f0; }
-  body.light .notif-item { background: #f8fafc; }
-  body.light .notif-item.unread { background: rgba(5,150,105,0.06); }
-  body.light .notif-icon { background: #e2e8f0; color: #059669; }
-  body.light .ticket-wrapper { background: #ffffff; border-color: #e2e8f0; }
-  body.light .ticket-main { border-color: #e2e8f0; }
-  body.light .ticket-footer { background: #f8fafc; }
-  body.light .ticket-id { background: #f1f5f9; border-color: #e2e8f0; color: #0f172a; }
-  body.light .loading-shimmer { background: linear-gradient(90deg, #e2e8f0 0%, #f1f5f9 50%, #e2e8f0 100%); background-size: 200% 100%; }
-  body.light .seat { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
-  body.light .seat.taken { background: #e2e8f0; color: #94a3b8; }
-  body.light .btn-ghost { background: #e2e8f0; color: #0f172a; }
-  body.light .pay-modal { background: #ffffff; border-color: #e2e8f0; }
-  body.light .pay-method-btn { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
-  body.light .confirm-box { background: #ffffff; border-color: #e2e8f0; }
-  body.light .confirm-box h4, body.light .confirm-box p { color: #0f172a; }
-  body.light #app-loader { background: #f0f4f8; }
-  body.light .ld-ch { color: #0f172a; }
-  body.light .ld-ch.grn { color: #059669; }
-  body.light .ld-seg { background: #e2e8f0; border-color: #059669; }
-  .logo-img { filter: brightness(0) invert(1); }
-  body.light .logo-img { filter: none; }
-  body.light .bottom-nav .nav-item { color: #475569; }
-  body.light .bottom-nav .nav-item.active { color: #059669; }
-  body.light input[type="date"] { color-scheme: light; }
-  body.light .results-container { background: transparent; }
-  body.light #sec-tickets { background: transparent; }
-  body.light .seat-map-container { background: #f8fafc; border-color: #e2e8f0; }
-  body.light .driver-wheel { border-color: #cbd5e1; color: #475569; }
-  body.light #sec-search { background: transparent; }
-  body.light .main-content { background: var(--bg-main); }
 
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
   body { 
@@ -145,7 +74,7 @@
   }
 
   /* --- AUTH STYLES --- */
-  .auth-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; padding: 20px; background: radial-gradient(circle at top right, rgba(5,150,105,0.18), #0a0f1e), radial-gradient(circle at bottom left, rgba(16,185,129,0.12), #0a0f1e); }
+  .auth-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; padding: 20px; background: radial-gradient(circle at top right, rgba(5,150,105,0.22), #071217), radial-gradient(circle at bottom left, rgba(52,211,153,0.18), #071217); }
   .auth-card { background: var(--bg-card); border-radius: 24px; padding: 40px; width: 100%; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid var(--border); }
   .auth-logo { text-align: center; margin-bottom: 32px; }
   .auth-logo h1 { font-size: 32px; font-weight: 900; color: var(--primary); letter-spacing: -1px; display:flex; align-items:center; justify-content:center; gap: 12px; }
@@ -160,20 +89,18 @@
   
   /* Sidebar - Desktop */
   .sidebar {
-    width: 280px;
+    width: 260px;
     background: var(--bg-card);
     border-right: 1px solid var(--border);
-    padding: 32px 20px;
+    padding: 32px 16px;
     position: fixed;
     height: 100vh;
     z-index: 50;
-    display: flex;
-    flex-direction: column;
   }
 
   .main-content {
     flex: 1;
-    margin-left: 280px;
+    margin-left: 260px;
     padding-bottom: 100px;
   }
 
@@ -207,13 +134,13 @@
     margin-bottom: 8px;
     min-height: 52px;
   }
-  .nav-item i { font-size: 20px; }
-  .nav-item:hover, .nav-item.active { background: rgba(5, 150, 105, 0.12); color: var(--secondary); }
+  .nav-item i { font-size: 20px; color: white; }
+  .nav-item:hover, .nav-item.active { background: rgba(5, 150, 105, 0.10); color: var(--secondary); }
 
   /* --- HERO SEARCH SECTION --- */
   .hero-section {
     padding: 40px;
-    background: linear-gradient(180deg, #111827 0%, #0a0f1e 100%);
+    background: linear-gradient(180deg, #0a1f1b 0%, #071217 100%);
     border-bottom: 1px solid var(--border);
   }
   .search-card {
@@ -231,7 +158,7 @@
 
   .search-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 200px 160px;
+    grid-template-columns: 1fr 1fr 180px 180px;
     gap: 16px;
     align-items: flex-end;
     overflow: visible;
@@ -514,7 +441,7 @@
   .ticket-wrapper::after { right: -15px; }
 
   .ticket-main { padding: 24px; border-bottom: 2px dashed rgba(148, 163, 184, 0.25); }
-  .ticket-footer { padding: 24px; text-align: center; background: var(--bg-main); }
+  .ticket-footer { padding: 24px; text-align: center; background: rgba(15, 23, 42, 0.55); }
   
   .ticket-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
   .ticket-logo { font-weight: 900; color: var(--secondary); font-size: 20px; letter-spacing: -0.5px; }
@@ -556,7 +483,7 @@
     border: 1px solid transparent;
     cursor: pointer;
   }
-  .notif-item.unread { border-left: 4px solid var(--secondary); background: rgba(5,150,105,0.08); }
+  .notif-item.unread { border-left: 4px solid var(--secondary); background: rgba(5,150,105,0.06); }
   .notif-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; color: white; }
 
   /* --- MOBILE ADAPTATIONS --- */
@@ -603,16 +530,16 @@
   .badge-pending { background: rgba(245,158,11,0.18); color: #fcd34d; border: 1px solid rgba(245,158,11,0.30); padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 800; display:inline-flex; align-items:center; gap:6px; }
   .badge-cancelled { background: rgba(239,68,68,0.18); color: #fca5a5; border: 1px solid rgba(239,68,68,0.30); padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 800; display:inline-flex; align-items:center; gap:6px; }
 
-  .loading-shimmer { animation: shimmer 2s infinite linear; background: linear-gradient(90deg, var(--bg-card) 0%, #374151 50%, var(--bg-card) 100%); background-size: 200% 100%; height: 100px; border-radius: 20px; margin-bottom: 20px; }
+  .loading-shimmer { animation: shimmer 2s infinite linear; background: linear-gradient(90deg, var(--bg-card) 0%, #134e4a 50%, var(--bg-card) 100%); background-size: 200% 100%; height: 100px; border-radius: 20px; margin-bottom: 20px; }
   @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
   /* --- LOADING PAGE --- */
-  #app-loader { position:fixed; inset:0; z-index:9999; background:#0a0f1e; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; transition:opacity 0.6s ease; }
+  #app-loader { position:fixed; inset:0; z-index:9999; background:#071217; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; transition:opacity 0.6s ease; }
   #app-loader.hide { opacity:0; pointer-events:none; }
   #ld-spinner { width:110px; height:110px; animation:ldspin 1s linear infinite; }
   @keyframes ldspin { to { transform:rotate(360deg); } }
   #ld-road { display:flex; gap:8px; opacity:0; }
-  .ld-seg { width:76px; height:10px; border-radius:5px; background:#1f2937; border:1px solid #059669; transform:translateY(-50px); opacity:0; transition:transform 0.55s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease; }
+  .ld-seg { width:76px; height:10px; border-radius:5px; background:#134e4a; border:1px solid #059669; transform:translateY(-50px); opacity:0; transition:transform 0.55s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease; }
   .ld-seg.land { transform:translateY(0); opacity:1; }
   .ld-seg.fall { animation:ldsegfall 0.5s cubic-bezier(0.55,0,1,0.45) forwards; }
   @keyframes ldsegfall { to { transform:translateY(90px) rotate(12deg); opacity:0; } }
@@ -659,7 +586,6 @@
 </style>
 </head>
 <body>
-<script>if(localStorage.getItem('theme')==='light')document.body.classList.add('light');</script>
 
 <!-- FETCH LOADER BAR -->
 <div id="fetch-loader"><div id="fetch-loader-bar"></div></div>
@@ -670,7 +596,7 @@
     <!-- spinner -->
     <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);"><div id="ld-spinner">
       <svg viewBox="0 0 110 110" width="110" height="110" fill="none">
-        <circle cx="55" cy="55" r="48" stroke="#1f2937" stroke-width="6"/>
+        <circle cx="55" cy="55" r="48" stroke="#134e4a" stroke-width="6"/>
         <path d="M55 7 A48 48 0 1 1 54.99 7" stroke="#059669" stroke-width="6" stroke-linecap="round" stroke-dasharray="280 20"/>
       </svg>
     </div></div>
@@ -703,8 +629,8 @@
   <div class="auth-card">
     <div class="auth-logo">
       <h1>
-        <!-- <img src="./download.png" alt="BookIt" onerror="this.style.display='none'"> -->
-        <img src="./download.png" alt="BookIt" class="logo-img" style="height:80px; width:auto;">
+        <img src="./download.png" alt="BookIt" onerror="this.style.display='none'">
+        <img src="./download.png" alt="BookIt" style="height:80px; width:auto; filter:brightness(0) invert(1);">
       </h1>
       <p style="color:var(--text-muted); font-size: 14px;">Travel Rwanda with ease</p>
     </div>
@@ -755,7 +681,7 @@
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div style="margin-bottom: 40px; padding: 0 8px;">
-      <img src="./download.png" alt="BookIt" class="logo-img" style="width:100%; height:auto; object-fit:contain; max-height:100px;">
+      <img src="./download.png" alt="BookIt" style="width:100%; height:auto; object-fit:contain; max-height:100px; filter:brightness(0) invert(1);">
     </div>
     <div class="nav-item active" onclick="showSection('search', this)">
       <i class="fa-solid fa-compass"></i> Explore
@@ -770,18 +696,15 @@
       </div>
       Notifications
     </div>
-    <div style="flex:1;"></div>
-      <div style="border-top: 1px solid var(--border); padding-top: 20px;">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; background: rgba(5,150,105,0.08); border-radius: 14px; border: 1px solid rgba(5,150,105,0.15);">
-          <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--secondary); display: flex; align-items:center; justify-content: center; color: white; font-weight: 900; font-size: 18px; flex-shrink:0;" id="user-initial">U</div>
-          <div style="overflow: hidden; flex:1;">
-            <p id="user-name" style="font-weight: 700; font-size: 14px; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; color: var(--text-main);"></p>
-            <p style="font-size: 11px; color: var(--text-muted);">Verified Traveler</p>
-          </div>
+    <div style="position: absolute; bottom: 32px; left: 16px; right: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 0 16px;">
+        <div style="width: 40px; height: 40px; border-radius: 14px; background: var(--secondary); display: flex; align-items:center; justify-content: center; color: var(--bg-main); font-weight: 900;" id="user-initial">U</div>
+        <div style="overflow: hidden;">
+          <p id="user-name" style="font-weight: 700; font-size: 14px; white-space: nowrap; text-overflow: ellipsis;"></p>
+          <p style="font-size: 11px; color: var(--text-muted);">Verified Traveler</p>
         </div>
-        <button class="btn btn-ghost btn-block" onclick="toggleTheme()" id="theme-btn" style="margin-bottom:8px;"><i class="fa fa-moon"></i> Light Mode</button>
-        <button class="btn btn-ghost btn-block" onclick="logout()"><i class="fa fa-sign-out"></i> Logout</button>
       </div>
+      <button class="btn btn-ghost btn-block" onclick="logout()"><i class="fa fa-sign-out"></i> Logout</button>
     </div>
   </div>
 
@@ -796,7 +719,6 @@
         </div>
     </div>
     <div class="nav-item" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></div>
-    <div class="nav-item" onclick="toggleTheme()" id="m-theme-btn"><i class="fa fa-moon"></i></div>
   </div>
 
   <!-- MAIN CONTENT -->
@@ -832,7 +754,7 @@
             </div>
             <div class="input-group">
               <label><i class="fa fa-calendar-alt" style="color:white;"></i> Date</label>
-              <input type="date" id="s-date" style="height:50px; border-radius:14px; padding: 0 20px; color-scheme: dark;"/>
+              <input type="date" id="s-date" style="height:50px; border-radius:14px;"/>
             </div>
             <button class="btn btn-primary" onclick="filterBuses()">Find Buses</button>
           </div>
@@ -1135,29 +1057,6 @@ window.doRegister = async () => {
     switchTab('login', document.querySelector('.tab'));
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
-
-window.toggleTheme = () => {
-  const isLight = document.body.classList.toggle('light');
-  localStorage.setItem('theme', isLight ? 'light' : 'dark');
-  const icon = isLight ? 'fa-moon' : 'fa-sun';
-  const label = isLight ? ' Dark Mode' : ' Light Mode';
-  const btn = document.getElementById('theme-btn');
-  const mbtn = document.getElementById('m-theme-btn');
-  if (btn) btn.innerHTML = `<i class="fa ${icon}"></i>${label}`;
-  if (mbtn) mbtn.innerHTML = `<i class="fa ${icon}"></i>`;
-};
-
-// apply saved theme and set correct icon
-(function(){
-  const isLight = localStorage.getItem('theme') === 'light';
-  if (isLight) document.body.classList.add('light');
-  const icon = isLight ? 'fa-moon' : 'fa-sun';
-  const label = isLight ? ' Dark Mode' : ' Light Mode';
-  const btn = document.getElementById('theme-btn');
-  const mbtn = document.getElementById('m-theme-btn');
-  if (btn) btn.innerHTML = `<i class="fa ${icon}"></i>${label}`;
-  if (mbtn) mbtn.innerHTML = `<i class="fa ${icon}"></i>`;
-})();
 
 window.logout = () => { clearToken(); location.reload(); };
 
@@ -1507,11 +1406,8 @@ window.loadMyTickets = async () => {
             <div class="ticket-wrapper">
               <div class="ticket-main">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                  <img src="./download.png" alt="BookIt" class="logo-img" style="height:52px;width:auto;">
-                  <div style="text-align:right;">
-                    ${t.ticket_number ? `<div style="font-family:monospace;font-size:13px;font-weight:800;color:var(--secondary);">${t.ticket_number}</div>` : '<div style="font-size:11px;color:var(--text-muted);">Awaiting payment</div>'}
-                    <span class="badge badge-${t.status}" style="margin-top:4px;">${statusIcon} ${statusLabel}</span>
-                  </div>
+                  <img src="./download.png" alt="BookIt" style="height:52px;width:auto;filter:brightness(0) invert(1);">
+                  <span class="badge badge-${t.status}">${statusIcon} ${statusLabel}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
                   <div style="text-align:center;flex:1;">
@@ -1632,7 +1528,7 @@ async function loadNotifications() {
 
         const icons = { booked: 'fa-ticket', paid: 'fa-check-circle', cancelled: 'fa-times-circle' };
 
-        document.getElementById('notif-list').innerHTML = notifs.length ? notifs.map(n => `
+        document.getElementById('notif-list').innerHTML = notifs.map(n => `
             <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markRead('${n.id}')">
                 <div class="notif-icon"><i class="fa ${icons[n.type] || 'fa-bell'}"></i></div>
                 <div>
@@ -1640,13 +1536,7 @@ async function loadNotifications() {
                     <small style="color:var(--text-muted); font-size:11px;">${new Date(n.createdAt).toLocaleTimeString()}</small>
                 </div>
             </div>
-        `).join('') : `
-            <div style="text-align:center; padding:48px 20px;">
-                <i class="fa fa-bell-slash" style="font-size:48px; color:var(--border); margin-bottom:16px; display:block;"></i>
-                <p style="font-weight:700; font-size:15px;">No notifications yet</p>
-                <p style="color:var(--text-muted); font-size:13px; margin-top:6px;">We'll notify you about your bookings and trips here.</p>
-            </div>
-        `;
+        `).join('');
     } catch(e) {}
 }
 

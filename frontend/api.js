@@ -52,6 +52,8 @@ const api = {
  getBuses: () => req('GET', '/buses/available', null, false),
   getMyBuses:      ()  => req('GET',    '/buses/mine'),
   createBus:       (b) => req('POST',   '/buses', b),
+  updateBus:       (id, b) => req('PUT', `/buses/${id}`, b),
+  toggleBus:       (id, b) => req('PUT', `/buses/${id}`, b),
   deleteBus:       (id)=> req('DELETE', `/buses/${id}`),
 
   // drivers

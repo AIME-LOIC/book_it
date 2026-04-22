@@ -74,12 +74,26 @@ const isSeatFree = async (bus_id, travel_date, seat_number, boarding_order, drop
 };
 
 const getSegmentSeats = async (bus, travel_date, boarding_order, dropoff_order) => {
+  const conflicts = await Ticket.findAll({
+    where: { bus_id: bus.id, travel_date, status: { [Op.ne]: 'cancelled' } },
+    include: [
+      { model: RouteStop, as: 'boardingStop', attributes: ['stop_order'] },
+      { model: RouteStop, as: 'dropoffStop',  attributes: ['stop_order'] },
+    ],
+  });
+
+  const takenSeats = new Set();
+  for (const t of conflicts) {
+    const eb = t.boardingStop.stop_order;
+    const ed = t.dropoffStop.stop_order;
+    if (eb < dropoff_order && ed > boarding_order) takenSeats.add(t.seat_number);
+  }
+
   const available = [];
   const taken     = [];
   for (let seat = 1; seat <= bus.capacity; seat++) {
-    const free = await isSeatFree(bus.id, travel_date, seat, boarding_order, dropoff_order);
-    if (free) available.push(seat);
-    else      taken.push(seat);
+    if (takenSeats.has(seat)) taken.push(seat);
+    else available.push(seat);
   }
   return { available, taken };
 };
@@ -137,7 +151,7 @@ export const searchBuses = async ({ from_location_id, to_location_id, travel_dat
 
   const route_ids = validRoutes.map(r => r.route_id);
   const buses     = await Bus.findAll({
-    where:   { route_id: { [Op.in]: route_ids } },
+    where:   { route_id: { [Op.in]: route_ids }, is_active: true },
     include: [
       { model: Operator, as: 'operator', attributes: ['id', 'company_name'] },
       {
@@ -153,9 +167,6 @@ export const searchBuses = async ({ from_location_id, to_location_id, travel_dat
   if (!buses.length) throw new Error('Route found but no buses assigned to it yet.');
 
   const results = await Promise.all(buses.map(async (bus) => {
-    // time check — skip departed buses
-    if (!isStillAvailable(bus.departure_time, travel_date)) return null;
-
     const routeInfo           = validRoutes.find(r => r.route_id === bus.route_id);
     const { available, taken } = await getSegmentSeats(
       bus, travel_date, routeInfo.boarding_order, routeInfo.dropoff_order
@@ -177,7 +188,6 @@ export const searchBuses = async ({ from_location_id, to_location_id, travel_dat
     };
   }));
 
-  // filter out departed buses and full buses
   return results.filter(b => b !== null && b.available_seats.length > 0);
 };
 
@@ -411,20 +421,16 @@ export const notifyPassengerExit = async (driver_id, ticket_id) => {
 
 // ── VALIDATE ──────────────────────────────────────────
 export const validateByQR = async (token) => {
-  const decoded = verifyQRToken(token);
-  if (!decoded) return { valid: false, reason: 'Invalid or tampered QR code' };
-
-  const ticket = await Ticket.findByPk(decoded.ticket_id, { include: ticketIncludes });
+  // QR contains ticket number directly — simple and fast to scan
+  const ticket_number = token.trim();
+  const ticket = await Ticket.findOne({ where: { ticket_number }, include: ticketIncludes });
   if (!ticket)                  return { valid: false, reason: 'Ticket not found' };
   if (ticket.status !== 'paid') return { valid: false, reason: `Ticket is ${ticket.status}` };
   if (ticket.is_used)           return { valid: false, reason: '⚠️ Ticket already used — boarding denied' };
-  if (ticket.ticket_number !== decoded.ticket_number) return { valid: false, reason: 'Ticket number mismatch' };
-  if (ticket.bus_id !== decoded.bus_id) return { valid: false, reason: 'Wrong bus' };
 
   const today = new Date().toISOString().split('T')[0];
-  if (ticket.travel_date !== today) return { valid: false, reason: `Ticket is for ${ticket.travel_date}, not today` };
+  if (ticket.travel_date > today) return { valid: false, reason: `Ticket is for future date: ${ticket.travel_date}` };
 
-  // mark as used
   await ticket.update({ is_used: true });
 
   return {
@@ -440,32 +446,6 @@ export const validateByQR = async (token) => {
       boarding:       ticket.boardingStop.location.name,
       dropoff:        ticket.dropoffStop.location.name,
       operator:       ticket.operator,
-    },
-  };
-};
-
-export const validateByNumber = async (ticket_number) => {
-  const ticket = await Ticket.findOne({ where: { ticket_number }, include: ticketIncludes });
-  if (!ticket)                  return { valid: false, reason: 'Ticket not found' };
-  if (ticket.status !== 'paid') return { valid: false, reason: `Ticket is ${ticket.status}` };
-  if (ticket.is_used)           return { valid: false, reason: '⚠️ Ticket already used — boarding denied' };
-
-  const today = new Date().toISOString().split('T')[0];
-  if (ticket.travel_date !== today) return { valid: false, reason: `Ticket is for ${ticket.travel_date}, not today` };
-
-  await ticket.update({ is_used: true });
-
-  return {
-    valid: true,
-    ticket: {
-      id:            ticket.id,
-      ticket_number: ticket.ticket_number,
-      seat_number:   ticket.seat_number,
-      travel_date:   ticket.travel_date,
-      passenger:     ticket.user,
-      boarding:      ticket.boardingStop.location.name,
-      dropoff:       ticket.dropoffStop.location.name,
-      plate_number:  ticket.bus.plate_number,
     },
   };
 };

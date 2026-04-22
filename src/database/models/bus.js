@@ -11,6 +11,7 @@ const Bus = sequelize.define('Bus', {
   driver_name:    { type: DataTypes.STRING(100), allowNull: false },
   capacity:       { type: DataTypes.INTEGER,     allowNull: false },
   departure_time: { type: DataTypes.TIME,        allowNull: false },
+  is_active:      { type: DataTypes.BOOLEAN,     allowNull: false, defaultValue: true },
 }, { tableName: 'buses', timestamps: false });
 
 Bus.belongsTo(Operator, { foreignKey: 'operator_id', as: 'operator' });

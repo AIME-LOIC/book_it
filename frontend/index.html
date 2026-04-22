@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookIt - Rwanda Bus Ticket Booking Simplified</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Using a generic bus icon as the logo placeholder since 'download.png' is not available -->
+    <link rel="shortcut icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 576 512'%3E%3Cpath fill='%23059669' d='M464 128H272c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16h192c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16zm-176 96H464c8.84 0 16-7.16 16-16v-32c0-8.84-7.16-16-16-16H288c-8.84 0-16 7.16-16 16v32c0 8.84 7.16 16 16 16zM144 96H432c8.84 0 16-7.16 16-16V32c0-17.67-14.33-32-32-32H128C57.31 0 0 57.31 0 128v128c0 105.88 85.83 192 192 192h192c105.88 0 192-86.12 192-192V96H448c-17.67 0-32 14.33-32 32v32c0 17.67-14.33 32-32 32H160c-17.67 0-32-14.33-32-32v-32c0-17.67-14.33-32-32-32zm384 192c0 53.02-42.98 96-96 96H192c-53.02 0-96-42.98-96-96v-32h384v32zM288 448c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zm-144 0c-26.51 0-48 21.49-48 48s21.49 48 48 48 48-21.49 48-48-21.49-48-48-48zm368-176c-17.67 0-32 14.33-32 32s14.33 32 32 32 32-14.33 32-32-14.33-32-32-32zm-464 0c-17.67 0-32 14.33-32 32s14.33 32 32 32 32-14.33 32-32-14.33-32-32-32z'/%3E%3C/svg%3E" type="image/svg+xml">
+    <!-- Load FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        /* Custom scroll behavior for navigation links */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Custom primary color inspired by the user's green logo (Emerald/Teal) */
+        .text-primary-green { color: #059669; } /* Emerald-600 */
+        .bg-primary-green { background-color: #059669; } /* Emerald-600 */
+        .hover\:bg-primary-green-dark:hover { background-color: #047857; } /* Emerald-700 */
+
+        /* --- Dark Mode Overrides (Updated for Green Theme) --- */
+        .dark body,
+        .dark header,
+        .dark section,
+        .dark nav,
+        .dark footer {
+            background-color: #071217 !important; /* Very dark background */
+            color: #d1fae5 !important; /* Light green-tinged text */
+        }
+        .dark .bg-white { background-color: #071715 !important; }
+        .dark .bg-gray-50 { background-color: #071715 !important; }
+        .dark .bg-gray-100 { background-color: #0a1f1b !important; }
+        .dark .text-gray-900 { color: #ecfdf5 !important; }
+        .dark .text-gray-600 { color: #a7f3d0 !important; }
+        .dark .text-gray-500 { color: #6ee7b7 !important; }
+        .dark .text-gray-400 { color: #34d399 !important; }
+        .dark .border-gray-300 { border-color: #1f2937 !important; } /* Darker input borders */
+        .dark .border-gray-700 { border-color: #172a27 !important; }
+        .dark .bg-primary-green { background-color: #065f46 !important; } /* Darker green button in dark mode */
+        .dark .bg-emerald-50 { background-color: #0d3a33 !important; } /* Dark card background */
+        .dark .bg-green-50 { background-color: #0d3a33 !important; }
+        .dark .bg-purple-50 { background-color: #1e1b30 !important; } /* Keep non-green colors visible */
+        .dark .bg-yellow-100 { background-color: #2b250d !important; }
+        .dark .shadow-2xl { box-shadow: 0 10px 25px rgba(0,0,0,0.6) !important; }
+
+
+    </style>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        'primary-green': '#059669', // Emerald-600
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <!-- Navigation Bar -->
+    <nav class="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex-shrink-0">
+                    <a href="#home" class="text-2xl font-extrabold text-primary-green tracking-tight flex items-center">
+                        <img src="download.png" alt="" srcset="" width="120" height="40" class="mr-2">
+                    </a>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                    <a href="#features" class="text-gray-600 dark:text-gray-300 hover:text-primary-green px-3 py-2 rounded-md text-sm font-medium transition duration-150">Features</a>
+                    <a href="#vision" class="text-gray-600 dark:text-gray-300 hover:text-primary-green px-3 py-2 rounded-md text-sm font-medium transition duration-150">Vision</a>
+                    <a href="#how-it-works" class="text-gray-600 dark:text-gray-300 hover:text-primary-green px-3 py-2 rounded-md text-sm font-medium transition duration-150">How It Works</a>
+                    <a href="#contact" class="text-gray-600 dark:text-gray-300 hover:text-primary-green px-3 py-2 rounded-md text-sm font-medium transition duration-150">Contact Us</a>
+                </div>
+
+                <div class="flex items-center space-x-3">
+                    <!-- Theme toggle -->
+                    <button id="theme-toggle" title="Toggle dark / light" class="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-primary-green hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-green">
+                        <i id="theme-icon" class="fas fa-moon text-lg"></i>
+                    </button>
+
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-button" class="sm:hidden p-2 rounded-md text-gray-400 dark:text-gray-300 hover:text-primary-green hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-green">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu (Hidden by default) -->
+        <div id="mobile-menu" class="sm:hidden hidden bg-white dark:bg-gray-900 border-t dark:border-gray-700">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="#features" class="block text-gray-700 dark:text-gray-300 hover:bg-emerald-50 dark:hover:bg-gray-700 hover:text-primary-green px-3 py-2 rounded-md text-base font-medium">Features</a>
+                <a href="#vision" class="block text-gray-700 dark:text-gray-300 hover:bg-emerald-50 dark:hover:bg-gray-700 hover:text-primary-green px-3 py-2 rounded-md text-base font-medium">Vision</a>
+                <a href="#how-it-works" class="block text-gray-700 dark:text-gray-300 hover:bg-emerald-50 dark:hover:bg-gray-700 hover:text-primary-green px-3 py-2 rounded-md text-base font-medium">How It Works</a>
+                <a href="#contact" class="block text-gray-700 dark:text-gray-300 hover:bg-emerald-50 dark:hover:bg-gray-700 hover:text-primary-green px-3 py-2 rounded-md text-base font-medium">Contact Us</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header id="home" class="relative overflow-hidden pt-16 pb-24 sm:pt-24 sm:pb-32 lg:pt-32 lg:pb-40 bg-white dark:bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="lg:grid lg:grid-cols-12 lg:gap-12 lg:items-center">
+                <div class="lg:col-span-6">
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight">
+                        <span class="block">Travel Rwanda,</span>
+                        <span class="block text-primary-green">Book Seamlessly.</span>
+                    </h1>
+                    <p class="mt-6 text-lg text-gray-600 dark:text-gray-300 max-w-xl">
+                        BookIt is the digital platform simplifying bus travel in Rwanda and beyond. Search, book, and manage your tickets instantly, eliminating long queues and manual processes.
+                    </p>
+                    <div class="mt-10 flex flex-col sm:flex-row gap-4">
+                        <button id="start-booking-btn" class="bg-primary-green text-white text-lg font-semibold py-3 px-8 rounded-xl shadow-xl shadow-emerald-500/50 hover:bg-primary-green-dark transition duration-300 transform hover:scale-105">
+                            Start Booking Today
+                        </button>
+                        <button class="bg-white dark:bg-gray-800 text-primary-green border border-primary-green text-lg font-semibold py-3 px-8 rounded-xl hover:bg-emerald-50 dark:hover:bg-gray-700 transition duration-300 transform hover:scale-105">
+                            <i class="fas fa-video mr-2"></i> Watch Demo
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-12 lg:mt-0 lg:col-span-6">
+                    
+                    <div class="relative rounded-xl overflow-hidden shadow-2xl">
+                        <img src="hero.png" alt="BookIt Hero" class="w-full h-auto object-cover rounded-xl">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Key Features Section -->
+    <section id="features" class="py-20 sm:py-28 bg-white dark:bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-base text-primary-green font-semibold tracking-wide uppercase">Why BookIt?</h2>
+                <p class="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
+                    Key Features Designed for You
+                </p>
+                <p class="mt-4 text-xl text-gray-500 dark:text-gray-400">
+                    Experience a smarter, faster, and stress-free way to travel.
+                </p>
+            </div>
+
+            <div class="mt-16 grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-3">
+
+                <!-- Feature 1: Real-Time Booking -->
+                <div class="bg-gray-50 dark:bg-gray-800 p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border-t-4 border-primary-green">
+                    <div class="flex items-center justify-center h-12 w-12 rounded-full bg-emerald-100 text-primary-green text-2xl">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Real-Time Booking</h3>
+                    <p class="mt-3 text-base text-gray-500 dark:text-gray-400">
+                        View and reserve seats instantly without visiting the station. Know exactly what's available, right now.
+                    </p>
+                </div>
+
+                <!-- Feature 2: Route Finder -->
+                <div class="bg-gray-50 dark:bg-gray-800 p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border-t-4 border-teal-500">
+                    <div class="flex items-center justify-center h-12 w-12 rounded-full bg-teal-100 text-teal-700 text-2xl">
+                        <i class="fas fa-route"></i>
+                    </div>
+                    <h3 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Route Finder</h3>
+                    <p class="mt-3 text-base text-gray-500 dark:text-gray-400">
+                        Search for buses based on destination, departure time, or your preferred bus company effortlessly.
+                    </p>
+                </div>
+
+                <!-- Feature 3: Online Payments -->
+                <div class="bg-gray-50 dark:bg-gray-800 p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border-t-4 border-yellow-500">
+                    <div class="flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 text-yellow-700 text-2xl">
+                        <i class="fas fa-credit-card"></i>
+                    </div>
+                    <h3 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Online Payments</h3>
+                    <p class="mt-3 text-base text-gray-500 dark:text-gray-400">
+                        Pay securely through the built-in MRT Wallet or choose from other popular local payment options.
+                    </p>
+                </div>
+
+                <!-- Feature 4: User-Friendly Interface -->
+                <div class="bg-gray-50 dark:bg-gray-800 p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border-t-4 border-red-500">
+                    <div class="flex items-center justify-center h-12 w-12 rounded-full bg-red-100 text-red-700 text-2xl">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">User-Friendly Interface</h3>
+                    <p class="mt-3 text-base text-gray-500 dark:text-gray-400">
+                        Clean and responsive design ensures a seamless booking experience on both desktop and mobile devices.
+                    </p>
+                </div>
+
+                <!-- Feature 5: Digital Tickets -->
+                <div class="bg-gray-50 dark:bg-gray-800 p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border-t-4 border-indigo-500">
+                    <div class="flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-indigo-700 text-2xl">
+                        <i class="fas fa-ticket-alt"></i>
+                    </div>
+                    <h3 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">Digital Tickets</h3>
+                    <p class="mt-3 text-base text-gray-500 dark:text-gray-400">
+                        Receive your secure e-ticket instantly after a successful booking. Just show your phone and board.
+                    </p>
+                </div>
+
+                <!-- Feature 6: Booking History & Reminders -->
+                <div class="bg-gray-50 dark:bg-gray-800 p-8 rounded-xl shadow-lg hover:shadow-xl transition duration-300 border-t-4 border-purple-500">
+                    <div class="flex items-center justify-center h-12 w-12 rounded-full bg-purple-100 text-purple-700 text-2xl">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h3 class="mt-6 text-xl font-semibold text-gray-900 dark:text-white">History & Reminders</h3>
+                    <p class="mt-3 text-base text-gray-500 dark:text-gray-400">
+                        Easily view, download, or cancel past bookings, and receive automatic travel reminders.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Vision & Mission Section -->
+    <section id="vision" class="py-20 sm:py-28 bg-gray-100 dark:bg-gray-800">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-2 gap-12">
+                <!-- Vision Card -->
+                <div class="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-2xl border-l-8 border-primary-green">
+                    <h2 class="text-4xl font-extrabold text-gray-900 dark:text-white flex items-center">
+                        <i class="fas fa-lightbulb text-primary-green mr-3"></i> Vision
+                    </h2>
+                    <p class="mt-4 text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
+                        To create a fast, transparent, and reliable way for passengers to book bus tickets anytime, anywhere — supporting the digital transformation of Rwanda’s transport sector.
+                    </p>
+                </div>
+
+                <!-- Mission Card -->
+                <div class="bg-white dark:bg-gray-900 p-8 rounded-xl shadow-2xl border-l-8 border-teal-500">
+                    <h2 class="text-4xl font-extrabold text-gray-900 dark:text-white flex items-center">
+                        <i class="fas fa-bullseye text-teal-600 mr-3"></i> Mission
+                    </h2>
+                    <p class="mt-4 text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
+                        To connect passengers and transport companies through technology that makes traveling simpler, smarter, and stress-free.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section (Flowchart style) -->
+    <section id="how-it-works" class="py-20 sm:py-28 bg-white dark:bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-base text-primary-green font-semibold tracking-wide uppercase">Simple Steps</h2>
+                <p class="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
+                    How BookIt Works
+                </p>
+            </div>
+
+            <div class="mt-16 relative flex justify-center">
+                <!-- Timeline/Flow Connector (Hidden on small screens) -->
+                <div class="hidden lg:block absolute top-1/4 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700"></div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 w-full">
+
+                    <!-- Step 1: Search -->
+                    <div class="relative flex flex-col items-center text-center p-6 bg-emerald-50 dark:bg-emerald-900/50 rounded-xl shadow-lg border-t-4 border-primary-green lg:mt-0">
+                        <div class="z-10 flex items-center justify-center h-16 w-16 rounded-full bg-primary-green text-white text-3xl font-bold mb-4 shadow-xl">
+                            1
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Search & Compare</h3>
+                        <p class="mt-3 text-lg text-gray-600 dark:text-gray-300">
+                            Enter your destination and date to view real-time schedules, prices, and available bus companies.
+                        </p>
+                        <i class="fas fa-search text-6xl text-primary-green opacity-20 mt-4"></i>
+                    </div>
+
+                    <!-- Step 2: Book & Pay -->
+                    <div class="relative flex flex-col items-center text-center p-6 bg-green-50 dark:bg-green-900/50 rounded-xl shadow-lg border-t-4 border-teal-600 lg:mt-0">
+                        <div class="z-10 flex items-center justify-center h-16 w-16 rounded-full bg-teal-600 text-white text-3xl font-bold mb-4 shadow-xl">
+                            2
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Reserve & Pay</h3>
+                        <p class="mt-3 text-lg text-gray-600 dark:text-gray-300">
+                            Select your preferred seat and complete the secure payment using MRT Wallet or other options.
+                        </p>
+                        <i class="fas fa-credit-card text-6xl text-teal-600 opacity-20 mt-4"></i>
+                    </div>
+
+                    <!-- Step 3: Travel -->
+                    <div class="relative flex flex-col items-center text-center p-6 bg-purple-50 dark:bg-purple-900/50 rounded-xl shadow-lg border-t-4 border-purple-600 lg:mt-0">
+                        <div class="z-10 flex items-center justify-center h-16 w-16 rounded-full bg-purple-600 text-white text-3xl font-bold mb-4 shadow-xl">
+                            3
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Get Digital Ticket</h3>
+                        <p class="mt-3 text-lg text-gray-600 dark:text-gray-300">
+                            Receive your digital e-ticket instantly and get ready for a stress-free journey!
+                        </p>
+                        <i class="fas fa-ticket-alt text-6xl text-purple-600 opacity-20 mt-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Contact Us Section (New) -->
+    <section id="contact" class="py-20 sm:py-28 bg-gray-100 dark:bg-gray-800">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-base text-primary-green font-semibold tracking-wide uppercase">Partnership & Support</h2>
+                <p class="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
+                    Get In Touch With Our Team
+                </p>
+                <p class="mt-4 text-xl text-gray-500 dark:text-gray-400">
+                    We'd love to hear from potential partners or travelers.
+                </p>
+            </div>
+            
+            <div class="mt-12 bg-white dark:bg-gray-900 p-8 rounded-xl shadow-2xl">
+                <form class="space-y-6">
+                    <div>
+                        <label for="contact-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Full Name</label>
+                        <input type="text" id="contact-name" name="name" required
+                               class="mt-1 block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-md shadow-sm p-3 focus:ring-primary-green focus:border-primary-green">
+                    </div>
+                    <div>
+                        <label for="contact-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email Address</label>
+                        <input type="email" id="contact-email" name="email" required
+                               class="mt-1 block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-md shadow-sm p-3 focus:ring-primary-green focus:border-primary-green">
+                    </div>
+                    <div>
+                        <label for="contact-message" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Message</label>
+                        <textarea id="contact-message" name="message" rows="4" required
+                                  class="mt-1 block w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-md shadow-sm p-3 focus:ring-primary-green focus:border-primary-green"></textarea>
+                    </div>
+                    <div>
+                        <!-- This button will also trigger the modal for demo purposes -->
+                        <button id="contact-submit-btn" type="submit" 
+                                class="w-full bg-primary-green text-white py-3 px-6 rounded-xl font-semibold hover:bg-primary-green-dark transition duration-300 shadow-lg shadow-emerald-500/50">
+                            Send Inquiry
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final Call to Action -->
+    <section class="py-16 sm:py-24 bg-primary-green">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">
+                Ready to ditch the queues?
+            </h2>
+            <p class="mt-4 text-xl text-emerald-200 max-w-2xl mx-auto">
+                Join the digital transformation of transport in Rwanda. Book your next bus trip with BookIt today.
+            </p>
+            <button id="book-seat-btn" class="mt-8 bg-yellow-400 text-gray-900 text-xl font-bold py-3 px-10 rounded-xl shadow-2xl hover:bg-yellow-300 transition duration-300 transform hover:scale-105">
+                Book Your Seat Now
+            </button>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 dark:bg-gray-900 text-white">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4 text-primary-green">BookIt</h3>
+                    <p class="text-gray-400 text-sm">Simplifying bus ticketing in Rwanda and beyond.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li><a href="#features" class="hover:text-primary-green transition">Features</a></li>
+                        <li><a href="#vision" class="hover:text-primary-green transition">Vision</a></li>
+                        <li><a href="#contact" class="hover:text-primary-green transition">Contact Us</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact</h3>
+                    <ul class="space-y-2 text-gray-400 text-sm">
+                        <li><i class="fas fa-envelope mr-2"></i> kingaime132@gmail.com</li>
+                        <li><i class="fas fa-phone mr-2"></i> +250 791749219</li>
+                        <li><i class="fas fa-map-marker-alt mr-2"></i> Kigali, Rwanda</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Social</h3>
+                    <div class="flex space-x-4 text-2xl">
+                        <a href="#" class="text-gray-400 hover:text-primary-green transition"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-primary-green transition"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-gray-400 hover:text-primary-green transition"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-12 border-t border-gray-700 pt-8">
+                <p class="text-center text-gray-500 text-sm">
+                    &copy; 2025 BookIt. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Under Construction Modal REMOVED -->
+
+    <script>
+        // Simple JavaScript to handle the mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+
+        // Close mobile menu when a link is clicked
+        document.querySelectorAll('#mobile-menu a').forEach(item => {
+            item.addEventListener('click', () => {
+                document.getElementById('mobile-menu').classList.add('hidden');
+            });
+        });
+
+        // Theme toggle with persistence
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const storedTheme = localStorage.getItem('bookit-theme');
+
+        function applyTheme(dark) {
+            if (dark) {
+                document.documentElement.classList.add('dark');
+                themeIcon.className = 'fas fa-sun text-lg';
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeIcon.className = 'fas fa-moon text-lg';
+            }
+        }
+
+        // initialize theme
+        if (storedTheme === 'dark') {
+            applyTheme(true);
+        } else if (storedTheme === 'light') {
+            applyTheme(false);
+        } else {
+            applyTheme(prefersDark);
+        }
+
+        themeToggle.addEventListener('click', () => {
+            const isDark = document.documentElement.classList.toggle('dark');
+            applyTheme(isDark);
+            localStorage.setItem('bookit-theme', isDark ? 'dark' : 'light');
+        });
+
+        // Redirect booking buttons to user.html
+        document.getElementById('start-booking-btn').addEventListener('click', () => window.location.href = 'user.html');
+        document.getElementById('book-seat-btn').addEventListener('click', () => window.location.href = 'user.html');
+        const contactSubmitBtn = document.getElementById('contact-submit-btn');
+        if (contactSubmitBtn) contactSubmitBtn.addEventListener('click', (e) => { e.preventDefault(); window.location.href = 'user.html'; });
+    </script>
+</body>
+</html>

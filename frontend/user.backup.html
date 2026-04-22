@@ -54,86 +54,15 @@
     --primary-hover: #047857;
     --secondary: #059669;
     --secondary-hover: #047857;
-    --bg-main: #0a0f1e;
-    --bg-card: #111827;
-    --text-main: #f9fafb;
-    --text-muted: #9ca3af;
-    --accent-green: #10b981;
+    --bg-main: #071217;
+    --bg-card: #0a1f1b;
+    --text-main: #d1fae5;
+    --text-muted: #6ee7b7;
+    --accent-green: #34d399;
     --accent-orange: #059669;
-    --border: #1f2937;
-    --glass: rgba(17, 24, 39, 0.85);
+    --border: #134e4a;
+    --glass: rgba(10, 31, 27, 0.8);
   }
-
-  /* LIGHT MODE — warm, modern, not plain white */
-  body.light {
-    --bg-main: #f0f4f8;
-    --bg-card: #ffffff;
-    --text-main: #0f172a;
-    --text-muted: #475569;
-    --border: #cbd5e1;
-    --glass: rgba(255,255,255,0.9);
-  }
-  body.light { background: var(--bg-main); }
-  body.light .auth-screen { background: radial-gradient(circle at top right, rgba(5,150,105,0.15), #f0f4f8), radial-gradient(circle at bottom left, rgba(16,185,129,0.10), #f0f4f8); }
-  body.light .sidebar { background: #ffffff; border-color: #e2e8f0; }
-  body.light .sidebar .nav-item { color: #475569; }
-  body.light .sidebar .nav-item:hover,
-  body.light .sidebar .nav-item.active { background: rgba(5,150,105,0.10); color: #059669; }
-  body.light .sidebar .nav-item i { color: #475569; }
-  body.light .sidebar .nav-item.active i { color: #059669; }
-  body.light .sidebar h1 { color: #059669; }
-  body.light .hero-section { background: linear-gradient(180deg, #e8f5f0 0%, #f0f4f8 100%); border-color: #e2e8f0; }
-  body.light .hero-title { color: #0f172a; }
-  body.light .hero-title span { color: #059669; }
-  body.light .search-card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
-  body.light .search-card .input-group label { color: #475569; }
-  body.light select, body.light input { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
-  body.light select:focus, body.light input:focus { border-color: #059669; background: #fff; }
-  body.light .custom-select-trigger { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
-  body.light .custom-select-options { background: #ffffff; border-color: #cbd5e1; }
-  body.light .custom-select-option { color: #0f172a; }
-  body.light .custom-select-option:hover { background: rgba(5,150,105,0.08); }
-  body.light .chip { background: #e2e8f0; color: #334155; }
-  body.light .chip:hover { background: #059669; color: white; }
-  body.light .bus-card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-  body.light .bus-card:hover { border-color: #059669; box-shadow: 0 8px 24px rgba(5,150,105,0.15); }
-  body.light .operator-name { color: #0f172a; }
-  body.light .bus-meta { color: #475569; }
-  body.light .bus-meta i { color: #059669; }
-  body.light .departure-time { color: #059669; }
-  body.light .price { color: #0f172a; }
-  body.light .occupancy-bar { background: #e2e8f0; }
-  body.light .notif-panel { background: #ffffff; border-color: #e2e8f0; }
-  body.light .notif-item { background: #f8fafc; }
-  body.light .notif-item.unread { background: rgba(5,150,105,0.06); }
-  body.light .notif-icon { background: #e2e8f0; color: #059669; }
-  body.light .ticket-wrapper { background: #ffffff; border-color: #e2e8f0; }
-  body.light .ticket-main { border-color: #e2e8f0; }
-  body.light .ticket-footer { background: #f8fafc; }
-  body.light .ticket-id { background: #f1f5f9; border-color: #e2e8f0; color: #0f172a; }
-  body.light .loading-shimmer { background: linear-gradient(90deg, #e2e8f0 0%, #f1f5f9 50%, #e2e8f0 100%); background-size: 200% 100%; }
-  body.light .seat { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
-  body.light .seat.taken { background: #e2e8f0; color: #94a3b8; }
-  body.light .btn-ghost { background: #e2e8f0; color: #0f172a; }
-  body.light .pay-modal { background: #ffffff; border-color: #e2e8f0; }
-  body.light .pay-method-btn { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
-  body.light .confirm-box { background: #ffffff; border-color: #e2e8f0; }
-  body.light .confirm-box h4, body.light .confirm-box p { color: #0f172a; }
-  body.light #app-loader { background: #f0f4f8; }
-  body.light .ld-ch { color: #0f172a; }
-  body.light .ld-ch.grn { color: #059669; }
-  body.light .ld-seg { background: #e2e8f0; border-color: #059669; }
-  .logo-img { filter: brightness(0) invert(1); }
-  body.light .logo-img { filter: none; }
-  body.light .bottom-nav .nav-item { color: #475569; }
-  body.light .bottom-nav .nav-item.active { color: #059669; }
-  body.light input[type="date"] { color-scheme: light; }
-  body.light .results-container { background: transparent; }
-  body.light #sec-tickets { background: transparent; }
-  body.light .seat-map-container { background: #f8fafc; border-color: #e2e8f0; }
-  body.light .driver-wheel { border-color: #cbd5e1; color: #475569; }
-  body.light #sec-search { background: transparent; }
-  body.light .main-content { background: var(--bg-main); }
 
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
   body { 
@@ -145,7 +74,7 @@
   }
 
   /* --- AUTH STYLES --- */
-  .auth-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; padding: 20px; background: radial-gradient(circle at top right, rgba(5,150,105,0.18), #0a0f1e), radial-gradient(circle at bottom left, rgba(16,185,129,0.12), #0a0f1e); }
+  .auth-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; padding: 20px; background: radial-gradient(circle at top right, rgba(5,150,105,0.22), #071217), radial-gradient(circle at bottom left, rgba(52,211,153,0.18), #071217); }
   .auth-card { background: var(--bg-card); border-radius: 24px; padding: 40px; width: 100%; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid var(--border); }
   .auth-logo { text-align: center; margin-bottom: 32px; }
   .auth-logo h1 { font-size: 32px; font-weight: 900; color: var(--primary); letter-spacing: -1px; display:flex; align-items:center; justify-content:center; gap: 12px; }
@@ -160,20 +89,18 @@
   
   /* Sidebar - Desktop */
   .sidebar {
-    width: 280px;
+    width: 260px;
     background: var(--bg-card);
     border-right: 1px solid var(--border);
-    padding: 32px 20px;
+    padding: 32px 16px;
     position: fixed;
     height: 100vh;
     z-index: 50;
-    display: flex;
-    flex-direction: column;
   }
 
   .main-content {
     flex: 1;
-    margin-left: 280px;
+    margin-left: 260px;
     padding-bottom: 100px;
   }
 
@@ -197,23 +124,21 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 16px 18px;
+    padding: 14px 18px;
     border-radius: 12px;
     color: var(--text-muted);
     cursor: pointer;
     font-weight: 600;
-    font-size: 16px;
     transition: 0.2s;
     margin-bottom: 8px;
-    min-height: 52px;
   }
-  .nav-item i { font-size: 20px; }
-  .nav-item:hover, .nav-item.active { background: rgba(5, 150, 105, 0.12); color: var(--secondary); }
+  .nav-item i { font-size: 20px; color: white; }
+  .nav-item:hover, .nav-item.active { background: rgba(5, 150, 105, 0.10); color: var(--secondary); }
 
   /* --- HERO SEARCH SECTION --- */
   .hero-section {
     padding: 40px;
-    background: linear-gradient(180deg, #111827 0%, #0a0f1e 100%);
+    background: linear-gradient(180deg, #0a1f1b 0%, #071217 100%);
     border-bottom: 1px solid var(--border);
   }
   .search-card {
@@ -231,74 +156,22 @@
 
   .search-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 200px 160px;
+    grid-template-columns: 1fr 1fr 180px 180px;
     gap: 16px;
     align-items: flex-end;
     overflow: visible;
   }
 
-  /* --- FLOATING LABEL INPUTS --- */
-  .float-group {
-    position: relative;
-    margin-bottom: 4px;
-  }
-  .float-group input {
-    height: 58px;
-    padding: 22px 48px 8px 20px;
-    border-radius: 14px;
-    font-size: 16px;
-  }
-  .float-group label {
-    position: absolute;
-    left: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 16px;
-    color: var(--text-muted);
-    font-weight: 500;
-    pointer-events: none;
-    transition: 0.2s;
-    text-transform: none;
-    letter-spacing: 0;
-  }
-  .float-group input:focus ~ label,
-  .float-group input:not(:placeholder-shown) ~ label {
-    top: 14px;
-    transform: none;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--secondary);
-  }
-  .float-group input:focus {
-    border-color: var(--secondary);
-    box-shadow: 0 0 0 4px rgba(5,150,105,0.12);
-  }
-  .eye-btn {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    padding: 6px;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .eye-btn:hover { color: white; }
+  .input-group { display: flex; flex-direction: column; gap: 8px; }
+  .input-group label { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
   
   select, input {
     background: var(--bg-main);
     border: 1px solid var(--border);
-    padding: 16px 20px;
+    padding: 14px 20px;
     border-radius: 12px;
     color: white;
-    font-size: 16px;
+    font-size: 15px;
     width: 100%;
     outline: none;
     transition: 0.2s;
@@ -381,60 +254,12 @@
     padding: 24px;
     margin-bottom: 20px;
     border: 1px solid var(--border);
-    transition: border-color 0.2s;
+    transition: transform 0.2s, border-color 0.2s;
     cursor: pointer;
     position: relative;
-    overflow: visible;
-    opacity: 0;
-    transform: translateX(-110%);
-  }
-  .bus-card.slide-in {
-    animation: busSlideIn 1.1s cubic-bezier(0.22,1,0.36,1) forwards;
-  }
-  @keyframes busSlideIn {
-    0%   { opacity:0; transform: translateX(-110%); }
-    65%  { opacity:1; transform: translateX(3%); }
-    82%  { transform: translateX(-1%); }
-    100% { opacity:1; transform: translateX(0); }
+    overflow: hidden;
   }
   .bus-card:hover { border-color: var(--secondary); transform: translateY(-2px); }
-
-  /* tow bus */
-  .tow-bus {
-    position: absolute;
-    left: -64px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 56px;
-    opacity: 1;
-    pointer-events: none;
-    animation: towBusAnim 1.1s cubic-bezier(0.22,1,0.36,1) forwards;
-    z-index: 10;
-  }
-  @keyframes towBusAnim {
-    0%   { left: -64px; opacity:1; }
-    62%  { left: -64px; opacity:1; }
-    80%  { left: -72px; opacity:1; }
-    90%  { left: -64px; opacity:0; }
-    100% { left: -64px; opacity:0; }
-  }
-  .tow-rope {
-    position: absolute;
-    top: 50%;
-    left: -64px;
-    width: 64px;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, #059669);
-    transform: translateY(-50%);
-    pointer-events: none;
-    animation: towRopeAnim 1.1s cubic-bezier(0.22,1,0.36,1) forwards;
-    z-index: 9;
-  }
-  @keyframes towRopeAnim {
-    0%   { opacity:1; }
-    80%  { opacity:1; }
-    100% { opacity:0; }
-  }
   
   .bus-card-main { display: flex; justify-content: space-between; align-items: center; }
   .bus-info { flex: 1; }
@@ -514,7 +339,7 @@
   .ticket-wrapper::after { right: -15px; }
 
   .ticket-main { padding: 24px; border-bottom: 2px dashed rgba(148, 163, 184, 0.25); }
-  .ticket-footer { padding: 24px; text-align: center; background: var(--bg-main); }
+  .ticket-footer { padding: 24px; text-align: center; background: rgba(15, 23, 42, 0.55); }
   
   .ticket-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
   .ticket-logo { font-weight: 900; color: var(--secondary); font-size: 20px; letter-spacing: -0.5px; }
@@ -556,7 +381,7 @@
     border: 1px solid transparent;
     cursor: pointer;
   }
-  .notif-item.unread { border-left: 4px solid var(--secondary); background: rgba(5,150,105,0.08); }
+  .notif-item.unread { border-left: 4px solid var(--secondary); background: rgba(5,150,105,0.06); }
   .notif-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; color: white; }
 
   /* --- MOBILE ADAPTATIONS --- */
@@ -576,8 +401,8 @@
 
   /* BUTTONS */
   .btn {
-    padding: 16px 24px;
-    border-radius: 14px;
+    padding: 14px 24px;
+    border-radius: 12px;
     border: none;
     font-weight: 700;
     cursor: pointer;
@@ -586,8 +411,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    font-size: 16px;
-    min-height: 52px;
+    font-size: 15px;
   }
   .btn-primary { background: var(--secondary); color: white; }
   .btn-primary:hover { background: var(--secondary-hover); transform: translateY(-1px); }
@@ -599,50 +423,14 @@
 
   /* UTILS */
   .badge { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
-  .badge-paid { background: rgba(5,150,105,0.18); color: #34d399; border: 1px solid rgba(5,150,105,0.30); padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 800; display:inline-flex; align-items:center; gap:6px; }
-  .badge-pending { background: rgba(245,158,11,0.18); color: #fcd34d; border: 1px solid rgba(245,158,11,0.30); padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 800; display:inline-flex; align-items:center; gap:6px; }
-  .badge-cancelled { background: rgba(239,68,68,0.18); color: #fca5a5; border: 1px solid rgba(239,68,68,0.30); padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 800; display:inline-flex; align-items:center; gap:6px; }
+  .badge-paid { background: rgba(5, 150, 105, 0.16); color: #34d399; border: 1px solid rgba(5, 150, 105, 0.20); }
+  .badge-pending { background: rgba(52, 211, 153, 0.14); color: #6ee7b7; border: 1px solid rgba(52, 211, 153, 0.20); }
+  .badge-cancelled { background: rgba(239, 68, 68, 0.14); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.20); }
 
-  .loading-shimmer { animation: shimmer 2s infinite linear; background: linear-gradient(90deg, var(--bg-card) 0%, #374151 50%, var(--bg-card) 100%); background-size: 200% 100%; height: 100px; border-radius: 20px; margin-bottom: 20px; }
+  .loading-shimmer { animation: shimmer 2s infinite linear; background: linear-gradient(90deg, var(--bg-card) 0%, #134e4a 50%, var(--bg-card) 100%); background-size: 200% 100%; height: 100px; border-radius: 20px; margin-bottom: 20px; }
   @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
 
-  /* --- LOADING PAGE --- */
-  #app-loader { position:fixed; inset:0; z-index:9999; background:#0a0f1e; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; transition:opacity 0.6s ease; }
-  #app-loader.hide { opacity:0; pointer-events:none; }
-  #ld-spinner { width:110px; height:110px; animation:ldspin 1s linear infinite; }
-  @keyframes ldspin { to { transform:rotate(360deg); } }
-  #ld-road { display:flex; gap:8px; opacity:0; }
-  .ld-seg { width:76px; height:10px; border-radius:5px; background:#1f2937; border:1px solid #059669; transform:translateY(-50px); opacity:0; transition:transform 0.55s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease; }
-  .ld-seg.land { transform:translateY(0); opacity:1; }
-  .ld-seg.fall { animation:ldsegfall 0.5s cubic-bezier(0.55,0,1,0.45) forwards; }
-  @keyframes ldsegfall { to { transform:translateY(90px) rotate(12deg); opacity:0; } }
-  #ld-bus-wrap { position:absolute; top:50%; left:0; transform:translateY(calc(-50% - 14px)) translateX(-200px); opacity:0; transition:opacity 0.3s ease; }
-  .ld-body { position:relative; width:108px; height:40px; background:#fff; border-radius:6px 12px 4px 4px; box-shadow:0 4px 20px rgba(255,255,255,0.15); }
-  .ld-cabin { position:absolute; top:-18px; left:8px; width:72px; height:20px; background:#f0fdf4; border-radius:6px 10px 0 0; }
-  .ld-wins { position:absolute; top:5px; left:6px; display:flex; gap:5px; }
-  .ld-win { width:14px; height:14px; background:#bfdbfe; border-radius:3px; }
-  .ld-front { position:absolute; right:-7px; top:5px; width:10px; height:28px; background:#e2e8f0; border-radius:0 6px 4px 0; }
-  .ld-stripe { position:absolute; top:50%; left:0; right:0; height:3px; background:#059669; transform:translateY(-50%); }
-  .ld-wheels { position:absolute; bottom:-10px; left:0; right:0; display:flex; justify-content:space-between; padding:0 12px; }
-  .ld-wheel { width:20px; height:20px; background:#1e293b; border-radius:50%; border:3px solid #334155; }
-  .ld-wheel::after { content:''; display:block; margin:3px; width:8px; height:8px; background:#475569; border-radius:50%; }
-  .ld-wheel.spin { animation:wspin 0.25s linear infinite; }
-  @keyframes wspin { to { transform:rotate(360deg); } }
-  #ld-title { display:flex; align-items:center; white-space:nowrap; }
-  .ld-ch { font-size:64px; font-weight:900; letter-spacing:-2px; color:#d1fae5; display:inline-block; opacity:0; transform:translateY(20px) scale(0.5); transition:opacity 0.3s ease, transform 0.4s cubic-bezier(0.34,1.56,0.64,1); line-height:1; font-family:'Plus Jakarta Sans','Segoe UI',sans-serif; }
-  .ld-ch.pop { opacity:1 !important; transform:translateY(0) scale(1) !important; }
-  .ld-ch.grn { color:#059669; }
-  /* --- FETCH LOADER --- */
-  #fetch-loader { position:fixed; top:0; left:0; right:0; height:3px; z-index:9998; pointer-events:none; }
-  #fetch-loader-bar { height:100%; width:0%; background:var(--secondary); border-radius:99px; transition:width 0.3s ease; box-shadow:0 0 8px rgba(5,150,105,0.6); }
-
-  /* --- CONFIRM POPUP --- */
-  .confirm-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:600; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(6px); }
-  .confirm-backdrop.open { display:flex; }
-  .confirm-box { background:var(--bg-card); border:1px solid var(--border); border-radius:24px; padding:32px; width:100%; max-width:360px; text-align:center; }
-  .confirm-box h4 { font-size:18px; font-weight:800; margin-bottom:10px; }
-  .confirm-box p { font-size:14px; color:var(--text-muted); margin-bottom:24px; }
-  .confirm-actions { display:flex; gap:12px; }
+  /* --- PAYMENT MODAL --- */
   .pay-modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(8px); }
   .pay-modal-backdrop.open { display:flex; }
   .pay-modal { background:var(--bg-card); border:1px solid var(--border); border-radius:28px; padding:32px; width:100%; max-width:420px; }
@@ -659,52 +447,14 @@
 </style>
 </head>
 <body>
-<script>if(localStorage.getItem('theme')==='light')document.body.classList.add('light');</script>
-
-<!-- FETCH LOADER BAR -->
-<div id="fetch-loader"><div id="fetch-loader-bar"></div></div>
-
-<!-- APP LOADING PAGE -->
-<div id="app-loader">
-  <div style="position:relative; width:360px; height:260px;">
-    <!-- spinner -->
-    <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);"><div id="ld-spinner">
-      <svg viewBox="0 0 110 110" width="110" height="110" fill="none">
-        <circle cx="55" cy="55" r="48" stroke="#1f2937" stroke-width="6"/>
-        <path d="M55 7 A48 48 0 1 1 54.99 7" stroke="#059669" stroke-width="6" stroke-linecap="round" stroke-dasharray="280 20"/>
-      </svg>
-    </div></div>
-    <!-- road -->
-    <div id="ld-road" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">
-      <div class="ld-seg" id="ld-s0"></div>
-      <div class="ld-seg" id="ld-s1"></div>
-      <div class="ld-seg" id="ld-s2"></div>
-    </div>
-    <!-- bus -->
-    <div id="ld-bus-wrap">
-      <div class="ld-body">
-        <div class="ld-cabin"></div>
-        <div class="ld-wins"><div class="ld-win"></div><div class="ld-win"></div><div class="ld-win"></div><div class="ld-win"></div></div>
-        <div class="ld-front"></div>
-        <div class="ld-stripe"></div>
-        <div class="ld-wheels"><div class="ld-wheel" id="ld-w1"></div><div class="ld-wheel" id="ld-w2"></div></div>
-      </div>
-    </div>
-    <!-- title -->
-    <div id="ld-title" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">
-      <span class="ld-ch" id="ld-c0">b</span><span class="ld-ch" id="ld-c1">o</span><span class="ld-ch" id="ld-c2">o</span><span class="ld-ch" id="ld-c3">k</span><span class="ld-ch grn" id="ld-c4">i</span><span class="ld-ch grn" id="ld-c5">t</span>
-    </div>
-  </div>
-</div>
-
 
 <!-- AUTH SCREEN -->
-<div class="auth-screen" id="auth-screen" style="display:none;">
+<div class="auth-screen" id="auth-screen">
   <div class="auth-card">
     <div class="auth-logo">
       <h1>
-        <!-- <img src="./download.png" alt="BookIt" onerror="this.style.display='none'"> -->
-        <img src="./download.png" alt="BookIt" class="logo-img" style="height:80px; width:auto;">
+        <img src="./download.png" alt="BookIt" onerror="this.style.display='none'">
+        <img src="./download.png" alt="BookIt" style="height:80px; width:auto;">
       </h1>
       <p style="color:var(--text-muted); font-size: 14px;">Travel Rwanda with ease</p>
     </div>
@@ -715,36 +465,22 @@
     <div id="auth-err" class="alert alert-err"></div>
 
     <div id="tab-login" style="display:flex; flex-direction:column; gap:16px;">
-      <div class="float-group">
-        <input id="log-email" type="email" placeholder=" " style="height:58px; border-radius:14px;" />
+      <div class="input-group">
         <label>Email Address</label>
+        <input id="log-email" type="email" placeholder="name@email.com" style="height:50px; border-radius:14px;" />
       </div>
-      <div class="float-group">
-        <input id="log-password" type="password" placeholder=" " style="height:58px; border-radius:14px;" />
+      <div class="input-group">
         <label>Password</label>
-        <button class="eye-btn" type="button" onclick="toggleEye('log-password', this)"><i class="fa fa-eye"></i></button>
+        <input id="log-password" type="password" placeholder="••••••••" style="height:50px; border-radius:14px;" />
       </div>
       <button class="btn btn-primary btn-block" onclick="doLogin()">Sign In <i class="fa fa-arrow-right" style="color:white;"></i></button>
     </div>
 
     <div id="tab-register" style="display:none; flex-direction:column; gap:16px;">
-      <div class="float-group">
-        <input id="reg-name" placeholder=" " style="height:58px; border-radius:14px;" />
-        <label>Full Name</label>
-      </div>
-      <div class="float-group">
-        <input id="reg-email" type="email" placeholder=" " style="height:58px; border-radius:14px;" />
-        <label>Email Address</label>
-      </div>
-      <div class="float-group">
-        <input id="reg-phone" placeholder=" " style="height:58px; border-radius:14px;" />
-        <label>Phone Number</label>
-      </div>
-      <div class="float-group">
-        <input id="reg-password" type="password" placeholder=" " style="height:58px; border-radius:14px;" />
-        <label>Password</label>
-        <button class="eye-btn" type="button" onclick="toggleEye('reg-password', this)"><i class="fa fa-eye"></i></button>
-      </div>
+      <input id="reg-name" placeholder="Full Name" style="height:50px; border-radius:14px;" />
+      <input id="reg-email" type="email" placeholder="Email" style="height:50px; border-radius:14px;" />
+      <input id="reg-phone" placeholder="Phone Number" style="height:50px; border-radius:14px;" />
+      <input id="reg-password" type="password" placeholder="Password" style="height:50px; border-radius:14px;" />
       <button class="btn btn-primary btn-block" onclick="doRegister()">Create Account</button>
     </div>
   </div>
@@ -755,7 +491,7 @@
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div style="margin-bottom: 40px; padding: 0 8px;">
-      <img src="./download.png" alt="BookIt" class="logo-img" style="width:100%; height:auto; object-fit:contain; max-height:100px;">
+      <img src="./download.png" alt="BookIt" style="width:100%; height:auto; object-fit:contain; max-height:100px;">
     </div>
     <div class="nav-item active" onclick="showSection('search', this)">
       <i class="fa-solid fa-compass"></i> Explore
@@ -770,18 +506,15 @@
       </div>
       Notifications
     </div>
-    <div style="flex:1;"></div>
-      <div style="border-top: 1px solid var(--border); padding-top: 20px;">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; background: rgba(5,150,105,0.08); border-radius: 14px; border: 1px solid rgba(5,150,105,0.15);">
-          <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--secondary); display: flex; align-items:center; justify-content: center; color: white; font-weight: 900; font-size: 18px; flex-shrink:0;" id="user-initial">U</div>
-          <div style="overflow: hidden; flex:1;">
-            <p id="user-name" style="font-weight: 700; font-size: 14px; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; color: var(--text-main);"></p>
-            <p style="font-size: 11px; color: var(--text-muted);">Verified Traveler</p>
-          </div>
+    <div style="position: absolute; bottom: 32px; left: 16px; right: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 0 16px;">
+        <div style="width: 40px; height: 40px; border-radius: 14px; background: var(--secondary); display: flex; align-items:center; justify-content: center; color: var(--bg-main); font-weight: 900;" id="user-initial">U</div>
+        <div style="overflow: hidden;">
+          <p id="user-name" style="font-weight: 700; font-size: 14px; white-space: nowrap; text-overflow: ellipsis;"></p>
+          <p style="font-size: 11px; color: var(--text-muted);">Verified Traveler</p>
         </div>
-        <button class="btn btn-ghost btn-block" onclick="toggleTheme()" id="theme-btn" style="margin-bottom:8px;"><i class="fa fa-moon"></i> Light Mode</button>
-        <button class="btn btn-ghost btn-block" onclick="logout()"><i class="fa fa-sign-out"></i> Logout</button>
       </div>
+      <button class="btn btn-ghost btn-block" onclick="logout()"><i class="fa fa-sign-out"></i> Logout</button>
     </div>
   </div>
 
@@ -796,7 +529,6 @@
         </div>
     </div>
     <div class="nav-item" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></div>
-    <div class="nav-item" onclick="toggleTheme()" id="m-theme-btn"><i class="fa fa-moon"></i></div>
   </div>
 
   <!-- MAIN CONTENT -->
@@ -832,7 +564,7 @@
             </div>
             <div class="input-group">
               <label><i class="fa fa-calendar-alt" style="color:white;"></i> Date</label>
-              <input type="date" id="s-date" style="height:50px; border-radius:14px; padding: 0 20px; color-scheme: dark;"/>
+              <input type="date" id="s-date" style="height:50px; border-radius:14px;"/>
             </div>
             <button class="btn btn-primary" onclick="filterBuses()">Find Buses</button>
           </div>
@@ -853,11 +585,10 @@
     </div>
 
     <!-- TICKETS SECTION -->
-    <div id="sec-tickets" class="section" style="display:none; padding: 40px;">
-      <h2 style="font-size:28px; font-weight:800; margin-bottom:24px;">My <span style="color:var(--secondary);">Tickets</span></h2>
-      <div id="my-tickets-list"></div>
+  <div id="sec-tickets" class="section" style="display:none; padding: 40px;">
+        <h2 style="font-size: 32px; font-weight: 800; margin-bottom: 32px;">My <span style="color: var(--secondary);">Tickets</span></h2>
+        <div id="my-tickets-list"></div>
     </div>
-
   </div>
 
   <!-- NOTIFICATION PANEL -->
@@ -882,23 +613,6 @@
             <button class="btn btn-ghost" onclick="closeSeatModal()">Cancel</button>
         </div>
         <div id="book-err" class="alert alert-err" style="margin-top: 16px;"></div>
-    </div>
-  </div>
-
-  <!-- LIGHTBOX -->
-  <div id="lightbox" onclick="closeLightbox()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(12px); cursor:zoom-out;">
-    <img id="lightbox-img" src="" alt="" style="max-width:90vw; max-height:90vh; border-radius:20px; background:#fff; padding:24px; box-shadow:0 30px 60px rgba(0,0,0,0.5);">
-  </div>
-
-  <!-- CONFIRM POPUP -->
-  <div class="confirm-backdrop" id="confirm-popup">
-    <div class="confirm-box">
-      <h4 id="confirm-title">Are you sure?</h4>
-      <p id="confirm-msg"></p>
-      <div class="confirm-actions">
-        <button class="btn btn-ghost" style="flex:1;" onclick="resolveConfirm(false)">No, keep it</button>
-        <button class="btn" id="confirm-ok-btn" style="flex:1; background:#ef4444; color:white;" onclick="resolveConfirm(true)">Yes, cancel</button>
-      </div>
     </div>
   </div>
 
@@ -970,132 +684,6 @@ const showToast = (msg, type = 'info') => {
     toastr[type](msg);
 };
 
-// --- LOADERS ---
-const fetchLoader = {
-  count: 0,
-  show() {
-    this.count++;
-    const bar = document.getElementById('fetch-loader-bar');
-    bar.style.width = '70%';
-  },
-  hide() {
-    this.count = Math.max(0, this.count - 1);
-    if (this.count === 0) {
-      const bar = document.getElementById('fetch-loader-bar');
-      bar.style.width = '100%';
-      setTimeout(() => { bar.style.transition = 'none'; bar.style.width = '0%'; setTimeout(() => bar.style.transition = 'width 0.3s ease', 50); }, 300);
-    }
-  }
-};
-
-const _ldWait = ms => new Promise(r => setTimeout(r, ms));
-let _loaderDone = false;
-
-async function runLoader() {
-  const sp = document.getElementById('ld-spinner');
-  const road = document.getElementById('ld-road');
-  const bw = document.getElementById('ld-bus-wrap');
-  const w1 = document.getElementById('ld-w1');
-  const w2 = document.getElementById('ld-w2');
-
-  await _ldWait(1500);
-
-  // fade spinner
-  sp.style.transition = 'opacity 0.35s';
-  sp.style.opacity = '0';
-  await _ldWait(350);
-  sp.style.display = 'none';
-
-  // road drops
-  road.style.opacity = '1';
-  for (let i = 0; i < 3; i++) {
-    await _ldWait(130);
-    document.getElementById(`ld-s${i}`).classList.add('land');
-  }
-  await _ldWait(350);
-
-  // bus enters
-  bw.style.opacity = '1';
-  w1.classList.add('spin'); w2.classList.add('spin');
-  bw.style.transition = 'transform 0.9s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease';
-  bw.style.transform = 'translateY(calc(-50% - 14px)) translateX(126px)';
-  await _ldWait(950);
-
-  // pause
-  w1.classList.remove('spin'); w2.classList.remove('spin');
-  await _ldWait(900);
-
-  // bus exits
-  w1.classList.add('spin'); w2.classList.add('spin');
-  bw.style.transition = 'transform 1.3s cubic-bezier(0.4,0,1,0.8), opacity 0.4s ease';
-  bw.style.transform = 'translateY(calc(-50% - 14px)) translateX(440px)';
-
-  await _ldWait(100);
-  document.getElementById('ld-s0').classList.add('fall');
-  await _ldWait(150);
-  document.getElementById('ld-s1').classList.add('fall');
-  await _ldWait(150);
-  document.getElementById('ld-s2').classList.add('fall');
-
-  await _ldWait(900);
-  bw.style.opacity = '0';
-  road.style.transition = 'opacity 0.2s';
-  road.style.opacity = '0';
-  await _ldWait(250);
-
-  // show bookit letters
-  for (let i = 0; i < 6; i++) {
-    await _ldWait(110);
-    const ch = document.getElementById(`ld-c${i}`);
-    ch.style.opacity = '1';
-    ch.style.transform = 'translateY(0) scale(1)';
-  }
-
-  await _ldWait(1000);
-  _loaderDone = true;
-  _onLoaderDone && _onLoaderDone();
-}
-
-let _onLoaderDone = null;
-runLoader();
-
-const hideAppLoader = (cb) => {
-  const el = document.getElementById('app-loader');
-  const hide = () => {
-    el.classList.add('hide');
-    setTimeout(() => { el.style.display = 'none'; cb && cb(); }, 600);
-  };
-  if (_loaderDone) hide();
-  else _onLoaderDone = hide;
-};
-
-// Wrap api calls with loader
-const origReq = window.api;
-const wrappedApi = new Proxy(window.api, {
-  get(target, prop) {
-    const fn = target[prop];
-    if (typeof fn !== 'function') return fn;
-    return async (...args) => {
-      fetchLoader.show();
-      try { return await fn(...args); }
-      finally { fetchLoader.hide(); }
-    };
-  }
-});
-window.api = wrappedApi;
-
-window.toggleEye = (inputId, btn) => {
-  const input = document.getElementById(inputId);
-  const icon  = btn.querySelector('i');
-  if (input.type === 'password') {
-    input.type = 'text';
-    icon.className = 'fa fa-eye-slash';
-  } else {
-    input.type = 'password';
-    icon.className = 'fa fa-eye';
-  }
-};
-
 // --- AUTH ---
 window.switchTab = (tab, el) => {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -1135,29 +723,6 @@ window.doRegister = async () => {
     switchTab('login', document.querySelector('.tab'));
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
-
-window.toggleTheme = () => {
-  const isLight = document.body.classList.toggle('light');
-  localStorage.setItem('theme', isLight ? 'light' : 'dark');
-  const icon = isLight ? 'fa-moon' : 'fa-sun';
-  const label = isLight ? ' Dark Mode' : ' Light Mode';
-  const btn = document.getElementById('theme-btn');
-  const mbtn = document.getElementById('m-theme-btn');
-  if (btn) btn.innerHTML = `<i class="fa ${icon}"></i>${label}`;
-  if (mbtn) mbtn.innerHTML = `<i class="fa ${icon}"></i>`;
-};
-
-// apply saved theme and set correct icon
-(function(){
-  const isLight = localStorage.getItem('theme') === 'light';
-  if (isLight) document.body.classList.add('light');
-  const icon = isLight ? 'fa-moon' : 'fa-sun';
-  const label = isLight ? ' Dark Mode' : ' Light Mode';
-  const btn = document.getElementById('theme-btn');
-  const mbtn = document.getElementById('m-theme-btn');
-  if (btn) btn.innerHTML = `<i class="fa ${icon}"></i>${label}`;
-  if (mbtn) mbtn.innerHTML = `<i class="fa ${icon}"></i>`;
-})();
 
 window.logout = () => { clearToken(); location.reload(); };
 
@@ -1235,13 +800,12 @@ window.quickSearch = (fromName, toName) => {
 
 async function loadAllBuses() {
   const res = document.getElementById('search-results');
-  res.style.display = 'block';
   res.innerHTML = '<div class="loading-shimmer"></div><div class="loading-shimmer"></div>';
   try {
     allBuses = await api.getBuses();
     renderBuses(allBuses);
   } catch(e) {
-    res.innerHTML = `<div style="text-align:center;padding:40px;"><i class="fa fa-circle-exclamation" style="font-size:40px;color:var(--border);margin-bottom:16px;"></i><p style="margin-bottom:16px;">Could not load buses</p><button class="btn btn-primary" onclick="loadAllBuses()">Retry</button></div>`;
+    res.innerHTML = `<p style="color:var(--primary); text-align:center;">${e.message}</p>`;
   }
 }
 
@@ -1253,13 +817,12 @@ window.filterBuses = async () => {
 
   if (from && to) {
     if (from === to) { showToast('Origin and destination match', 'error'); return; }
-    res.style.display = 'block';
     res.innerHTML = '<div class="loading-shimmer"></div><div class="loading-shimmer"></div>';
     try {
       const buses = await api.searchTickets({ from, to, date });
       renderSearchResults(buses, from, to, date);
-    } catch(e) {
-      res.innerHTML = '<div style="text-align:center; padding:40px;"><i class="fa fa-search" style="font-size:40px; color:var(--border); margin-bottom:16px;"></i><p>No buses available for this route/date.</p><p style="font-size:12px; color:var(--text-muted);">Try a different date or route.</p></div>';
+    } catch(e) { 
+      res.innerHTML = '<div style="text-align:center; padding:40px;"><i class="fa fa-search" style="font-size:40px; color:var(--border); margin-bottom:16px;"></i><p>No buses available for this route/date.</p><p style="font-size:12px; color:var(--text-muted);">Try different locations, dates, or contact the operator to assign buses.</p></div>';
     }
   } else {
     renderBuses(allBuses);
@@ -1297,8 +860,8 @@ function renderBuses(buses) {
     return;
   }
   res.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin-bottom:16px;">Click a bus to select seats and book. Availability is checked for the selected date.</p>` +
-  buses.map((b, idx) => `
-    <div class="bus-card" data-idx="${idx}" onclick="openBrowseBus('${b.id}')">
+  buses.map(b => `
+    <div class="bus-card" onclick="openBrowseBus('${b.id}')">
       <div class="bus-card-main">
         <div class="bus-info">
           <div class="operator-name">${b.operator?.company_name || 'BookIt Express'}</div>
@@ -1319,41 +882,6 @@ function renderBuses(buses) {
       </div>
     </div>
   `).join('');
-  animateBusCards();
-}
-
-const TOW_BUS = `
-  <div class="tow-rope"></div>
-  <div class="tow-bus">
-    <svg viewBox="0 0 56 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="1" y="8" width="50" height="18" rx="4" fill="white"/>
-      <rect x="6" y="2" width="32" height="10" rx="3" fill="#f0fdf4"/>
-      <rect x="8" y="10" width="8" height="8" rx="2" fill="#bfdbfe"/>
-      <rect x="19" y="10" width="8" height="8" rx="2" fill="#bfdbfe"/>
-      <rect x="30" y="10" width="8" height="8" rx="2" fill="#bfdbfe"/>
-      <rect x="2" y="13" width="4" height="8" rx="1" fill="#e2e8f0"/>
-      <rect x="1" y="17" width="50" height="3" fill="#059669" opacity="0.6"/>
-      <circle cx="12" cy="27" r="4" fill="#1e293b" stroke="#334155" stroke-width="2"/>
-      <circle cx="12" cy="27" r="1.5" fill="#475569"/>
-      <circle cx="40" cy="27" r="4" fill="#1e293b" stroke="#334155" stroke-width="2"/>
-      <circle cx="40" cy="27" r="1.5" fill="#475569"/>
-      <circle cx="51" cy="17" r="2" fill="#fcd34d"/>
-    </svg>
-  </div>
-`;
-
-function animateBusCards() {
-  const cards = document.querySelectorAll('.bus-card');
-  cards.forEach((card, i) => {
-    setTimeout(() => {
-      card.insertAdjacentHTML('afterbegin', TOW_BUS);
-      card.classList.add('slide-in');
-      // remove tow elements after animation
-      setTimeout(() => {
-        card.querySelectorAll('.tow-bus, .tow-rope').forEach(el => el.remove());
-      }, 1200);
-    }, i * 350);
-  });
 }
 
 function renderSearchResults(buses, from, to, date) {
@@ -1386,7 +914,6 @@ function renderSearchResults(buses, from, to, date) {
             </div>
         `;
     }).join('');
-    animateBusCards();
 }
 
 // --- SEAT MODAL ---
@@ -1424,16 +951,16 @@ window.confirmBook = async () => {
     btn.disabled = true;
     btn.textContent = 'Processing...';
     try {
-        const ticket = await api.bookTicket({
+        await api.bookTicket({
             bus_id: selectedBus.bus_id,
             boarding_stop_id: selectedBus.boarding_stop_id,
             dropoff_stop_id: selectedBus.dropoff_stop_id,
             seat_number: selectedSeat,
             travel_date: selectedBus.date
         });
+        showToast('Ticket booked successfully!', 'success');
         closeSeatModal();
-        // open payment immediately
-        payTicket(ticket.id, ticket.price);
+        showSection('tickets', document.querySelector('.nav-item:nth-child(2)'));
     } catch(e) {
         document.getElementById('book-err').textContent = e.message;
         document.getElementById('book-err').style.display = 'block';
@@ -1441,13 +968,6 @@ window.confirmBook = async () => {
         btn.textContent = 'Confirm Booking';
     }
 };
-
-window.openLightbox = (src) => {
-  const lb = document.getElementById('lightbox');
-  document.getElementById('lightbox-img').src = src;
-  lb.style.display = 'flex';
-};
-window.closeLightbox = () => { document.getElementById('lightbox').style.display = 'none'; };
 
 window.downloadQR = async (url, filename) => {
   try {
@@ -1459,33 +979,6 @@ window.downloadQR = async (url, filename) => {
     a.click();
     URL.revokeObjectURL(a.href);
   } catch(e) { showToast('Download failed', 'error'); }
-};
-
-let confirmResolve = null;
-
-window.showConfirm = (title, msg, okLabel = 'Yes, cancel', okColor = '#ef4444') => {
-  document.getElementById('confirm-title').textContent = title;
-  document.getElementById('confirm-msg').textContent   = msg;
-  const btn = document.getElementById('confirm-ok-btn');
-  btn.textContent = okLabel;
-  btn.style.background = okColor;
-  document.getElementById('confirm-popup').classList.add('open');
-  return new Promise(res => { confirmResolve = res; });
-};
-
-window.resolveConfirm = (val) => {
-  document.getElementById('confirm-popup').classList.remove('open');
-  if (confirmResolve) { confirmResolve(val); confirmResolve = null; }
-};
-
-window.cancelTicket = async (id) => {
-  const ok = await showConfirm('Cancel Ticket', 'This will free your seat. This action cannot be undone.');
-  if (!ok) return;
-  try {
-    await api.cancelTicket(id);
-    showToast('Ticket cancelled', 'info');
-    loadMyTickets();
-  } catch(e) { showToast(e.message, 'error'); }
 };
 
 // --- TICKETS ---
@@ -1501,55 +994,55 @@ window.loadMyTickets = async () => {
         list.innerHTML = tickets.map(t => {
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&qzone=3&data=${encodeURIComponent(t.ticket_number || t.id)}`;
             const qrFilename = `ticket-${t.ticket_number || t.id}.png`;
-            const statusIcon = { paid: '<i class="fa fa-circle-check"></i>', pending: '<i class="fa fa-clock"></i>', cancelled: '<i class="fa fa-circle-xmark"></i>' }[t.status] || '<i class="fa fa-ticket"></i>';
-            const statusLabel = { paid: 'Paid', pending: 'Pending', cancelled: 'Cancelled' }[t.status] || t.status;
             return `
             <div class="ticket-wrapper">
-              <div class="ticket-main">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                  <img src="./download.png" alt="BookIt" class="logo-img" style="height:52px;width:auto;">
-                  <div style="text-align:right;">
-                    ${t.ticket_number ? `<div style="font-family:monospace;font-size:13px;font-weight:800;color:var(--secondary);">${t.ticket_number}</div>` : '<div style="font-size:11px;color:var(--text-muted);">Awaiting payment</div>'}
-                    <span class="badge badge-${t.status}" style="margin-top:4px;">${statusIcon} ${statusLabel}</span>
-                  </div>
+                <div class="ticket-main">
+                    <div class="ticket-header">
+                        <div class="ticket-logo"><img src="./download.png" alt="BookIt" style="height:40px; width:auto;"></div>
+                        <div class="ticket-id">${t.ticket_number || 'PENDING'}</div>
+                    </div>
+                    <div class="ticket-timeline">
+                        <div class="stop">
+                            <div class="stop-dot"></div>
+                            <div class="stop-name">${t.boardingStop?.location?.name}</div>
+                            <div class="stop-time">Boarding</div>
+                        </div>
+                        <div class="stop">
+                            <div class="stop-dot" style="border-color: rgba(148, 163, 184, 0.35);"></div>
+                            <div class="stop-name">${t.dropoffStop?.location?.name}</div>
+                            <div class="stop-time">Destination</div>
+                        </div>
+                    </div>
+                    <div class="ticket-grid">
+                        <div class="ticket-item"><label>Date</label><p>${t.travel_date}</p></div>
+                        <div class="ticket-item"><label>Seat</label><p>${t.seat_number}</p></div>
+                        <div class="ticket-item"><label>Status</label><span class="badge badge-${t.status}">${t.status}</span></div>
+                    </div>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
-                  <div style="text-align:center;flex:1;">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">FROM</div>
-                    <div style="font-size:18px;font-weight:900;">${t.boardingStop?.location?.name || '—'}</div>
-                  </div>
-                  <i class="fa fa-arrow-right" style="color:var(--secondary);"></i>
-                  <div style="text-align:center;flex:1;">
-                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">TO</div>
-                    <div style="font-size:18px;font-weight:900;">${t.dropoffStop?.location?.name || '—'}</div>
-                  </div>
+                <div class="ticket-footer">
+                    ${t.status === 'pending' ? `
+                        <button class="btn btn-primary btn-block" onclick="payTicket('${t.id}', '${t.price}')">Complete Payment — ${Number(t.price).toLocaleString()} RWF</button>
+                    ` : `
+                        <div style="margin-bottom: 12px; font-weight: 600;">Present QR Code for boarding</div>
+                        <div style="display:flex; flex-direction:column; align-items:center; gap:16px;">
+                          <img
+                            id="qr-${t.id}"
+                            src="${qrUrl}"
+                            alt="QR"
+                            style="background:#ffffff; padding:20px; border-radius:16px; display:block;"
+                          >
+                          <button
+                            onclick="downloadQR('${qrUrl}', '${qrFilename}')"
+                            style="display:inline-flex; align-items:center; gap:8px; background:var(--secondary); color:white; padding:10px 24px; border-radius:12px; font-weight:700; font-size:14px; border:none; cursor:pointer;"
+                          >
+                            <i class="fa fa-download" style="color:white;"></i> Download QR
+                          </button>
+                        </div>
+                        <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted);">Scan this QR in the Driver Portal to validate.</div>
+                    `}
                 </div>
-                <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:14px;">
-                  <div><div style="font-size:11px;color:var(--text-muted);">Date</div><strong>${t.travel_date}</strong></div>
-                  <div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);">Seat</div><strong style="font-size:22px;color:var(--secondary);">${t.seat_number}</strong></div>
-                  <div style="text-align:right;"><div style="font-size:11px;color:var(--text-muted);">Price</div><strong>${Number(t.price).toLocaleString()} RWF</strong></div>
-                </div>
-              </div>
-              <div class="ticket-footer">
-                ${t.status === 'pending' ? `
-                  <button class="btn btn-primary btn-block" style="min-height:52px;" onclick="payTicket('${t.id}','${t.price}')">
-                    <i class="fa fa-lock" style="color:white;"></i> Pay ${Number(t.price).toLocaleString()} RWF
-                  </button>
-                  <button onclick="cancelTicket('${t.id}')" style="width:100%;margin-top:10px;padding:12px;border-radius:12px;border:1px solid #ef4444;background:transparent;color:#f87171;font-weight:700;font-size:14px;cursor:pointer;">
-                    <i class="fa fa-times-circle"></i> Cancel Ticket
-                  </button>
-                ` : t.status === 'paid' ? `
-                  <p style="font-weight:600;margin-bottom:12px;font-size:14px;"><i class="fa fa-qrcode"></i> Show to driver when boarding</p>
-                  <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-                    <img src="${qrUrl}" alt="QR" style="background:#fff;padding:16px;border-radius:12px;cursor:zoom-in;" onclick="openLightbox('${qrUrl}')">
-                    <button onclick="downloadQR('${qrUrl}','${qrFilename}')" style="display:inline-flex;align-items:center;gap:8px;background:var(--secondary);color:white;padding:10px 24px;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;">
-                      <i class="fa fa-download" style="color:white;"></i> Save to Phone
-                    </button>
-                  </div>
-                ` : `<p style="color:#fca5a5;font-weight:700;"><i class="fa fa-circle-xmark"></i> Cancelled</p>`}
-              </div>
             </div>
-            `;
+        `;
         }).join('');
     } catch(e) { list.innerHTML = `<p>${e.message}</p>`; }
 };
@@ -1569,7 +1062,6 @@ window.closePayModal = () => {
   showPayStep(1);
   [0,1,2,3].forEach(i => document.getElementById(`pin-${i}`).value = '');
   document.getElementById('pay-err').textContent = '';
-  showSection('tickets', document.querySelector('.nav-item:nth-child(2)'));
 };
 
 window.showPayStep = (step, method) => {
@@ -1632,7 +1124,7 @@ async function loadNotifications() {
 
         const icons = { booked: 'fa-ticket', paid: 'fa-check-circle', cancelled: 'fa-times-circle' };
 
-        document.getElementById('notif-list').innerHTML = notifs.length ? notifs.map(n => `
+        document.getElementById('notif-list').innerHTML = notifs.map(n => `
             <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markRead('${n.id}')">
                 <div class="notif-icon"><i class="fa ${icons[n.type] || 'fa-bell'}"></i></div>
                 <div>
@@ -1640,13 +1132,7 @@ async function loadNotifications() {
                     <small style="color:var(--text-muted); font-size:11px;">${new Date(n.createdAt).toLocaleTimeString()}</small>
                 </div>
             </div>
-        `).join('') : `
-            <div style="text-align:center; padding:48px 20px;">
-                <i class="fa fa-bell-slash" style="font-size:48px; color:var(--border); margin-bottom:16px; display:block;"></i>
-                <p style="font-weight:700; font-size:15px;">No notifications yet</p>
-                <p style="color:var(--text-muted); font-size:13px; margin-top:6px;">We'll notify you about your bookings and trips here.</p>
-            </div>
-        `;
+        `).join('');
     } catch(e) {}
 }
 
@@ -1657,30 +1143,22 @@ window.markRead = async (id) => {
 
 // --- STARTUP ---
 (async () => {
-  if (!getToken()) {
-    hideAppLoader(() => {
-      document.getElementById('auth-screen').style.display = 'flex';
-    });
-    return;
-  }
+  if (!getToken()) return;
   try {
-    await api.getLocations();
+    await api.getLocations(); // lightweight auth check
     const u = JSON.parse(localStorage.getItem('user') || 'null');
     if (u?.name) {
       document.getElementById('user-name').textContent = u.name;
       document.getElementById('user-initial').textContent = u.name.charAt(0);
     }
-    hideAppLoader(() => {
-      document.getElementById('auth-screen').style.display = 'none';
-      document.getElementById('dashboard').style.display = 'block';
-      init();
-    });
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    init();
   } catch {
     clearToken();
     localStorage.removeItem('user');
-    hideAppLoader(() => {
-      document.getElementById('auth-screen').style.display = 'flex';
-    });
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('dashboard').style.display = 'none';
   }
 })();
 </script>

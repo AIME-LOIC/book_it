@@ -52,6 +52,7 @@ export const deleteBus = async (operator_id, id) => {
 };
 export const getAllAvailableBuses = async () => {
   return await Bus.findAll({
+    where: { is_active: true },
     include: [
       { model: Operator, as: 'operator', attributes: ['id', 'company_name'] },
       {

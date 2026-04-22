@@ -12,9 +12,9 @@ import driverRoutes       from './routes/driver.routes.js';
 import ticketRoutes       from './routes/ticket.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import cors               from 'cors';
+import { checkDepartedBuses } from './services/scheduler.service.js';
 
 dotenv.config();
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,6 +36,11 @@ app.use('/api/tickets',       ticketRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(` BookIt running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(` BookIt running on port ${PORT}`);
+  // Run immediately on start, then every 60 seconds
+  checkDepartedBuses();
+  setInterval(checkDepartedBuses, 60 * 1000);
+});
 
 export default app;

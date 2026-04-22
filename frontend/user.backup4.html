@@ -64,76 +64,27 @@
     --glass: rgba(17, 24, 39, 0.85);
   }
 
-  /* LIGHT MODE — warm, modern, not plain white */
   body.light {
-    --bg-main: #f0f4f8;
+    --bg-main: #f1f5f9;
     --bg-card: #ffffff;
     --text-main: #0f172a;
-    --text-muted: #475569;
-    --border: #cbd5e1;
-    --glass: rgba(255,255,255,0.9);
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --glass: rgba(255,255,255,0.85);
   }
-  body.light { background: var(--bg-main); }
-  body.light .auth-screen { background: radial-gradient(circle at top right, rgba(5,150,105,0.15), #f0f4f8), radial-gradient(circle at bottom left, rgba(16,185,129,0.10), #f0f4f8); }
-  body.light .sidebar { background: #ffffff; border-color: #e2e8f0; }
-  body.light .sidebar .nav-item { color: #475569; }
-  body.light .sidebar .nav-item:hover,
-  body.light .sidebar .nav-item.active { background: rgba(5,150,105,0.10); color: #059669; }
-  body.light .sidebar .nav-item i { color: #475569; }
-  body.light .sidebar .nav-item.active i { color: #059669; }
-  body.light .sidebar h1 { color: #059669; }
-  body.light .hero-section { background: linear-gradient(180deg, #e8f5f0 0%, #f0f4f8 100%); border-color: #e2e8f0; }
-  body.light .hero-title { color: #0f172a; }
-  body.light .hero-title span { color: #059669; }
-  body.light .search-card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
-  body.light .search-card .input-group label { color: #475569; }
-  body.light select, body.light input { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
-  body.light select:focus, body.light input:focus { border-color: #059669; background: #fff; }
-  body.light .custom-select-trigger { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
-  body.light .custom-select-options { background: #ffffff; border-color: #cbd5e1; }
+  body.light .auth-screen { background: radial-gradient(circle at top right, rgba(5,150,105,0.12), #f1f5f9), radial-gradient(circle at bottom left, rgba(16,185,129,0.08), #f1f5f9); }
+  body.light select, body.light input { background: #f8fafc; color: #0f172a; }
+  body.light .custom-select-trigger { background: #f8fafc; color: #0f172a; }
+  body.light .custom-select-options { background: #ffffff; }
   body.light .custom-select-option { color: #0f172a; }
-  body.light .custom-select-option:hover { background: rgba(5,150,105,0.08); }
-  body.light .chip { background: #e2e8f0; color: #334155; }
-  body.light .chip:hover { background: #059669; color: white; }
-  body.light .bus-card { background: #ffffff; border-color: #e2e8f0; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-  body.light .bus-card:hover { border-color: #059669; box-shadow: 0 8px 24px rgba(5,150,105,0.15); }
+  body.light .chip { background: #e2e8f0; color: #0f172a; }
   body.light .operator-name { color: #0f172a; }
-  body.light .bus-meta { color: #475569; }
-  body.light .bus-meta i { color: #059669; }
-  body.light .departure-time { color: #059669; }
-  body.light .price { color: #0f172a; }
-  body.light .occupancy-bar { background: #e2e8f0; }
-  body.light .notif-panel { background: #ffffff; border-color: #e2e8f0; }
-  body.light .notif-item { background: #f8fafc; }
-  body.light .notif-item.unread { background: rgba(5,150,105,0.06); }
-  body.light .notif-icon { background: #e2e8f0; color: #059669; }
-  body.light .ticket-wrapper { background: #ffffff; border-color: #e2e8f0; }
-  body.light .ticket-main { border-color: #e2e8f0; }
-  body.light .ticket-footer { background: #f8fafc; }
-  body.light .ticket-id { background: #f1f5f9; border-color: #e2e8f0; color: #0f172a; }
-  body.light .loading-shimmer { background: linear-gradient(90deg, #e2e8f0 0%, #f1f5f9 50%, #e2e8f0 100%); background-size: 200% 100%; }
-  body.light .seat { background: #f1f5f9; color: #0f172a; border-color: #cbd5e1; }
+  body.light .loading-shimmer { background: linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 50%, #e2e8f0 100%); background-size: 200% 100%; }
+  body.light .seat { background: rgba(241,245,249,0.8); color: #0f172a; }
   body.light .seat.taken { background: #e2e8f0; color: #94a3b8; }
-  body.light .btn-ghost { background: #e2e8f0; color: #0f172a; }
-  body.light .pay-modal { background: #ffffff; border-color: #e2e8f0; }
-  body.light .pay-method-btn { background: #f8fafc; border-color: #e2e8f0; color: #0f172a; }
-  body.light .confirm-box { background: #ffffff; border-color: #e2e8f0; }
-  body.light .confirm-box h4, body.light .confirm-box p { color: #0f172a; }
-  body.light #app-loader { background: #f0f4f8; }
+  body.light #app-loader { background: #f1f5f9; }
   body.light .ld-ch { color: #0f172a; }
   body.light .ld-ch.grn { color: #059669; }
-  body.light .ld-seg { background: #e2e8f0; border-color: #059669; }
-  .logo-img { filter: brightness(0) invert(1); }
-  body.light .logo-img { filter: none; }
-  body.light .bottom-nav .nav-item { color: #475569; }
-  body.light .bottom-nav .nav-item.active { color: #059669; }
-  body.light input[type="date"] { color-scheme: light; }
-  body.light .results-container { background: transparent; }
-  body.light #sec-tickets { background: transparent; }
-  body.light .seat-map-container { background: #f8fafc; border-color: #e2e8f0; }
-  body.light .driver-wheel { border-color: #cbd5e1; color: #475569; }
-  body.light #sec-search { background: transparent; }
-  body.light .main-content { background: var(--bg-main); }
 
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
   body { 
@@ -160,20 +111,18 @@
   
   /* Sidebar - Desktop */
   .sidebar {
-    width: 280px;
+    width: 260px;
     background: var(--bg-card);
     border-right: 1px solid var(--border);
-    padding: 32px 20px;
+    padding: 32px 16px;
     position: fixed;
     height: 100vh;
     z-index: 50;
-    display: flex;
-    flex-direction: column;
   }
 
   .main-content {
     flex: 1;
-    margin-left: 280px;
+    margin-left: 260px;
     padding-bottom: 100px;
   }
 
@@ -207,7 +156,7 @@
     margin-bottom: 8px;
     min-height: 52px;
   }
-  .nav-item i { font-size: 20px; }
+  .nav-item i { font-size: 20px; color: white; }
   .nav-item:hover, .nav-item.active { background: rgba(5, 150, 105, 0.12); color: var(--secondary); }
 
   /* --- HERO SEARCH SECTION --- */
@@ -231,7 +180,7 @@
 
   .search-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 200px 160px;
+    grid-template-columns: 1fr 1fr 180px 180px;
     gap: 16px;
     align-items: flex-end;
     overflow: visible;
@@ -514,7 +463,7 @@
   .ticket-wrapper::after { right: -15px; }
 
   .ticket-main { padding: 24px; border-bottom: 2px dashed rgba(148, 163, 184, 0.25); }
-  .ticket-footer { padding: 24px; text-align: center; background: var(--bg-main); }
+  .ticket-footer { padding: 24px; text-align: center; background: rgba(15, 23, 42, 0.55); }
   
   .ticket-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
   .ticket-logo { font-weight: 900; color: var(--secondary); font-size: 20px; letter-spacing: -0.5px; }
@@ -703,8 +652,8 @@
   <div class="auth-card">
     <div class="auth-logo">
       <h1>
-        <!-- <img src="./download.png" alt="BookIt" onerror="this.style.display='none'"> -->
-        <img src="./download.png" alt="BookIt" class="logo-img" style="height:80px; width:auto;">
+        <img src="./download.png" alt="BookIt" onerror="this.style.display='none'">
+        <img src="./download.png" alt="BookIt" style="height:80px; width:auto; filter:brightness(0) invert(1);">
       </h1>
       <p style="color:var(--text-muted); font-size: 14px;">Travel Rwanda with ease</p>
     </div>
@@ -755,7 +704,7 @@
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div style="margin-bottom: 40px; padding: 0 8px;">
-      <img src="./download.png" alt="BookIt" class="logo-img" style="width:100%; height:auto; object-fit:contain; max-height:100px;">
+      <img src="./download.png" alt="BookIt" style="width:100%; height:auto; object-fit:contain; max-height:100px; filter:brightness(0) invert(1);">
     </div>
     <div class="nav-item active" onclick="showSection('search', this)">
       <i class="fa-solid fa-compass"></i> Explore
@@ -770,18 +719,16 @@
       </div>
       Notifications
     </div>
-    <div style="flex:1;"></div>
-      <div style="border-top: 1px solid var(--border); padding-top: 20px;">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; background: rgba(5,150,105,0.08); border-radius: 14px; border: 1px solid rgba(5,150,105,0.15);">
-          <div style="width: 40px; height: 40px; border-radius: 12px; background: var(--secondary); display: flex; align-items:center; justify-content: center; color: white; font-weight: 900; font-size: 18px; flex-shrink:0;" id="user-initial">U</div>
-          <div style="overflow: hidden; flex:1;">
-            <p id="user-name" style="font-weight: 700; font-size: 14px; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; color: var(--text-main);"></p>
-            <p style="font-size: 11px; color: var(--text-muted);">Verified Traveler</p>
-          </div>
+    <div style="position: absolute; bottom: 32px; left: 16px; right: 16px;">
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 0 16px;">
+        <div style="width: 40px; height: 40px; border-radius: 14px; background: var(--secondary); display: flex; align-items:center; justify-content: center; color: var(--bg-main); font-weight: 900;" id="user-initial">U</div>
+        <div style="overflow: hidden;">
+          <p id="user-name" style="font-weight: 700; font-size: 14px; white-space: nowrap; text-overflow: ellipsis;"></p>
+          <p style="font-size: 11px; color: var(--text-muted);">Verified Traveler</p>
         </div>
-        <button class="btn btn-ghost btn-block" onclick="toggleTheme()" id="theme-btn" style="margin-bottom:8px;"><i class="fa fa-moon"></i> Light Mode</button>
-        <button class="btn btn-ghost btn-block" onclick="logout()"><i class="fa fa-sign-out"></i> Logout</button>
       </div>
+      <button class="btn btn-ghost btn-block" onclick="logout()"><i class="fa fa-sign-out"></i> Logout</button>
+      <button class="btn btn-ghost btn-block" style="margin-top:8px;" onclick="toggleTheme()" id="theme-btn"><i class="fa fa-moon"></i> Dark Mode</button>
     </div>
   </div>
 
@@ -796,7 +743,6 @@
         </div>
     </div>
     <div class="nav-item" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></div>
-    <div class="nav-item" onclick="toggleTheme()" id="m-theme-btn"><i class="fa fa-moon"></i></div>
   </div>
 
   <!-- MAIN CONTENT -->
@@ -832,7 +778,7 @@
             </div>
             <div class="input-group">
               <label><i class="fa fa-calendar-alt" style="color:white;"></i> Date</label>
-              <input type="date" id="s-date" style="height:50px; border-radius:14px; padding: 0 20px; color-scheme: dark;"/>
+              <input type="date" id="s-date" style="height:50px; border-radius:14px;"/>
             </div>
             <button class="btn btn-primary" onclick="filterBuses()">Find Buses</button>
           </div>
@@ -1139,24 +1085,17 @@ window.doRegister = async () => {
 window.toggleTheme = () => {
   const isLight = document.body.classList.toggle('light');
   localStorage.setItem('theme', isLight ? 'light' : 'dark');
-  const icon = isLight ? 'fa-moon' : 'fa-sun';
-  const label = isLight ? ' Dark Mode' : ' Light Mode';
   const btn = document.getElementById('theme-btn');
-  const mbtn = document.getElementById('m-theme-btn');
-  if (btn) btn.innerHTML = `<i class="fa ${icon}"></i>${label}`;
-  if (mbtn) mbtn.innerHTML = `<i class="fa ${icon}"></i>`;
+  if (btn) btn.innerHTML = isLight
+    ? '<i class="fa fa-moon"></i> Dark Mode'
+    : '<i class="fa fa-sun"></i> Light Mode';
 };
 
-// apply saved theme and set correct icon
+// apply saved theme
 (function(){
-  const isLight = localStorage.getItem('theme') === 'light';
-  if (isLight) document.body.classList.add('light');
-  const icon = isLight ? 'fa-moon' : 'fa-sun';
-  const label = isLight ? ' Dark Mode' : ' Light Mode';
-  const btn = document.getElementById('theme-btn');
-  const mbtn = document.getElementById('m-theme-btn');
-  if (btn) btn.innerHTML = `<i class="fa ${icon}"></i>${label}`;
-  if (mbtn) mbtn.innerHTML = `<i class="fa ${icon}"></i>`;
+  if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light');
+  }
 })();
 
 window.logout = () => { clearToken(); location.reload(); };
@@ -1507,11 +1446,8 @@ window.loadMyTickets = async () => {
             <div class="ticket-wrapper">
               <div class="ticket-main">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                  <img src="./download.png" alt="BookIt" class="logo-img" style="height:52px;width:auto;">
-                  <div style="text-align:right;">
-                    ${t.ticket_number ? `<div style="font-family:monospace;font-size:13px;font-weight:800;color:var(--secondary);">${t.ticket_number}</div>` : '<div style="font-size:11px;color:var(--text-muted);">Awaiting payment</div>'}
-                    <span class="badge badge-${t.status}" style="margin-top:4px;">${statusIcon} ${statusLabel}</span>
-                  </div>
+                  <img src="./download.png" alt="BookIt" style="height:52px;width:auto;filter:brightness(0) invert(1);">
+                  <span class="badge badge-${t.status}">${statusIcon} ${statusLabel}</span>
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
                   <div style="text-align:center;flex:1;">
