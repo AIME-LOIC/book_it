@@ -127,7 +127,7 @@
   body.light .logo-img { filter: none; }
   body.light .bottom-nav .nav-item { color: #475569; }
   body.light .bottom-nav .nav-item.active { color: #059669; }
-  body.light input[type="date"] { color-scheme: light; }
+  body.light input[type="date"], body.light input[type="time"] { color-scheme: light; }
   body.light .results-container { background: transparent; }
   body.light #sec-tickets { background: transparent; }
   body.light .seat-map-container { background: #f8fafc; border-color: #e2e8f0; }
@@ -231,7 +231,7 @@
 
   .search-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 200px 160px;
+    grid-template-columns: 1fr 1fr 160px 140px 160px;
     gap: 16px;
     align-items: flex-end;
     overflow: visible;
@@ -605,6 +605,7 @@
 
   .loading-shimmer { animation: shimmer 2s infinite linear; background: linear-gradient(90deg, var(--bg-card) 0%, #374151 50%, var(--bg-card) 100%); background-size: 200% 100%; height: 100px; border-radius: 20px; margin-bottom: 20px; }
   @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  @keyframes livepulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.8)} }
 
   /* --- LOADING PAGE --- */
   #app-loader { position:fixed; inset:0; z-index:9999; background:#0a0f1e; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; transition:opacity 0.6s ease; }
@@ -780,23 +781,10 @@
           </div>
         </div>
         <button class="btn btn-ghost btn-block" onclick="toggleTheme()" id="theme-btn" style="margin-bottom:8px;"><i class="fa fa-moon"></i> Light Mode</button>
+        <button class="btn btn-ghost btn-block" onclick="setLang(currentLang==='en'?'rw':'en')" id="lang-btn" style="margin-bottom:8px;">RW 🇷🇼</button>
         <button class="btn btn-ghost btn-block" onclick="logout()"><i class="fa fa-sign-out"></i> Logout</button>
       </div>
     </div>
-  </div>
-
-  <!-- BOTTOM NAV (MOBILE) -->
-  <div class="bottom-nav">
-    <div class="nav-item active" onclick="showSection('search', this)"><i class="fa-solid fa-compass"></i></div>
-    <div class="nav-item" onclick="showSection('tickets', this)"><i class="fa-solid fa-ticket"></i></div>
-    <div class="nav-item" onclick="toggleNotifs()">
-        <div class="bell-btn">
-            <i class="fa-solid fa-bell"></i>
-            <span class="bell-count" id="m-bell-count" style="display:none">0</span>
-        </div>
-    </div>
-    <div class="nav-item" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></div>
-    <div class="nav-item" onclick="toggleTheme()" id="m-theme-btn"><i class="fa fa-moon"></i></div>
   </div>
 
   <!-- MAIN CONTENT -->
@@ -806,6 +794,10 @@
     <div id="sec-search" class="section active">
       <div class="hero-section">
         <h2 class="hero-title">Find your next <span>Adventure.</span></h2>
+        <div style="display:flex; justify-content:center; align-items:center; gap:6px; margin-bottom:16px; font-size:12px; color:var(--text-muted); font-weight:600;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#10b981;display:inline-block;animation:livepulse 2s ease-in-out infinite;"></span>
+          Live — buses update automatically
+        </div>
         <div class="search-card">
           <div class="search-grid">
             <div class="input-group">
@@ -833,6 +825,10 @@
             <div class="input-group">
               <label><i class="fa fa-calendar-alt" style="color:white;"></i> Date</label>
               <input type="date" id="s-date" style="height:50px; border-radius:14px; padding: 0 20px; color-scheme: dark;"/>
+            </div>
+            <div class="input-group">
+              <label><i class="fa fa-clock" style="color:white;"></i> From Time</label>
+              <input type="time" id="s-time" style="height:50px; border-radius:14px; padding: 0 20px; color-scheme: dark;"/>
             </div>
             <button class="btn btn-primary" onclick="filterBuses()">Find Buses</button>
           </div>
@@ -955,6 +951,21 @@
 
 </div>
 
+<!-- BOTTOM NAV (MOBILE) -->
+<div class="bottom-nav" id="bottom-nav" style="display:none;">
+  <div class="nav-item active" onclick="showSection('search', this)"><i class="fa-solid fa-compass"></i></div>
+  <div class="nav-item" onclick="showSection('tickets', this)"><i class="fa-solid fa-ticket"></i></div>
+  <div class="nav-item" onclick="toggleNotifs()">
+    <div class="bell-btn">
+      <i class="fa-solid fa-bell"></i>
+      <span class="bell-count" id="m-bell-count" style="display:none">0</span>
+    </div>
+  </div>
+  <div class="nav-item" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></div>
+  <div class="nav-item" onclick="toggleTheme()" id="m-theme-btn"><i class="fa fa-moon"></i></div>
+  <div class="nav-item" onclick="setLang(currentLang==='en'?'rw':'en')" id="m-lang-btn" style="font-size:11px;font-weight:900;">RW</div>
+</div>
+
 <script type="module">
 import { api, setToken, clearToken, getToken } from './api.js';
 window.api = api;
@@ -963,6 +974,152 @@ let locations  = [];
 let allBuses   = [];
 let selectedBus  = null;
 let selectedSeat = null;
+
+// --- LANGUAGE ---
+const translations = {
+  en: {
+    tagline: 'Travel Rwanda with ease',
+    login: 'Login', register: 'Register',
+    emailAddress: 'Email Address', password: 'Password',
+    signIn: 'Sign In', createAccount: 'Create Account',
+    fullName: 'Full Name', phoneNumber: 'Phone Number',
+    explore: 'Explore', myTickets: 'My Tickets',
+    notifications: 'Notifications', verifiedTraveler: 'Verified Traveler',
+    logout: 'Logout', lightMode: 'Light Mode', darkMode: 'Dark Mode',
+    heroTitle: 'Find your next <span>Adventure.</span>',
+    liveText: 'Live — buses update automatically',
+    from: 'From', to: 'To', date: 'Date', fromTime: 'From Time',
+    selectDeparture: 'Select departure', selectDestination: 'Select destination',
+    findBuses: 'Find Buses',
+    selectSeat: 'Select Seat', confirmBooking: 'Confirm Booking', cancel: 'Cancel',
+    completePayment: 'Complete Payment', payNow: 'Pay Now',
+    viewMyTickets: 'View My Tickets',
+    noNotifications: 'No notifications yet',
+    noNotifSub: "We'll notify you about your bookings and trips here.",
+    boarding: 'Boarding', destination: 'Destination',
+    fromLabel: 'FROM', toLabel: 'TO',
+    seat: 'Seat', dateLbl: 'Date', price: 'Price',
+    showQr: 'Show to driver when boarding',
+    savePhone: 'Save to Phone',
+    cancelTicket: 'Cancel Ticket', keepIt: 'No, keep it',
+    cancelConfirmTitle: 'Cancel Ticket',
+    cancelConfirmMsg: 'This will free your seat. This action cannot be undone.',
+    paymentMethod: 'Select payment method',
+    promoCode: 'Promo Code', enterPromo: 'Enter your 4-digit promo code',
+    confirmPayment: 'Confirm Payment', processing: 'Processing...',
+    paymentConfirmed: 'Payment Confirmed!', ticketActive: 'Your ticket is now active.',
+    clickToBook: 'Click a bus to select seats and book. Availability is checked for the selected date.',
+    noBuses: 'No buses available.',
+    fullRoute: 'Full Route', seatsTotal: 'seats total',
+    busOccupancy: 'Bus Occupancy', full: 'Full',
+    free: 'free', departs: 'Departs',
+    myTicketsTitle: 'My <span style="color:var(--secondary);">Tickets</span>',
+    noTickets: 'Your tickets will appear here.',
+    paid: 'Paid', pending: 'Awaiting Payment', cancelled: 'Cancelled',
+    payBtn: 'Pay', cancelledMsg: 'Cancelled',
+    travelDate: 'Travel Date',
+  },
+  rw: {
+    tagline: 'Genda mu Rwanda neza',
+    login: 'Injira', register: 'Iyandikishe',
+    emailAddress: 'Imeyili', password: 'Ijambo banga',
+    signIn: 'Injira', createAccount: 'Fungura konti',
+    fullName: 'Amazina yose', phoneNumber: 'Nimero ya telefoni',
+    explore: 'Shakisha', myTickets: 'Tiketi zanjye',
+    notifications: 'Ubutumwa', verifiedTraveler: 'Umugendo wemejwe',
+    logout: 'Sohoka', lightMode: 'Urumuri', darkMode: 'Umwijima',
+    heroTitle: 'Shaka <span>Urugendo.</span>',
+    liveText: 'Aho — imodoka zivuguruzwa',
+    from: 'Uvuye', to: 'Ujya', date: 'Itariki', fromTime: 'Saa zingahe',
+    selectDeparture: 'Hitamo aho uvuye', selectDestination: 'Hitamo aho ujya',
+    findBuses: 'Shaka Imodoka',
+    selectSeat: 'Hitamo intebe', confirmBooking: 'Emeza igiciro', cancel: 'Reka',
+    completePayment: 'Soza kwishyura', payNow: 'Ishyura',
+    viewMyTickets: 'Reba tiketi zanjye',
+    noNotifications: 'Nta butumwa buriho',
+    noNotifSub: 'Tuzakumenyesha ibyerekeye ingendo zawe hano.',
+    boarding: 'Kwinjira', destination: 'Aho ujya',
+    fromLabel: 'UVUYE', toLabel: 'UJYA',
+    seat: 'Intebe', dateLbl: 'Itariki', price: 'Igiciro',
+    showQr: 'Erekana shoferi iyo uinjira',
+    savePhone: 'Bika kuri telefoni',
+    cancelTicket: 'Siba tiketi', keepIt: 'Oya, bika',
+    cancelConfirmTitle: 'Siba Tiketi',
+    cancelConfirmMsg: 'Intebe yawe izasubira kuboneka. Ntushobora gusubira inyuma.',
+    paymentMethod: 'Hitamo uburyo bwo kwishyura',
+    promoCode: 'Kode ya promo', enterPromo: 'Injiza kode ya nimero 4',
+    confirmPayment: 'Emeza kwishyura', processing: 'Birimo gukorwa...',
+    paymentConfirmed: 'Kwishyura byemejwe!', ticketActive: 'Tiketi yawe irakora.',
+    clickToBook: 'Kanda imodoka uhitemo intebe. Ubushobozi bugenzurwa ku itariki wahisemo.',
+    noBuses: 'Nta modoka zihari.',
+    fullRoute: 'Inzira yose', seatsTotal: 'intebe',
+    busOccupancy: 'Umubare w\'abantu', full: 'Uzuye',
+    free: 'ziboneka', departs: 'Irasohoka',
+    myTicketsTitle: 'Tiketi <span style="color:var(--secondary);">Zanjye</span>',
+    noTickets: 'Tiketi zawe zizagaragara hano.',
+    paid: 'Wishyuye', pending: 'Ntarashyurwa', cancelled: 'Ihagaritswe',
+    payBtn: 'Ishyura', cancelledMsg: 'Ihagaritswe',
+    travelDate: 'Itariki y\'urugendo',
+  }
+};
+
+let currentLang = localStorage.getItem('lang') || 'en';
+
+const t = (key) => translations[currentLang][key] || translations.en[key] || key;
+
+window.setLang = (lang) => {
+  currentLang = lang;
+  localStorage.setItem('lang', lang);
+  applyLang();
+};
+
+const applyLang = () => {
+  // auth
+  document.querySelector('#auth-screen .auth-logo p').textContent = t('tagline');
+  document.querySelectorAll('.tab')[0].textContent = t('login');
+  document.querySelectorAll('.tab')[1].textContent = t('register');
+  document.querySelectorAll('#tab-login label')[0].textContent = t('emailAddress');
+  document.querySelectorAll('#tab-login label')[1].textContent = t('password');
+  const signInBtn = document.querySelector('#tab-login .btn-primary');
+  if (signInBtn) signInBtn.innerHTML = `${t('signIn')} <i class="fa fa-arrow-right" style="color:white;"></i>`;
+  const regBtn = document.querySelector('#tab-register .btn-primary');
+  if (regBtn) regBtn.textContent = t('createAccount');
+  // inputs placeholders
+  const logEmail = document.getElementById('log-email');
+  const logPass  = document.getElementById('log-password');
+  if (logEmail) logEmail.closest('.float-group').querySelector('label').textContent = t('emailAddress');
+  if (logPass)  logPass.closest('.float-group').querySelector('label').textContent  = t('password');
+  // sidebar nav
+  const navItems = document.querySelectorAll('.sidebar .nav-item');
+  if (navItems[0]) navItems[0].innerHTML = `<i class="fa-solid fa-compass"></i> ${t('explore')}`;
+  if (navItems[1]) navItems[1].innerHTML = `<i class="fa-solid fa-ticket"></i> ${t('myTickets')}`;
+  if (navItems[2]) navItems[2].innerHTML = `<div class="bell-btn"><i class="fa-solid fa-bell"></i><span class="bell-count" id="bell-count" style="display:none">0</span></div> ${t('notifications')}`;
+  // sidebar bottom
+  document.querySelector('#user-name')?.closest('div')?.querySelector('p:last-child') && (document.querySelectorAll('.sidebar p')[1].textContent = t('verifiedTraveler'));
+  // hero
+  document.querySelector('.hero-title').innerHTML = t('heroTitle');
+  document.querySelector('.hero-section .live-text') && (document.querySelector('.live-text').textContent = t('liveText'));
+  // search labels
+  const labels = document.querySelectorAll('.search-grid .input-group label');
+  if (labels[0]) labels[0].innerHTML = `<i class="fa fa-map-marker-alt" style="color:white;"></i> ${t('from')}`;
+  if (labels[1]) labels[1].innerHTML = `<i class="fa fa-location-dot" style="color:white;"></i> ${t('to')}`;
+  if (labels[2]) labels[2].innerHTML = `<i class="fa fa-calendar-alt" style="color:white;"></i> ${t('date')}`;
+  if (labels[3]) labels[3].innerHTML = `<i class="fa fa-clock" style="color:white;"></i> ${t('fromTime')}`;
+  // dropdowns
+  const fromLabel = document.getElementById('from-label');
+  const toLabel   = document.getElementById('to-label');
+  if (fromLabel && fromLabel.textContent === translations[currentLang === 'en' ? 'rw' : 'en'].selectDeparture || fromLabel?.textContent === 'Select departure' || fromLabel?.textContent === 'Hitamo aho uvuye') fromLabel.textContent = t('selectDeparture');
+  if (toLabel && toLabel.textContent === translations[currentLang === 'en' ? 'rw' : 'en'].selectDestination || toLabel?.textContent === 'Select destination' || toLabel?.textContent === 'Hitamo aho ujya') toLabel.textContent = t('selectDestination');
+  // find buses btn
+  document.querySelector('.search-grid .btn-primary').textContent = t('findBuses');
+  // notifications panel
+  document.querySelector('#notif-panel h3').textContent = t('notifications');
+  // lang btn
+  const langBtn = document.getElementById('lang-btn');
+  if (langBtn) langBtn.textContent = currentLang === 'en' ? 'RW' : 'EN';
+  const mLangBtn = document.getElementById('m-lang-btn');
+  if (mLangBtn) mLangBtn.textContent = currentLang === 'en' ? 'RW' : 'EN';
+};
 
 // --- UTILS ---
 const showToast = (msg, type = 'info') => {
@@ -1117,6 +1274,7 @@ window.doLogin = async () => {
     document.getElementById('user-initial').textContent = data.user.name.charAt(0);
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
+    document.getElementById('bottom-nav').style.display = '';
     init();
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
@@ -1164,11 +1322,51 @@ window.logout = () => { clearToken(); location.reload(); };
 // --- CORE ---
 async function init() {
   document.getElementById('s-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('s-time').value = new Date().toTimeString().slice(0,5);
   locations = await api.getLocations();
   populateSelects();
   await loadAllBuses();
   loadNotifications();
-  setInterval(loadNotifications, 30000);
+  applyLang();
+
+  // ── REAL-TIME SYNC ─────────────────────────────────────────────
+  // notifications every 15s
+  setInterval(loadNotifications, 15000);
+
+  // buses refresh every 60s — also removes departed buses
+  setInterval(async () => {
+    const newBuses = await api.getBuses().catch(() => null);
+    if (!newBuses) return;
+    const now = new Date().toTimeString().slice(0,5);
+    const futureBuses = newBuses.filter(b => String(b.departure_time).slice(0,5) >= now);
+    // only re-render if data changed
+    if (JSON.stringify(newBuses.map(b=>b.id+b.is_active)) !== JSON.stringify(allBuses.map(b=>b.id+b.is_active))) {
+      allBuses = newBuses;
+      const from = document.getElementById('s-from').value;
+      const to   = document.getElementById('s-to').value;
+      if (!from && !to) renderBuses(futureBuses.length ? futureBuses : newBuses);
+    }
+  }, 60000);
+
+  // tickets auto-refresh every 30s if tickets tab is active
+  setInterval(() => {
+    const ticketsSection = document.getElementById('sec-tickets');
+    if (ticketsSection && ticketsSection.style.display !== 'none') {
+      loadMyTickets();
+    }
+  }, 30000);
+
+  // page visibility — refresh when user comes back to tab
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      loadNotifications();
+      const now = new Date().toTimeString().slice(0,5);
+      const futureBuses = allBuses.filter(b => String(b.departure_time).slice(0,5) >= now);
+      const from = document.getElementById('s-from').value;
+      const to   = document.getElementById('s-to').value;
+      if (!from && !to) renderBuses(futureBuses.length ? futureBuses : allBuses);
+    }
+  });
 }
 
 function populateSelects() {
@@ -1239,7 +1437,10 @@ async function loadAllBuses() {
   res.innerHTML = '<div class="loading-shimmer"></div><div class="loading-shimmer"></div>';
   try {
     allBuses = await api.getBuses();
-    renderBuses(allBuses);
+    // only show buses departing from now onwards
+    const now = new Date().toTimeString().slice(0,5);
+    const futureBuses = allBuses.filter(b => String(b.departure_time).slice(0,5) >= now);
+    renderBuses(futureBuses.length ? futureBuses : allBuses);
   } catch(e) {
     res.innerHTML = `<div style="text-align:center;padding:40px;"><i class="fa fa-circle-exclamation" style="font-size:40px;color:var(--border);margin-bottom:16px;"></i><p style="margin-bottom:16px;">Could not load buses</p><button class="btn btn-primary" onclick="loadAllBuses()">Retry</button></div>`;
   }
@@ -1249,6 +1450,7 @@ window.filterBuses = async () => {
   const from = document.getElementById('s-from').value;
   const to   = document.getElementById('s-to').value;
   const date = document.getElementById('s-date').value;
+  const time = document.getElementById('s-time').value;
   const res  = document.getElementById('search-results');
 
   if (from && to) {
@@ -1256,7 +1458,11 @@ window.filterBuses = async () => {
     res.style.display = 'block';
     res.innerHTML = '<div class="loading-shimmer"></div><div class="loading-shimmer"></div>';
     try {
-      const buses = await api.searchTickets({ from, to, date });
+      let buses = await api.searchTickets({ from, to, date });
+      // filter by departure time if set
+      if (time) {
+        buses = buses.filter(b => String(b.departure_time).slice(0,5) >= time);
+      }
       renderSearchResults(buses, from, to, date);
     } catch(e) {
       res.innerHTML = '<div style="text-align:center; padding:40px;"><i class="fa fa-search" style="font-size:40px; color:var(--border); margin-bottom:16px;"></i><p>No buses available for this route/date.</p><p style="font-size:12px; color:var(--text-muted);">Try a different date or route.</p></div>';
@@ -1656,6 +1862,10 @@ window.markRead = async (id) => {
 };
 
 // --- STARTUP ---
+// apply lang immediately
+if (document.readyState !== 'loading') setTimeout(applyLang, 0);
+else document.addEventListener('DOMContentLoaded', applyLang);
+
 (async () => {
   if (!getToken()) {
     hideAppLoader(() => {
@@ -1673,6 +1883,7 @@ window.markRead = async (id) => {
     hideAppLoader(() => {
       document.getElementById('auth-screen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
+      document.getElementById('bottom-nav').style.display = '';
       init();
     });
   } catch {

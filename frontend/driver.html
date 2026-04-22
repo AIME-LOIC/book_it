@@ -23,6 +23,33 @@
       --sidebar-width: 280px;
     }
 
+    body.light {
+      --bg:      #f0f4f8;
+      --sidebar: #ffffff;
+      --card:    #ffffff;
+      --border:  #e2e8f0;
+      --text:    #0f172a;
+      --muted:   #475569;
+    }
+    body.light { background: var(--bg); }
+    body.light .sidebar { background: #ffffff; border-color: #e2e8f0; }
+    body.light .nav-link { color: #475569; }
+    body.light .nav-link:hover { background: rgba(5,150,105,0.06); color: #0f172a; }
+    body.light .mobile-nav { background: #ffffff; border-color: #e2e8f0; }
+    body.light .m-nav-item { color: #475569; }
+    body.light .glass-card { background: #ffffff; border-color: #e2e8f0; }
+    body.light .passenger-card { background: #ffffff; border-color: #e2e8f0; }
+    body.light .input { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+    body.light .input:focus { background: #fff; }
+    body.light .btn-ghost { background: #e2e8f0; color: #0f172a; border-color: #cbd5e1; }
+    body.light .toast { background: #ffffff; border-color: #e2e8f0; }
+    body.light .notif-panel { background: #ffffff; border-color: #e2e8f0; }
+    body.light .notif-item { background: #f8fafc; }
+    body.light #ticket-result-box { background: #ffffff; border-color: #e2e8f0; }
+    body.light #qr-modal > div { background: #ffffff; border-color: #e2e8f0; }
+    body.light #dr-loader { background: #f0f4f8; }
+    body.light #dr-loader img { filter: none; }
+
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     body {
@@ -301,8 +328,6 @@
 </head>
 <body>
 <script>if(localStorage.getItem('driver-theme')==='light')document.body.classList.add('light');</script>
-
-<!-- LOADER -->
 <div id="dr-loader" style="position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.5s ease;">
   <img src="./download.png" alt="BookIt" style="width:140px;height:auto;filter:brightness(0) invert(1);animation:drpulse 1.4s ease-in-out infinite;">
   <div style="width:160px;height:4px;background:var(--border);border-radius:99px;overflow:hidden;">
@@ -361,6 +386,9 @@
       </nav>
       <div class="nav-link" onclick="logout()" style="color: var(--error);">
         <i class="fa fa-right-from-bracket"></i> Logout
+      </div>
+      <div class="nav-link" onclick="toggleDrTheme()" id="dr-theme-btn" style="margin-top:auto;">
+        <i class="fa fa-moon"></i> Light Mode
       </div>
     </aside>
 
@@ -446,6 +474,10 @@
       <div class="m-nav-item" onclick="logout()" style="color:#ef4444;">
         <i class="fa fa-right-from-bracket"></i>
         <span>Logout</span>
+      </div>
+      <div class="m-nav-item" onclick="toggleDrTheme()" id="dr-m-theme-btn">
+        <i class="fa fa-moon"></i>
+        <span>Theme</span>
       </div>
     </nav>
   </div>
@@ -566,6 +598,28 @@
         err.classList.remove('hidden');
       }
     };
+
+    window.toggleDrTheme = () => {
+      const isLight = document.body.classList.toggle('light');
+      localStorage.setItem('driver-theme', isLight ? 'light' : 'dark');
+      const icon  = isLight ? 'fa-moon' : 'fa-sun';
+      const label = isLight ? 'Dark Mode' : 'Light Mode';
+      const btn  = document.getElementById('dr-theme-btn');
+      const mbtn = document.getElementById('dr-m-theme-btn');
+      if (btn)  btn.innerHTML  = `<i class="fa ${icon}"></i> ${label}`;
+      if (mbtn) mbtn.innerHTML = `<i class="fa ${icon}"></i><span>Theme</span>`;
+    };
+
+    // apply saved theme
+    (function(){
+      if (localStorage.getItem('driver-theme') === 'light') {
+        document.body.classList.add('light');
+        const btn  = document.getElementById('dr-theme-btn');
+        const mbtn = document.getElementById('dr-m-theme-btn');
+        if (btn)  btn.innerHTML  = '<i class="fa fa-moon"></i> Dark Mode';
+        if (mbtn) mbtn.innerHTML = '<i class="fa fa-moon"></i><span>Theme</span>';
+      }
+    })();
 
     window.logout = () => { clearToken(); localStorage.removeItem('driver'); location.reload(); };
 

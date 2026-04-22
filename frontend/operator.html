@@ -23,6 +23,32 @@
     --warning: #f59e0b;
   }
 
+  body.light {
+    --bg:     #f0f4f8;
+    --card:   #ffffff;
+    --border: #e2e8f0;
+    --text:   #0f172a;
+    --muted:  #475569;
+  }
+  body.light { background: var(--bg); }
+  body.light .topbar { background: #ffffff; border-color: #e2e8f0; }
+  body.light .sidebar { background: #ffffff; border-color: #e2e8f0; }
+  body.light .nav-item:hover { background: rgba(5,150,105,0.06); }
+  body.light input, body.light select { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+  body.light input:focus, body.light select:focus { background: #fff; }
+  body.light .btn-ghost { background: #e2e8f0; color: #0f172a; }
+  body.light .btn-ghost:hover { background: #cbd5e1; }
+  body.light .logout-btn { background: #e2e8f0; color: #475569; }
+  body.light tr:hover td { background: rgba(5,150,105,0.04); }
+  body.light .notif-panel { background: #ffffff; border-color: #e2e8f0; }
+  body.light .notif-item { background: #f8fafc; }
+  body.light .modal-box { background: #ffffff; border-color: #e2e8f0; }
+  body.light .revenue-box { background: #f8fafc; border-color: #e2e8f0; }
+  body.light .stop-row { border-color: #e2e8f0; }
+  body.light .skeleton { background: linear-gradient(90deg, #e2e8f0 0%, #f1f5f9 50%, #e2e8f0 100%); background-size:200% 100%; }
+  body.light #op-loader { background: #f0f4f8; }
+  body.light #op-loader img { filter: none; }
+
   * { margin:0; padding:0; box-sizing:border-box; }
 
   body {
@@ -295,6 +321,7 @@
       <button class="bell-btn" onclick="toggleNotifs()" id="bell-btn">
         <i class="fa fa-bell"></i><span class="bell-count" id="bell-count" style="display:none">0</span>
       </button>
+      <button id="op-theme-btn" onclick="toggleOpTheme()" style="background:var(--border);border:none;color:var(--muted);padding:8px 12px;border-radius:10px;cursor:pointer;font-size:16px;transition:0.2s;" title="Toggle theme"><i class="fa fa-moon"></i></button>
       <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </div>
@@ -472,6 +499,19 @@
     </div>
   </div>
 
+  <!-- CONFIRM POPUP -->
+  <div class="modal-backdrop" id="op-confirm">
+    <div class="modal-box" style="max-width:360px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;"><i class="fa fa-triangle-exclamation" style="color:#f59e0b;"></i></div>
+      <h3 id="op-confirm-title" style="font-size:18px;font-weight:800;margin-bottom:8px;"></h3>
+      <p id="op-confirm-msg" style="color:var(--muted);font-size:14px;margin-bottom:24px;"></p>
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-ghost" style="flex:1;" onclick="opConfirmResolve(false)">Cancel</button>
+        <button id="op-confirm-ok" class="btn" style="flex:1;color:white;" onclick="opConfirmResolve(true)">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TICKET DETAIL MODAL -->
   <div class="modal-backdrop" id="ticket-modal">
     <div class="modal-box" style="max-width:480px;">
@@ -522,6 +562,38 @@
 import { api, setToken, clearToken, getToken } from './api.js';
 window.api = api;
 
+// ── TOAST ─────────────────────────────────────────────
+const toastContainer = document.createElement('div');
+toastContainer.style.cssText = 'position:fixed;top:24px;right:24px;z-index:9000;display:flex;flex-direction:column;gap:10px;pointer-events:none;';
+document.body.appendChild(toastContainer);
+
+const showToast = (msg, type = 'info') => {
+  const t = document.createElement('div');
+  const colors = { success: '#10b981', error: '#ef4444', info: '#059669', warning: '#f59e0b' };
+  const icons  = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info', warning: 'fa-triangle-exclamation' };
+  t.style.cssText = `background:var(--card);border:1px solid var(--border);border-left:4px solid ${colors[type]||colors.info};padding:14px 18px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;min-width:280px;max-width:360px;pointer-events:auto;transform:translateX(120%);transition:transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275);`;
+  t.innerHTML = `<i class="fa ${icons[type]||icons.info}" style="color:${colors[type]||colors.info};font-size:18px;"></i><span style="font-size:14px;font-weight:600;color:var(--text);">${msg}</span>`;
+  toastContainer.appendChild(t);
+  setTimeout(() => t.style.transform = 'translateX(0)', 10);
+  setTimeout(() => { t.style.transform = 'translateX(120%)'; setTimeout(() => t.remove(), 350); }, 4000);
+};
+
+// ── CONFIRM POPUP ─────────────────────────────────────
+let _confirmResolve = null;
+const showConfirm = (title, msg, okLabel = 'Delete', okColor = '#ef4444') => {
+  document.getElementById('op-confirm-title').textContent = title;
+  document.getElementById('op-confirm-msg').textContent   = msg;
+  const btn = document.getElementById('op-confirm-ok');
+  btn.textContent = okLabel;
+  btn.style.background = okColor;
+  document.getElementById('op-confirm').classList.add('open');
+  return new Promise(res => { _confirmResolve = res; });
+};
+window.opConfirmResolve = (val) => {
+  document.getElementById('op-confirm').classList.remove('open');
+  if (_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
+};
+
 let currentRouteId = null;
 let locations      = [];
 let myRoutes       = [];
@@ -533,7 +605,7 @@ window.doLogin = async () => {
   try {
     const data = await api.loginOperator({ company_name, password });
     setToken(data.token);
-    document.getElementById('company-name').textContent = data.operator.company_name;
+    localStorage.setItem('operator', JSON.stringify({ company_name: data.operator.company_name }));
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display    = 'block';
     init();
@@ -542,6 +614,22 @@ window.doLogin = async () => {
     el.textContent = e.message; el.style.display = 'block';
   }
 };
+
+window.toggleOpTheme = () => {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('op-theme', isLight ? 'light' : 'dark');
+  const btn = document.getElementById('op-theme-btn');
+  if (btn) btn.innerHTML = isLight ? '<i class="fa fa-moon"></i>' : '<i class="fa fa-sun"></i>';
+};
+
+// apply saved theme
+(function(){
+  if (localStorage.getItem('op-theme') === 'light') {
+    document.body.classList.add('light');
+    const btn = document.getElementById('op-theme-btn');
+    if (btn) btn.innerHTML = '<i class="fa fa-moon"></i>';
+  }
+})();
 
 window.logout = () => { clearToken(); location.reload(); };
 
@@ -658,6 +746,7 @@ window.createRoute = async () => {
   err.style.display = 'none'; ok.style.display = 'none';
   try {
     const data = await api.createRoute({ from_location_id: from, to_location_id: to, price: parseFloat(price) });
+    showToast(`Route created${data.reverse ? ' + reverse' : ''}`, 'success');
     ok.textContent = `Route created${data.reverse ? ' + reverse auto-generated' : ''}`;
     ok.style.display = 'block';
     renderRoutes();
@@ -665,9 +754,13 @@ window.createRoute = async () => {
 };
 
 window.deleteRoute = async (id) => {
-  if (!confirm('Delete route?')) return;
-  await api.deleteRoute(id);
-  renderRoutes();
+  const ok = await showConfirm('Delete Route', 'This will also remove all stops on this route.');
+  if (!ok) return;
+  try {
+    await api.deleteRoute(id);
+    showToast('Route deleted', 'success');
+    renderRoutes();
+  } catch(e) { showToast(e.message, 'error'); }
 };
 
 // ── STOPS ─────────────────────────────────────────────
@@ -723,7 +816,7 @@ async function renderBuses() {
       <td data-label="Plate">${b.plate_number}</td>
       <td data-label="Route">${b.route?.fromLocation?.name||'?'} → ${b.route?.toLocation?.name||'?'}</td>
       <td data-label="Departure">
-        <input type="time" value="${String(b.departure_time).slice(0,5)}" onchange="updateDeparture('${b.id}', this.value)"
+        <input type="time" value="${String(b.departure_time).slice(0,5)}" onblur="updateDeparture('${b.id}', this.value)"
           style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;font-size:13px;font-family:inherit;">
       </td>
       <td data-label="Capacity">${b.capacity}</td>
@@ -755,21 +848,26 @@ window.createBus = async () => {
 window.reactivateBus = async (id) => {
   try {
     await api.updateBus(id, { is_active: true });
+    showToast('Bus reactivated', 'success');
     renderBuses();
-  } catch(e) { alert(e.message); }
+  } catch(e) { showToast(e.message, 'error'); }
 };
 
 window.updateDeparture = async (id, time) => {
   try {
     await api.updateBus(id, { departure_time: time, is_active: true });
-    renderBuses();
-  } catch(e) { alert(e.message); }
+    showToast('Departure time updated', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
 };
 
 window.deleteBus = async (id) => {
-  if (!confirm('Delete bus?')) return;
-  await api.deleteBus(id);
-  renderBuses();
+  const ok = await showConfirm('Delete Bus', 'This bus will be permanently removed.');
+  if (!ok) return;
+  try {
+    await api.deleteBus(id);
+    showToast('Bus deleted', 'success');
+    renderBuses();
+  } catch(e) { showToast(e.message, 'error'); }
 };
 
 // ── DRIVERS ───────────────────────────────────────────
@@ -809,18 +907,29 @@ window.createDriver = async () => {
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
 
-window.toggleDrv = async (id) => { await api.toggleDriver(id); loadDrivers(); };
+window.toggleDrv = async (id) => {
+  try {
+    await api.toggleDriver(id);
+    showToast('Driver status updated', 'success');
+    loadDrivers();
+  } catch(e) { showToast(e.message, 'error'); }
+};
 window.deleteDrv = async (id) => {
-  if (!confirm('Delete driver?')) return;
-  // no delete driver endpoint yet, skip
+  const ok = await showConfirm('Delete Driver', 'This driver will be permanently removed.');
+  if (!ok) return;
+  showToast('Delete driver not yet supported', 'warning');
 };
 
 // ── TICKETS ───────────────────────────────────────────
+let ticketsCache = {};
+
 async function loadTickets() {
   const tickets = await api.getOperatorTickets();
   const statusColor = { paid:'badge-green', pending:'badge-yellow', cancelled:'badge-red' };
-  document.getElementById('tkt-table').innerHTML = tickets.map(t => `
-    <tr style="cursor:pointer;" onclick="openTicket(${JSON.stringify(t).replace(/"/g,'&quot;')})">
+  ticketsCache = {};
+  tickets.forEach(t => ticketsCache[t.id] = t);
+  document.getElementById('tkt-table').innerHTML = tickets.length ? tickets.map(t => `
+    <tr style="cursor:pointer;" onclick="openTicket('${t.id}')">
       <td data-label="Ticket #">${t.ticket_number || '—'}</td>
       <td data-label="Passenger">${t.user?.name || '—'}</td>
       <td data-label="Bus">${t.bus?.plate_number || '—'}</td>
@@ -829,12 +938,14 @@ async function loadTickets() {
       <td data-label="Seat">${t.seat_number}</td>
       <td data-label="Date">${t.travel_date}</td>
       <td data-label="Price">${Number(t.price).toLocaleString()} RWF</td>
-      <td data-label="Status"><span class="badge badge-${statusColor[t.status]||''}">${t.status}</span></td>
+      <td data-label="Status"><span class="badge ${statusColor[t.status]||''}">${t.status}</span></td>
     </tr>
-  `).join('');
+  `).join('') : '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--muted);">No tickets yet</td></tr>';
 }
 
-window.openTicket = (t) => {
+window.openTicket = (id) => {
+  const t = ticketsCache[id];
+  if (!t) return;
   const statusColor = { paid:'badge-green', pending:'badge-yellow', cancelled:'badge-red' };
   const qrUrl = t.ticket_number ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&qzone=2&data=${encodeURIComponent(t.ticket_number)}` : null;
   document.getElementById('ticket-modal-body').innerHTML = `
