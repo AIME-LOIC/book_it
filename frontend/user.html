@@ -76,6 +76,8 @@
   body.light { background: var(--bg-main); }
   body.light .auth-screen { background: radial-gradient(circle at top right, rgba(5,150,105,0.15), #f0f4f8), radial-gradient(circle at bottom left, rgba(16,185,129,0.10), #f0f4f8); }
   body.auth-mode { overflow: hidden; }
+  body.auth-mode #dashboard,
+  body.auth-mode #bottom-nav { display: none !important; }
   body.light .sidebar { background: #ffffff; border-color: #e2e8f0; }
   body.light .sidebar .nav-item { color: #475569; }
   body.light .sidebar .nav-item:hover,
@@ -155,7 +157,7 @@
     height:100vh;
     overflow-y:auto;
     padding:20px;
-    z-index:1000;
+    z-index:10000;
     background: radial-gradient(circle at top right, rgba(5,150,105,0.18), #0a0f1e), radial-gradient(circle at bottom left, rgba(16,185,129,0.12), #0a0f1e);
   }
   .auth-card { background: var(--bg-card); border-radius: 24px; padding: 40px; width: 100%; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid var(--border); }

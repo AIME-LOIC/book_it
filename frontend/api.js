@@ -14,15 +14,14 @@ const req = async (method, path, body = null, auth = true) => {
     body: body ? JSON.stringify(body) : null,
   });
   const data = await res.json();
-  // only auto-logout on 401 for authenticated requests (not login endpoints)
+  // auto-logout on 401 for authenticated requests (not login endpoints)
+  // NOTE: don't hard-reload/redirect here; let the page decide how to render the login screen.
   if (res.status === 401 && auth) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('driver');
     localStorage.removeItem('operator');
-    // don't reload — just redirect to login cleanly
-    window.location.href = window.location.pathname;
-    return;
+    throw new Error('401 Unauthorized');
   }
   if (!res.ok) throw new Error(data.message || 'Request failed');
   return data;
