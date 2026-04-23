@@ -1,4 +1,4 @@
-const BASE = `${window.location.protocol}//${window.location.host}/api`;
+const BASE = `${window.location.protocol}//${window.location.host}/rw/v1/bk`;
 
 const getToken = () => localStorage.getItem('token');
 const setToken = (t) => localStorage.setItem('token', t);

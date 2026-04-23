@@ -823,32 +823,29 @@
 
     // Auto-login if token exists
     if (getToken()) {
-      // verify token is still valid server-side
-      api.getPassengers(new Date().toISOString().split('T')[0]).then((data) => {
+      api.getPassengers(new Date().toISOString().split('T')[0]).then(() => {
         try {
           const saved = JSON.parse(localStorage.getItem('driver') || 'null');
-          if (saved?.name) {
-            driverState.name = saved.name;
-            driverState.bus  = saved.bus;
-            $('#driver-name').textContent = saved.name;
-          }
+          if (saved?.name) { driverState.name = saved.name; driverState.bus = saved.bus; $('#driver-name').textContent = saved.name; }
         } catch {}
-        hideDrLoader(() => {
-          $('#login-screen').style.display = 'none';
-          $('#dashboard').classList.remove('hidden');
-          init();
-        });
-      }).catch(() => {
-        clearToken();
-        localStorage.removeItem('driver');
-        hideDrLoader(() => {
-          $('#login-screen').style.display = 'flex';
-        });
+        hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').classList.remove('hidden'); init(); });
+      }).catch((e) => {
+        const isAuthErr = e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token') || e.message.toLowerCase().includes('unauthorized'));
+        if (isAuthErr) {
+          clearToken();
+          localStorage.removeItem('driver');
+          hideDrLoader(() => { $('#login-screen').style.display = 'flex'; });
+        } else {
+          // server error — show dashboard anyway
+          try {
+            const saved = JSON.parse(localStorage.getItem('driver') || 'null');
+            if (saved?.name) { driverState.name = saved.name; driverState.bus = saved.bus; $('#driver-name').textContent = saved.name; }
+          } catch {}
+          hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').classList.remove('hidden'); init(); });
+        }
       });
     } else {
-      hideDrLoader(() => {
-        $('#login-screen').style.display = 'flex';
-      });
+      hideDrLoader(() => { $('#login-screen').style.display = 'flex'; });
     }
   </script>
 </body>

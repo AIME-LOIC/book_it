@@ -77,10 +77,12 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use('/api/', apiLimiter);
-app.use('/api/auth/login',          loginLimiter);
-app.use('/api/auth/operator/login', loginLimiter);
-app.use('/api/drivers/login',       loginLimiter);
+const P = '/rw/v1/bk'; // obscure API prefix
+
+app.use(`${P}/`, apiLimiter);
+app.use(`${P}/auth/login`,          loginLimiter);
+app.use(`${P}/auth/operator/login`, loginLimiter);
+app.use(`${P}/drivers/login`,       loginLimiter);
 
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, '../frontend')));
@@ -92,15 +94,18 @@ app.get('/operator',  (req, res) => res.sendFile(path.join(__dirname, '../fronte
 app.get('/driver',    (req, res) => res.sendFile(path.join(__dirname, '../frontend/driver.html')));
 app.get('/admin',     (req, res) => res.sendFile(path.join(__dirname, '../frontend/admin.html')));
 
-app.use('/api/auth',          authRoutes);
-app.use('/api/locations',     locationRoutes);
-app.use('/api/operators',     operatorRoutes);
-app.use('/api/routes',        routeRoutes);
-app.use('/api/route-stops',   routeStopRoutes);
-app.use('/api/buses',         busRoutes);
-app.use('/api/drivers',       driverRoutes);
-app.use('/api/tickets',       ticketRoutes);
-app.use('/api/notifications', notificationRoutes);
+app.use(`${P}/auth`,          authRoutes);
+app.use(`${P}/locations`,     locationRoutes);
+app.use(`${P}/operators`,     operatorRoutes);
+app.use(`${P}/routes`,        routeRoutes);
+app.use(`${P}/route-stops`,   routeStopRoutes);
+app.use(`${P}/buses`,         busRoutes);
+app.use(`${P}/drivers`,       driverRoutes);
+app.use(`${P}/tickets`,       ticketRoutes);
+app.use(`${P}/notifications`, notificationRoutes);
+
+// return 404 on /api/* to confuse scanners
+app.use('/api/*', (req, res) => res.status(404).json({ message: 'Not found' }));
 
 // ── GLOBAL ERROR MIDDLEWARE ─────────────────────────────────────────────
 // 404 for unknown API routes

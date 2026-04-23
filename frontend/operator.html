@@ -1068,19 +1068,26 @@ const hideOpLoader = (cb) => {
 };
 
 if (getToken()) {
-  // verify token is still valid server-side
   api.getMyRoutes().then(() => {
     hideOpLoader(() => {
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
       init();
     });
-  }).catch(() => {
-    clearToken();
-    localStorage.removeItem('operator');
-    hideOpLoader(() => {
-      document.getElementById('login-screen').style.display = 'flex';
-    });
+  }).catch((e) => {
+    const isAuthErr = e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token') || e.message.toLowerCase().includes('unauthorized'));
+    if (isAuthErr) {
+      clearToken();
+      localStorage.removeItem('operator');
+      hideOpLoader(() => { document.getElementById('login-screen').style.display = 'flex'; });
+    } else {
+      // server error — show dashboard anyway
+      hideOpLoader(() => {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        init();
+      });
+    }
   });
 } else {
   hideOpLoader(() => {
