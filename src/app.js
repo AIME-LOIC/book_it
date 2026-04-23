@@ -104,7 +104,7 @@ app.use('/api/notifications', notificationRoutes);
 
 // ── GLOBAL ERROR MIDDLEWARE ─────────────────────────────────────────────
 // 404 for unknown API routes
-app.use('/api/*', (req, res) => {
+app.use('/api/*path', (req, res) => {
   res.status(404).json({ message: 'API endpoint not found' });
 });
 
