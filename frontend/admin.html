@@ -226,6 +226,7 @@
       <div class="nav-item active" id="sd-overview" onclick="showSection('overview',this)"><i class="fa fa-chart-pie"></i> Overview</div>
       <div class="nav-item" id="sd-operators" onclick="showSection('operators',this)"><i class="fa fa-building"></i> Operators</div>
       <div class="nav-item" id="sd-locations" onclick="showSection('locations',this)"><i class="fa fa-map-marker-alt"></i> Locations</div>
+      <div class="nav-item" id="sd-locker" onclick="showSection('locker',this)"><i class="fa fa-lock"></i> Locker</div>
       <div style="margin-top:auto;padding-top:20px;border-top:1px solid var(--border);">
         <div class="nav-item" onclick="logout()" style="color:var(--danger);"><i class="fa fa-sign-out-alt"></i> Logout</div>
       </div>
@@ -305,6 +306,16 @@
         </div>
       </div>
 
+      <!-- LOCKER -->
+      <div class="section" id="sec-locker">
+        <div class="section-title">Password Locker</div>
+        <div class="section-sub">Saved credentials for operators you created. Requires your account password to view.</div>
+        <div class="card">
+          <h3>Saved Credentials</h3>
+          <div id="locker-list"><p style="color:var(--muted);font-size:13px;">No saved credentials yet.</p></div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -313,6 +324,7 @@
     <div class="m-nav-item active" id="mb-overview" onclick="showSection('overview',this)"><i class="fa fa-chart-pie"></i><span>Overview</span></div>
     <div class="m-nav-item" id="mb-operators" onclick="showSection('operators',this)"><i class="fa fa-building"></i><span>Operators</span></div>
     <div class="m-nav-item" id="mb-locations" onclick="showSection('locations',this)"><i class="fa fa-map-marker-alt"></i><span>Locations</span></div>
+    <div class="m-nav-item" id="mb-locker" onclick="showSection('locker',this)"><i class="fa fa-lock"></i><span>Locker</span></div>
     <div class="m-nav-item" onclick="toggleNotifs()" style="position:relative;">
       <i class="fa fa-bell"></i>
       <span class="bell-count" id="m-bell-count" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--danger);color:white;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center;">0</span>
@@ -343,6 +355,32 @@
         <button class="btn btn-ghost" style="flex:1;" onclick="adConfirmResolve(false)">Cancel</button>
         <button id="ad-confirm-ok" class="btn" style="flex:1;color:white;background:#ef4444;" onclick="adConfirmResolve(true)">Delete</button>
       </div>
+    </div>
+  </div>
+
+  <!-- LOCKER UNLOCK MODAL -->
+  <div class="modal-backdrop" id="locker-unlock-modal">
+    <div class="modal-box" style="max-width:380px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;"><i class="fa fa-lock" style="color:var(--primary);"></i></div>
+      <h3 style="font-size:18px;font-weight:800;margin-bottom:8px;">Unlock Locker</h3>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Enter your account password to view saved credentials.</p>
+      <div class="alert alert-err" id="locker-unlock-err"></div>
+      <input type="password" id="locker-unlock-pass" placeholder="Your password" style="margin-bottom:16px;" />
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-ghost" style="flex:1;" onclick="closeLockerUnlock()">Cancel</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="submitLockerUnlock()"><i class="fa fa-unlock"></i> Unlock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOCKER ENTRY MODAL -->
+  <div class="modal-backdrop" id="locker-entry-modal">
+    <div class="modal-box" style="max-width:420px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h3 style="font-size:18px;font-weight:800;"><i class="fa fa-key" style="color:var(--primary);margin-right:8px;"></i>Credential</h3>
+        <button class="btn btn-ghost btn-sm" onclick="closeLockerEntry()"><i class="fa fa-times"></i></button>
+      </div>
+      <div id="locker-entry-body"></div>
     </div>
   </div>
 
@@ -445,6 +483,7 @@ window.showSection = (name, el) => {
   const mb = document.getElementById(`mb-${name}`);
   if (sd) sd.classList.add('active');
   if (mb) mb.classList.add('active');
+  if (name === 'locker') renderLockerList();
 };
 
 // ── OVERVIEW ──────────────────────────────────────────
@@ -487,6 +526,7 @@ window.createOperator = async () => {
     ok.textContent = `Operator "${data.company_name}" created`; ok.style.display = 'block';
     document.getElementById('op-name').value = '';
     document.getElementById('op-contact').value = '';
+    lockerSave(data.company_name, data.default_password);
     loadOperators(); loadOverview();
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
@@ -564,6 +604,108 @@ async function loadNotifications() {
 
 window.readNotif = async (id, el) => { await api.markRead(id); el.classList.remove('unread'); loadNotifications(); };
 window.markAllRead = async () => { await api.markAllRead(); loadNotifications(); };
+
+// ── LOCKER ────────────────────────────────────────────
+const LOCKER_KEY = 'bookit_admin_locker';
+let lockerUnlocked = false;
+let lockerCallback = null;
+
+const lockerSave = (label, password) => {
+  const entries = JSON.parse(localStorage.getItem(LOCKER_KEY) || '[]');
+  entries.unshift({ id: Date.now(), label, password, savedAt: new Date().toISOString() });
+  localStorage.setItem(LOCKER_KEY, JSON.stringify(entries));
+};
+
+const renderLockerList = () => {
+  const entries = JSON.parse(localStorage.getItem(LOCKER_KEY) || '[]');
+  const el = document.getElementById('locker-list');
+  if (!entries.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px;">No saved credentials yet.</p>'; return; }
+  el.innerHTML = entries.map(e => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg);border-radius:12px;border:1px solid var(--border);margin-bottom:10px;">
+      <div>
+        <div style="font-weight:700;font-size:14px;">${e.label}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${new Date(e.savedAt).toLocaleDateString()}</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="viewLockerEntry('${e.id}')"><i class="fa fa-eye"></i> View</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteLockerEntry('${e.id}')"><i class="fa fa-trash"></i></button>
+      </div>
+    </div>
+  `).join('');
+};
+
+window.viewLockerEntry = (id) => {
+  lockerCallback = () => {
+    const entries = JSON.parse(localStorage.getItem(LOCKER_KEY) || '[]');
+    const e = entries.find(x => String(x.id) === String(id));
+    if (!e) return;
+    document.getElementById('locker-entry-body').innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div style="background:var(--bg);border-radius:12px;padding:16px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Operator</div>
+          <div style="font-weight:700;font-size:16px;">${e.label}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:16px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:8px;">Default Password</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <span style="font-family:monospace;font-size:20px;font-weight:900;color:var(--primary);letter-spacing:3px;">${e.password}</span>
+            <button class="btn btn-ghost btn-sm" onclick="copyText('${e.password}')"><i class="fa fa-copy"></i> Copy</button>
+          </div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);text-align:center;">Saved ${new Date(e.savedAt).toLocaleString()}</div>
+      </div>
+    `;
+    document.getElementById('locker-entry-modal').classList.add('open');
+  };
+  openLockerUnlock();
+};
+
+window.deleteLockerEntry = (id) => {
+  const entries = JSON.parse(localStorage.getItem(LOCKER_KEY) || '[]').filter(x => String(x.id) !== String(id));
+  localStorage.setItem(LOCKER_KEY, JSON.stringify(entries));
+  renderLockerList();
+  showToast('Entry deleted', 'info');
+};
+
+window.copyText = (text) => {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied!', 'success'));
+};
+
+const openLockerUnlock = () => {
+  lockerUnlocked = false;
+  const err = document.getElementById('locker-unlock-err');
+  err.style.display = 'none'; err.textContent = '';
+  document.getElementById('locker-unlock-pass').value = '';
+  document.getElementById('locker-unlock-modal').classList.add('open');
+  setTimeout(() => document.getElementById('locker-unlock-pass').focus(), 100);
+};
+
+window.closeLockerUnlock = () => {
+  document.getElementById('locker-unlock-modal').classList.remove('open');
+  lockerCallback = null;
+};
+
+window.submitLockerUnlock = async () => {
+  const pass = document.getElementById('locker-unlock-pass').value;
+  const err  = document.getElementById('locker-unlock-err');
+  err.style.display = 'none';
+  if (!pass) { err.textContent = 'Password required'; err.style.display = 'block'; return; }
+  try {
+    await api.verifyPassword({ password: pass });
+    lockerUnlocked = true;
+    document.getElementById('locker-unlock-modal').classList.remove('open');
+    if (lockerCallback) { lockerCallback(); lockerCallback = null; }
+  } catch(e) { err.textContent = e.message || 'Incorrect password'; err.style.display = 'block'; }
+};
+
+window.closeLockerEntry = () => {
+  document.getElementById('locker-entry-modal').classList.remove('open');
+  lockerUnlocked = false;
+};
+
+document.getElementById('locker-unlock-pass').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') submitLockerUnlock();
+});
 
 // ── LOADER & STARTUP ──────────────────────────────────
 const hideLoader = (cb) => {

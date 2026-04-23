@@ -81,3 +81,15 @@ export const loginOperator = async ({ company_name, password }) => {
   );
   return { token, operator: { id: operator.id, company_name: operator.company_name } };
 };
+
+export const verifyPassword = async (user, password) => {
+  if (!password) throw new Error('Password required');
+  if (user.role === 'operator') {
+    const operator = await Operator.findByPk(user.id);
+    if (!operator || !await bcrypt.compare(password, operator.password_hash)) throw new Error('Incorrect password');
+  } else {
+    const u = await User.findByPk(user.id);
+    if (!u || !await bcrypt.compare(password, u.password_hash)) throw new Error('Incorrect password');
+  }
+  return { verified: true };
+};

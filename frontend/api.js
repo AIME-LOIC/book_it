@@ -33,6 +33,7 @@ const api = {
   loginOperator: (b) => req('POST', '/auth/operator/login', b, false),
   loginDriver:   (b) => req('POST', '/drivers/login', b, false),
   register:      (b) => req('POST', '/auth/register', b, false),
+  verifyPassword:(b) => req('POST', '/auth/verify-password', b),
 
   // locations
   getLocations:    ()  => req('GET',    '/locations'),
