@@ -1,3 +1,4 @@
+(() => {
 const BASE = `${window.location.protocol}//${window.location.host}/rw/v1/bk`;
 
 const getToken = () => localStorage.getItem('token');
@@ -94,4 +95,8 @@ const api = {
   markAllRead:       () => req('PATCH', '/notifications/read-all'),
 };
 
-export { api, getToken, setToken, clearToken };
+// Expose for plain `<script>` usage (no ES modules needed).
+window.BookItApi = { api, getToken, setToken, clearToken };
+// Back-compat for existing pages that reference `window.api`.
+window.api = api;
+})();

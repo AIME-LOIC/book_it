@@ -978,8 +978,9 @@
   <div class="nav-item" onclick="setLang(window.currentLang==='en'?'rw':'en')" id="m-lang-btn" style="font-size:11px;font-weight:900;">RW</div>
 </div>
 
-<script type="module">
-import { api, setToken, clearToken, getToken } from './api.js';
+<script src="./api.js"></script>
+<script>
+const { api, setToken, clearToken, getToken } = window.BookItApi;
 window.api = api;
 
 let locations  = [];

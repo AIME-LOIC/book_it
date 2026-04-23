@@ -348,8 +348,9 @@
 
 </div>
 
-<script type="module">
-import { api, setToken, clearToken, getToken } from './api.js';
+<script src="./api.js"></script>
+<script>
+const { api, setToken, clearToken, getToken } = window.BookItApi;
 window.api = api;
 
 // ── CONFIRM POPUP ─────────────────────────────────────
