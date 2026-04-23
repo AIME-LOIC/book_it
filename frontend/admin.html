@@ -535,9 +535,10 @@ window.markAllRead = async () => { await api.markAllRead(); loadNotifications();
 // ── LOADER & STARTUP ──────────────────────────────────
 const hideLoader = (cb) => {
   const el = document.getElementById('admin-loader');
+  cb && cb(); // show correct screen FIRST
   el.style.opacity = '0';
   el.style.pointerEvents = 'none';
-  setTimeout(() => { el.style.display = 'none'; cb && cb(); }, 500);
+  setTimeout(() => { el.style.display = 'none'; }, 500);
 };
 
 if (getToken()) {
