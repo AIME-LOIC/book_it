@@ -137,6 +137,10 @@
   input, select { background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 14px 16px; border-radius: 12px; font-size: 14px; width: 100%; transition: 0.2s; }
   input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
 
+  /* SECTIONS */
+  .section { display: none; }
+  .section.active { display: block; }
+
   /* LIGHT THEME */
   body.light .glass-card, body.light .stat-card { background: white; border-color: #e5e7eb; }
   body.light input, body.light select { background: #f9fafb; color: #111827; border-color: #d1d5db; }
@@ -146,8 +150,20 @@
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100 selection:bg-brandOrange-500/30 selection:text-slate-100">
 
+<style>
+  @keyframes opulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  @keyframes obar { 0%{transform:translateX(-100%)} 100%{transform:translateX(400%)} }
+</style>
+<div id="admin-loader" style="position:fixed;inset:0;z-index:9999;background:#0a0f1e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.5s ease;">
+  <img src="./download.png" alt="BookIt" style="width:140px;height:auto;filter:brightness(0) invert(1);animation:opulse 1.4s ease-in-out infinite;">
+  <div style="width:160px;height:4px;background:#1f2937;border-radius:99px;overflow:hidden;">
+    <div style="height:100%;width:40%;background:#059669;border-radius:99px;animation:obar 3.5s ease-in-out infinite;"></div>
+  </div>
+  <div style="font-size:13px;color:#9ca3af;font-weight:600;">Loading Admin Dashboard...</div>
+</div>
+
 <!-- LOGIN -->
-<div id="login-screen" class="min-h-screen grid place-items-center p-6 bg-[radial-gradient(ellipse_at_top_right,rgba(249,115,22,0.16),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(34,197,94,0.18),transparent_55%)]">
+<div id="login-screen" style="display:none;">
   <div class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/70 backdrop-blur p-8 shadow-2xl">
     <div class="flex items-center gap-3 mb-6">
       <div class="h-12 w-12 rounded-xl border border-slate-800 bg-slate-950/60 grid place-items-center overflow-hidden">
@@ -160,7 +176,7 @@
       </div>
     </div>
 
-    <div class="alert rounded-xl border border-red-900/60 bg-red-950/50 px-4 py-3 text-sm text-red-200" id="login-err"></div>
+    <div class="alert alert-err" id="login-err"></div>
 
     <div class="flex flex-col gap-3">
       <input type="email" id="email" placeholder="Email" class="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
@@ -176,7 +192,7 @@
 </div>
 
 <!-- DASHBOARD -->
-<div id="dashboard" class="hidden">
+<div id="dashboard" style="display:none;">
   <div class="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/70 backdrop-blur">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 py-4 flex items-center justify-between">
       <div class="flex items-center gap-3">
@@ -209,9 +225,9 @@
       <div class="px-3 py-3">
         <div class="text-xs font-black tracking-widest text-slate-500">NAVIGATION</div>
       </div>
-      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition active bg-slate-900/70 text-brandOrange-300" onclick="showSection('overview')">📊 Overview</button>
-      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition" onclick="showSection('operators')">🏢 Operators</button>
-      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition" onclick="showSection('locations')">📍 Locations</button>
+      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition active bg-slate-900/70 text-brandOrange-300" onclick="showSection('overview', this)">📊 Overview</button>
+      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition" onclick="showSection('operators', this)">🏢 Operators</button>
+      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition" onclick="showSection('locations', this)">📍 Locations</button>
     </aside>
 
     <main class="min-w-0">
@@ -227,11 +243,11 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
             <div class="text-sm text-slate-400 font-bold">Operators</div>
-            <div class="mt-2 text-4xl font-black tracking-tight text-brandOrange-300" id="stat-ops">—</div>
+            <div class="mt-2 text-4xl font-black tracking-tight" style="color:#059669;" id="stat-ops">—</div>
           </div>
           <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
             <div class="text-sm text-slate-400 font-bold">Locations</div>
-            <div class="mt-2 text-4xl font-black tracking-tight text-brandOrange-300" id="stat-locs">—</div>
+            <div class="mt-2 text-4xl font-black tracking-tight" style="color:#059669;" id="stat-locs">—</div>
           </div>
         </div>
       </div>
@@ -247,15 +263,15 @@
 
         <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 mb-6">
           <div class="text-sm font-extrabold text-slate-200 mb-4">Add Operator</div>
-          <div class="alert rounded-xl border border-red-900/60 bg-red-950/50 px-4 py-3 text-sm text-red-200 mb-3" id="op-err"></div>
-          <div class="alert rounded-xl border border-forest-900/50 bg-forest-950/30 px-4 py-3 text-sm text-forest-200 mb-3" id="op-ok"></div>
+          <div class="alert alert-err" id="op-err"></div>
+          <div class="alert alert-ok" id="op-ok"></div>
           <div class="flex flex-col lg:flex-row gap-3">
             <input id="op-name" placeholder="Company name" class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
             <input id="op-contact" placeholder="Contact" class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
             <button class="rounded-xl bg-brandOrange-500 px-5 py-3 text-sm font-extrabold text-slate-950 hover:bg-brandOrange-400 active:bg-brandOrange-600 transition" onclick="createOperator()">Add</button>
           </div>
-          <div class="hidden mt-4 rounded-xl border border-brandOrange-500/40 bg-slate-950/40 px-4 py-3 text-sm text-slate-200" id="op-pass">
-            Default password: <span class="font-black text-brandOrange-300" id="op-pass-val"></span>
+          <div style="display:none;" class="mt-4 rounded-xl border border-slate-700 bg-slate-950/40 px-4 py-3 text-sm text-slate-200" id="op-pass">
+            Default password: <span class="font-black" style="color:#059669;" id="op-pass-val"></span>
           </div>
         </div>
 
@@ -290,7 +306,7 @@
 
         <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 mb-6">
           <div class="text-sm font-extrabold text-slate-200 mb-4">Add Location</div>
-          <div class="alert rounded-xl border border-red-900/60 bg-red-950/50 px-4 py-3 text-sm text-red-200 mb-3" id="loc-err"></div>
+          <div class="alert alert-err" id="loc-err"></div>
           <div class="flex flex-col sm:flex-row gap-3">
             <input id="loc-name" placeholder="City / Town name" class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
             <button class="rounded-xl bg-brandOrange-500 px-5 py-3 text-sm font-extrabold text-slate-950 hover:bg-brandOrange-400 active:bg-brandOrange-600 transition" onclick="createLocation()">Add</button>
@@ -324,6 +340,10 @@ import { api, setToken, clearToken, getToken } from './api.js';
 window.api = api;
 
 // ── AUTH ──────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
+});
+
 window.doLogin = async () => {
   const email    = document.getElementById('email').value;
   const password = document.getElementById('password').value;
@@ -333,6 +353,7 @@ window.doLogin = async () => {
     setToken(data.token);
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display    = 'block';
+    document.getElementById('dashboard').classList.remove('hidden');
     init();
   } catch(e) {
     const el = document.getElementById('login-err');
@@ -355,11 +376,11 @@ async function init() {
 }
 
 // ── NAVIGATION ────────────────────────────────────────
-window.showSection = (name) => {
+window.showSection = (name, el) => {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById(`sec-${name}`).classList.add('active');
-  event.target.classList.add('active');
+  if (el) el.classList.add('active');
 };
 
 // ── OVERVIEW ──────────────────────────────────────────
@@ -483,11 +504,26 @@ document.addEventListener('click', (e) => {
   }
 });
 
+const hideLoader = (cb) => {
+  const el = document.getElementById('admin-loader');
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.pointerEvents = 'none';
+    setTimeout(() => { el.style.display = 'none'; cb && cb(); }, 500);
+  }, 800);
+};
+
 // auto login if token exists
 if (getToken()) {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('dashboard').style.display    = 'block';
-  init();
+  hideLoader(() => {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('dashboard').style.display    = 'block';
+    init();
+  });
+} else {
+  hideLoader(() => {
+    document.getElementById('login-screen').style.display = 'flex';
+  });
 }
 </script>
 </body>
