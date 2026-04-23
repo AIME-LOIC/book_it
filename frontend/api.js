@@ -19,7 +19,8 @@ const req = async (method, path, body = null, auth = true) => {
     localStorage.removeItem('user');
     localStorage.removeItem('driver');
     localStorage.removeItem('operator');
-    window.location.reload();
+    // don't reload — just redirect to login cleanly
+    window.location.href = window.location.pathname;
     return;
   }
   if (!res.ok) throw new Error(data.message || 'Request failed');
