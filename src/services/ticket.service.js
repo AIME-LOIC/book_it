@@ -198,6 +198,9 @@ export const searchBuses = async ({ from_location_id, to_location_id, travel_dat
 
 // ── BOOK ──────────────────────────────────────────────
 export const bookTicket = async (user_id, { bus_id, seat_number, boarding_stop_id, dropoff_stop_id, travel_date }) => {
+  const user = await User.findByPk(user_id);
+  if (!user) throw new Error('User not found (invalid token)');
+
   const bus = await Bus.findByPk(bus_id);
   if (!bus) throw new Error('Bus not found');
 

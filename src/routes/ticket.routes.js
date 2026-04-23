@@ -9,6 +9,7 @@ import authenticate from '../middleware/auth.js';
 import isAdmin      from '../middleware/admin.js';
 import isOperator   from '../middleware/operator.js';
 import isDriver     from '../middleware/driver.js';
+import isUser       from '../middleware/user.js';
 import { validateBookTicket } from '../middleware/validate.js';
 
 const router = Router();
@@ -27,10 +28,10 @@ router.get('/operator',         authenticate, isOperator, getOperatorTickets);
 router.get('/all',              authenticate, isAdmin, getAllTickets);
 
 // user
-router.get('/my',               authenticate, getMyTickets);
-router.get('/my/:id',           authenticate, getTicketById);
-router.post('/',                authenticate, validateBookTicket, book);
-router.patch('/:id/pay',        authenticate, pay);
-router.patch('/:id/cancel',     authenticate, cancel);
+router.get('/my',               authenticate, isUser, getMyTickets);
+router.get('/my/:id',           authenticate, isUser, getTicketById);
+router.post('/',                authenticate, isUser, validateBookTicket, book);
+router.patch('/:id/pay',        authenticate, isUser, pay);
+router.patch('/:id/cancel',     authenticate, isUser, cancel);
 
 export default router;
