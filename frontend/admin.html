@@ -151,7 +151,7 @@
 <script>if(localStorage.getItem('admin-theme')==='light')document.body.classList.add('light');</script>
 
 <!-- LOADER -->
-<div id="admin-loader" style="position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.5s ease;">
+<div id="admin-loader" style="position:fixed;inset:0;z-index:9999;background:#0a0f1e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.5s ease;">
   <img src="./download.png" alt="BookIt" style="width:140px;height:auto;filter:brightness(0) invert(1);animation:adpulse 1.4s ease-in-out infinite;">
   <div style="width:160px;height:4px;background:var(--border);border-radius:99px;overflow:hidden;">
     <div style="height:100%;width:40%;background:var(--primary);border-radius:99px;animation:adbar 3.5s ease-in-out infinite;"></div>
@@ -535,10 +535,9 @@ window.markAllRead = async () => { await api.markAllRead(); loadNotifications();
 // ── LOADER & STARTUP ──────────────────────────────────
 const hideLoader = (cb) => {
   const el = document.getElementById('admin-loader');
-  cb && cb();
   el.style.opacity = '0';
   el.style.pointerEvents = 'none';
-  setTimeout(() => el.style.display = 'none', 500);
+  setTimeout(() => { el.style.display = 'none'; cb && cb(); }, 500);
 };
 
 if (getToken()) {
@@ -550,14 +549,14 @@ if (getToken()) {
     });
   }).catch((e) => {
     const isAuth = e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token'));
-    if (isAuth) { clearToken(); }
+    if (isAuth) clearToken();
     hideLoader(() => {
-      document.getElementById('login-screen').style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),var(--bg)),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),var(--bg));';
+      document.getElementById('login-screen').style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),#0a0f1e),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),#0a0f1e);';
     });
   });
 } else {
   hideLoader(() => {
-    document.getElementById('login-screen').style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),var(--bg)),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),var(--bg));';
+    document.getElementById('login-screen').style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),#0a0f1e),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),#0a0f1e);';
   });
 }
 </script>
