@@ -1,0 +1,42 @@
+# Environment variables (CRITICAL — contains DB password, JWT secrets)
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+/tmp/
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Backups
+*.backup.html
+*.backup*.html
+frontend/*.backup*.html
+
+# Build outputs (if you add a build step later)
+dist/
+build/
+
+# Database dumps (if you export DB)
+*.sql
+*.dump
+
+# Temporary files
+/tmp/
+server.log
