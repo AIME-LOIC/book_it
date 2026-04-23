@@ -4,9 +4,9 @@ import Route    from '../database/models/route.js';
 import Location from '../database/models/location.js';
 import { createMany } from './notification.service.js';
 
+// ── DEACTIVATE DEPARTED BUSES (runs every 60s) ────────────────
 export const checkDepartedBuses = async () => {
-  const now   = new Date();
-  const today = now.toISOString().split('T')[0];
+  const now = new Date();
 
   const activeBuses = await Bus.findAll({
     where: { is_active: true },
@@ -37,11 +37,38 @@ export const checkDepartedBuses = async () => {
         recipient_id:   bus.operator_id,
         recipient_type: 'operator',
         type:           'bus_departed',
-        message:        `Bus ${bus.plate_number} (${from} → ${to}) has departed at ${String(bus.departure_time).slice(0,5)}. It has been deactivated and removed from bookings.`,
+        message:        `Bus ${bus.plate_number} (${from} → ${to}) has departed at ${String(bus.departure_time).slice(0,5)}. It will be reactivated tomorrow.`,
         meta:           { bus_id: bus.id, plate: bus.plate_number },
       }]);
 
       console.log(`[Scheduler] Bus ${bus.plate_number} deactivated — departed at ${String(bus.departure_time).slice(0,5)}`);
     }
+  }
+};
+
+// ── REACTIVATE ALL BUSES AT MIDNIGHT (runs every 60s, triggers once) ─────────
+let lastReactivationDate = null;
+
+export const checkMidnightReactivation = async () => {
+  const now   = new Date();
+  const today = now.toISOString().split('T')[0];
+
+  // only run once per day, between 00:00 and 00:01
+  if (now.getHours() !== 0 || now.getMinutes() > 1) return;
+  if (lastReactivationDate === today) return;
+
+  lastReactivationDate = today;
+
+  const inactiveBuses = await Bus.findAll({
+    where: { is_active: false },
+  });
+
+  for (const bus of inactiveBuses) {
+    await bus.update({ is_active: true });
+    console.log(`[Scheduler] Bus ${bus.plate_number} reactivated for ${today}`);
+  }
+
+  if (inactiveBuses.length > 0) {
+    console.log(`[Scheduler] ${inactiveBuses.length} bus(es) reactivated for ${today}`);
   }
 };

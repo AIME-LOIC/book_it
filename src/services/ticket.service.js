@@ -64,9 +64,11 @@ const isSeatFree = async (bus_id, travel_date, seat_number, boarding_order, drop
   });
 
   for (const t of conflicts) {
-    const existBoarding = t.boardingStop.stop_order;
-    const existDropoff  = t.dropoffStop.stop_order;
-    if (existBoarding < dropoff_order && existDropoff > boarding_order) {
+    const existBoarding = Number(t.boardingStop.stop_order);
+    const existDropoff  = Number(t.dropoffStop.stop_order);
+    const nb = Number(boarding_order);
+    const nd = Number(dropoff_order);
+    if (existBoarding < nd && existDropoff > nb) {
       return false;
     }
   }
@@ -84,9 +86,12 @@ const getSegmentSeats = async (bus, travel_date, boarding_order, dropoff_order) 
 
   const takenSeats = new Set();
   for (const t of conflicts) {
-    const eb = t.boardingStop.stop_order;
-    const ed = t.dropoffStop.stop_order;
-    if (eb < dropoff_order && ed > boarding_order) takenSeats.add(t.seat_number);
+    const eb = Number(t.boardingStop.stop_order);
+    const ed = Number(t.dropoffStop.stop_order);
+    const nb = Number(boarding_order);
+    const nd = Number(dropoff_order);
+    // segments overlap if existing boarding < new dropoff AND existing dropoff > new boarding
+    if (eb < nd && ed > nb) takenSeats.add(t.seat_number);
   }
 
   const available = [];
@@ -420,13 +425,43 @@ export const notifyPassengerExit = async (driver_id, ticket_id) => {
 };
 
 // ── VALIDATE ──────────────────────────────────────────
-export const validateByQR = async (token) => {
+export const validateByQR = async (token, driver) => {
   // QR contains ticket number directly — simple and fast to scan
   const ticket_number = token.trim();
   const ticket = await Ticket.findOne({ where: { ticket_number }, include: ticketIncludes });
   if (!ticket)                  return { valid: false, reason: 'Ticket not found' };
   if (ticket.status !== 'paid') return { valid: false, reason: `Ticket is ${ticket.status}` };
   if (ticket.is_used)           return { valid: false, reason: '⚠️ Ticket already used — boarding denied' };
+  if (driver?.bus_id && ticket.bus_id !== driver.bus_id) return { valid: false, reason: 'This ticket is not for your bus' };
+
+  const today = new Date().toISOString().split('T')[0];
+  if (ticket.travel_date > today) return { valid: false, reason: `Ticket is for future date: ${ticket.travel_date}` };
+
+  await ticket.update({ is_used: true });
+
+  return {
+    valid: true,
+    ticket: {
+      id:             ticket.id,
+      ticket_number:  ticket.ticket_number,
+      seat_number:    ticket.seat_number,
+      travel_date:    ticket.travel_date,
+      departure_time: ticket.bus.departure_time,
+      plate_number:   ticket.bus.plate_number,
+      passenger:      ticket.user,
+      boarding:       ticket.boardingStop.location.name,
+      dropoff:        ticket.dropoffStop.location.name,
+      operator:       ticket.operator,
+    },
+  };
+};
+
+export const validateByNumber = async (ticket_number, driver) => {
+  const ticket = await Ticket.findOne({ where: { ticket_number }, include: ticketIncludes });
+  if (!ticket)                  return { valid: false, reason: 'Ticket not found' };
+  if (ticket.status !== 'paid') return { valid: false, reason: `Ticket is ${ticket.status}` };
+  if (ticket.is_used)           return { valid: false, reason: '⚠️ Ticket already used — boarding denied' };
+  if (driver?.bus_id && ticket.bus_id !== driver.bus_id) return { valid: false, reason: 'This ticket is not for your bus' };
 
   const today = new Date().toISOString().split('T')[0];
   if (ticket.travel_date > today) return { valid: false, reason: `Ticket is for future date: ${ticket.travel_date}` };

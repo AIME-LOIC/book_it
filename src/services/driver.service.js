@@ -1,5 +1,6 @@
 import bcrypt   from 'bcrypt';
 import jwt      from 'jsonwebtoken';
+import crypto   from 'crypto';
 import Driver   from '../database/models/driver.js';
 import Bus      from '../database/models/bus.js';
 import Operator from '../database/models/operator.js';
@@ -17,8 +18,7 @@ export const createDriver = async (operator_id, { name, phone, bus_id }) => {
     if (existing) throw new Error('Bus already has a driver assigned');
   }
 
-  const initials      = name.split(' ').map(w => w[0].toUpperCase()).join('');
-  const plainPassword = `${initials}@Driver1`;
+  const plainPassword = crypto.randomBytes(4).toString('hex').toUpperCase();
   const password_hash = await bcrypt.hash(plainPassword, 10);
 
   const driver = await Driver.create({
@@ -40,13 +40,22 @@ export const createDriver = async (operator_id, { name, phone, bus_id }) => {
 };
 
 export const loginDriver = async ({ phone, password }) => {
+  const { checkLockout, recordFailure, clearFailures, MAX_ATTEMPTS, failedAttempts } = await import('./auth.service.js');
+  checkLockout(phone);
   const driver = await Driver.findOne({ where: { phone }, include: driverIncludes });
-  if (!driver)           throw new Error('Invalid credentials');
+  if (!driver || !await bcrypt.compare(password, driver.password_hash)) {
+    recordFailure(phone);
+    const record = failedAttempts.get(phone);
+    const remaining = MAX_ATTEMPTS - (record?.count || 0);
+    throw new Error(remaining > 0
+      ? `Invalid credentials. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`
+      : 'Account locked for 15 minutes.');
+  }
   if (!driver.is_active) throw new Error('Account suspended');
-  if (!await bcrypt.compare(password, driver.password_hash)) throw new Error('Invalid credentials');
+  clearFailures(phone);
 
   const token = jwt.sign(
-    { id: driver.id, phone: driver.phone, bus_id: driver.bus_id, operator_id: driver.operator_id, role: 'driver' },
+    { id: driver.id, phone: driver.phone, role: 'driver' },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );

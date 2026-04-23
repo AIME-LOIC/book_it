@@ -781,7 +781,7 @@
           </div>
         </div>
         <button class="btn btn-ghost btn-block" onclick="toggleTheme()" id="theme-btn" style="margin-bottom:8px;"><i class="fa fa-moon"></i> Light Mode</button>
-        <button class="btn btn-ghost btn-block" onclick="setLang(currentLang==='en'?'rw':'en')" id="lang-btn" style="margin-bottom:8px;">RW 🇷🇼</button>
+        <button class="btn btn-ghost btn-block" onclick="setLang(window.currentLang==='en'?'rw':'en')" id="lang-btn" style="margin-bottom:8px;">RW 🇷🇼</button>
         <button class="btn btn-ghost btn-block" onclick="logout()"><i class="fa fa-sign-out"></i> Logout</button>
       </div>
     </div>
@@ -963,7 +963,7 @@
   </div>
   <div class="nav-item" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i></div>
   <div class="nav-item" onclick="toggleTheme()" id="m-theme-btn"><i class="fa fa-moon"></i></div>
-  <div class="nav-item" onclick="setLang(currentLang==='en'?'rw':'en')" id="m-lang-btn" style="font-size:11px;font-weight:900;">RW</div>
+  <div class="nav-item" onclick="setLang(window.currentLang==='en'?'rw':'en')" id="m-lang-btn" style="font-size:11px;font-weight:900;">RW</div>
 </div>
 
 <script type="module">
@@ -1064,61 +1064,84 @@ const translations = {
 };
 
 let currentLang = localStorage.getItem('lang') || 'en';
+window.currentLang = currentLang;
 
 const t = (key) => translations[currentLang][key] || translations.en[key] || key;
 
 window.setLang = (lang) => {
   currentLang = lang;
+  window.currentLang = lang;
   localStorage.setItem('lang', lang);
   applyLang();
 };
 
 const applyLang = () => {
-  // auth
-  document.querySelector('#auth-screen .auth-logo p').textContent = t('tagline');
-  document.querySelectorAll('.tab')[0].textContent = t('login');
-  document.querySelectorAll('.tab')[1].textContent = t('register');
-  document.querySelectorAll('#tab-login label')[0].textContent = t('emailAddress');
-  document.querySelectorAll('#tab-login label')[1].textContent = t('password');
+  const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+  const setHTML = (sel, html) => { const el = document.querySelector(sel); if (el) el.innerHTML = html; };
+  const setText = (sel, text) => { const el = document.querySelector(sel); if (el) el.textContent = text; };
+
+  // auth screen
+  setText('#auth-screen .auth-logo p', t('tagline'));
+  const tabs = document.querySelectorAll('.tab');
+  if (tabs[0]) tabs[0].textContent = t('login');
+  if (tabs[1]) tabs[1].textContent = t('register');
+
+  // login labels
+  const loginLabels = document.querySelectorAll('#tab-login .float-group label');
+  if (loginLabels[0]) loginLabels[0].textContent = t('emailAddress');
+  if (loginLabels[1]) loginLabels[1].textContent = t('password');
   const signInBtn = document.querySelector('#tab-login .btn-primary');
   if (signInBtn) signInBtn.innerHTML = `${t('signIn')} <i class="fa fa-arrow-right" style="color:white;"></i>`;
+
+  // register labels
+  const regLabels = document.querySelectorAll('#tab-register .float-group label');
+  if (regLabels[0]) regLabels[0].textContent = t('fullName');
+  if (regLabels[1]) regLabels[1].textContent = t('emailAddress');
+  if (regLabels[2]) regLabels[2].textContent = t('phoneNumber');
+  if (regLabels[3]) regLabels[3].textContent = t('password');
   const regBtn = document.querySelector('#tab-register .btn-primary');
   if (regBtn) regBtn.textContent = t('createAccount');
-  // inputs placeholders
-  const logEmail = document.getElementById('log-email');
-  const logPass  = document.getElementById('log-password');
-  if (logEmail) logEmail.closest('.float-group').querySelector('label').textContent = t('emailAddress');
-  if (logPass)  logPass.closest('.float-group').querySelector('label').textContent  = t('password');
+
   // sidebar nav
   const navItems = document.querySelectorAll('.sidebar .nav-item');
   if (navItems[0]) navItems[0].innerHTML = `<i class="fa-solid fa-compass"></i> ${t('explore')}`;
   if (navItems[1]) navItems[1].innerHTML = `<i class="fa-solid fa-ticket"></i> ${t('myTickets')}`;
-  if (navItems[2]) navItems[2].innerHTML = `<div class="bell-btn"><i class="fa-solid fa-bell"></i><span class="bell-count" id="bell-count" style="display:none">0</span></div> ${t('notifications')}`;
-  // sidebar bottom
-  document.querySelector('#user-name')?.closest('div')?.querySelector('p:last-child') && (document.querySelectorAll('.sidebar p')[1].textContent = t('verifiedTraveler'));
+
+  // verified traveler
+  const vt = document.querySelector('.sidebar #user-initial + div p:last-child');
+  if (vt) vt.textContent = t('verifiedTraveler');
+
   // hero
-  document.querySelector('.hero-title').innerHTML = t('heroTitle');
-  document.querySelector('.hero-section .live-text') && (document.querySelector('.live-text').textContent = t('liveText'));
+  setHTML('.hero-title', t('heroTitle'));
+
   // search labels
-  const labels = document.querySelectorAll('.search-grid .input-group label');
-  if (labels[0]) labels[0].innerHTML = `<i class="fa fa-map-marker-alt" style="color:white;"></i> ${t('from')}`;
-  if (labels[1]) labels[1].innerHTML = `<i class="fa fa-location-dot" style="color:white;"></i> ${t('to')}`;
-  if (labels[2]) labels[2].innerHTML = `<i class="fa fa-calendar-alt" style="color:white;"></i> ${t('date')}`;
-  if (labels[3]) labels[3].innerHTML = `<i class="fa fa-clock" style="color:white;"></i> ${t('fromTime')}`;
-  // dropdowns
+  const searchLabels = document.querySelectorAll('.search-grid .input-group label');
+  if (searchLabels[0]) searchLabels[0].innerHTML = `<i class="fa fa-map-marker-alt" style="color:white;"></i> ${t('from')}`;
+  if (searchLabels[1]) searchLabels[1].innerHTML = `<i class="fa fa-location-dot" style="color:white;"></i> ${t('to')}`;
+  if (searchLabels[2]) searchLabels[2].innerHTML = `<i class="fa fa-calendar-alt" style="color:white;"></i> ${t('date')}`;
+  if (searchLabels[3]) searchLabels[3].innerHTML = `<i class="fa fa-clock" style="color:white;"></i> ${t('fromTime')}`;
+
+  // find buses button
+  const findBtn = document.querySelector('.search-grid .btn-primary');
+  if (findBtn) findBtn.textContent = t('findBuses');
+
+  // dropdown placeholders (only if not yet selected)
   const fromLabel = document.getElementById('from-label');
   const toLabel   = document.getElementById('to-label');
-  if (fromLabel && fromLabel.textContent === translations[currentLang === 'en' ? 'rw' : 'en'].selectDeparture || fromLabel?.textContent === 'Select departure' || fromLabel?.textContent === 'Hitamo aho uvuye') fromLabel.textContent = t('selectDeparture');
-  if (toLabel && toLabel.textContent === translations[currentLang === 'en' ? 'rw' : 'en'].selectDestination || toLabel?.textContent === 'Select destination' || toLabel?.textContent === 'Hitamo aho ujya') toLabel.textContent = t('selectDestination');
-  // find buses btn
-  document.querySelector('.search-grid .btn-primary').textContent = t('findBuses');
-  // notifications panel
-  document.querySelector('#notif-panel h3').textContent = t('notifications');
-  // lang btn
-  const langBtn = document.getElementById('lang-btn');
-  if (langBtn) langBtn.textContent = currentLang === 'en' ? 'RW' : 'EN';
+  if (fromLabel && !document.getElementById('s-from').value) fromLabel.textContent = t('selectDeparture');
+  if (toLabel   && !document.getElementById('s-to').value)   toLabel.textContent   = t('selectDestination');
+
+  // notifications panel title
+  setText('#notif-panel h3', t('notifications'));
+
+  // lang/theme buttons
+  const langBtn  = document.getElementById('lang-btn');
   const mLangBtn = document.getElementById('m-lang-btn');
+  if (langBtn)  langBtn.textContent  = currentLang === 'en' ? 'RW 🇷🇼' : 'EN 🇬🇧';
   if (mLangBtn) mLangBtn.textContent = currentLang === 'en' ? 'RW' : 'EN';
+
+  // tickets section title
+  setHTML('#sec-tickets h2', t('myTicketsTitle'));
 };
 
 // --- UTILS ---

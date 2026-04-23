@@ -820,7 +820,7 @@ async function renderBuses() {
           style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;font-size:13px;font-family:inherit;">
       </td>
       <td data-label="Capacity">${b.capacity}</td>
-      <td data-label="Status"><span class="badge ${b.is_active ? 'badge-green' : 'badge-red'}">${b.is_active ? 'Active' : 'Departed'}</span></td>
+      <td data-label="Status"><span class="badge ${b.is_active ? 'badge-green' : 'badge-red'}">${b.is_active ? 'Active' : 'Departed — reactivates at midnight'}</span></td>
       <td data-label="Actions" style="display:flex;gap:6px;flex-wrap:wrap;">
         ${!b.is_active ? `<button class="btn btn-ghost btn-sm" onclick="reactivateBus('${b.id}')"><i class="fa fa-rotate-right"></i> Reactivate</button>` : ''}
         <button class="btn btn-danger btn-sm" onclick="deleteBus('${b.id}')">Delete</button>

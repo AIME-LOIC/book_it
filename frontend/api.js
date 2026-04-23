@@ -1,4 +1,4 @@
-const BASE = 'http://localhost:2000/api';
+const BASE = `http://${window.location.hostname}:2000/api`;
 
 const getToken = () => localStorage.getItem('token');
 const setToken = (t) => localStorage.setItem('token', t);
