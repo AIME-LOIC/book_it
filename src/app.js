@@ -105,11 +105,11 @@ app.use(`${P}/tickets`,       ticketRoutes);
 app.use(`${P}/notifications`, notificationRoutes);
 
 // return 404 on /api/* to confuse scanners
-app.use('/api/*', (req, res) => res.status(404).json({ message: 'Not found' }));
+app.use('/api/{*path}', (req, res) => res.status(404).json({ message: 'Not found' }));
 
 // ── GLOBAL ERROR MIDDLEWARE ─────────────────────────────────────────────
 // 404 for unknown API routes
-app.use('/api/*path', (req, res) => {
+app.use('/api/{*path}', (req, res) => {
   res.status(404).json({ message: 'API endpoint not found' });
 });
 
