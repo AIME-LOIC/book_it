@@ -823,18 +823,27 @@
 
     // Auto-login if token exists
     if (getToken()) {
-      try {
-        const saved = JSON.parse(localStorage.getItem('driver') || 'null');
-        if (saved?.name) {
-          driverState.name = saved.name;
-          driverState.bus  = saved.bus;
-          $('#driver-name').textContent = saved.name;
-        }
-      } catch {}
-      hideDrLoader(() => {
-        $('#login-screen').style.display = 'none';
-        $('#dashboard').classList.remove('hidden');
-        init();
+      // verify token is still valid server-side
+      api.getPassengers(new Date().toISOString().split('T')[0]).then((data) => {
+        try {
+          const saved = JSON.parse(localStorage.getItem('driver') || 'null');
+          if (saved?.name) {
+            driverState.name = saved.name;
+            driverState.bus  = saved.bus;
+            $('#driver-name').textContent = saved.name;
+          }
+        } catch {}
+        hideDrLoader(() => {
+          $('#login-screen').style.display = 'none';
+          $('#dashboard').classList.remove('hidden');
+          init();
+        });
+      }).catch(() => {
+        clearToken();
+        localStorage.removeItem('driver');
+        hideDrLoader(() => {
+          $('#login-screen').style.display = 'flex';
+        });
       });
     } else {
       hideDrLoader(() => {

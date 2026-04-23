@@ -1068,10 +1068,19 @@ const hideOpLoader = (cb) => {
 };
 
 if (getToken()) {
-  hideOpLoader(() => {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    init();
+  // verify token is still valid server-side
+  api.getMyRoutes().then(() => {
+    hideOpLoader(() => {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      init();
+    });
+  }).catch(() => {
+    clearToken();
+    localStorage.removeItem('operator');
+    hideOpLoader(() => {
+      document.getElementById('login-screen').style.display = 'flex';
+    });
   });
 } else {
   hideOpLoader(() => {

@@ -13,6 +13,15 @@ const req = async (method, path, body = null, auth = true) => {
     body: body ? JSON.stringify(body) : null,
   });
   const data = await res.json();
+  if (res.status === 401) {
+    // token expired or invalid — clear and reload
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('driver');
+    localStorage.removeItem('operator');
+    window.location.reload();
+    return;
+  }
   if (!res.ok) throw new Error(data.message || 'Request failed');
   return data;
 };

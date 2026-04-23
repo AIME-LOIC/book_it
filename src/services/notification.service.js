@@ -11,17 +11,18 @@ export const createMany = async (notifications) => {
 };
 
 // Get all notifications for a recipient
-export const getMyNotifications = async (recipient_id) => {
+export const getMyNotifications = async (recipient_id, recipient_type) => {
   return await Notification.findAll({
-    where:  { recipient_id },
+    where:  { recipient_id, recipient_type },
     order:  [['createdAt', 'DESC']],
+    limit:  50,
   });
 };
 
 // Get unread count
-export const getUnreadCount = async (recipient_id) => {
+export const getUnreadCount = async (recipient_id, recipient_type) => {
   return await Notification.count({
-    where: { recipient_id, is_read: false },
+    where: { recipient_id, recipient_type, is_read: false },
   });
 };
 

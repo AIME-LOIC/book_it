@@ -4,22 +4,24 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const pool = {
-  max: 3,        // max 3 connections — stays well under FreedB's limit
-  min: 0,        // release connections when idle
+  max: 3,
+  min: 0,
   acquire: 30000,
-  idle: 10000,   // close connection after 10s idle
+  idle: 10000,
 };
 
 let sequelize;
 
 if (process.env.DATABASE_URL) {
+  // Render / production PostgreSQL
   sequelize = new Sequelize(process.env.DATABASE_URL, {
-    dialect: 'mysql',
+    dialect: 'postgres',
     dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
     logging: false,
     pool,
   });
 } else {
+  // Local MySQL (XAMPP)
   sequelize = new Sequelize(
     process.env.DB_NAME,
     process.env.DB_USER,
@@ -28,9 +30,9 @@ if (process.env.DATABASE_URL) {
       host:    process.env.DB_HOST,
       port:    process.env.DB_PORT || 3306,
       dialect: 'mysql',
-      dialectOptions: process.env.DB_HOST !== 'localhost'
-        ? { ssl: { require: true, rejectUnauthorized: false } }
-        : {},
+      dialectOptions: (process.env.DB_HOST === 'localhost' || process.env.DB_HOST === '127.0.0.1')
+        ? {}
+        : { ssl: { require: true, rejectUnauthorized: false } },
       logging: false,
       pool,
     }

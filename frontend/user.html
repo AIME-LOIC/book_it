@@ -1242,8 +1242,10 @@ runLoader();
 const hideAppLoader = (cb) => {
   const el = document.getElementById('app-loader');
   const hide = () => {
+    // run callback FIRST so correct screen is set before loader fades
+    cb && cb();
     el.classList.add('hide');
-    setTimeout(() => { el.style.display = 'none'; cb && cb(); }, 600);
+    setTimeout(() => { el.style.display = 'none'; }, 600);
   };
   if (_loaderDone) hide();
   else _onLoaderDone = hide;
@@ -1500,7 +1502,16 @@ window.openBrowseBus = async (busId) => {
   if (!bus || !bus.route?.fromLocation || !bus.route?.toLocation) {
     showToast('Route info missing', 'error'); return;
   }
-  const date = document.getElementById('s-date').value;
+  // use selected date, but if bus already departed today use tomorrow
+  let date = document.getElementById('s-date').value;
+  const now  = new Date().toTimeString().slice(0,5);
+  const dep  = String(bus.departure_time).slice(0,5);
+  const today = new Date().toISOString().split('T')[0];
+  if (date === today && dep <= now) {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    date = tomorrow.toISOString().split('T')[0];
+  }
   try {
     const results = await api.searchTickets({
       from: bus.route.fromLocation.id,
@@ -1599,7 +1610,7 @@ function renderSearchResults(buses, from, to, date) {
                     <div class="bus-info">
                         <div class="operator-name">${b.operator?.company_name}</div>
                         <div class="bus-meta">
-                            <span><i class="fa fa-clock"></i> Departs ${b.departure_time}</span>
+                            <span><i class="fa fa-clock"></i> Departs ${String(b.departure_time).slice(0,5)}</span>
                             <span><i class="fa fa-chair"></i> ${b.available_seats.length} free</span>
                         </div>
                     </div>

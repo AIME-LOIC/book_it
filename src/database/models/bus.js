@@ -10,7 +10,7 @@ const Bus = sequelize.define('Bus', {
   plate_number:   { type: DataTypes.STRING(20),  allowNull: false, unique: true },
   driver_name:    { type: DataTypes.STRING(100), allowNull: false },
   capacity:       { type: DataTypes.INTEGER,     allowNull: false },
-  departure_time: { type: DataTypes.TIME,        allowNull: false },
+  departure_time: { type: DataTypes.STRING(8), allowNull: false },
   is_active:      { type: DataTypes.BOOLEAN,     allowNull: false, defaultValue: true },
 }, { tableName: 'buses', timestamps: false });
 
