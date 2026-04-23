@@ -39,6 +39,16 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
+// Normalize trailing slashes on page routes so relative assets like `./api.js` resolve correctly.
+// Example failure: visiting `/admin/` makes `./api.js` resolve to `/admin/api.js` (404) -> blank screen.
+app.use((req, res, next) => {
+  if ((req.method !== 'GET' && req.method !== 'HEAD') || req.path === '/') return next();
+  if (req.path.startsWith('/rw/v1/bk')) return next();
+  if (!req.path.endsWith('/')) return next();
+  const q = req.url.includes('?') ? `?${req.url.split('?')[1]}` : '';
+  return res.redirect(301, `${req.path.slice(0, -1)}${q}`);
+});
+
 // Lightweight health check for deployments (Render, etc.)
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
 

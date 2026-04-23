@@ -149,6 +149,27 @@
 </head>
 <body>
 <script>if(localStorage.getItem('admin-theme')==='light')document.body.classList.add('light');</script>
+<script>
+  // Fallback: if the module script fails to load (wrong path/MIME/CSP), don't show a blank page.
+  setTimeout(() => {
+    const loader = document.getElementById('admin-loader');
+    const login  = document.getElementById('login-screen');
+    const dash   = document.getElementById('dashboard');
+    if (!loader || !login || !dash) return;
+    const loginVisible = getComputedStyle(login).display !== 'none';
+    const dashVisible  = getComputedStyle(dash).display !== 'none';
+    if (loginVisible || dashVisible) return;
+    loader.style.display = 'none';
+    login.style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),#0a0f1e),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),#0a0f1e);';
+    const box = login.querySelector('div');
+    if (box) {
+      const warn = document.createElement('div');
+      warn.textContent = 'Admin scripts did not load. Open DevTools → Console/Network to see the error (often: /api.js 404 or wrong MIME, or blocked CDN).';
+      warn.style.cssText = 'margin-bottom:14px;padding:12px 14px;border-radius:12px;background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25);font-size:13px;font-weight:700;';
+      box.prepend(warn);
+    }
+  }, 2500);
+</script>
 
 <!-- LOADER -->
 <div id="admin-loader" style="position:fixed;inset:0;z-index:9999;background:#0a0f1e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.5s ease;">
@@ -326,7 +347,7 @@
 
 </div>
 
-<script type="module">
+<script>
 import { api, setToken, clearToken, getToken } from './api.js';
 window.api = api;
 
