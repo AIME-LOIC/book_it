@@ -75,6 +75,7 @@
   }
   body.light { background: var(--bg-main); }
   body.light .auth-screen { background: radial-gradient(circle at top right, rgba(5,150,105,0.15), #f0f4f8), radial-gradient(circle at bottom left, rgba(16,185,129,0.10), #f0f4f8); }
+  body.auth-mode { overflow: hidden; }
   body.light .sidebar { background: #ffffff; border-color: #e2e8f0; }
   body.light .sidebar .nav-item { color: #475569; }
   body.light .sidebar .nav-item:hover,
@@ -145,7 +146,18 @@
   }
 
   /* --- AUTH STYLES --- */
-  .auth-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; padding: 20px; background: radial-gradient(circle at top right, rgba(5,150,105,0.18), #0a0f1e), radial-gradient(circle at bottom left, rgba(16,185,129,0.12), #0a0f1e); }
+  .auth-screen {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:fixed;
+    inset:0;
+    height:100vh;
+    overflow-y:auto;
+    padding:20px;
+    z-index:1000;
+    background: radial-gradient(circle at top right, rgba(5,150,105,0.18), #0a0f1e), radial-gradient(circle at bottom left, rgba(16,185,129,0.12), #0a0f1e);
+  }
   .auth-card { background: var(--bg-card); border-radius: 24px; padding: 40px; width: 100%; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid var(--border); }
   .auth-logo { text-align: center; margin-bottom: 32px; }
   .auth-logo h1 { font-size: 32px; font-weight: 900; color: var(--primary); letter-spacing: -1px; display:flex; align-items:center; justify-content:center; gap: 12px; }
@@ -752,7 +764,7 @@
 </div>
 
 <!-- DASHBOARD -->
-<div id="dashboard">
+<div id="dashboard" style="display:none;">
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div style="margin-bottom: 40px; padding: 0 8px;">
@@ -1300,6 +1312,7 @@ window.doLogin = async () => {
     document.getElementById('auth-screen').style.display = 'none';
     document.getElementById('dashboard').style.display = 'block';
     document.getElementById('bottom-nav').style.display = '';
+    document.body.classList.remove('auth-mode');
     init();
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
@@ -1903,7 +1916,10 @@ else document.addEventListener('DOMContentLoaded', applyLang);
 (async () => {
   if (!getToken()) {
     hideAppLoader(() => {
+      document.getElementById('dashboard').style.display = 'none';
+      document.getElementById('bottom-nav').style.display = 'none';
       document.getElementById('auth-screen').style.display = 'flex';
+      document.body.classList.add('auth-mode');
     });
     return;
   }
@@ -1918,6 +1934,7 @@ else document.addEventListener('DOMContentLoaded', applyLang);
       document.getElementById('auth-screen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
       document.getElementById('bottom-nav').style.display = '';
+      document.body.classList.remove('auth-mode');
       init();
     });
   } catch(e) {
@@ -1926,7 +1943,12 @@ else document.addEventListener('DOMContentLoaded', applyLang);
     if (e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token') || e.message.toLowerCase().includes('unauthorized'))) {
       clearToken();
       localStorage.removeItem('user');
-      hideAppLoader(() => { document.getElementById('auth-screen').style.display = 'flex'; });
+      hideAppLoader(() => {
+        document.getElementById('dashboard').style.display = 'none';
+        document.getElementById('bottom-nav').style.display = 'none';
+        document.getElementById('auth-screen').style.display = 'flex';
+        document.body.classList.add('auth-mode');
+      });
     } else {
       // server error — still show dashboard with cached user data
       const u = JSON.parse(localStorage.getItem('user') || 'null');
@@ -1938,6 +1960,7 @@ else document.addEventListener('DOMContentLoaded', applyLang);
         document.getElementById('auth-screen').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         document.getElementById('bottom-nav').style.display = '';
+        document.body.classList.remove('auth-mode');
         init();
       });
     }
