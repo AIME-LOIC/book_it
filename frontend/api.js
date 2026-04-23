@@ -13,8 +13,8 @@ const req = async (method, path, body = null, auth = true) => {
     body: body ? JSON.stringify(body) : null,
   });
   const data = await res.json();
-  if (res.status === 401) {
-    // token expired or invalid — clear and reload
+  // only auto-logout on 401 for authenticated requests (not login endpoints)
+  if (res.status === 401 && auth) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('driver');
