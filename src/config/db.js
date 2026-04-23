@@ -3,15 +3,21 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const pool = {
+  max: 3,        // max 3 connections — stays well under FreedB's limit
+  min: 0,        // release connections when idle
+  acquire: 30000,
+  idle: 10000,   // close connection after 10s idle
+};
+
 let sequelize;
 
 if (process.env.DATABASE_URL) {
   sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'mysql',
-    dialectOptions: {
-      ssl: { require: true, rejectUnauthorized: false },
-    },
+    dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
     logging: false,
+    pool,
   });
 } else {
   sequelize = new Sequelize(
@@ -26,6 +32,7 @@ if (process.env.DATABASE_URL) {
         ? { ssl: { require: true, rejectUnauthorized: false } }
         : {},
       logging: false,
+      pool,
     }
   );
 }
