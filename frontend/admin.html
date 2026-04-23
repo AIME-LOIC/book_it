@@ -6,6 +6,18 @@
 <title>BookIt — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          emerald: { 600: '#059669', 700: '#047857' }
+        }
+      }
+    }
+  }
+</script>
 <style>
   :root {
     --bg:      #0a0f1e;
@@ -201,11 +213,21 @@
         <div class="section-title">Overview</div>
         <div class="section-sub">Platform snapshot</div>
         <div class="stats-grid">
-          <div class="stat-card" onclick="showSection('operators',document.getElementById('sd-operators'))">
-            <div class="num" id="stat-ops">—</div><div class="lbl">Operators</div>
+          <div class="stat-card group" onclick="showSection('operators',document.getElementById('sd-operators'))">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold uppercase tracking-widest" style="color:var(--muted);">Operators</span>
+              <i class="fa fa-building text-emerald-600 opacity-60 group-hover:opacity-100 transition"></i>
+            </div>
+            <div class="num" id="stat-ops">—</div>
+            <div class="lbl">Total registered</div>
           </div>
-          <div class="stat-card" onclick="showSection('locations',document.getElementById('sd-locations'))">
-            <div class="num" id="stat-locs">—</div><div class="lbl">Locations</div>
+          <div class="stat-card group" onclick="showSection('locations',document.getElementById('sd-locations'))">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold uppercase tracking-widest" style="color:var(--muted);">Locations</span>
+              <i class="fa fa-map-marker-alt text-emerald-600 opacity-60 group-hover:opacity-100 transition"></i>
+            </div>
+            <div class="num" id="stat-locs">—</div>
+            <div class="lbl">Cities &amp; towns</div>
           </div>
         </div>
       </div>
