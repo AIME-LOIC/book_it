@@ -227,6 +227,7 @@
       <div class="nav-item" id="sd-operators" onclick="showSection('operators',this)"><i class="fa fa-building"></i> Operators</div>
       <div class="nav-item" id="sd-locations" onclick="showSection('locations',this)"><i class="fa fa-map-marker-alt"></i> Locations</div>
       <div class="nav-item" id="sd-locker" onclick="showSection('locker',this)"><i class="fa fa-lock"></i> Locker</div>
+      <div class="nav-item" id="sd-profile" onclick="showSection('profile',this)"><i class="fa fa-user-circle"></i> Profile</div>
       <div style="margin-top:auto;padding-top:20px;border-top:1px solid var(--border);">
         <div class="nav-item" onclick="logout()" style="color:var(--danger);"><i class="fa fa-sign-out-alt"></i> Logout</div>
       </div>
@@ -316,6 +317,35 @@
         </div>
       </div>
 
+      <!-- PROFILE -->
+      <div class="section" id="sec-profile">
+        <div class="section-title">My Profile</div>
+        <div class="section-sub">Admin account settings</div>
+        <div class="card">
+          <h3>Account Info</h3>
+          <div id="profile-info" style="margin-bottom:24px;"></div>
+          <h3>Update Details</h3>
+          <div class="alert alert-err" id="profile-err"></div>
+          <div class="alert alert-ok"  id="profile-ok"></div>
+          <div class="form-row" style="margin-bottom:12px;">
+            <input id="profile-name"  placeholder="Full name" />
+            <input id="profile-phone" placeholder="Phone" />
+          </div>
+          <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+        </div>
+        <div class="card">
+          <h3>Change Password</h3>
+          <div class="alert alert-err" id="pw-err"></div>
+          <div class="alert alert-ok"  id="pw-ok"></div>
+          <div class="form-row">
+            <input type="password" id="pw-old"     placeholder="Current password" />
+            <input type="password" id="pw-new"     placeholder="New password" />
+            <input type="password" id="pw-confirm" placeholder="Confirm new password" />
+            <button class="btn btn-primary" onclick="changePassword()">Change Password</button>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -325,6 +355,7 @@
     <div class="m-nav-item" id="mb-operators" onclick="showSection('operators',this)"><i class="fa fa-building"></i><span>Operators</span></div>
     <div class="m-nav-item" id="mb-locations" onclick="showSection('locations',this)"><i class="fa fa-map-marker-alt"></i><span>Locations</span></div>
     <div class="m-nav-item" id="mb-locker" onclick="showSection('locker',this)"><i class="fa fa-lock"></i><span>Locker</span></div>
+    <div class="m-nav-item" id="mb-profile" onclick="showSection('profile',this)"><i class="fa fa-user-circle"></i><span>Profile</span></div>
     <div class="m-nav-item" onclick="toggleNotifs()" style="position:relative;">
       <i class="fa fa-bell"></i>
       <span class="bell-count" id="m-bell-count" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--danger);color:white;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center;">0</span>

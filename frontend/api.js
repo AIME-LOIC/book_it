@@ -35,6 +35,10 @@ const api = {
   register:      (b) => req('POST', '/auth/register', b, false),
   verifyPassword:(b) => req('POST', '/auth/verify-password', b),
   getLocker:     (b) => req('POST', '/auth/locker', b),
+  getMe:         ()  => req('GET',  '/auth/me'),
+  updateMe:      (b) => req('PATCH','/auth/me', b),
+  getDriverMe:   ()  => req('GET',  '/drivers/me'),
+  updateDriverMe:(b) => req('PATCH','/drivers/profile', b),
 
   // locations
   getLocations:    ()  => req('GET',    '/locations'),

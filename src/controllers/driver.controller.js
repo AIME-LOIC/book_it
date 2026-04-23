@@ -1,6 +1,11 @@
 import * as svc from '../services/driver.service.js';
 import * as ticketSvc from '../services/ticket.service.js';
 
+export const getMe = async (req, res) => {
+  try { res.status(200).json(await svc.getDriverMe(req.user.id)); }
+  catch (err) { res.status(404).json({ message: err.message }); }
+};
+
 export const create           = async (req, res) => {
   try { res.status(201).json(await svc.createDriver(req.user.id, req.body)); }
   catch (err) { res.status(400).json({ message: err.message }); }

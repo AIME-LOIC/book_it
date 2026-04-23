@@ -56,6 +56,7 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
+    overflow-x: hidden;
   }
 
   /* LOGIN */
@@ -68,9 +69,8 @@
   #dashboard { display:none; }
 
   /* TOPBAR */
-  .topbar { background:var(--card); border-bottom:1px solid var(--border); padding:14px 32px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; }
-  .topbar h1 { color:var(--primary); font-size:20px; font-weight:900; letter-spacing:-0.5px; }
-  .topbar-right { display:flex; align-items:center; gap:16px; position:relative; }
+  .topbar { background:var(--card); border-bottom:1px solid var(--border); padding:12px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; overflow:hidden; }
+  .topbar-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
   .bell-btn { position:relative; background:var(--border); border:none; color:var(--text); width:40px; height:40px; border-radius:12px; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; transition:0.2s; }
   .bell-btn:hover { background:var(--primary-glow); color:var(--primary); }
   /* NOTIFICATION PANEL */
@@ -105,12 +105,12 @@
   .bell-count { position:absolute; top:-4px; right:-4px; background:var(--danger); color:white; font-size:10px; font-weight:700; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
 
   /* LAYOUT */
-  .layout { display:flex; height:calc(100vh - 65px); }
-  .sidebar { width:240px; background:var(--card); border-right:1px solid var(--border); padding:24px 12px; display:flex; flex-direction:column; }
+  .layout { display:flex; height:calc(100vh - 65px); overflow:hidden; }
+  .sidebar { width:240px; background:var(--card); border-right:1px solid var(--border); padding:24px 12px; display:flex; flex-direction:column; overflow-y:auto; }
   .nav-item { padding:12px 16px; cursor:pointer; color:var(--muted); transition:all 0.2s; display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; border-radius:12px; margin-bottom:4px; }
   .nav-item:hover { background:rgba(255,255,255,0.04); color:var(--text); }
   .nav-item.active { background:var(--primary-glow); color:var(--primary); }
-  .main { flex:1; padding:32px; overflow-y:auto; }
+  .main { flex:1; padding:32px; overflow-y:auto; overflow-x:hidden; }
 
   /* SECTIONS */
   .section { display:none; }
@@ -210,39 +210,56 @@
     bottom: 0; left: 0; right: 0;
     background: var(--card);
     border-top: 1px solid var(--border);
-    padding: 8px 4px;
+    padding: 6px 0;
     z-index: 100;
     justify-content: space-around;
     backdrop-filter: blur(12px);
+    overflow: hidden;
   }
   .m-nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 2px;
     color: var(--muted);
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 700;
-    padding: 6px 10px;
-    border-radius: 12px;
+    padding: 6px 8px;
+    border-radius: 10px;
     cursor: pointer;
     transition: 0.2s;
     flex: 1;
+    min-width: 0;
   }
-  .m-nav-item i { font-size: 18px; }
+  .m-nav-item i { font-size: 20px; }
+  .m-nav-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
   .m-nav-item.active { color: var(--primary); }
+
+  #mobile-more-menu {
+    display: none;
+    position: fixed;
+    bottom: 62px;
+    right: 8px;
+    width: 180px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    z-index: 200;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    overflow: hidden;
+  }
 
   @media (max-width: 768px) {
     .sidebar { display: none; }
     .mobile-nav { display: flex; }
     .layout { height: calc(100vh - 65px); }
-    .main { padding: 16px 16px 90px; }
-    .topbar { padding: 12px 16px; }
+    .main { padding: 16px 16px 80px; overflow-x: hidden; }
+    .topbar { padding: 10px 16px; }
     .form-row { flex-direction: column; }
-    input, select { min-width: 0; }
+    input, select { min-width: 0; width: 100%; }
     .stats { grid-template-columns: repeat(2, 1fr); }
     .section-title { font-size: 20px; }
-    .card { padding: 16px; border-radius: 12px; }
+    .card { padding: 14px; border-radius: 12px; overflow: hidden; }
     .notif-panel { width: 100%; right: -100%; }
 
     /* CARD-STYLE TABLES ON MOBILE */
@@ -264,6 +281,7 @@
       border: none;
       font-size: 13px;
       border-bottom: 1px solid var(--border);
+      word-break: break-word;
     }
     td:last-child { border-bottom: none; padding-bottom: 0; }
     td:first-child { padding-top: 0; }
@@ -283,6 +301,8 @@
 
   @media (max-width: 480px) {
     .stats { grid-template-columns: 1fr 1fr; }
+    .stat-card .num { font-size: 24px; }
+  }
     .stat-card .num { font-size: 24px; }
   }
 </style>
@@ -314,15 +334,13 @@
 
 <div id="dashboard" style="display:none;">
   <div class="topbar">
-    <div style="display:flex; align-items:center; gap:10px;">
-      <img src="./download.png" alt="BookIt" style="height:80px; width:auto; filter:brightness(0) invert(1);">
-    </div>
+    <img src="./download.png" alt="BookIt" style="height:44px;width:auto;filter:brightness(0) invert(1);flex-shrink:0;">
     <div class="topbar-right">
       <button class="bell-btn" onclick="toggleNotifs()" id="bell-btn">
         <i class="fa fa-bell"></i><span class="bell-count" id="bell-count" style="display:none">0</span>
       </button>
-      <button id="op-theme-btn" onclick="toggleOpTheme()" style="background:var(--border);border:none;color:var(--muted);padding:8px 12px;border-radius:10px;cursor:pointer;font-size:16px;transition:0.2s;" title="Toggle theme"><i class="fa fa-moon"></i></button>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+      <button id="op-theme-btn" onclick="toggleOpTheme()" style="background:var(--border);border:none;color:var(--muted);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:15px;transition:0.2s;display:flex;align-items:center;justify-content:center;" title="Toggle theme"><i class="fa fa-moon"></i></button>
+      <button onclick="logout()" style="background:var(--border);border:none;color:var(--muted);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:0.2s;" title="Logout"><i class="fa fa-sign-out-alt"></i></button>
     </div>
   </div>
 
@@ -348,6 +366,7 @@
       <div class="nav-item" onclick="showSection('revenue',this)" id="sd-revenue"><i class="fa fa-money-bill"></i> Revenue</div>
       <div class="nav-item" onclick="showSection('locations',this)" id="sd-locations"><i class="fa fa-map-marker-alt"></i> Locations</div>
       <div class="nav-item" onclick="showSection('locker',this)" id="sd-locker"><i class="fa fa-lock"></i> Locker</div>
+      <div class="nav-item" onclick="showSection('profile',this)" id="sd-profile"><i class="fa fa-user-circle"></i> Profile</div>
     </div>
 
     <div class="main">
@@ -502,8 +521,36 @@
         <div class="section-title">Password Locker</div>
         <div class="card">
           <h3>Saved Credentials</h3>
-          <p style="color:var(--muted);font-size:13px;margin-bottom:16px;">Default passwords for operators and drivers you created. Requires your account password to view.</p>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:16px;">Default passwords for drivers you created. Requires your account password to view.</p>
           <div id="locker-list"><p style="color:var(--muted);font-size:13px;">No saved credentials yet.</p></div>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="section" id="sec-profile">
+        <div class="section-title">My Profile</div>
+        <div class="card">
+          <h3>Account Info</h3>
+          <div id="profile-info" style="margin-bottom:24px;"></div>
+          <h3>Update Details</h3>
+          <div class="alert alert-err" id="profile-err"></div>
+          <div class="alert alert-ok"  id="profile-ok"></div>
+          <div class="form-row" style="margin-bottom:12px;">
+            <input id="profile-name"  placeholder="Company name" />
+            <input id="profile-phone" placeholder="Contact / Phone" />
+          </div>
+          <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+        </div>
+        <div class="card">
+          <h3>Change Password</h3>
+          <div class="alert alert-err" id="pw-err"></div>
+          <div class="alert alert-ok"  id="pw-ok"></div>
+          <div class="form-row">
+            <input type="password" id="pw-old" placeholder="Current password" />
+            <input type="password" id="pw-new" placeholder="New password" />
+            <input type="password" id="pw-confirm" placeholder="Confirm new password" />
+            <button class="btn btn-primary" onclick="changePassword()">Change Password</button>
+          </div>
         </div>
       </div>
 
@@ -557,22 +604,21 @@
 
   <!-- MOBILE NAV -->
   <nav class="mobile-nav">
-    <div class="m-nav-item active" id="mb-overview" onclick="showSection('overview',this)"><i class="fa fa-chart-pie"></i><span>Overview</span></div>
+    <div class="m-nav-item active" id="mb-overview" onclick="showSection('overview',this)"><i class="fa fa-chart-pie"></i><span>Home</span></div>
     <div class="m-nav-item" id="mb-buses" onclick="showSection('buses',this)"><i class="fa fa-bus"></i><span>Buses</span></div>
     <div class="m-nav-item" id="mb-drivers" onclick="showSection('drivers',this)"><i class="fa fa-user"></i><span>Drivers</span></div>
     <div class="m-nav-item" id="mb-tickets" onclick="showSection('tickets',this)"><i class="fa fa-ticket"></i><span>Tickets</span></div>
-    <div class="m-nav-item" id="mb-locker" onclick="showSection('locker',this)"><i class="fa fa-lock"></i><span>Locker</span></div>
-    <div class="m-nav-item" onclick="toggleMobileMore()" id="mb-more"><i class="fa fa-ellipsis"></i><span>More</span></div>
+    <div class="m-nav-item" onclick="toggleMobileMore()" id="mb-more"><i class="fa fa-ellipsis-v"></i><span>More</span></div>
   </nav>
 
-  <!-- MOBILE MORE MENU -->
-  <div id="mobile-more-menu" style="display:none;position:fixed;bottom:70px;right:0;left:0;background:var(--card);border-top:1px solid var(--border);z-index:99;padding:8px 0;">
-    <div style="display:flex;flex-direction:column;">
-      <div onclick="showSection('routes',document.getElementById('sd-routes'));toggleMobileMore()" style="display:flex;align-items:center;gap:12px;padding:14px 24px;color:var(--muted);font-weight:600;font-size:14px;cursor:pointer;"><i class="fa fa-route" style="width:20px;"></i> Routes</div>
-      <div onclick="showSection('revenue',document.getElementById('sd-revenue'));toggleMobileMore()" style="display:flex;align-items:center;gap:12px;padding:14px 24px;color:var(--muted);font-weight:600;font-size:14px;cursor:pointer;"><i class="fa fa-money-bill" style="width:20px;"></i> Revenue</div>
-      <div onclick="showSection('locations',document.getElementById('sd-locations'));toggleMobileMore()" style="display:flex;align-items:center;gap:12px;padding:14px 24px;color:var(--muted);font-weight:600;font-size:14px;cursor:pointer;"><i class="fa fa-map-marker-alt" style="width:20px;"></i> Locations</div>
-      <div onclick="logout()" style="display:flex;align-items:center;gap:12px;padding:14px 24px;color:#ef4444;font-weight:600;font-size:14px;cursor:pointer;"><i class="fa fa-sign-out-alt" style="width:20px;"></i> Logout</div>
-    </div>
+  <!-- MOBILE MORE MENU — vertical compact, right-anchored -->
+  <div id="mobile-more-menu">
+    <div onclick="showSection('routes',document.getElementById('sd-routes'));toggleMobileMore()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);"><i class="fa fa-route" style="width:18px;text-align:center;"></i> Routes</div>
+    <div onclick="showSection('revenue',document.getElementById('sd-revenue'));toggleMobileMore()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);"><i class="fa fa-money-bill" style="width:18px;text-align:center;"></i> Revenue</div>
+    <div onclick="showSection('locations',document.getElementById('sd-locations'));toggleMobileMore()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);"><i class="fa fa-map-marker-alt" style="width:18px;text-align:center;"></i> Locations</div>
+    <div onclick="showSection('locker',document.getElementById('sd-locker'));toggleMobileMore()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);"><i class="fa fa-lock" style="width:18px;text-align:center;"></i> Locker</div>
+    <div onclick="logout()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;color:#ef4444;font-weight:600;font-size:13px;cursor:pointer;"><i class="fa fa-sign-out-alt" style="width:18px;text-align:center;"></i> Logout</div>
+    <div onclick="showSection('profile',document.getElementById('sd-profile'));toggleMobileMore()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;border-top:1px solid var(--border);"><i class="fa fa-user-circle" style="width:18px;text-align:center;"></i> Profile</div>
   </div>
 
   <!-- LOCKER UNLOCK MODAL -->
@@ -718,6 +764,7 @@ window.showSection = (name, el) => {
   if (name === 'tickets') loadTickets();
   if (name === 'revenue') calcRevenue();
   if (name === 'locker') { openLockerUnlock(); return; }
+  if (name === 'profile') loadProfile();
 };
 
 // ── OVERVIEW ──────────────────────────────────────────
@@ -1107,6 +1154,67 @@ async function loadNotifications() {
 }
 
 window.toggleNotifs = () => document.getElementById('notif-panel').classList.toggle('open');
+
+// ── PROFILE ───────────────────────────────────────────
+async function loadProfile() {
+  try {
+    const me = await api.getMe();
+    document.getElementById('profile-name').value  = me.company_name || '';
+    document.getElementById('profile-phone').value = me.contact || '';
+    document.getElementById('profile-info').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Company</div>
+          <div style="font-weight:700;">${me.company_name}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Contact</div>
+          <div style="font-weight:700;">${me.contact || '—'}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Status</div>
+          <span class="badge ${me.is_active ? 'badge-green' : 'badge-red'}">${me.is_active ? 'Active' : 'Suspended'}</span>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Member Since</div>
+          <div style="font-weight:700;">${new Date(me.createdAt).toLocaleDateString()}</div>
+        </div>
+      </div>
+    `;
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+window.saveProfile = async () => {
+  const err = document.getElementById('profile-err');
+  const ok  = document.getElementById('profile-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  try {
+    await api.updateMe({
+      name:  document.getElementById('profile-name').value.trim(),
+      phone: document.getElementById('profile-phone').value.trim(),
+    });
+    ok.textContent = 'Profile updated'; ok.style.display = 'block';
+    loadProfile();
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
+
+window.changePassword = async () => {
+  const err = document.getElementById('pw-err');
+  const ok  = document.getElementById('pw-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  const old_password = document.getElementById('pw-old').value;
+  const new_password = document.getElementById('pw-new').value;
+  const confirm      = document.getElementById('pw-confirm').value;
+  if (new_password !== confirm) { err.textContent = 'Passwords do not match'; err.style.display = 'block'; return; }
+  if (new_password.length < 6)  { err.textContent = 'Password must be at least 6 characters'; err.style.display = 'block'; return; }
+  try {
+    await api.updateMe({ old_password, new_password });
+    ok.textContent = 'Password changed successfully'; ok.style.display = 'block';
+    document.getElementById('pw-old').value = '';
+    document.getElementById('pw-new').value = '';
+    document.getElementById('pw-confirm').value = '';
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
 
 window.toggleMobileMore = () => {
   const m = document.getElementById('mobile-more-menu');

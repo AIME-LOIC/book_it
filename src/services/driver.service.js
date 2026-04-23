@@ -4,11 +4,21 @@ import crypto   from 'crypto';
 import Driver   from '../database/models/driver.js';
 import Bus      from '../database/models/bus.js';
 import Operator from '../database/models/operator.js';
+import { encryptPassword } from '../utils/crypto.utils.js';
 
 const driverIncludes = [
   { model: Operator, as: 'operator', attributes: ['id', 'company_name'] },
   { model: Bus,      as: 'bus',      attributes: ['id', 'plate_number', 'departure_time'] },
 ];
+
+export const getDriverMe = async (driver_id) => {
+  const driver = await Driver.findByPk(driver_id, {
+    attributes: ['id','name','email','phone','bus_id','is_active','must_update_profile','createdAt'],
+    include: driverIncludes,
+  });
+  if (!driver) throw new Error('Driver not found');
+  return driver;
+};
 
 export const createDriver = async (operator_id, { name, phone, bus_id }) => {
   if (await Driver.findOne({ where: { phone } })) throw new Error('Phone already in use');
@@ -27,7 +37,7 @@ export const createDriver = async (operator_id, { name, phone, bus_id }) => {
     name,
     phone,
     password_hash,
-    default_password: plainPassword,
+    default_password: encryptPassword(plainPassword),
     must_update_profile: true,
   });
 

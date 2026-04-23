@@ -1,5 +1,6 @@
 import bcrypt   from 'bcrypt';
 import Operator from '../database/models/operator.js';
+import { encryptPassword, decryptPassword } from '../utils/crypto.utils.js';
 
 export const createOperator = async ({ company_name, contact }) => {
   if (await Operator.findOne({ where: { company_name } })) {
@@ -8,7 +9,7 @@ export const createOperator = async ({ company_name, contact }) => {
   const initials      = company_name.split(' ').map(w => w[0].toUpperCase()).join('');
   const plainPassword = `${initials}@Bookit1`;
   const password_hash = await bcrypt.hash(plainPassword, 10);
-  const operator = await Operator.create({ company_name, contact, password_hash, default_password: plainPassword });
+  const operator = await Operator.create({ company_name, contact, password_hash, default_password: encryptPassword(plainPassword) });
 
   return {
     id:               operator.id,
