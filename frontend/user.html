@@ -1920,12 +1920,27 @@ else document.addEventListener('DOMContentLoaded', applyLang);
       document.getElementById('bottom-nav').style.display = '';
       init();
     });
-  } catch {
-    clearToken();
-    localStorage.removeItem('user');
-    hideAppLoader(() => {
-      document.getElementById('auth-screen').style.display = 'flex';
-    });
+  } catch(e) {
+    // only clear token on 401 (expired/invalid)
+    // network errors or server errors should NOT log the user out
+    if (e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token') || e.message.toLowerCase().includes('unauthorized'))) {
+      clearToken();
+      localStorage.removeItem('user');
+      hideAppLoader(() => { document.getElementById('auth-screen').style.display = 'flex'; });
+    } else {
+      // server error — still show dashboard with cached user data
+      const u = JSON.parse(localStorage.getItem('user') || 'null');
+      if (u?.name) {
+        document.getElementById('user-name').textContent = u.name;
+        document.getElementById('user-initial').textContent = u.name.charAt(0);
+      }
+      hideAppLoader(() => {
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        document.getElementById('bottom-nav').style.display = '';
+        init();
+      });
+    }
   }
 })();
 </script>
