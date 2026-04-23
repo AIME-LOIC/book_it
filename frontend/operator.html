@@ -312,7 +312,7 @@
   </div>
 </div>
 
-<div id="dashboard">
+<div id="dashboard" style="display:none;">
   <div class="topbar">
     <div style="display:flex; align-items:center; gap:10px;">
       <img src="./download.png" alt="BookIt" style="height:80px; width:auto; filter:brightness(0) invert(1);">
@@ -562,6 +562,16 @@
 <script>
 const { api, setToken, clearToken, getToken } = window.BookItApi;
 window.api = api;
+
+const parseJwt = (token) => {
+  try {
+    const part = token.split('.')[1];
+    if (!part) return null;
+    const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(b64));
+  } catch { return null; }
+};
+const tokenRole = () => parseJwt(getToken() || '')?.role || null;
 
 // ── TOAST ─────────────────────────────────────────────
 const toastContainer = document.createElement('div');
@@ -1068,6 +1078,12 @@ const hideOpLoader = (cb) => {
   }, 3500);
 };
 
+// If a token exists but it's for a different role (user/admin/driver), force login.
+if (getToken() && tokenRole() !== 'operator') {
+  clearToken();
+  localStorage.removeItem('operator');
+}
+
 if (getToken()) {
   api.getMyRoutes().then(() => {
     hideOpLoader(() => {
@@ -1076,11 +1092,17 @@ if (getToken()) {
       init();
     });
   }).catch((e) => {
-    const isAuthErr = e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token') || e.message.toLowerCase().includes('unauthorized'));
+    const msg = (e && e.message) ? String(e.message) : '';
+    const isAuthErr = msg.includes('401') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('access only') || msg.includes('403');
     if (isAuthErr) {
       clearToken();
       localStorage.removeItem('operator');
-      hideOpLoader(() => { document.getElementById('login-screen').style.display = 'flex'; });
+      hideOpLoader(() => {
+        const err = document.getElementById('login-err');
+        err.textContent = msg || 'Please login';
+        err.style.display = 'block';
+        document.getElementById('login-screen').style.display = 'flex';
+      });
     } else {
       // server error — show dashboard anyway
       hideOpLoader(() => {

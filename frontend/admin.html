@@ -353,6 +353,16 @@
 const { api, setToken, clearToken, getToken } = window.BookItApi;
 window.api = api;
 
+const parseJwt = (token) => {
+  try {
+    const part = token.split('.')[1];
+    if (!part) return null;
+    const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(b64));
+  } catch { return null; }
+};
+const tokenRole = () => parseJwt(getToken() || '')?.role || null;
+
 // ── CONFIRM POPUP ─────────────────────────────────────
 let _adConfirmResolve = null;
 const showConfirm = (title, msg) => {
@@ -565,19 +575,28 @@ const hideLoader = (cb) => {
 };
 
 if (getToken()) {
-  api.getLocations().then(() => {
+  // If token exists but isn't admin, force login
+  if (tokenRole() !== 'admin') {
+    clearToken();
+    hideLoader(() => {
+      document.getElementById('login-screen').style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),#0a0f1e),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),#0a0f1e);';
+    });
+  } else {
+    // validate admin token by calling an admin-only endpoint
+    api.getOperators().then(() => {
     hideLoader(() => {
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('dashboard').style.display    = 'block';
       init();
     });
-  }).catch((e) => {
+    }).catch((e) => {
     const isAuth = e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token'));
     if (isAuth) clearToken();
     hideLoader(() => {
       document.getElementById('login-screen').style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),#0a0f1e),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),#0a0f1e);';
     });
-  });
+    });
+  }
 } else {
   hideLoader(() => {
     document.getElementById('login-screen').style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),#0a0f1e),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),#0a0f1e);';

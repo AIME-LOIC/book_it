@@ -367,7 +367,7 @@
   </div>
 
   <!-- Dashboard Section -->
-  <div id="dashboard" class="hidden">
+  <div id="dashboard" style="display:none;">
     <!-- Sidebar -->
     <aside class="sidebar">
       <div style="margin-bottom:40px; padding:0 8px;">
@@ -526,6 +526,16 @@
   <script>
     const { api, setToken, clearToken, getToken } = window.BookItApi;
     window.api = api;
+
+    const parseJwt = (token) => {
+      try {
+        const part = token.split('.')[1];
+        if (!part) return null;
+        const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(atob(b64));
+      } catch { return null; }
+    };
+    const tokenRole = () => parseJwt(getToken() || '')?.role || null;
 
     const $ = (sel) => document.querySelector(sel);
     
@@ -822,6 +832,12 @@
       }, 3500);
     };
 
+    // If a token exists but it's for a different role (user/admin/operator), force login.
+    if (getToken() && tokenRole() !== 'driver') {
+      clearToken();
+      localStorage.removeItem('driver');
+    }
+
     // Auto-login if token exists
     if (getToken()) {
       api.getPassengers(new Date().toISOString().split('T')[0]).then(() => {
@@ -829,20 +845,26 @@
           const saved = JSON.parse(localStorage.getItem('driver') || 'null');
           if (saved?.name) { driverState.name = saved.name; driverState.bus = saved.bus; $('#driver-name').textContent = saved.name; }
         } catch {}
-        hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').classList.remove('hidden'); init(); });
+        hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').style.display = 'block'; init(); });
       }).catch((e) => {
-        const isAuthErr = e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token') || e.message.toLowerCase().includes('unauthorized'));
+        const msg = (e && e.message) ? String(e.message) : '';
+        const isAuthErr = msg.includes('401') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('access only') || msg.toLowerCase().includes('suspended') || msg.includes('403');
         if (isAuthErr) {
           clearToken();
           localStorage.removeItem('driver');
-          hideDrLoader(() => { $('#login-screen').style.display = 'flex'; });
+          hideDrLoader(() => {
+            const err = document.getElementById('login-err');
+            err.textContent = msg || 'Please login';
+            err.classList.remove('hidden');
+            $('#login-screen').style.display = 'flex';
+          });
         } else {
           // server error — show dashboard anyway
           try {
             const saved = JSON.parse(localStorage.getItem('driver') || 'null');
             if (saved?.name) { driverState.name = saved.name; driverState.bus = saved.bus; $('#driver-name').textContent = saved.name; }
           } catch {}
-          hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').classList.remove('hidden'); init(); });
+          hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').style.display = 'block'; init(); });
         }
       });
     } else {
