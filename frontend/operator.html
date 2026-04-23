@@ -917,7 +917,11 @@ window.toggleDrv = async (id) => {
 window.deleteDrv = async (id) => {
   const ok = await showConfirm('Delete Driver', 'This driver will be permanently removed.');
   if (!ok) return;
-  showToast('Delete driver not yet supported', 'warning');
+  try {
+    await api.deleteDriver(id);
+    showToast('Driver deleted', 'success');
+    loadDrivers();
+  } catch(e) { showToast(e.message, 'error'); }
 };
 
 // ── TICKETS ───────────────────────────────────────────

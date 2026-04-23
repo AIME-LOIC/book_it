@@ -21,8 +21,11 @@ import { checkDepartedBuses, checkMidnightReactivation } from './services/schedu
 dotenv.config();
 
 // Fail fast if critical env vars are missing
-const required = ['JWT_SECRET', 'QR_SECRET', 'DB_HOST', 'DB_USER', 'DB_NAME'];
-for (const key of required) {
+const required = ['JWT_SECRET', 'QR_SECRET'];
+const dbVars   = process.env.DATABASE_URL
+  ? ['DATABASE_URL']
+  : ['DB_HOST', 'DB_USER', 'DB_NAME'];
+for (const key of [...required, ...dbVars]) {
   if (!process.env[key]) { console.error(`Missing required env var: ${key}`); process.exit(1); }
 }
 
@@ -98,6 +101,27 @@ app.use('/api/buses',         busRoutes);
 app.use('/api/drivers',       driverRoutes);
 app.use('/api/tickets',       ticketRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+// ── GLOBAL ERROR MIDDLEWARE ─────────────────────────────────────────────
+// 404 for unknown API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ message: 'API endpoint not found' });
+});
+
+// Global error handler — catches any error thrown in routes
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error('[ERROR]', err.message);
+  if (process.env.NODE_ENV !== 'production') console.error(err.stack);
+  if (err.message === 'CORS: origin not allowed') {
+    return res.status(403).json({ message: 'CORS: origin not allowed' });
+  }
+  res.status(err.status || 500).json({
+    message: process.env.NODE_ENV === 'production'
+      ? 'Something went wrong. Please try again.'
+      : err.message,
+  });
+});
 
 const PORT = process.env.PORT || 2000;
 const HOST = '0.0.0.0';

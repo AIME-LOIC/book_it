@@ -11,7 +11,8 @@ const Notification = sequelize.define('Notification', {
       'ticket_paid',
       'ticket_cancelled',
       'bus_arrived',
-      'new_booking'       // operator gets this when user books on their bus
+      'bus_departed',
+      'new_booking'
     ),
     allowNull: false,
   },

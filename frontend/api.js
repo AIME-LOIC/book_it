@@ -1,4 +1,4 @@
-const BASE = `http://${window.location.hostname}:2000/api`;
+const BASE = `${window.location.protocol}//${window.location.host}/api`;
 
 const getToken = () => localStorage.getItem('token');
 const setToken = (t) => localStorage.setItem('token', t);
@@ -61,6 +61,7 @@ const api = {
   createDriver:    (b)      => req('POST',   '/drivers', b),
   assignBus:       (id, b)  => req('PATCH',  `/drivers/${id}/assign-bus`, b),
   toggleDriver:    (id)     => req('PATCH',  `/drivers/${id}/toggle`),
+  deleteDriver:    (id)     => req('DELETE', `/drivers/${id}`),
   updateProfile:   (b)      => req('PATCH',  '/drivers/profile', b),
   getPassengers:   (date)   => req('GET',    `/drivers/passengers?date=${date}`),
   notifyExit:      (tid)    => req('POST',   `/drivers/notify/${tid}`),
