@@ -27,6 +27,7 @@ export const createDriver = async (operator_id, { name, phone, bus_id }) => {
     name,
     phone,
     password_hash,
+    default_password: plainPassword,
     must_update_profile: true,
   });
 
@@ -81,6 +82,7 @@ export const updateProfile = async (driver_id, { name, email, phone, old_passwor
     if (!old_password) throw new Error('Old password required');
     if (!await bcrypt.compare(old_password, driver.password_hash)) throw new Error('Old password incorrect');
     driver.password_hash = await bcrypt.hash(new_password, 10);
+    driver.default_password = null;
   }
 
   if (email && email !== driver.email) {

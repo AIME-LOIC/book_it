@@ -23,3 +23,9 @@ export const verifyPassword = async (req, res) => {
     res.status(200).json(await authService.verifyPassword(req.user, req.body.password));
   } catch (err) { res.status(401).json({ message: err.message }); }
 };
+
+export const getLocker = async (req, res) => {
+  try {
+    res.status(200).json(await authService.getLocker(req.user, req.body.password));
+  } catch (err) { res.status(401).json({ message: err.message }); }
+};

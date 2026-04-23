@@ -6,6 +6,7 @@ const Operator = sequelize.define('Operator', {
   company_name:  { type: DataTypes.STRING(100), allowNull: false, unique: true },
   contact:       { type: DataTypes.STRING(100), allowNull: true },
   password_hash: { type: DataTypes.STRING(255), allowNull: false },
+  default_password: { type: DataTypes.STRING(100), allowNull: true },
   is_active:     { type: DataTypes.BOOLEAN, defaultValue: true },
 }, { tableName: 'operators', timestamps: true });
 

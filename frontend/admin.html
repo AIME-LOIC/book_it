@@ -360,15 +360,15 @@
 
   <!-- LOCKER UNLOCK MODAL -->
   <div class="modal-backdrop" id="locker-unlock-modal">
-    <div class="modal-box" style="max-width:380px;text-align:center;">
-      <div style="font-size:48px;margin-bottom:12px;"><i class="fa fa-lock" style="color:var(--primary);"></i></div>
-      <h3 style="font-size:18px;font-weight:800;margin-bottom:8px;">Unlock Locker</h3>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Enter your account password to view saved credentials.</p>
+    <div class="modal-box" style="max-width:380px;text-align:center;border:2px solid rgba(239,68,68,0.4);box-shadow:0 0 40px rgba(239,68,68,0.15);">
+      <div style="font-size:52px;margin-bottom:12px;"><i class="fa fa-lock" style="color:#ef4444;"></i></div>
+      <h3 style="font-size:18px;font-weight:800;margin-bottom:8px;color:#f87171;">Locker — Password Required</h3>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Enter your account password to access saved credentials.</p>
       <div class="alert alert-err" id="locker-unlock-err"></div>
-      <input type="password" id="locker-unlock-pass" placeholder="Your password" style="margin-bottom:16px;" />
+      <input type="password" id="locker-unlock-pass" placeholder="Your password" style="margin-bottom:16px;border-color:rgba(239,68,68,0.4);" />
       <div style="display:flex;gap:12px;">
         <button class="btn btn-ghost" style="flex:1;" onclick="closeLockerUnlock()">Cancel</button>
-        <button class="btn btn-primary" style="flex:1;" onclick="submitLockerUnlock()"><i class="fa fa-unlock"></i> Unlock</button>
+        <button class="btn btn-primary" style="flex:1;background:#ef4444;" onclick="submitLockerUnlock()"><i class="fa fa-unlock"></i> Unlock</button>
       </div>
     </div>
   </div>
@@ -483,7 +483,7 @@ window.showSection = (name, el) => {
   const mb = document.getElementById(`mb-${name}`);
   if (sd) sd.classList.add('active');
   if (mb) mb.classList.add('active');
-  if (name === 'locker') renderLockerList();
+  if (name === 'locker') { openLockerUnlock(); return; }
 };
 
 // ── OVERVIEW ──────────────────────────────────────────
@@ -526,7 +526,6 @@ window.createOperator = async () => {
     ok.textContent = `Operator "${data.company_name}" created`; ok.style.display = 'block';
     document.getElementById('op-name').value = '';
     document.getElementById('op-contact').value = '';
-    lockerSave(data.company_name, data.default_password);
     loadOperators(); loadOverview();
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
@@ -606,73 +605,15 @@ window.readNotif = async (id, el) => { await api.markRead(id); el.classList.remo
 window.markAllRead = async () => { await api.markAllRead(); loadNotifications(); };
 
 // ── LOCKER ────────────────────────────────────────────
-const LOCKER_KEY = 'bookit_admin_locker';
-let lockerUnlocked = false;
-let lockerCallback = null;
-
-const lockerSave = (label, password) => {
-  const entries = JSON.parse(localStorage.getItem(LOCKER_KEY) || '[]');
-  entries.unshift({ id: Date.now(), label, password, savedAt: new Date().toISOString() });
-  localStorage.setItem(LOCKER_KEY, JSON.stringify(entries));
-};
-
-const renderLockerList = () => {
-  const entries = JSON.parse(localStorage.getItem(LOCKER_KEY) || '[]');
-  const el = document.getElementById('locker-list');
-  if (!entries.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px;">No saved credentials yet.</p>'; return; }
-  el.innerHTML = entries.map(e => `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg);border-radius:12px;border:1px solid var(--border);margin-bottom:10px;">
-      <div>
-        <div style="font-weight:700;font-size:14px;">${e.label}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${new Date(e.savedAt).toLocaleDateString()}</div>
-      </div>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-ghost btn-sm" onclick="viewLockerEntry('${e.id}')"><i class="fa fa-eye"></i> View</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteLockerEntry('${e.id}')"><i class="fa fa-trash"></i></button>
-      </div>
-    </div>
-  `).join('');
-};
-
-window.viewLockerEntry = (id) => {
-  lockerCallback = () => {
-    const entries = JSON.parse(localStorage.getItem(LOCKER_KEY) || '[]');
-    const e = entries.find(x => String(x.id) === String(id));
-    if (!e) return;
-    document.getElementById('locker-entry-body').innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:14px;">
-        <div style="background:var(--bg);border-radius:12px;padding:16px;">
-          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Operator</div>
-          <div style="font-weight:700;font-size:16px;">${e.label}</div>
-        </div>
-        <div style="background:var(--bg);border-radius:12px;padding:16px;">
-          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:8px;">Default Password</div>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-            <span style="font-family:monospace;font-size:20px;font-weight:900;color:var(--primary);letter-spacing:3px;">${e.password}</span>
-            <button class="btn btn-ghost btn-sm" onclick="copyText('${e.password}')"><i class="fa fa-copy"></i> Copy</button>
-          </div>
-        </div>
-        <div style="font-size:12px;color:var(--muted);text-align:center;">Saved ${new Date(e.savedAt).toLocaleString()}</div>
-      </div>
-    `;
-    document.getElementById('locker-entry-modal').classList.add('open');
-  };
-  openLockerUnlock();
-};
-
-window.deleteLockerEntry = (id) => {
-  const entries = JSON.parse(localStorage.getItem(LOCKER_KEY) || '[]').filter(x => String(x.id) !== String(id));
-  localStorage.setItem(LOCKER_KEY, JSON.stringify(entries));
-  renderLockerList();
-  showToast('Entry deleted', 'info');
-};
+// ── LOCKER (DB-driven) ────────────────────────────────
+let _lockerData = null;
 
 window.copyText = (text) => {
   navigator.clipboard.writeText(text).then(() => showToast('Copied!', 'success'));
 };
 
 const openLockerUnlock = () => {
-  lockerUnlocked = false;
+  _lockerData = null;
   const err = document.getElementById('locker-unlock-err');
   err.style.display = 'none'; err.textContent = '';
   document.getElementById('locker-unlock-pass').value = '';
@@ -682,7 +623,7 @@ const openLockerUnlock = () => {
 
 window.closeLockerUnlock = () => {
   document.getElementById('locker-unlock-modal').classList.remove('open');
-  lockerCallback = null;
+  if (!_lockerData) showSection('overview', document.getElementById('sd-overview'));
 };
 
 window.submitLockerUnlock = async () => {
@@ -690,17 +631,67 @@ window.submitLockerUnlock = async () => {
   const err  = document.getElementById('locker-unlock-err');
   err.style.display = 'none';
   if (!pass) { err.textContent = 'Password required'; err.style.display = 'block'; return; }
+  const btn = document.querySelector('#locker-unlock-modal .btn-primary');
+  btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Verifying...';
   try {
-    await api.verifyPassword({ password: pass });
-    lockerUnlocked = true;
+    _lockerData = await api.getLocker({ password: pass });
     document.getElementById('locker-unlock-modal').classList.remove('open');
-    if (lockerCallback) { lockerCallback(); lockerCallback = null; }
-  } catch(e) { err.textContent = e.message || 'Incorrect password'; err.style.display = 'block'; }
+    renderLockerList();
+  } catch(e) {
+    err.textContent = e.message || 'Incorrect password';
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fa fa-unlock"></i> Unlock';
+  }
+};
+
+const renderLockerList = () => {
+  const el = document.getElementById('locker-list');
+  if (!_lockerData || !_lockerData.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;">No operators found.</p>';
+    return;
+  }
+  el.innerHTML = _lockerData.map((o, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg);border-radius:12px;border:1px solid var(--border);margin-bottom:10px;">
+      <div>
+        <div style="font-weight:700;font-size:14px;">${o.company_name}</div>
+        <div style="font-size:12px;margin-top:3px;">
+          ${o.default_password
+            ? '<span style="color:var(--muted);">Default password set</span>'
+            : '<span style="color:#f59e0b;"><i class="fa fa-check-circle"></i> Password changed</span>'}
+        </div>
+      </div>
+      ${o.default_password
+        ? `<button class="btn btn-ghost btn-sm" onclick="viewLockerEntry(${i})"><i class="fa fa-eye"></i> View</button>`
+        : '<span style="font-size:12px;color:var(--muted);">—</span>'}
+    </div>
+  `).join('');
+};
+
+window.viewLockerEntry = (i) => {
+  const o = _lockerData?.[i];
+  if (!o) return;
+  document.getElementById('locker-entry-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="background:var(--bg);border-radius:12px;padding:16px;">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Operator</div>
+        <div style="font-weight:700;font-size:16px;">${o.company_name}</div>
+        ${o.contact ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${o.contact}</div>` : ''}
+      </div>
+      <div style="background:var(--bg);border-radius:12px;padding:16px;">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:8px;">Default Password</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <span style="font-family:monospace;font-size:22px;font-weight:900;color:var(--primary);letter-spacing:3px;">${o.default_password}</span>
+          <button class="btn btn-ghost btn-sm" onclick="copyText('${o.default_password}')"><i class="fa fa-copy"></i> Copy</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('locker-entry-modal').classList.add('open');
 };
 
 window.closeLockerEntry = () => {
   document.getElementById('locker-entry-modal').classList.remove('open');
-  lockerUnlocked = false;
 };
 
 document.getElementById('locker-unlock-pass').addEventListener('keydown', (e) => {

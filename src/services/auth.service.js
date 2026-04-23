@@ -93,3 +93,43 @@ export const verifyPassword = async (user, password) => {
   }
   return { verified: true };
 };
+
+export const getLocker = async (user, password) => {
+  // verify password first
+  await verifyPassword(user, password);
+
+  if (user.role === 'operator') {
+    const drivers = await (await import('../database/models/driver.js')).default.findAll({
+      where: { operator_id: user.id },
+      attributes: ['id', 'name', 'phone', 'bus_id', 'default_password', 'must_update_profile'],
+      include: [{
+        model: (await import('../database/models/bus.js')).default,
+        as: 'bus',
+        attributes: ['plate_number'],
+      }],
+    });
+    return drivers.map(d => ({
+      id:               d.id,
+      name:             d.name,
+      phone:            d.phone,
+      plate:            d.bus?.plate_number || null,
+      default_password: d.default_password,
+      changed_password: !d.must_update_profile,
+    }));
+  }
+
+  if (user.role === 'admin') {
+    const operators = await Operator.findAll({
+      attributes: ['id', 'company_name', 'contact', 'default_password', 'is_active'],
+    });
+    return operators.map(o => ({
+      id:               o.id,
+      company_name:     o.company_name,
+      contact:          o.contact,
+      default_password: o.default_password,
+      changed_password: !o.default_password,
+    }));
+  }
+
+  throw new Error('Not authorized');
+};

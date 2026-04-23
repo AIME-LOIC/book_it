@@ -34,6 +34,7 @@ const api = {
   loginDriver:   (b) => req('POST', '/drivers/login', b, false),
   register:      (b) => req('POST', '/auth/register', b, false),
   verifyPassword:(b) => req('POST', '/auth/verify-password', b),
+  getLocker:     (b) => req('POST', '/auth/locker', b),
 
   // locations
   getLocations:    ()  => req('GET',    '/locations'),
