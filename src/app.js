@@ -44,12 +44,15 @@ app.use(cors({
   origin: (origin, callback) => {
     // allow requests with no origin (mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
-    // production: check against ALLOWED_ORIGINS env var
+    // production: check against ALLOWED_ORIGINS env var (strip trailing slashes)
     const envOrigins = (process.env.ALLOWED_ORIGINS || '')
       .split(',')
-      .map(o => o.trim())
+      .map(o => o.trim().replace(/\/+$/, ''))
       .filter(Boolean);
-    if (envOrigins.includes(origin)) return callback(null, true);
+    const cleanOrigin = origin.replace(/\/+$/, '');
+    if (envOrigins.includes(cleanOrigin)) return callback(null, true);
+    // allow same render.com domain
+    if (origin.endsWith('.onrender.com')) return callback(null, true);
     // development: allow localhost and LAN
     const isLAN = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$/.test(origin);
     if (isLAN) return callback(null, true);
