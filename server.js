@@ -1,5 +1,6 @@
 import sequelize from './src/config/db.js';
 import './src/app.js';
+import { seedDatabase } from './src/database/seed.js';
 
 // ── GLOBAL ERROR HANDLERS ─────────────────────────────────────
 process.on('uncaughtException', (err) => {
@@ -32,6 +33,10 @@ process.on('SIGINT', () => {
 
 sequelize.authenticate()
 .then(()=> sequelize.sync())
+.then(async () => {
+  if (process.env.SEED_ON_START === 'false') return;
+  await seedDatabase();
+})
 .then(()=>{
     // The app is started in src/app.js
     console.log('database connected');

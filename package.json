@@ -8,7 +8,7 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "node src/database/seed.js && node server.js",
+    "start": "node server.js",
     "dev": "nodemon server.js",
     "dev:local": "DOTENV_CONFIG_PATH=.env.local nodemon server.js",
     "start:local": "DOTENV_CONFIG_PATH=.env.local node server.js",

@@ -39,6 +39,9 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
+// Lightweight health check for deployments (Render, etc.)
+app.get('/healthz', (req, res) => res.status(200).send('ok'));
+
 app.use(express.json());
 app.use(cors({
   origin: (origin, callback) => {
@@ -50,6 +53,8 @@ app.use(cors({
       .map(o => o.trim().replace(/\/+$/, ''))
       .filter(Boolean);
     const cleanOrigin = origin.replace(/\/+$/, '');
+    // if ALLOWED_ORIGINS isn't set, don't block browser clients (common deployment pitfall)
+    if (envOrigins.length === 0) return callback(null, true);
     if (envOrigins.includes(cleanOrigin)) return callback(null, true);
     // allow same render.com domain
     if (origin.endsWith('.onrender.com')) return callback(null, true);
