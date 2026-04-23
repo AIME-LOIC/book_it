@@ -130,322 +130,220 @@
   body.light .notif-panel { background:#ffffff; border-color:#e2e8f0; }
   body.light .notif-item { background:#f8fafc; }
   body.light .modal-box { background:#ffffff; border-color:#e2e8f0; }
-</style>
 </head>
-<style>
-  :root {
-    --primary: #059669;
-    --primary-hover: #047857;
-    --bg-main: #0a0f1e;
-    --bg-card: #111827;
-    --text-main: #f9fafb;
-    --text-muted: #9ca3af;
-    --border: #1f2937;
-    --glass: rgba(17, 24, 39, 0.85);
-  }
-  body.light {
-    --bg-main: #f8fafc;
-    --bg-card: #ffffff;
-    --text-main: #0f172a;
-    --text-muted: #64748b;
-    --border: #e2e8f0;
-    --glass: rgba(255,255,255,0.95);
-  }
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body { 
-    font-family: 'Plus Jakarta Sans', sans-serif; 
-    background: var(--bg-main); 
-    color: var(--text-main); 
-    line-height: 1.5;
-    overflow-x: hidden;
-  }
-  body.light { background: var(--bg-main); }
+<body>
+<script>if(localStorage.getItem('admin-theme')==='light')document.body.classList.add('light');</script>
 
-  /* LAYOUT */
-  .layout { display: flex; min-height: 100vh; }
-  .sidebar {
-    width: 280px; background: var(--bg-card); border-right: 1px solid var(--border);
-    padding: 32px 20px; position: fixed; height: 100vh; z-index: 50;
-  }
-  .main-content { flex: 1; margin-left: 280px; padding-bottom: 100px; }
-  .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--glass); backdrop-filter: blur(12px); border-top: 1px solid var(--border); padding: 12px 24px; z-index: 100; justify-content: space-around; }
-  @media (max-width: 768px) { .sidebar { display: none; } .bottom-nav { display: flex; } .main-content { margin-left: 0; } }
-
-  /* NAV */
-  .nav-item { display:flex; align-items:center; gap:12px; padding:16px 18px; border-radius:12px; color:var(--text-muted); cursor:pointer; font-weight:600; font-size:16px; transition:0.2s; margin-bottom:8px; min-height:52px; }
-  .nav-item:hover, .nav-item.active { background: rgba(5,150,105,0.12); color: var(--primary); }
-
-  /* GLASS CARDS */
-  .glass-card { background: var(--bg-card); border-radius: 24px; padding: 32px; border: 1px solid var(--border); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); margin-bottom: 24px; }
-  .glass-card:hover { border-color: var(--primary); }
-
-  /* HERO TITLES */
-  .hero-title { font-size: 36px; font-weight: 800; margin-bottom: 8px; }
-  .hero-subtitle { color: var(--text-muted); font-size: 16px; }
-
-  /* STATS */
-  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
-  .stat-card { background: var(--glass); border-radius: 20px; padding: 24px; border: 1px solid var(--border); transition: 0.2s; cursor: pointer; }
-  .stat-card:hover { transform: translateY(-4px); border-color: var(--primary); box-shadow: 0 20px 40px rgba(5,150,105,0.15); }
-  .stat-number { font-size: 48px; font-weight: 900; color: var(--primary); letter-spacing: -2px; }
-  .stat-label { font-size: 14px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
-
-  /* TABLES */
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  th { text-align: left; padding: 16px; color: var(--text-muted); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; border-bottom: 1px solid var(--border); }
-  td { padding: 16px; border-bottom: 1px solid var(--border); }
-  tr:hover td { background: rgba(5,150,105,0.05); }
-  /* MOBILE TABLES → CARDS */
-  @media (max-width: 768px) {
-    table thead { display: none; }
-    table, tbody, tr, td { display: block; }
-    tr { background: var(--bg-card); border-radius: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
-    td { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border: none; border-bottom: 1px solid var(--border); }
-    td:last-child { border-bottom: none; padding-bottom: 16px; }
-    td::before { content: attr(data-label); font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; flex-shrink: 0; margin-right: 16px; }
-  }
-
-  /* BUTTONS */
-  .btn { padding: 12px 24px; border-radius: 12px; border: none; font-weight: 700; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
-  .btn-primary { background: var(--primary); color: white; }
-  .btn-primary:hover { background: var(--primary-hover); }
-  .btn-ghost { background: var(--border); color: white; }
-  .btn-ghost:hover { background: rgba(5,150,105,0.2); }
-  .btn-danger { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
-  .btn-danger:hover { background: #ef4444; color: white; }
-  .btn-sm { padding: 8px 16px; font-size: 13px; }
-
-  /* BADGES */
-  .badge { padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
-  .badge-green { background: rgba(16,185,129,0.2); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
-  .badge-red { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
-
-  /* ALERTS */
-  .alert { padding: 16px 20px; border-radius: 16px; margin-bottom: 20px; font-weight: 600; display: none; border-left: 4px solid; }
-  .alert-err { background: rgba(239,68,68,0.15); color: #f87171; border-color: #ef4444; }
-  .alert-ok { background: rgba(16,185,129,0.15); color: #34d399; border-color: #10b981; }
-
-  /* NOTIF DROPDOWN */
-  .notif-dropdown { position: absolute; right: 0; top: 100%; width: 380px; max-height: 400px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; overflow: hidden; z-index: 100; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); display: none; }
-  .notif-dropdown.open { display: block; }
-  .notif-item { padding: 16px; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; }
-  .notif-item:hover, .notif-item.unread { background: rgba(5,150,105,0.1); }
-  .notif-item:last-child { border-bottom: none; }
-
-  /* MODALS */
-  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 500; display: none; align-items: center; justify-content: center; backdrop-filter: blur(12px); }
-  .modal-backdrop.open { display: flex; }
-  .modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: 24px; padding: 32px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
-
-  /* SHIMMERS */
-  .skeleton { background: linear-gradient(90deg, var(--bg-card) 0%, #374151 50%, var(--bg-card) 100%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 12px; }
-  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-
-  /* FORMS */
-  input, select { background: var(--bg-main); border: 1px solid var(--border); color: var(--text-main); padding: 14px 16px; border-radius: 12px; font-size: 14px; width: 100%; transition: 0.2s; }
-  input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
-
-  /* SECTIONS */
-  .section { display: none; }
-  .section.active { display: block; }
-
-  /* LIGHT THEME */
-  body.light .glass-card, body.light .stat-card { background: white; border-color: #e5e7eb; }
-  body.light input, body.light select { background: #f9fafb; color: #111827; border-color: #d1d5db; }
-  body.light .nav-item { color: #6b7280; }
-  body.light .nav-item:hover, body.light .nav-item.active { background: rgba(5,150,105,0.08); color: var(--primary); }
-</style>
-</head>
-<body class="min-h-screen bg-slate-950 text-slate-100 selection:bg-brandOrange-500/30 selection:text-slate-100">
-
-<style>
-  @keyframes opulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
-  @keyframes obar { 0%{transform:translateX(-100%)} 100%{transform:translateX(400%)} }
-</style>
-<div id="admin-loader" style="position:fixed;inset:0;z-index:9999;background:#0a0f1e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.5s ease;">
-  <img src="./download.png" alt="BookIt" style="width:140px;height:auto;filter:brightness(0) invert(1);animation:opulse 1.4s ease-in-out infinite;">
-  <div style="width:160px;height:4px;background:#1f2937;border-radius:99px;overflow:hidden;">
-    <div style="height:100%;width:40%;background:#059669;border-radius:99px;animation:obar 3.5s ease-in-out infinite;"></div>
+<!-- LOADER -->
+<div id="admin-loader" style="position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.5s ease;">
+  <img src="./download.png" alt="BookIt" style="width:140px;height:auto;filter:brightness(0) invert(1);animation:adpulse 1.4s ease-in-out infinite;">
+  <div style="width:160px;height:4px;background:var(--border);border-radius:99px;overflow:hidden;">
+    <div style="height:100%;width:40%;background:var(--primary);border-radius:99px;animation:adbar 3.5s ease-in-out infinite;"></div>
   </div>
-  <div style="font-size:13px;color:#9ca3af;font-weight:600;">Loading Admin Dashboard...</div>
+  <div style="font-size:13px;color:var(--muted);font-weight:600;">Loading Admin Dashboard...</div>
 </div>
 
 <!-- LOGIN -->
-<div id="login-screen" style="display:none;">
-  <div class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/70 backdrop-blur p-8 shadow-2xl">
-    <div class="flex items-center gap-3 mb-6">
-      <div class="h-12 w-12 rounded-xl border border-slate-800 bg-slate-950/60 grid place-items-center overflow-hidden">
-        <img src="./logo.png" alt="BookIt" class="h-10 w-10 object-contain" onerror="this.style.display='none'">
-        <span class="text-2xl font-black text-brandOrange-400" aria-hidden="true">B</span>
-      </div>
-      <div>
-        <div class="text-xl font-extrabold tracking-tight">BookIt</div>
-        <div class="text-sm text-slate-400">Admin Dashboard</div>
-      </div>
+<div id="login-screen" style="display:none; min-height:100vh; background:radial-gradient(circle at top right,rgba(5,150,105,0.18),var(--bg)),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),var(--bg)); display:none; align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:24px;padding:40px;width:100%;max-width:420px;box-shadow:0 25px 50px rgba(0,0,0,0.5);">
+    <div style="text-align:center;margin-bottom:28px;">
+      <img src="./download.png" alt="BookIt" style="height:72px;width:auto;filter:brightness(0) invert(1);">
+      <p style="color:var(--muted);font-size:13px;margin-top:8px;">Admin Dashboard</p>
     </div>
-
     <div class="alert alert-err" id="login-err"></div>
-
-    <div class="flex flex-col gap-3">
-      <input type="email" id="email" placeholder="Email" class="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
-      <input type="password" id="password" placeholder="Password" class="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
-      <button class="w-full rounded-xl bg-brandOrange-500 px-4 py-3 text-sm font-extrabold text-slate-950 shadow-lg shadow-brandOrange-500/10 hover:bg-brandOrange-400 active:bg-brandOrange-600 transition" onclick="doLogin()">
-        Sign In
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <input type="email" id="email" placeholder="Email address" />
+      <input type="password" id="password" placeholder="Password" />
+      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;" onclick="doLogin()">
+        <i class="fa fa-sign-in-alt"></i> Sign In
       </button>
-      <div class="text-xs text-slate-500">
-        Tip: use an <span class="text-slate-300 font-semibold">admin</span> account.
-      </div>
     </div>
   </div>
 </div>
 
 <!-- DASHBOARD -->
 <div id="dashboard" style="display:none;">
-  <div class="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/70 backdrop-blur">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="h-9 w-9 rounded-lg border border-slate-800 bg-slate-900 grid place-items-center overflow-hidden">
-          <img src="./logo.png" alt="BookIt" class="h-7 w-7 object-contain" onerror="this.style.display='none'">
-          <span class="text-sm font-black text-brandOrange-400" aria-hidden="true">B</span>
-        </div>
-        <div class="font-extrabold tracking-tight">BookIt <span class="text-brandOrange-400">Admin</span></div>
-      </div>
 
-      <div class="flex items-center gap-3 relative">
-        <button class="relative h-10 w-10 rounded-full border border-slate-800 bg-slate-900/60 text-slate-200 hover:bg-slate-900 transition" onclick="toggleNotifs()" id="bell-btn" aria-label="Notifications">
-          <span aria-hidden="true">🔔</span>
-          <span class="absolute -top-1 -right-1 hidden h-5 min-w-5 px-1 rounded-full bg-brandOrange-500 text-[11px] font-extrabold text-slate-950 grid place-items-center border-2 border-slate-950" id="bell-count">0</span>
-        </button>
-        <div class="notif-dropdown absolute right-0 top-12 w-[22rem] overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/90 backdrop-blur shadow-2xl" id="notif-dropdown">
-          <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-800">
-            <span class="font-bold">Notifications</span>
-            <button class="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-900 transition" onclick="markAllRead()">Mark all read</button>
-          </div>
-          <div id="notif-list" class="max-h-[24rem] overflow-auto"></div>
-        </div>
-        <button class="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-2 text-sm font-bold text-slate-200 hover:bg-slate-900 transition" onclick="logout()">Logout</button>
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <img src="./download.png" alt="BookIt" style="height:48px;width:auto;filter:brightness(0) invert(1);">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <button id="ad-theme-btn" onclick="toggleAdTheme()" style="background:var(--border);border:none;color:var(--muted);padding:8px 12px;border-radius:10px;cursor:pointer;font-size:16px;"><i class="fa fa-moon"></i></button>
+      <div class="bell-wrap" onclick="toggleNotifs()">
+        <i class="fa fa-bell" style="font-size:20px;color:var(--muted);"></i>
+        <span class="bell-count" id="bell-count" style="display:none;">0</span>
       </div>
+      <button class="btn btn-ghost btn-sm" onclick="logout()"><i class="fa fa-sign-out-alt"></i> Logout</button>
     </div>
   </div>
 
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6">
-    <aside class="rounded-2xl border border-slate-800 bg-slate-900/40 p-3 h-fit lg:sticky lg:top-24">
-      <div class="px-3 py-3">
-        <div class="text-xs font-black tracking-widest text-slate-500">NAVIGATION</div>
+  <!-- LAYOUT -->
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div style="margin-bottom:32px;padding:0 8px;">
+        <img src="./download.png" alt="BookIt" style="width:100%;max-height:72px;object-fit:contain;filter:brightness(0) invert(1);">
       </div>
-      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition active bg-slate-900/70 text-brandOrange-300" onclick="showSection('overview', this)">📊 Overview</button>
-      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition" onclick="showSection('operators', this)">🏢 Operators</button>
-      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition" onclick="showSection('locations', this)">📍 Locations</button>
+      <div class="nav-item active" id="sd-overview" onclick="showSection('overview',this)"><i class="fa fa-chart-pie"></i> Overview</div>
+      <div class="nav-item" id="sd-operators" onclick="showSection('operators',this)"><i class="fa fa-building"></i> Operators</div>
+      <div class="nav-item" id="sd-locations" onclick="showSection('locations',this)"><i class="fa fa-map-marker-alt"></i> Locations</div>
+      <div style="margin-top:auto;padding-top:20px;border-top:1px solid var(--border);">
+        <div class="nav-item" onclick="logout()" style="color:var(--danger);"><i class="fa fa-sign-out-alt"></i> Logout</div>
+      </div>
     </aside>
 
-    <main class="min-w-0">
+    <!-- MAIN -->
+    <main class="main-content">
 
       <!-- OVERVIEW -->
       <div class="section active" id="sec-overview">
-        <div class="flex items-end justify-between gap-4 mb-6">
-          <div>
-            <div class="text-2xl font-extrabold tracking-tight">Overview</div>
-            <div class="text-sm text-slate-400">Quick snapshot of the platform.</div>
+        <div class="section-title">Overview</div>
+        <div class="section-sub">Platform snapshot</div>
+        <div class="stats-grid">
+          <div class="stat-card" onclick="showSection('operators',document.getElementById('sd-operators'))">
+            <div class="num" id="stat-ops">—</div><div class="lbl">Operators</div>
           </div>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
-            <div class="text-sm text-slate-400 font-bold">Operators</div>
-            <div class="mt-2 text-4xl font-black tracking-tight" style="color:#059669;" id="stat-ops">—</div>
-          </div>
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
-            <div class="text-sm text-slate-400 font-bold">Locations</div>
-            <div class="mt-2 text-4xl font-black tracking-tight" style="color:#059669;" id="stat-locs">—</div>
+          <div class="stat-card" onclick="showSection('locations',document.getElementById('sd-locations'))">
+            <div class="num" id="stat-locs">—</div><div class="lbl">Locations</div>
           </div>
         </div>
       </div>
 
       <!-- OPERATORS -->
       <div class="section" id="sec-operators">
-        <div class="flex items-end justify-between gap-4 mb-6">
-          <div>
-            <div class="text-2xl font-extrabold tracking-tight">Operators</div>
-            <div class="text-sm text-slate-400">Create and manage bus operators.</div>
-          </div>
-        </div>
-
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 mb-6">
-          <div class="text-sm font-extrabold text-slate-200 mb-4">Add Operator</div>
+        <div class="section-title">Operators</div>
+        <div class="section-sub">Create and manage bus operators</div>
+        <div class="card">
+          <h3>Add Operator</h3>
           <div class="alert alert-err" id="op-err"></div>
-          <div class="alert alert-ok" id="op-ok"></div>
-          <div class="flex flex-col lg:flex-row gap-3">
-            <input id="op-name" placeholder="Company name" class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
-            <input id="op-contact" placeholder="Contact" class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
-            <button class="rounded-xl bg-brandOrange-500 px-5 py-3 text-sm font-extrabold text-slate-950 hover:bg-brandOrange-400 active:bg-brandOrange-600 transition" onclick="createOperator()">Add</button>
+          <div class="alert alert-ok"  id="op-ok"></div>
+          <div class="form-row">
+            <input id="op-name" placeholder="Company name" />
+            <input id="op-contact" placeholder="Contact / Phone" />
+            <button class="btn btn-primary" onclick="createOperator()">Add</button>
           </div>
-          <div style="display:none;" class="mt-4 rounded-xl border border-slate-700 bg-slate-950/40 px-4 py-3 text-sm text-slate-200" id="op-pass">
-            Default password: <span class="font-black" style="color:#059669;" id="op-pass-val"></span>
+          <div id="op-pass" style="display:none;margin-top:14px;background:var(--bg);border:1px solid var(--primary);border-radius:12px;padding:12px 16px;">
+            Default password: <span id="op-pass-val" style="color:var(--primary);font-weight:800;font-family:monospace;"></span>
           </div>
         </div>
-
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-0 overflow-hidden">
-          <div class="px-6 py-4 border-b border-slate-800">
-            <div class="text-sm font-extrabold text-slate-200">All Operators</div>
-          </div>
-          <div class="overflow-auto">
-            <table class="w-full border-collapse">
-              <thead class="bg-slate-950/60">
-                <tr>
-                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Company</th>
-                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Contact</th>
-                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Status</th>
-                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="op-table" class="[&>tr>td]:px-6 [&>tr>td]:py-4 [&>tr]:border-t [&>tr]:border-slate-800/70 [&>tr:hover]:bg-slate-950/40"></tbody>
-            </table>
-          </div>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;">All Operators</div>
+          <table>
+            <thead><tr><th>Company</th><th>Contact</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="op-table"></tbody>
+          </table>
         </div>
       </div>
 
       <!-- LOCATIONS -->
       <div class="section" id="sec-locations">
-        <div class="flex items-end justify-between gap-4 mb-6">
-          <div>
-            <div class="text-2xl font-extrabold tracking-tight">Locations</div>
-            <div class="text-sm text-slate-400">Manage cities/towns used in routes.</div>
-          </div>
-        </div>
-
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 mb-6">
-          <div class="text-sm font-extrabold text-slate-200 mb-4">Add Location</div>
+        <div class="section-title">Locations</div>
+        <div class="section-sub">Manage cities and towns used in routes</div>
+        <div class="card">
+          <h3>Add Location</h3>
           <div class="alert alert-err" id="loc-err"></div>
-          <div class="flex flex-col sm:flex-row gap-3">
-            <input id="loc-name" placeholder="City / Town name" class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
-            <button class="rounded-xl bg-brandOrange-500 px-5 py-3 text-sm font-extrabold text-slate-950 hover:bg-brandOrange-400 active:bg-brandOrange-600 transition" onclick="createLocation()">Add</button>
+          <div class="form-row">
+            <input id="loc-name" placeholder="City / Town name" />
+            <button class="btn btn-primary" onclick="createLocation()">Add</button>
           </div>
         </div>
-
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-0 overflow-hidden">
-          <div class="px-6 py-4 border-b border-slate-800">
-            <div class="text-sm font-extrabold text-slate-200">All Locations</div>
-          </div>
-          <div class="overflow-auto">
-            <table class="w-full border-collapse">
-              <thead class="bg-slate-950/60">
-                <tr>
-                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Name</th>
-                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody id="loc-table" class="[&>tr>td]:px-6 [&>tr>td]:py-4 [&>tr]:border-t [&>tr]:border-slate-800/70 [&>tr:hover]:bg-slate-950/40"></tbody>
-            </table>
-          </div>
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;">All Locations</div>
+          <table>
+            <thead><tr><th>Name</th><th>Actions</th></tr></thead>
+            <tbody id="loc-table"></tbody>
+          </table>
         </div>
       </div>
 
     </main>
   </div>
+
+  <!-- MOBILE NAV -->
+  <nav class="mobile-nav">
+    <div class="m-nav-item active" id="mb-overview" onclick="showSection('overview',this)"><i class="fa fa-chart-pie"></i><span>Overview</span></div>
+    <div class="m-nav-item" id="mb-operators" onclick="showSection('operators',this)"><i class="fa fa-building"></i><span>Operators</span></div>
+    <div class="m-nav-item" id="mb-locations" onclick="showSection('locations',this)"><i class="fa fa-map-marker-alt"></i><span>Locations</span></div>
+    <div class="m-nav-item" onclick="toggleNotifs()" style="position:relative;">
+      <i class="fa fa-bell"></i>
+      <span class="bell-count" id="m-bell-count" style="display:none;position:absolute;top:-4px;right:-4px;background:var(--danger);color:white;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center;">0</span>
+      <span>Alerts</span>
+    </div>
+    <div class="m-nav-item" onclick="logout()" style="color:var(--danger);"><i class="fa fa-sign-out-alt"></i><span>Logout</span></div>
+  </nav>
+
+  <!-- NOTIFICATION PANEL -->
+  <div class="notif-panel" id="notif-panel">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <h3 style="font-size:18px;font-weight:800;">Notifications</h3>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleNotifs()"><i class="fa fa-times"></i></button>
+      </div>
+    </div>
+    <div id="notif-list" style="overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:var(--border) transparent;"></div>
+  </div>
+
+  <!-- CONFIRM POPUP -->
+  <div class="modal-backdrop" id="ad-confirm">
+    <div class="modal-box" style="text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;"><i class="fa fa-triangle-exclamation" style="color:#f59e0b;"></i></div>
+      <h3 id="ad-confirm-title" style="font-size:18px;font-weight:800;margin-bottom:8px;"></h3>
+      <p id="ad-confirm-msg" style="color:var(--muted);font-size:14px;margin-bottom:24px;"></p>
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-ghost" style="flex:1;" onclick="adConfirmResolve(false)">Cancel</button>
+        <button id="ad-confirm-ok" class="btn" style="flex:1;color:white;background:#ef4444;" onclick="adConfirmResolve(true)">Delete</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script type="module">
 import { api, setToken, clearToken, getToken } from './api.js';
 window.api = api;
+
+// ── CONFIRM POPUP ─────────────────────────────────────
+let _adConfirmResolve = null;
+const showConfirm = (title, msg) => {
+  document.getElementById('ad-confirm-title').textContent = title;
+  document.getElementById('ad-confirm-msg').textContent   = msg;
+  document.getElementById('ad-confirm').classList.add('open');
+  return new Promise(res => { _adConfirmResolve = res; });
+};
+window.adConfirmResolve = (val) => {
+  document.getElementById('ad-confirm').classList.remove('open');
+  if (_adConfirmResolve) { _adConfirmResolve(val); _adConfirmResolve = null; }
+};
+
+// ── TOAST ─────────────────────────────────────────────
+const toastEl = document.createElement('div');
+toastEl.style.cssText = 'position:fixed;top:24px;right:24px;z-index:9000;display:flex;flex-direction:column;gap:10px;pointer-events:none;';
+document.body.appendChild(toastEl);
+const showToast = (msg, type='info') => {
+  const colors = {success:'#10b981',error:'#ef4444',info:'#059669'};
+  const t = document.createElement('div');
+  t.style.cssText = `background:var(--card);border:1px solid var(--border);border-left:4px solid ${colors[type]||colors.info};padding:14px 18px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.3);min-width:280px;font-size:14px;font-weight:600;color:var(--text);pointer-events:auto;transform:translateX(120%);transition:transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275);`;
+  t.textContent = msg;
+  toastEl.appendChild(t);
+  setTimeout(() => t.style.transform = 'translateX(0)', 10);
+  setTimeout(() => { t.style.transform = 'translateX(120%)'; setTimeout(() => t.remove(), 350); }, 4000);
+};
+
+// ── THEME ─────────────────────────────────────────────
+window.toggleAdTheme = () => {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('admin-theme', isLight ? 'light' : 'dark');
+  const btn = document.getElementById('ad-theme-btn');
+  if (btn) btn.innerHTML = isLight ? '<i class="fa fa-moon"></i>' : '<i class="fa fa-sun"></i>';
+};
+(function(){
+  if (localStorage.getItem('admin-theme') === 'light') {
+    const btn = document.getElementById('ad-theme-btn');
+    if (btn) btn.innerHTML = '<i class="fa fa-moon"></i>';
+  }
+})();
 
 // ── AUTH ──────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
@@ -453,26 +351,21 @@ document.addEventListener('keydown', (e) => {
 });
 
 window.doLogin = async () => {
-  const email    = document.getElementById('email').value;
+  const email    = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
+  const err = document.getElementById('login-err');
+  err.style.display = 'none';
   try {
     const data = await api.loginUser({ email, password });
     if (data.user.role !== 'admin') throw new Error('Not an admin account');
     setToken(data.token);
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display    = 'block';
-    document.getElementById('dashboard').classList.remove('hidden');
     init();
-  } catch(e) {
-    const el = document.getElementById('login-err');
-    el.textContent = e.message; el.style.display = 'block';
-  }
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
 
-window.logout = () => {
-  clearToken();
-  location.reload();
-};
+window.logout = () => { clearToken(); location.reload(); };
 
 // ── INIT ──────────────────────────────────────────────
 async function init() {
@@ -486,37 +379,44 @@ async function init() {
 // ── NAVIGATION ────────────────────────────────────────
 window.showSection = (name, el) => {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.nav-item, .m-nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById(`sec-${name}`).classList.add('active');
   if (el) el.classList.add('active');
+  const sd = document.getElementById(`sd-${name}`);
+  const mb = document.getElementById(`mb-${name}`);
+  if (sd) sd.classList.add('active');
+  if (mb) mb.classList.add('active');
 };
 
 // ── OVERVIEW ──────────────────────────────────────────
 async function loadOverview() {
-  const [ops, locs] = await Promise.all([api.getOperators(), api.getLocations()]);
-  document.getElementById('stat-ops').textContent  = ops.length;
-  document.getElementById('stat-locs').textContent = locs.length;
+  try {
+    const [ops, locs] = await Promise.all([api.getOperators(), api.getLocations()]);
+    document.getElementById('stat-ops').textContent  = ops.length;
+    document.getElementById('stat-locs').textContent = locs.length;
+  } catch {}
 }
 
 // ── OPERATORS ─────────────────────────────────────────
 async function loadOperators() {
-  const ops  = await api.getOperators();
-  const tbody = document.getElementById('op-table');
-  tbody.innerHTML = ops.map(o => `
-    <tr>
-      <td>${o.company_name}</td>
-      <td>${o.contact || '—'}</td>
-      <td><span class="badge ${o.is_active ? 'badge-green' : 'badge-red'}">${o.is_active ? 'Active' : 'Suspended'}</span></td>
-      <td style="display:flex;gap:8px;">
-        <button class="btn btn-ghost btn-sm" onclick="toggleOp('${o.id}')">${o.is_active ? 'Suspend' : 'Activate'}</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteOp('${o.id}')">Delete</button>
-      </td>
-    </tr>
-  `).join('');
+  try {
+    const ops = await api.getOperators();
+    document.getElementById('op-table').innerHTML = ops.map(o => `
+      <tr>
+        <td data-label="Company">${o.company_name}</td>
+        <td data-label="Contact">${o.contact || '—'}</td>
+        <td data-label="Status"><span class="badge ${o.is_active ? 'badge-green' : 'badge-red'}">${o.is_active ? 'Active' : 'Suspended'}</span></td>
+        <td data-label="Actions" style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="toggleOp('${o.id}')">${o.is_active ? 'Suspend' : 'Activate'}</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteOp('${o.id}')">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) { showToast(e.message, 'error'); }
 }
 
 window.createOperator = async () => {
-  const name    = document.getElementById('op-name').value.trim();
+  const name = document.getElementById('op-name').value.trim();
   const contact = document.getElementById('op-contact').value.trim();
   const err = document.getElementById('op-err');
   const ok  = document.getElementById('op-ok');
@@ -526,33 +426,35 @@ window.createOperator = async () => {
     document.getElementById('op-pass-val').textContent = data.default_password;
     document.getElementById('op-pass').style.display   = 'block';
     ok.textContent = `Operator "${data.company_name}" created`; ok.style.display = 'block';
-    document.getElementById('op-name').value    = '';
+    document.getElementById('op-name').value = '';
     document.getElementById('op-contact').value = '';
     loadOperators(); loadOverview();
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
 
 window.toggleOp = async (id) => {
-  await api.toggleOperator(id);
-  loadOperators();
+  try { await api.toggleOperator(id); loadOperators(); showToast('Operator status updated', 'success'); }
+  catch(e) { showToast(e.message, 'error'); }
 };
 
 window.deleteOp = async (id) => {
-  if (!confirm('Delete this operator?')) return;
-  await api.deleteOperator(id);
-  loadOperators(); loadOverview();
+  const ok = await showConfirm('Delete Operator', 'This will permanently remove the operator.');
+  if (!ok) return;
+  try { await api.deleteOperator(id); loadOperators(); loadOverview(); showToast('Operator deleted', 'success'); }
+  catch(e) { showToast(e.message, 'error'); }
 };
 
 // ── LOCATIONS ─────────────────────────────────────────
 async function loadLocations() {
-  const locs  = await api.getLocations();
-  const tbody = document.getElementById('loc-table');
-  tbody.innerHTML = locs.map(l => `
-    <tr>
-      <td>${l.name}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteLoc('${l.id}')">Delete</button></td>
-    </tr>
-  `).join('');
+  try {
+    const locs = await api.getLocations();
+    document.getElementById('loc-table').innerHTML = locs.map(l => `
+      <tr>
+        <td data-label="Name">${l.name}</td>
+        <td data-label="Actions"><button class="btn btn-danger btn-sm" onclick="deleteLoc('${l.id}')">Delete</button></td>
+      </tr>
+    `).join('');
+  } catch(e) { showToast(e.message, 'error'); }
 }
 
 window.createLocation = async () => {
@@ -563,70 +465,69 @@ window.createLocation = async () => {
     await api.createLocation({ name });
     document.getElementById('loc-name').value = '';
     loadLocations(); loadOverview();
+    showToast('Location added', 'success');
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
 
 window.deleteLoc = async (id) => {
-  if (!confirm('Delete this location?')) return;
-  await api.deleteLocation(id);
-  loadLocations(); loadOverview();
+  const ok = await showConfirm('Delete Location', 'This location will be permanently removed.');
+  if (!ok) return;
+  try { await api.deleteLocation(id); loadLocations(); loadOverview(); showToast('Location deleted', 'success'); }
+  catch(e) { showToast(e.message, 'error'); }
 };
 
 // ── NOTIFICATIONS ─────────────────────────────────────
-async function loadNotifications() {
-  const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
-  const count = unread.unread;
-  const bell  = document.getElementById('bell-count');
-  bell.textContent  = count;
-  bell.style.display = count > 0 ? 'flex' : 'none';
+window.toggleNotifs = () => document.getElementById('notif-panel').classList.toggle('open');
 
-  document.getElementById('notif-list').innerHTML = notifs.length
-    ? notifs.map(n => `
-        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${n.id}', this)">
-          <p>${n.message}</p>
-          <small>${new Date(n.createdAt).toLocaleString()}</small>
+async function loadNotifications() {
+  try {
+    const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
+    const count = unread.unread;
+    const bell  = document.getElementById('bell-count');
+    const mbell = document.getElementById('m-bell-count');
+    bell.textContent  = count; bell.style.display  = count > 0 ? 'flex' : 'none';
+    if (mbell) { mbell.textContent = count; mbell.style.display = count > 0 ? 'flex' : 'none'; }
+
+    document.getElementById('notif-list').innerHTML = notifs.length ? notifs.map(n => `
+      <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${n.id}',this)">
+        <div class="notif-icon"><i class="fa fa-bell"></i></div>
+        <div style="flex:1;">
+          <p style="font-size:13px;font-weight:600;">${n.message}</p>
+          <small style="color:var(--muted);font-size:11px;">${new Date(n.createdAt).toLocaleTimeString()}</small>
         </div>
-      `).join('')
-    : '<div style="padding:24px;text-align:center;color:#64748b;">No notifications</div>';
+      </div>
+    `).join('') : `<div style="text-align:center;padding:48px 20px;">
+      <i class="fa fa-bell-slash" style="font-size:48px;color:var(--border);margin-bottom:16px;display:block;"></i>
+      <p style="font-weight:700;">No notifications yet</p>
+    </div>`;
+  } catch {}
 }
 
-window.toggleNotifs = () => {
-  document.getElementById('notif-dropdown').classList.toggle('open');
-};
+window.readNotif = async (id, el) => { await api.markRead(id); el.classList.remove('unread'); loadNotifications(); };
+window.markAllRead = async () => { await api.markAllRead(); loadNotifications(); };
 
-window.readNotif = async (id, el) => {
-  await api.markRead(id);
-  el.classList.remove('unread');
-  loadNotifications();
-};
-
-window.markAllRead = async () => {
-  await api.markAllRead();
-  loadNotifications();
-};
-
-// close dropdown on outside click
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('#bell-btn') && !e.target.closest('#notif-dropdown')) {
-    document.getElementById('notif-dropdown').classList.remove('open');
-  }
-});
-
+// ── LOADER & STARTUP ──────────────────────────────────
 const hideLoader = (cb) => {
   const el = document.getElementById('admin-loader');
-  setTimeout(() => {
-    el.style.opacity = '0';
-    el.style.pointerEvents = 'none';
-    setTimeout(() => { el.style.display = 'none'; cb && cb(); }, 500);
-  }, 800);
+  cb && cb();
+  el.style.opacity = '0';
+  el.style.pointerEvents = 'none';
+  setTimeout(() => el.style.display = 'none', 500);
 };
 
-// auto login if token exists
 if (getToken()) {
-  hideLoader(() => {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display    = 'block';
-    init();
+  api.getLocations().then(() => {
+    hideLoader(() => {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('dashboard').style.display    = 'block';
+      init();
+    });
+  }).catch((e) => {
+    const isAuth = e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token'));
+    if (isAuth) { clearToken(); }
+    hideLoader(() => {
+      document.getElementById('login-screen').style.display = 'flex';
+    });
   });
 } else {
   hideLoader(() => {
