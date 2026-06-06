@@ -515,6 +515,7 @@ window.showSection = (name, el) => {
   if (sd) sd.classList.add('active');
   if (mb) mb.classList.add('active');
   if (name === 'locker') { openLockerUnlock(); return; }
+  if (name === 'profile') loadProfile();
 };
 
 // ── OVERVIEW ──────────────────────────────────────────
@@ -728,6 +729,65 @@ window.closeLockerEntry = () => {
 document.getElementById('locker-unlock-pass').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') submitLockerUnlock();
 });
+
+// ── PROFILE ───────────────────────────────────────────
+async function loadProfile() {
+  try {
+    const me = await api.getMe();
+    document.getElementById('profile-name').value  = me.name || '';
+    document.getElementById('profile-phone').value = me.phone || '';
+    document.getElementById('profile-info').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Name</div>
+          <div style="font-weight:700;">${me.name}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Email</div>
+          <div style="font-weight:700;font-size:13px;">${me.email}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Role</div>
+          <span class="badge badge-green">${me.role}</span>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Member Since</div>
+          <div style="font-weight:700;">${new Date(me.createdAt).toLocaleDateString()}</div>
+        </div>
+      </div>
+    `;
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+window.saveProfile = async () => {
+  const err = document.getElementById('profile-err');
+  const ok  = document.getElementById('profile-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  try {
+    await api.updateMe({
+      name:  document.getElementById('profile-name').value.trim(),
+      phone: document.getElementById('profile-phone').value.trim(),
+    });
+    ok.textContent = 'Profile updated'; ok.style.display = 'block';
+    loadProfile();
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
+
+window.changePassword = async () => {
+  const err = document.getElementById('pw-err');
+  const ok  = document.getElementById('pw-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  const old_password = document.getElementById('pw-old').value;
+  const new_password = document.getElementById('pw-new').value;
+  const confirm      = document.getElementById('pw-confirm').value;
+  if (new_password !== confirm) { err.textContent = 'Passwords do not match'; err.style.display = 'block'; return; }
+  if (new_password.length < 6)  { err.textContent = 'Min 6 characters'; err.style.display = 'block'; return; }
+  try {
+    await api.updateMe({ old_password, new_password });
+    ok.textContent = 'Password changed'; ok.style.display = 'block';
+    ['pw-old','pw-new','pw-confirm'].forEach(id => document.getElementById(id).value = '');
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
 
 // ── LOADER & STARTUP ──────────────────────────────────
 const hideLoader = (cb) => {

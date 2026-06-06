@@ -383,6 +383,12 @@
         <div class="nav-link" onclick="showSection('validate')" id="sd-validate">
           <i class="fa fa-shield-halved"></i> Validate
         </div>
+        <div class="nav-link" onclick="showSection('profile')" id="sd-profile">
+          <i class="fa fa-user-circle"></i> Profile
+        </div>
+          <div class="nav-link" onclick="showSection('profile')" id="sd-profile">
+            <i class="fa fa-user-circle"></i> Profile
+          </div>
       </nav>
       <div class="nav-link" onclick="logout()" style="color: var(--error);">
         <i class="fa fa-right-from-bracket"></i> Logout
@@ -398,6 +404,29 @@
         <h1 style="font-size:28px; font-weight:900;">Welcome, <span id="driver-name" style="color:var(--primary);">Driver</span></h1>
         <p style="color:var(--muted); font-size:14px;" id="today-date"></p>
       </div>
+        <!-- Profile Section -->
+        <section id="sec-profile" class="section hidden">
+          <div class="glass-card" style="max-width:420px;margin:auto;">
+            <h2 style="font-size:22px;font-weight:800;margin-bottom:18px;">My Profile</h2>
+            <div id="profile-info" style="margin-bottom:18px;"></div>
+            <h3 style="font-size:16px;margin-bottom:8px;">Update Phone</h3>
+            <div class="alert alert-err" id="profile-err" style="display:none"></div>
+            <div class="alert alert-ok"  id="profile-ok" style="display:none"></div>
+            <div class="form-row" style="margin-bottom:12px;gap:8px;">
+              <input id="profile-phone" placeholder="Phone" />
+              <button class="btn btn-primary" onclick="saveProfile()">Save</button>
+            </div>
+            <h3 style="font-size:16px;margin-bottom:8px;">Change Password</h3>
+            <div class="alert alert-err" id="pw-err" style="display:none"></div>
+            <div class="alert alert-ok"  id="pw-ok" style="display:none"></div>
+            <div class="form-row" style="gap:8px;">
+              <input type="password" id="pw-old" placeholder="Current password" />
+              <input type="password" id="pw-new" placeholder="New password" />
+              <input type="password" id="pw-confirm" placeholder="Confirm new password" />
+              <button class="btn btn-primary" onclick="changePassword()">Change</button>
+            </div>
+          </div>
+        </section>
       <!-- Section: Home -->
       <section id="sec-home" class="section">
 
@@ -448,6 +477,34 @@
           </div>
         </div>
       </section>
+
+      <!-- PROFILE -->
+      <section id="sec-profile" class="section hidden">
+        <h1 style="font-size:28px;font-weight:900;margin-bottom:32px;">My <span style="color:var(--primary);">Profile</span></h1>
+        <div class="glass-card">
+          <div class="input-label">Account Info</div>
+          <div id="profile-info" style="margin:16px 0 24px;"></div>
+          <div class="input-label" style="margin-bottom:12px;">Update Details</div>
+          <div id="profile-err" style="display:none;color:var(--error);background:rgba(239,68,68,0.1);padding:12px;border-radius:12px;margin-bottom:12px;font-size:13px;font-weight:600;"></div>
+          <div id="profile-ok"  style="display:none;color:var(--success);background:rgba(16,185,129,0.1);padding:12px;border-radius:12px;margin-bottom:12px;font-size:13px;font-weight:600;"></div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;">
+            <input class="input" id="profile-name"  placeholder="Full name" />
+            <input class="input" id="profile-phone" placeholder="Phone" />
+          </div>
+          <button class="btn btn-primary" style="width:100%;" onclick="saveProfile()">Save Changes</button>
+        </div>
+        <div class="glass-card" style="margin-top:24px;">
+          <div class="input-label" style="margin-bottom:12px;">Change Password</div>
+          <div id="pw-err" style="display:none;color:var(--error);background:rgba(239,68,68,0.1);padding:12px;border-radius:12px;margin-bottom:12px;font-size:13px;font-weight:600;"></div>
+          <div id="pw-ok"  style="display:none;color:var(--success);background:rgba(16,185,129,0.1);padding:12px;border-radius:12px;margin-bottom:12px;font-size:13px;font-weight:600;"></div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;">
+            <input class="input" type="password" id="pw-old"     placeholder="Current password" />
+            <input class="input" type="password" id="pw-new"     placeholder="New password" />
+            <input class="input" type="password" id="pw-confirm" placeholder="Confirm new password" />
+          </div>
+          <button class="btn btn-primary" style="width:100%;" onclick="changePassword()">Change Password</button>
+        </div>
+      </section>
     </main>
 
     <!-- Mobile Bottom Nav -->
@@ -463,6 +520,10 @@
       <div class="m-nav-item" id="mb-validate" onclick="showSection('validate')">
         <i class="fa fa-shield-halved"></i>
         <span>Verify</span>
+      </div>
+      <div class="m-nav-item" id="mb-profile" onclick="showSection('profile')">
+        <i class="fa fa-user-circle"></i>
+        <span>Profile</span>
       </div>
       <div class="m-nav-item" onclick="toggleDriverNotifs()" style="position:relative;">
         <div style="position:relative; display:inline-flex;">
@@ -557,7 +618,9 @@
       $(`#sd-${name}`)?.classList.add('active');
       
       // Update Mobile Nav
+        if (name === 'profile') loadProfile();
       document.querySelectorAll('.m-nav-item').forEach(l => l.classList.remove('active'));
+
       $(`#mb-${name}`)?.classList.add('active');
     };
 
@@ -571,6 +634,7 @@
       const icon = type === 'success' ? '<i class="fa fa-circle-check"></i>' : type === 'error' ? '<i class="fa fa-circle-xmark"></i>' : '<i class="fa fa-bell"></i>';
       const color = type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--error)' : 'var(--primary)';
 
+
       toast.innerHTML = `
         <div class="toast-icon" style="background: ${color}20; color: ${color}">${icon}</div>
         <div class="toast-info">
@@ -582,6 +646,7 @@
       container.appendChild(toast);
       setTimeout(() => toast.classList.add('show'), 10);
       setTimeout(() => {
+
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 400);
       }, 5000);

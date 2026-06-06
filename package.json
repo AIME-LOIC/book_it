@@ -8,12 +8,12 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
-    "dev:local": "DOTENV_CONFIG_PATH=.env.local nodemon server.js",
-    "start:local": "DOTENV_CONFIG_PATH=.env.local node server.js",
-    "db:sync": "node src/database/sync.js",
-    "db:seed": "node src/database/seed.js"
+    "start": "node --dns-result-order=ipv4first server.js",
+    "dev": "nodemon --exec 'node --dns-result-order=ipv4first' server.js",
+    "dev:local": "DOTENV_CONFIG_PATH=.env.local nodemon --exec 'node --dns-result-order=ipv4first' server.js",
+    "start:local": "DOTENV_CONFIG_PATH=.env.local node --dns-result-order=ipv4first server.js",
+    "db:sync": "node --dns-result-order=ipv4first src/database/sync.js",
+    "db:seed": "node --dns-result-order=ipv4first src/database/seed.js"
   },
   "keywords": [],
   "author": "",
