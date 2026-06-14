@@ -1,4 +1,4 @@
-import sequelize from '../config/local.db.js';
+import sequelize from '../config/sequelize.js';
 import User from './models/user.js';
 import Location from './models/location.js';
 import bcrypt from 'bcrypt';

@@ -1,4 +1,4 @@
-import sequelize          from '../config/db.js';
+import sequelize          from '../config/sequelize.js';
 import './models/location.js';
 import './models/user.js';
 import './models/operator.js';

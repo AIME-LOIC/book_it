@@ -153,3 +153,9 @@ export const deleteDriver = async (operator_id, id) => {
   if (!driver) throw new Error('Driver not found or not yours');
   await driver.destroy();
 };
+
+export const updateDriverLocation = async (driver_id, { last_lat, last_lng }) => {
+  const driver = await Driver.findByPk(driver_id);
+  if (!driver) throw new Error('Driver not found');
+  return await driver.update({ last_lat, last_lng });
+};
