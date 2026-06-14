@@ -1,5 +1,6 @@
 import * as svc from '../services/driver.service.js';
 import * as ticketSvc from '../services/ticket.service.js';
+import * as busSvc from '../services/bus.service.js';
 
 export const getMe = async (req, res) => {
   try { res.status(200).json(await svc.getDriverMe(req.user.id)); }
@@ -57,5 +58,16 @@ export const getMyPassengers  = async (req, res) => {
 export const notifyExit       = async (req, res) => {
   try {
     res.status(200).json(await ticketSvc.notifyPassengerExit(req.user.id, req.params.ticket_id));
+  } catch (err) { res.status(400).json({ message: err.message }); }
+};
+
+export const updateLocation = async (req, res) => {
+  try {
+    const { last_lat, last_lng } = req.body;
+    if (!req.user.bus_id) return res.status(400).json({ message: 'No bus assigned to driver' });
+    // update both driver and assigned bus location
+    await svc.updateDriverLocation(req.user.id, { last_lat, last_lng });
+    const updated = await busSvc.updateBusLocation(req.user.bus_id, { last_lat, last_lng });
+    res.status(200).json(updated);
   } catch (err) { res.status(400).json({ message: err.message }); }
 };
