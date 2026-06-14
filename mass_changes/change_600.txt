@@ -1,0 +1,2 @@
+Change file 600
+Generated for commit #600
