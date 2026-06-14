@@ -77,3 +77,9 @@ export const validateCreateLocation = [
   body('name').trim().notEmpty().withMessage('Location name is required').isLength({ max: 100 }).matches(/^[a-zA-Z\s\-']+$/).withMessage('Location name contains invalid characters'),
   validate,
 ];
+
+export const validateDriverLocation = [
+  body('last_lat').notEmpty().withMessage('Latitude required').isFloat({ min: -90, max: 90 }).withMessage('Invalid latitude'),
+  body('last_lng').notEmpty().withMessage('Longitude required').isFloat({ min: -180, max: 180 }).withMessage('Invalid longitude'),
+  validate,
+];
