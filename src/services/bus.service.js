@@ -1,5 +1,5 @@
-import Bus      from '../database/models/bus.js';
-import Route    from '../database/models/route.js';
+import Bus from '../database/models/bus.js';
+import Route from '../database/models/route.js';
 import Operator from '../database/models/operator.js';
 import Location from '../database/models/location.js';
 
@@ -9,7 +9,7 @@ const includes = [
     model: Route, as: 'route', attributes: ['id', 'price'],
     include: [
       { model: Location, as: 'fromLocation', attributes: ['id', 'name'] },
-      { model: Location, as: 'toLocation',   attributes: ['id', 'name'] },
+      { model: Location, as: 'toLocation', attributes: ['id', 'name'] },
     ],
   },
 ];
@@ -45,6 +45,12 @@ export const updateBus = async (operator_id, id, data) => {
   return await bus.update(data);
 };
 
+export const updateBusLocation = async (id, { last_lat, last_lng }) => {
+  const bus = await Bus.findByPk(id);
+  if (!bus) throw new Error('Bus not found');
+  return await bus.update({ last_lat, last_lng });
+};
+
 export const deleteBus = async (operator_id, id) => {
   const bus = await Bus.findOne({ where: { id, operator_id } });
   if (!bus) throw new Error('Bus not found or not yours');
@@ -59,7 +65,7 @@ export const getAllAvailableBuses = async () => {
         model: Route, as: 'route', attributes: ['id', 'price'],
         include: [
           { model: Location, as: 'fromLocation', attributes: ['id', 'name'] },
-          { model: Location, as: 'toLocation',   attributes: ['id', 'name'] },
+          { model: Location, as: 'toLocation', attributes: ['id', 'name'] },
         ],
       },
     ],
