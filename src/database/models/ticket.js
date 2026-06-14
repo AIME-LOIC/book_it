@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import sequelize  from '../../config/db.js';
+import sequelize  from '../../config/local.db.js';
 import User       from './user.js';
 import Bus        from './bus.js';
 import Operator   from './operator.js';
