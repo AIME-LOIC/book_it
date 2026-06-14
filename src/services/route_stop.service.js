@@ -1,5 +1,5 @@
 import { Op }        from 'sequelize';
-import sequelize     from '../config/db.js';
+import sequelize     from '../config/sequelize.js';
 import Route         from '../database/models/route.js';
 import RouteStop     from '../database/models/route_stop.js';
 import Location      from '../database/models/location.js';
