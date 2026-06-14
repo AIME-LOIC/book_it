@@ -1,107 +1,117 @@
 (() => {
-const BASE = `${window.location.protocol}//${window.location.host}/rw/v1/bk`;
+  const BASE = `${window.location.protocol}//${window.location.host}/rw/v1/bk`;
 
-const getToken = () => localStorage.getItem('token');
-const setToken = (t) => localStorage.setItem('token', t);
-const clearToken = () => localStorage.removeItem('token');
+  const getToken = () => localStorage.getItem('token');
+  const setToken = (t) => localStorage.setItem('token', t);
+  const clearToken = () => localStorage.removeItem('token');
 
-const req = async (method, path, body = null, auth = true) => {
-  const headers = { 'Content-Type': 'application/json' };
-  if (auth) headers['Authorization'] = `Bearer ${getToken()}`;
-  const res = await fetch(`${BASE}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : null,
-  });
-  const data = await res.json();
-  // auto-logout on 401 for authenticated requests (not login endpoints)
-  // NOTE: don't hard-reload/redirect here; let the page decide how to render the login screen.
-  if (res.status === 401 && auth) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('driver');
-    localStorage.removeItem('operator');
-    throw new Error('401 Unauthorized');
-  }
-  if (!res.ok) throw new Error(data.message || 'Request failed');
-  return data;
-};
+  const req = async (method, path, body = null, auth = true) => {
+    const headers = { 'Content-Type': 'application/json' };
+    if (auth) headers['Authorization'] = `Bearer ${getToken()}`;
+    const res = await fetch(`${BASE}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : null,
+    });
 
-const api = {
-  // auth
-  loginUser:     (b) => req('POST', '/auth/login', b, false),
-  loginOperator: (b) => req('POST', '/auth/operator/login', b, false),
-  loginDriver:   (b) => req('POST', '/drivers/login', b, false),
-  register:      (b) => req('POST', '/auth/register', b, false),
-  verifyPassword:(b) => req('POST', '/auth/verify-password', b),
-  getLocker:     (b) => req('POST', '/auth/locker', b),
-  getMe:         ()  => req('GET',  '/auth/me'),
-  updateMe:      (b) => req('PATCH','/auth/me', b),
-  getDriverMe:   ()  => req('GET',  '/drivers/me'),
-  updateDriverMe:(b) => req('PATCH','/drivers/profile', b),
+    let data = {};
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      data = await res.json();
+    } else if (!res.ok) {
+      throw new Error(`Server Error: ${res.status} ${res.statusText}`);
+    }
 
-  // locations
-  getLocations:    ()  => req('GET',    '/locations'),
-  createLocation:  (b) => req('POST',   '/locations', b),
-  deleteLocation:  (id)=> req('DELETE', `/locations/${id}`),
+    // auto-logout on 401 for authenticated requests (not login endpoints)
+    // NOTE: don't hard-reload/redirect here; let the page decide how to render the login screen.
+    if (res.status === 401 && auth) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('driver');
+      localStorage.removeItem('operator');
+      throw new Error('401 Unauthorized');
+    }
+    if (!res.ok) throw new Error(data.message || 'Request failed');
+    return data;
+  };
 
-  // operators
-  getOperators:    ()  => req('GET',    '/operators'),
-  createOperator:  (b) => req('POST',   '/operators', b),
-  toggleOperator:  (id)=> req('PATCH',  `/operators/${id}/toggle`),
-  deleteOperator:  (id)=> req('DELETE', `/operators/${id}`),
+  const api = {
+    // auth
+    loginUser: (b) => req('POST', '/auth/login', b, false),
+    loginOperator: (b) => req('POST', '/auth/operator/login', b, false),
+    loginDriver: (b) => req('POST', '/drivers/login', b, false),
+    register: (b) => req('POST', '/auth/register', b, false),
+    verifyPassword: (b) => req('POST', '/auth/verify-password', b),
+    getLocker: (b) => req('POST', '/auth/locker', b),
+    getMe: () => req('GET', '/auth/me'),
+    updateMe: (b) => req('PATCH', '/auth/me', b),
+    getDriverMe: () => req('GET', '/drivers/me'),
+    updateDriverMe: (b) => req('PATCH', '/drivers/profile', b),
 
-  // routes
-  getRoutes:       ()  => req('GET',    '/routes'),
-  getMyRoutes:     ()  => req('GET',    '/routes/mine'),
-  createRoute:     (b) => req('POST',   '/routes', b),
-  deleteRoute:     (id)=> req('DELETE', `/routes/${id}`),
+    // locations
+    getLocations: () => req('GET', '/locations', null, false),
+    createLocation: (b) => req('POST', '/locations', b),
+    deleteLocation: (id) => req('DELETE', `/locations/${id}`),
 
-  // stops
-  getRouteStops:   (rid)    => req('GET',    `/route-stops/${rid}`),
-  addStops:        (rid, b) => req('POST',   `/route-stops/${rid}/stops`, b),
-  deleteStop:      (sid)    => req('DELETE', `/route-stops/stops/${sid}`),
-  getSettings:     ()       => req('GET',    '/route-stops/settings'),
-  updateSettings:  (b)      => req('PATCH',  '/route-stops/settings', b),
+    // operators
+    getOperators: () => req('GET', '/operators'),
+    createOperator: (b) => req('POST', '/operators', b),
+    toggleOperator: (id) => req('PATCH', `/operators/${id}/toggle`),
+    deleteOperator: (id) => req('DELETE', `/operators/${id}`),
 
-  // buses
- getBuses: () => req('GET', '/buses/available', null, false),
-  getMyBuses:      ()  => req('GET',    '/buses/mine'),
-  createBus:       (b) => req('POST',   '/buses', b),
-  updateBus:       (id, b) => req('PUT', `/buses/${id}`, b),
-  toggleBus:       (id, b) => req('PUT', `/buses/${id}`, b),
-  deleteBus:       (id)=> req('DELETE', `/buses/${id}`),
+    // routes
+    getRoutes: () => req('GET', '/routes'),
+    getMyRoutes: () => req('GET', '/routes/mine'),
+    createRoute: (b) => req('POST', '/routes', b),
+    deleteRoute: (id) => req('DELETE', `/routes/${id}`),
 
-  // drivers
-  getDrivers:      ()       => req('GET',    '/drivers'),
-  createDriver:    (b)      => req('POST',   '/drivers', b),
-  assignBus:       (id, b)  => req('PATCH',  `/drivers/${id}/assign-bus`, b),
-  toggleDriver:    (id)     => req('PATCH',  `/drivers/${id}/toggle`),
-  deleteDriver:    (id)     => req('DELETE', `/drivers/${id}`),
-  updateProfile:   (b)      => req('PATCH',  '/drivers/profile', b),
-  getPassengers:   (date)   => req('GET',    `/drivers/passengers?date=${date}`),
-  notifyExit:      (tid)    => req('POST',   `/drivers/notify/${tid}`),
+    // stops
+    getRouteStops: (rid) => req('GET', `/route-stops/${rid}`),
+    addStops: (rid, b) => req('POST', `/route-stops/${rid}/stops`, b),
+    deleteStop: (sid) => req('DELETE', `/route-stops/stops/${sid}`),
+    getSettings: () => req('GET', '/route-stops/settings'),
+    updateSettings: (b) => req('PATCH', '/route-stops/settings', b),
 
-  // tickets
-  searchTickets:   (p) => req('GET', `/tickets/search?from_location_id=${p.from}&to_location_id=${p.to}&travel_date=${p.date}`),
-  bookTicket:      (b) => req('POST',  '/tickets', b),
-  payTicket:       (id)=> req('PATCH', `/tickets/${id}/pay`),
-  cancelTicket:    (id)=> req('PATCH', `/tickets/${id}/cancel`),
-  getMyTickets:    ()  => req('GET',   '/tickets/my'),
-  getOperatorTickets: () => req('GET', '/tickets/operator'),
-  getAllTickets:    ()  => req('GET',   '/tickets'),
-  validateQR:      (b) => req('POST',  '/tickets/validate/qr', b),
-  validateNumber:  (b) => req('POST',  '/tickets/validate/number', b),
+    // buses
+    getBuses: () => req('GET', '/buses/available', null, false),
+    getMyBuses: () => req('GET', '/buses/mine'),
+    createBus: (b) => req('POST', '/buses', b),
+    updateBus: (id, b) => req('PUT', `/buses/${id}`, b),
+    toggleBus: (id, b) => req('PUT', `/buses/${id}`, b),
+    updateBusLocation: (id, b) => req('PATCH', `/buses/${id}/location`, b),
+    deleteBus: (id) => req('DELETE', `/buses/${id}`),
 
-  // notifications
-  getNotifications:  () => req('GET',   '/notifications'),
-  getUnread:         () => req('GET',   '/notifications/unread'),
-  markRead:          (id)=> req('PATCH', `/notifications/${id}/read`),
-  markAllRead:       () => req('PATCH', '/notifications/read-all'),
-};
+    // drivers
+    getDrivers: () => req('GET', '/drivers'),
+    createDriver: (b) => req('POST', '/drivers', b),
+    assignBus: (id, b) => req('PATCH', `/drivers/${id}/assign-bus`, b),
+    toggleDriver: (id) => req('PATCH', `/drivers/${id}/toggle`),
+    deleteDriver: (id) => req('DELETE', `/drivers/${id}`),
+    updateProfile: (b) => req('PATCH', '/drivers/profile', b),
+    getPassengers: (date) => req('GET', `/drivers/passengers?date=${date}`),
+    notifyExit: (tid) => req('POST', `/drivers/notify/${tid}`),
 
-// Expose for plain `<script>` usage (no ES modules needed).
-window.BookItApi = { api, getToken, setToken, clearToken };
-// Back-compat for existing pages that reference `window.api`.
-window.api = api;
+    // tickets
+    searchTickets: (p) => req('GET', `/tickets/search?from_location_id=${p.from}&to_location_id=${p.to}&travel_date=${p.date}`, null, false),
+    bookTicket: (b) => req('POST', '/tickets', b),
+    payTicket: (id) => req('PATCH', `/tickets/${id}/pay`),
+    cancelTicket: (id) => req('PATCH', `/tickets/${id}/cancel`),
+    getMyTickets: () => req('GET', '/tickets/my'),
+    getTicket: (id) => req('GET', `/tickets/my/${id}?_=${Date.now()}`),
+    getOperatorTickets: () => req('GET', '/tickets/operator'),
+    getAllTickets: () => req('GET', '/tickets'),
+    validateQR: (b) => req('POST', '/tickets/validate/qr', b),
+    validateNumber: (b) => req('POST', '/tickets/validate/number', b),
+
+    // notifications
+    getNotifications: () => req('GET', '/notifications'),
+    getUnread: () => req('GET', '/notifications/unread'),
+    markRead: (id) => req('PATCH', `/notifications/${id}/read`),
+    markAllRead: () => req('PATCH', '/notifications/read-all'),
+  };
+
+  // Expose for plain `<script>` usage (no ES modules needed).
+  window.BookItApi = { api, getToken, setToken, clearToken };
+  // Back-compat for existing pages that reference `window.api`.
+  window.api = api;
 })();
