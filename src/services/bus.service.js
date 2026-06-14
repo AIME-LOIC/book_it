@@ -48,6 +48,7 @@ export const updateBus = async (operator_id, id, data) => {
 export const updateBusLocation = async (id, { last_lat, last_lng }) => {
   const bus = await Bus.findByPk(id);
   if (!bus) throw new Error('Bus not found');
+  console.log(`[BusService] Updating location for Bus ${id}: ${last_lat}, ${last_lng}`);
   return await bus.update({ last_lat, last_lng });
 };
 
