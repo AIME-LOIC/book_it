@@ -1,4 +1,4 @@
-import sequelize from './src/config/db.js';
+import sequelize, { isLocal } from './src/config/sequelize.js';
 import './src/app.js';
 import { seedDatabase } from './src/database/seed.js';
 
@@ -32,8 +32,14 @@ process.on('SIGINT', () => {
 });
 
 sequelize.authenticate()
-.then(()=> sequelize.sync())
+.then(()=> {
+  // Only apply schema `alter` automatically in local/dev environments.
+  // Altering enums on Postgres (Supabase) can fail in-place; run migrations manually there.
+  return isLocal ? sequelize.sync({ alter: true }) : Promise.resolve();
+})
 .then(async () => {
+  // Only seed automatically in local/dev environments to avoid schema mismatch on managed DBs
+  if (!isLocal) return;
   if (process.env.SEED_ON_START === 'false') return;
   await seedDatabase();
 })
