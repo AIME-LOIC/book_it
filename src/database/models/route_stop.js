@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../../config/db.js';
+import sequelize from '../../config/local.db.js';
 import Location  from './location.js';
 import Route     from './route.js';
 
