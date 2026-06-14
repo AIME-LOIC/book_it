@@ -30,6 +30,19 @@ export const update     = async (req, res) => {
   catch (err) { res.status(400).json({ message: err.message }); }
 };
 
+export const updateLocation = async (req, res) => {
+  try {
+    const { last_lat, last_lng } = req.body;
+    const id = req.params.id;
+    // permission: drivers can only update their assigned bus
+    if (req.user && req.user.role === 'driver' && Number(req.user.bus_id) !== Number(id)) {
+      return res.status(403).json({ message: 'Not allowed to update this bus' });
+    }
+    const updated = await svc.updateBusLocation(id, { last_lat, last_lng });
+    res.status(200).json(updated);
+  } catch (err) { res.status(400).json({ message: err.message }); }
+};
+
 export const remove     = async (req, res) => {
   try {
     await svc.deleteBus(req.user.id, req.params.id);
