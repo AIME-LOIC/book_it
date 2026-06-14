@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../../config/db.js';
+import db from '../../config/local.db.js';
 
 const Location = sequelize.define('Location', {
   id:   { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
