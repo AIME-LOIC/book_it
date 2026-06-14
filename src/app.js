@@ -1,20 +1,20 @@
-import express            from 'express';
-import dotenv             from 'dotenv';
-import path               from 'path';
-import { fileURLToPath }  from 'url';
-import os                 from 'os';
-import rateLimit          from 'express-rate-limit';
-import helmet             from 'helmet';
-import authRoutes         from './routes/auth.routes.js';
-import locationRoutes     from './routes/location.routes.js';
-import operatorRoutes     from './routes/operator.routes.js';
-import routeRoutes        from './routes/route.routes.js';
-import routeStopRoutes    from './routes/route_stop.routes.js';
-import busRoutes          from './routes/bus.routes.js';
-import driverRoutes       from './routes/driver.routes.js';
-import ticketRoutes       from './routes/ticket.routes.js';
+import express from 'express';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import os from 'os';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
+import authRoutes from './routes/auth.routes.js';
+import locationRoutes from './routes/location.routes.js';
+import operatorRoutes from './routes/operator.routes.js';
+import routeRoutes from './routes/route.routes.js';
+import routeStopRoutes from './routes/route_stop.routes.js';
+import busRoutes from './routes/bus.routes.js';
+import driverRoutes from './routes/driver.routes.js';
+import ticketRoutes from './routes/ticket.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
-import cors               from 'cors';
+import cors from 'cors';
 import { checkDepartedBuses, checkMidnightReactivation } from './services/scheduler.service.js';
 
 
@@ -22,7 +22,7 @@ dotenv.config();
 
 // Fail fast if critical env vars are missing
 const required = ['JWT_SECRET', 'QR_SECRET'];
-const dbVars   = process.env.DATABASE_URL
+const dbVars = process.env.DATABASE_URL
   ? ['DATABASE_URL']
   : ['DB_HOST', 'DB_USER', 'DB_NAME'];
 for (const key of [...required, ...dbVars]) {
@@ -98,38 +98,39 @@ const apiLimiter = rateLimit({
 const P = '/rw/v1/bk'; // obscure API prefix
 
 app.use(`${P}/`, apiLimiter);
-app.use(`${P}/auth/login`,          loginLimiter);
+app.use(`${P}/auth/login`, loginLimiter);
 app.use(`${P}/auth/operator/login`, loginLimiter);
-app.use(`${P}/drivers/login`,       loginLimiter);
+app.use(`${P}/drivers/login`, loginLimiter);
 
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Explicit page routes
-app.get('/',          (req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
-app.get('/book',      (req, res) => res.sendFile(path.join(__dirname, '../frontend/user.html')));
-app.get('/operator',  (req, res) => res.sendFile(path.join(__dirname, '../frontend/operator.html')));
-app.get('/driver',    (req, res) => res.sendFile(path.join(__dirname, '../frontend/driver.html')));
-app.get('/admin',     (req, res) => res.sendFile(path.join(__dirname, '../frontend/admin.html')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
+app.get('/book', (req, res) => res.sendFile(path.join(__dirname, '../frontend/user.html')));
+app.get('/operator', (req, res) => res.sendFile(path.join(__dirname, '../frontend/operator.html')));
+app.get('/driver', (req, res) => res.sendFile(path.join(__dirname, '../frontend/driver.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '../frontend/admin.html')));
+app.get('/policy', (req, res) => res.sendFile(path.join(__dirname, '../frontend/policy.html')));
+app.get('/docs', (req, res) => res.sendFile(path.join(__dirname, '../frontend/docs.html')));
 
-app.use(`${P}/auth`,          authRoutes);
-app.use(`${P}/locations`,     locationRoutes);
-app.use(`${P}/operators`,     operatorRoutes);
-app.use(`${P}/routes`,        routeRoutes);
-app.use(`${P}/route-stops`,   routeStopRoutes);
-app.use(`${P}/buses`,         busRoutes);
-app.use(`${P}/drivers`,       driverRoutes);
-app.use(`${P}/tickets`,       ticketRoutes);
+app.use(`${P}/auth`, authRoutes);
+app.use(`${P}/locations`, locationRoutes);
+app.use(`${P}/operators`, operatorRoutes);
+app.use(`${P}/routes`, routeRoutes);
+app.use(`${P}/route-stops`, routeStopRoutes);
+app.use(`${P}/buses`, busRoutes);
+app.use(`${P}/drivers`, driverRoutes);
+app.use(`${P}/tickets`, ticketRoutes);
 app.use(`${P}/notifications`, notificationRoutes);
 
-// return 404 on /api/* to confuse scanners
-app.use('/api/{*path}', (req, res) => res.status(404).json({ message: 'Not found' }));
+// Catch unmatched routes in the actual API prefix
+app.use(`${P}/*any`, (req, res) => res.status(404).json({ message: 'API endpoint not found' }));
+
+// Confuse scanners looking for common /api paths
+app.use('/api/*any', (req, res) => res.status(404).json({ message: 'Not found' }));
 
 // ── GLOBAL ERROR MIDDLEWARE ─────────────────────────────────────────────
-// 404 for unknown API routes
-app.use('/api/{*path}', (req, res) => {
-  res.status(404).json({ message: 'API endpoint not found' });
-});
 
 // Global error handler — catches any error thrown in routes
 // eslint-disable-next-line no-unused-vars
