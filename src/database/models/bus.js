@@ -13,7 +13,8 @@ const Bus = sequelize.define('Bus', {
   departure_time: { type: DataTypes.STRING(8), allowNull: false },
   last_lat: { type: DataTypes.DECIMAL(10, 8), allowNull: true },
   last_lng: { type: DataTypes.DECIMAL(11, 8), allowNull: true },
-  amenities: { type: DataTypes.JSONB, allowNull: false, defaultValue: [] },
+  // Use JSON (portable) and allow null to avoid unsupported DDL on older MySQL versions.
+  amenities: { type: DataTypes.JSON, allowNull: true, defaultValue: null },
   is_active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
 }, { tableName: 'buses', timestamps: false });
 
