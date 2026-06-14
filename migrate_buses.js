@@ -1,5 +1,5 @@
 import { QueryTypes } from 'sequelize';
-import sequelize from './src/config/db.js';
+import sequelize from './src/config/sequelize.js';
 
 async function runMigration() {
     try {
