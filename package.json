@@ -9,9 +9,10 @@
   },
   "scripts": {
     "start": "node --dns-result-order=ipv4first server.js",
-    "dev": "nodemon --exec 'node --dns-result-order=ipv4first' server.js",
+    "dev": "npm run migrate:local-to-supabase && nodemon --exec 'node --dns-result-order=ipv4first' server.js",
     "dev:local": "DOTENV_CONFIG_PATH=.env.local nodemon --exec 'node --dns-result-order=ipv4first' server.js",
     "start:local": "DOTENV_CONFIG_PATH=.env.local node --dns-result-order=ipv4first server.js",
+    "migrate:local-to-supabase": "node --dns-result-order=ipv4first scripts/migrate-local-to-supabase.js",
     "db:sync": "node --dns-result-order=ipv4first src/database/sync.js",
     "db:seed": "node --dns-result-order=ipv4first src/database/seed.js"
   },
