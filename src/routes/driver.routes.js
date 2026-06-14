@@ -2,7 +2,7 @@ import { Router }   from 'express';
 import {
   create, login, updateProfile, assignBus,
   getMyDrivers, getDriverById, toggleDriver, remove,
-  getMyPassengers, notifyExit,
+  getMyPassengers, notifyExit, getMe,
 } from '../controllers/driver.controller.js';
 import authenticate from '../middleware/auth.js';
 import isOperator   from '../middleware/operator.js';
@@ -14,6 +14,7 @@ const router = Router();
 router.post('/login',              login);
 
 // driver self
+router.get('/me',                  authenticate, isDriver,   getMe);
 router.patch('/profile',           authenticate, isDriver,   updateProfile);
 router.get('/passengers',          authenticate, isDriver,   getMyPassengers);
 router.post('/notify/:ticket_id',  authenticate, isDriver,   notifyExit);

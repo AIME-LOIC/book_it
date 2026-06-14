@@ -1,5 +1,5 @@
-import Bus      from '../database/models/bus.js';
-import Route    from '../database/models/route.js';
+import Bus from '../database/models/bus.js';
+import Route from '../database/models/route.js';
 import Operator from '../database/models/operator.js';
 import Location from '../database/models/location.js';
 
@@ -9,7 +9,7 @@ const includes = [
     model: Route, as: 'route', attributes: ['id', 'price'],
     include: [
       { model: Location, as: 'fromLocation', attributes: ['id', 'name'] },
-      { model: Location, as: 'toLocation',   attributes: ['id', 'name'] },
+      { model: Location, as: 'toLocation', attributes: ['id', 'name'] },
     ],
   },
 ];
@@ -45,33 +45,30 @@ export const updateBus = async (operator_id, id, data) => {
   return await bus.update(data);
 };
 
+export const updateBusLocation = async (id, { last_lat, last_lng }) => {
+  const bus = await Bus.findByPk(id);
+  if (!bus) throw new Error('Bus not found');
+  console.log(`[BusService] Updating location for Bus ${id}: ${last_lat}, ${last_lng}`);
+  return await bus.update({ last_lat, last_lng });
+};
+
 export const deleteBus = async (operator_id, id) => {
   const bus = await Bus.findOne({ where: { id, operator_id } });
   if (!bus) throw new Error('Bus not found or not yours');
   await bus.destroy();
 };
 export const getAllAvailableBuses = async () => {
-  const buses = await Bus.findAll({
+  return await Bus.findAll({
+    where: { is_active: true },
     include: [
       { model: Operator, as: 'operator', attributes: ['id', 'company_name'] },
       {
         model: Route, as: 'route', attributes: ['id', 'price'],
         include: [
           { model: Location, as: 'fromLocation', attributes: ['id', 'name'] },
-          { model: Location, as: 'toLocation',   attributes: ['id', 'name'] },
+          { model: Location, as: 'toLocation', attributes: ['id', 'name'] },
         ],
       },
     ],
-  });
-
-  const now   = new Date();
-  const today = now.toISOString().split('T')[0];
-
-  return buses.filter(b => {
-    const [hours, minutes] = b.departure_time.split(':').map(Number);
-    const departure = new Date();
-    departure.setHours(hours, minutes, 0, 0);
-    // show if departure is in the future today, or bus runs on future dates
-    return now > departure;
   });
 };

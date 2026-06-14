@@ -1,408 +1,1348 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BookIt — Admin</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          forest: {
-            50:  '#f0fdf4',
-            100: '#dcfce7',
-            200: '#bbf7d0',
-            300: '#86efac',
-            400: '#4ade80',
-            500: '#22c55e',
-            600: '#16a34a',
-            700: '#15803d',
-            800: '#166534',
-            900: '#14532d'
-          },
-          brandOrange: {
-            50:  '#fff7ed',
-            100: '#ffedd5',
-            200: '#fed7aa',
-            300: '#fdba74',
-            400: '#fb923c',
-            500: '#f97316',
-            600: '#ea580c',
-            700: '#c2410c',
-            800: '#9a3412',
-            900: '#7c2d12'
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BookIt — Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            emerald: { 600: '#059669', 700: '#047857' }
           }
         }
       }
     }
-  }
-</script>
-<style>
-  .section { display: none; }
-  .section.active { display: block; }
-  .notif-dropdown { display: none; }
-  .notif-dropdown.open { display: block; }
-.alert { display: none; }
+  </script>
+  <style>
+    :root {
+      --bg: #0a0f1e;
+      --card: #111827;
+      --border: #1f2937;
+      --text: #f9fafb;
+      --muted: #9ca3af;
+      --primary: #059669;
+      --primary-hover: #047857;
+      --primary-glow: rgba(5, 150, 105, 0.18);
+      --danger: #ef4444;
+      --success: #10b981;
+    }
 
-  /* Universal Skeletons - Step 2 */
-  .skeleton { 
-    @apply bg-gradient-to-r from-slate-800 to-slate-700 bg-[length:200%_100%] animate-shimmer rounded-xl h-4;
-  }
-  .skeleton-card { @apply h-32; }
-  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-  
-  /* Empty States */
-  .empty-state { @apply text-center p-16 text-slate-400; }
-  .empty-state i { @apply text-6xl opacity-30 mb-5 block; }
-</style>
+    body.light {
+      --bg: #f0f4f8;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* LAYOUT */
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: var(--card);
+      border-right: 1px solid var(--border);
+      padding: 24px 12px;
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      z-index: 50;
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: 260px;
+      padding: 32px;
+      padding-bottom: 100px;
+    }
+
+    @media(max-width:768px) {
+      .sidebar {
+        display: none;
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 16px 16px 90px;
+      }
+
+      .mobile-nav {
+        display: flex !important;
+      }
+    }
+
+    /* TOPBAR */
+    .topbar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    /* NAV */
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: 0.2s;
+      margin-bottom: 4px;
+    }
+
+    .nav-item:hover,
+    .nav-item.active {
+      background: var(--primary-glow);
+      color: var(--primary);
+    }
+
+    .mobile-nav {
+      display: none;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      padding: 8px 4px;
+      z-index: 100;
+      justify-content: space-around;
+    }
+
+    .m-nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      flex: 1;
+    }
+
+    .m-nav-item i {
+      font-size: 20px;
+    }
+
+    .m-nav-item.active {
+      color: var(--primary);
+    }
+
+    /* CARDS */
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* STATS */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .stat-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px var(--primary-glow);
+    }
+
+    .stat-card .num {
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: -1px;
+    }
+
+    .stat-card .lbl {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+
+    /* TABLES */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 14px 16px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:hover td {
+      background: rgba(5, 150, 105, 0.04);
+    }
+
+    @media(max-width:768px) {
+      table thead {
+        display: none;
+      }
+
+      table,
+      tbody,
+      tr,
+      td {
+        display: block;
+      }
+
+      tr {
+        background: var(--card);
+        border-radius: 14px;
+        margin-bottom: 12px;
+        border: 1px solid var(--border);
+      }
+
+      td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 16px;
+        border: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      td:last-child {
+        border-bottom: none;
+      }
+
+      td::before {
+        content: attr(data-label);
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--muted);
+        text-transform: uppercase;
+        flex-shrink: 0;
+        margin-right: 12px;
+      }
+    }
+
+    /* BUTTONS */
+    .btn {
+      padding: 10px 20px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      font-family: inherit;
+      transition: 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-ghost {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    .btn-ghost:hover {
+      background: #374151;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+
+    /* BADGES */
+    .badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .badge-green {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .badge-red {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+
+    /* ALERTS */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      font-size: 14px;
+      display: none;
+      font-weight: 600;
+    }
+
+    .alert-err {
+      background: rgba(239, 68, 68, 0.12);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+
+    .alert-ok {
+      background: rgba(16, 185, 129, 0.12);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    /* FORMS */
+    input,
+    select {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 16px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-family: inherit;
+      width: 100%;
+      outline: none;
+      transition: 0.2s;
+    }
+
+    input:focus,
+    select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+
+    input::placeholder {
+      color: var(--muted);
+    }
+
+    .form-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* SECTIONS */
+    .section {
+      display: none;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    .section-title {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .section-sub {
+      font-size: 14px;
+      color: var(--muted);
+      margin-bottom: 24px;
+    }
+
+    /* NOTIF PANEL */
+    .notif-panel {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 400px;
+      height: 100vh;
+      background: var(--card);
+      border-left: 1px solid var(--border);
+      z-index: 200;
+      transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 24px;
+      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .notif-panel.open {
+      right: 0;
+    }
+
+    .notif-item {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      gap: 12px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .notif-item:hover {
+      border-color: var(--border);
+    }
+
+    .notif-item.unread {
+      border-left: 3px solid var(--primary);
+      background: var(--primary-glow);
+    }
+
+    .notif-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      color: var(--primary);
+    }
+
+    .bell-wrap {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .bell-count {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: var(--danger);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* CONFIRM POPUP */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      z-index: 600;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      backdrop-filter: blur(6px);
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+    }
+
+    /* LOGIN SCREEN */
+    #login-screen {
+      min-height: 100vh;
+      background: radial-gradient(circle at top right, rgba(5, 150, 105, 0.18), var(--bg)), radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.10), var(--bg));
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    #login-screen.show {
+      display: flex !important;
+    }
+
+    /* LOADER */
+    @keyframes adpulse {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.35
+      }
+    }
+
+    @keyframes adbar {
+      0% {
+        transform: translateX(-100%)
+      }
+
+      100% {
+        transform: translateX(400%)
+      }
+    }
+
+    /* LIGHT MODE */
+    body.light .topbar {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+
+    body.light .sidebar {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+
+    body.light .mobile-nav {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+
+    body.light input,
+    body.light select {
+      background: #f8fafc;
+      color: #0f172a;
+      border-color: #cbd5e1;
+    }
+
+    body.light .btn-ghost {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    body.light .notif-panel {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+
+    body.light .notif-item {
+      background: #f8fafc;
+    }
+
+    body.light .modal-box {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 selection:bg-brandOrange-500/30 selection:text-slate-100">
 
-<!-- LOGIN -->
-<div id="login-screen" class="min-h-screen grid place-items-center p-6 bg-[radial-gradient(ellipse_at_top_right,rgba(249,115,22,0.16),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(34,197,94,0.18),transparent_55%)]">
-  <div class="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900/70 backdrop-blur p-8 shadow-2xl">
-    <div class="flex items-center gap-3 mb-6">
-      <div class="h-12 w-12 rounded-xl border border-slate-800 bg-slate-950/60 grid place-items-center overflow-hidden">
-        <img src="./logo.png" alt="BookIt" class="h-10 w-10 object-contain" onerror="this.style.display='none'">
-        <span class="text-2xl font-black text-brandOrange-400" aria-hidden="true">B</span>
-      </div>
-      <div>
-        <div class="text-xl font-extrabold tracking-tight">BookIt</div>
-        <div class="text-sm text-slate-400">Admin Dashboard</div>
+<body>
+  <script>if (localStorage.getItem('admin-theme') === 'light') document.body.classList.add('light');</script>
+  <script>
+    // Fallback: if the module script fails to load (wrong path/MIME/CSP), don't show a blank page.
+    setTimeout(() => {
+      const loader = document.getElementById('admin-loader');
+      const login = document.getElementById('login-screen');
+      const dash = document.getElementById('dashboard');
+      if (!loader || !login || !dash) return;
+      const loginVisible = getComputedStyle(login).display !== 'none';
+      const dashVisible = getComputedStyle(dash).display !== 'none';
+      if (loginVisible || dashVisible) return;
+      loader.style.display = 'none';
+      login.style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),#0a0f1e),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),#0a0f1e);';
+      const box = login.querySelector('div');
+      if (box) {
+        const warn = document.createElement('div');
+        warn.textContent = 'Admin scripts did not load. Open DevTools → Console/Network to see the error (often: /api.js 404 or wrong MIME, or blocked CDN).';
+        warn.style.cssText = 'margin-bottom:14px;padding:12px 14px;border-radius:12px;background:rgba(239,68,68,0.12);color:#f87171;border:1px solid rgba(239,68,68,0.25);font-size:13px;font-weight:700;';
+        box.prepend(warn);
+      }
+    }, 2500);
+  </script>
+
+  <!-- LOADER -->
+  <div id="admin-loader"
+    style="position:fixed;inset:0;z-index:9999;background:#0a0f1e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.5s ease;">
+    <img src="./download.png" alt="BookIt"
+      style="width:140px;height:auto;filter:brightness(0) invert(1);animation:adpulse 1.4s ease-in-out infinite;">
+    <div style="width:160px;height:4px;background:var(--border);border-radius:99px;overflow:hidden;">
+      <div
+        style="height:100%;width:40%;background:var(--primary);border-radius:99px;animation:adbar 3.5s ease-in-out infinite;">
       </div>
     </div>
-
-    <div class="alert rounded-xl border border-red-900/60 bg-red-950/50 px-4 py-3 text-sm text-red-200" id="login-err"></div>
-
-    <div class="flex flex-col gap-3">
-      <input type="email" id="email" placeholder="Email" class="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
-      <input type="password" id="password" placeholder="Password" class="w-full rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
-      <button class="w-full rounded-xl bg-brandOrange-500 px-4 py-3 text-sm font-extrabold text-slate-950 shadow-lg shadow-brandOrange-500/10 hover:bg-brandOrange-400 active:bg-brandOrange-600 transition" onclick="doLogin()">
-        Sign In
-      </button>
-      <div class="text-xs text-slate-500">
-        Tip: use an <span class="text-slate-300 font-semibold">admin</span> account.
-      </div>
-    </div>
+    <div style="font-size:13px;color:var(--muted);font-weight:600;">Loading Admin Dashboard...</div>
   </div>
-</div>
 
-<!-- DASHBOARD -->
-<div id="dashboard" class="hidden">
-  <div class="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/70 backdrop-blur">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="h-9 w-9 rounded-lg border border-slate-800 bg-slate-900 grid place-items-center overflow-hidden">
-          <img src="./logo.png" alt="BookIt" class="h-7 w-7 object-contain" onerror="this.style.display='none'">
-          <span class="text-sm font-black text-brandOrange-400" aria-hidden="true">B</span>
-        </div>
-        <div class="font-extrabold tracking-tight">BookIt <span class="text-brandOrange-400">Admin</span></div>
+  <!-- LOGIN -->
+  <div id="login-screen" style="display:none;">
+    <div
+      style="background:var(--card);border:1px solid var(--border);border-radius:24px;padding:40px;width:100%;max-width:420px;box-shadow:0 25px 50px rgba(0,0,0,0.5);">
+      <div style="text-align:center;margin-bottom:28px;">
+        <img src="./download.png" alt="BookIt" style="height:72px;width:auto;filter:brightness(0) invert(1);">
+        <p style="color:var(--muted);font-size:13px;margin-top:8px;">Admin Dashboard</p>
       </div>
-
-      <div class="flex items-center gap-3 relative">
-        <button class="relative h-10 w-10 rounded-full border border-slate-800 bg-slate-900/60 text-slate-200 hover:bg-slate-900 transition" onclick="toggleNotifs()" id="bell-btn" aria-label="Notifications">
-          <span aria-hidden="true">🔔</span>
-          <span class="absolute -top-1 -right-1 hidden h-5 min-w-5 px-1 rounded-full bg-brandOrange-500 text-[11px] font-extrabold text-slate-950 grid place-items-center border-2 border-slate-950" id="bell-count">0</span>
+      <div class="alert alert-err" id="login-err"></div>
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <input type="email" id="email" placeholder="Email address" style="height: 50px; padding: 10px;" />
+        <input type="password" id="password" placeholder="Password" style="height: 50px; padding: 10px;" />
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:14px;" onclick="doLogin()">
+          <i class="fa fa-sign-in-alt"></i> Sign In
         </button>
-        <div class="notif-dropdown absolute right-0 top-12 w-[22rem] overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/90 backdrop-blur shadow-2xl" id="notif-dropdown">
-          <div class="flex items-center justify-between gap-3 px-4 py-3 border-b border-slate-800">
-            <span class="font-bold">Notifications</span>
-            <button class="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-1.5 text-xs font-bold text-slate-200 hover:bg-slate-900 transition" onclick="markAllRead()">Mark all read</button>
-          </div>
-          <div id="notif-list" class="max-h-[24rem] overflow-auto"></div>
-        </div>
-        <button class="rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-2 text-sm font-bold text-slate-200 hover:bg-slate-900 transition" onclick="logout()">Logout</button>
       </div>
     </div>
   </div>
 
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-[16rem_1fr] gap-6">
-    <aside class="rounded-2xl border border-slate-800 bg-slate-900/40 p-3 h-fit lg:sticky lg:top-24">
-      <div class="px-3 py-3">
-        <div class="text-xs font-black tracking-widest text-slate-500">NAVIGATION</div>
+  <!-- DASHBOARD -->
+  <div id="dashboard" style="display:none;">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <img src="./download.png" alt="BookIt" style="height:48px;width:auto;filter:brightness(0) invert(1);">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button id="ad-theme-btn" onclick="toggleAdTheme()"
+          style="background:var(--border);border:none;color:var(--muted);padding:8px 12px;border-radius:10px;cursor:pointer;font-size:16px;"><i
+            class="fa fa-moon"></i></button>
+        <div class="bell-wrap" onclick="toggleNotifs()">
+          <i class="fa fa-bell" style="font-size:20px;color:var(--muted);"></i>
+          <span class="bell-count" id="bell-count" style="display:none;">0</span>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="logout()"><i class="fa fa-sign-out-alt"></i> Logout</button>
       </div>
-      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition active bg-slate-900/70 text-brandOrange-300" onclick="showSection('overview')">📊 Overview</button>
-      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition" onclick="showSection('operators')">🏢 Operators</button>
-      <button class="nav-item w-full text-left rounded-xl px-4 py-3 text-sm font-bold text-slate-300 hover:bg-slate-900/70 hover:text-slate-100 transition" onclick="showSection('locations')">📍 Locations</button>
-    </aside>
+    </div>
 
-    <main class="min-w-0">
+    <!-- LAYOUT -->
+    <div class="layout">
 
-      <!-- OVERVIEW -->
-      <div class="section active" id="sec-overview">
-        <div class="flex items-end justify-between gap-4 mb-6">
-          <div>
-            <div class="text-2xl font-extrabold tracking-tight">Overview</div>
-            <div class="text-sm text-slate-400">Quick snapshot of the platform.</div>
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <div style="margin-bottom:32px;padding:0 8px;">
+          <img src="./download.png" alt="BookIt"
+            style="width:100%;max-height:72px;object-fit:contain;filter:brightness(0) invert(1);">
+        </div>
+        <div class="nav-item active" id="sd-overview" onclick="showSection('overview',this)"><i
+            class="fa fa-chart-pie"></i> Overview</div>
+        <div class="nav-item" id="sd-operators" onclick="showSection('operators',this)"><i class="fa fa-building"></i>
+          Operators</div>
+        <div class="nav-item" id="sd-locations" onclick="showSection('locations',this)"><i
+            class="fa fa-map-marker-alt"></i> Locations</div>
+        <div class="nav-item" id="sd-locker" onclick="showSection('locker',this)"><i class="fa fa-lock"></i> Locker
+        </div>
+        <div class="nav-item" id="sd-profile" onclick="showSection('profile',this)"><i class="fa fa-user-circle"></i>
+          Profile</div>
+        <div style="margin-top:auto;padding-top:20px;border-top:1px solid var(--border);">
+          <div class="nav-item" onclick="logout()" style="color:var(--danger);"><i class="fa fa-sign-out-alt"></i>
+            Logout</div>
+        </div>
+      </aside>
+
+      <!-- MAIN -->
+      <main class="main-content">
+
+        <!-- OVERVIEW -->
+        <div class="section active" id="sec-overview">
+          <div class="section-title">Overview</div>
+          <div class="section-sub">Platform snapshot</div>
+          <div class="stats-grid">
+            <div class="stat-card group" onclick="showSection('operators',document.getElementById('sd-operators'))">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold uppercase tracking-widest" style="color:var(--muted);">Operators</span>
+                <i class="fa fa-building text-emerald-600 opacity-60 group-hover:opacity-100 transition"></i>
+              </div>
+              <div class="num" id="stat-ops">—</div>
+              <div class="lbl">Total registered</div>
+            </div>
+            <div class="stat-card group" onclick="showSection('locations',document.getElementById('sd-locations'))">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs font-bold uppercase tracking-widest" style="color:var(--muted);">Locations</span>
+                <i class="fa fa-map-marker-alt text-emerald-600 opacity-60 group-hover:opacity-100 transition"></i>
+              </div>
+              <div class="num" id="stat-locs">—</div>
+              <div class="lbl">Cities &amp; towns</div>
+            </div>
           </div>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
-            <div class="text-sm text-slate-400 font-bold">Operators</div>
-            <div class="mt-2 text-4xl font-black tracking-tight text-brandOrange-300" id="stat-ops">—</div>
-          </div>
-          <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-5">
-            <div class="text-sm text-slate-400 font-bold">Locations</div>
-            <div class="mt-2 text-4xl font-black tracking-tight text-brandOrange-300" id="stat-locs">—</div>
-          </div>
-        </div>
-      </div>
 
-      <!-- OPERATORS -->
-      <div class="section" id="sec-operators">
-        <div class="flex items-end justify-between gap-4 mb-6">
-          <div>
-            <div class="text-2xl font-extrabold tracking-tight">Operators</div>
-            <div class="text-sm text-slate-400">Create and manage bus operators.</div>
+        <!-- OPERATORS -->
+        <div class="section" id="sec-operators">
+          <div class="section-title">Operators</div>
+          <div class="section-sub">Create and manage bus operators</div>
+          <div class="card">
+            <h3>Add Operator</h3>
+            <div class="alert alert-err" id="op-err"></div>
+            <div class="alert alert-ok" id="op-ok"></div>
+            <div class="form-row">
+              <input id="op-name" placeholder="Company name" style="height: 50px; padding: 10px;" />
+              <input id="op-contact" placeholder="Contact / Phone" style="height: 50px; padding: 10px;" />
+              <button class="btn btn-primary" onclick="createOperator()">Add</button>
+            </div>
+            <div id="op-pass"
+              style="display:none;margin-top:14px;background:var(--bg);border:1px solid var(--primary);border-radius:12px;padding:12px 16px;">
+              Default password: <span id="op-pass-val"
+                style="color:var(--primary);font-weight:800;font-family:monospace;"></span>
+            </div>
           </div>
-        </div>
-
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 mb-6">
-          <div class="text-sm font-extrabold text-slate-200 mb-4">Add Operator</div>
-          <div class="alert rounded-xl border border-red-900/60 bg-red-950/50 px-4 py-3 text-sm text-red-200 mb-3" id="op-err"></div>
-          <div class="alert rounded-xl border border-forest-900/50 bg-forest-950/30 px-4 py-3 text-sm text-forest-200 mb-3" id="op-ok"></div>
-          <div class="flex flex-col lg:flex-row gap-3">
-            <input id="op-name" placeholder="Company name" class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
-            <input id="op-contact" placeholder="Contact" class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
-            <button class="rounded-xl bg-brandOrange-500 px-5 py-3 text-sm font-extrabold text-slate-950 hover:bg-brandOrange-400 active:bg-brandOrange-600 transition" onclick="createOperator()">Add</button>
-          </div>
-          <div class="hidden mt-4 rounded-xl border border-brandOrange-500/40 bg-slate-950/40 px-4 py-3 text-sm text-slate-200" id="op-pass">
-            Default password: <span class="font-black text-brandOrange-300" id="op-pass-val"></span>
-          </div>
-        </div>
-
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-0 overflow-hidden">
-          <div class="px-6 py-4 border-b border-slate-800">
-            <div class="text-sm font-extrabold text-slate-200">All Operators</div>
-          </div>
-          <div class="overflow-auto">
-            <table class="w-full border-collapse">
-              <thead class="bg-slate-950/60">
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;">All Operators</div>
+            <table>
+              <thead>
                 <tr>
-                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Company</th>
-                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Contact</th>
-                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Status</th>
-                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Actions</th>
+                  <th>Company</th>
+                  <th>Contact</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
-              <tbody id="op-table" class="[&>tr>td]:px-6 [&>tr>td]:py-4 [&>tr]:border-t [&>tr]:border-slate-800/70 [&>tr:hover]:bg-slate-950/40"></tbody>
+              <tbody id="op-table"></tbody>
             </table>
           </div>
         </div>
-      </div>
 
-      <!-- LOCATIONS -->
-      <div class="section" id="sec-locations">
-        <div class="flex items-end justify-between gap-4 mb-6">
-          <div>
-            <div class="text-2xl font-extrabold tracking-tight">Locations</div>
-            <div class="text-sm text-slate-400">Manage cities/towns used in routes.</div>
+        <!-- LOCATIONS -->
+        <div class="section" id="sec-locations">
+          <div class="section-title">Locations</div>
+          <div class="section-sub">Manage cities and towns used in routes</div>
+          <div class="card">
+            <h3>Add Location</h3>
+            <div class="alert alert-err" id="loc-err"></div>
+            <div class="form-row">
+              <input id="loc-name" placeholder="City / Town name" style="height: 50px; padding: 10px;" />
+              <button class="btn btn-primary" onclick="createLocation()">Add</button>
+            </div>
           </div>
-        </div>
-
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-6 mb-6">
-          <div class="text-sm font-extrabold text-slate-200 mb-4">Add Location</div>
-          <div class="alert rounded-xl border border-red-900/60 bg-red-950/50 px-4 py-3 text-sm text-red-200 mb-3" id="loc-err"></div>
-          <div class="flex flex-col sm:flex-row gap-3">
-            <input id="loc-name" placeholder="City / Town name" class="flex-1 rounded-xl border border-slate-800 bg-slate-950/60 px-4 py-3 text-sm placeholder:text-slate-500 outline-none focus:border-brandOrange-500 focus:ring-4 focus:ring-brandOrange-500/10" />
-            <button class="rounded-xl bg-brandOrange-500 px-5 py-3 text-sm font-extrabold text-slate-950 hover:bg-brandOrange-400 active:bg-brandOrange-600 transition" onclick="createLocation()">Add</button>
-          </div>
-        </div>
-
-        <div class="rounded-2xl border border-slate-800 bg-slate-900/40 p-0 overflow-hidden">
-          <div class="px-6 py-4 border-b border-slate-800">
-            <div class="text-sm font-extrabold text-slate-200">All Locations</div>
-          </div>
-          <div class="overflow-auto">
-            <table class="w-full border-collapse">
-              <thead class="bg-slate-950/60">
+          <div class="card" style="padding:0;overflow:hidden;">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:700;">All Locations</div>
+            <table>
+              <thead>
                 <tr>
-                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Name</th>
-                  <th class="text-left px-6 py-3 text-[11px] tracking-widest font-black text-slate-500 uppercase">Actions</th>
+                  <th>Name</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
-              <tbody id="loc-table" class="[&>tr>td]:px-6 [&>tr>td]:py-4 [&>tr]:border-t [&>tr]:border-slate-800/70 [&>tr:hover]:bg-slate-950/40"></tbody>
+              <tbody id="loc-table"></tbody>
             </table>
           </div>
         </div>
-      </div>
 
-    </main>
+        <!-- LOCKER -->
+        <div class="section" id="sec-locker">
+          <div class="section-title">Password Locker</div>
+          <div class="section-sub">Saved credentials for operators you created. Requires your account password to view.
+          </div>
+          <div class="card">
+            <h3>Saved Credentials</h3>
+            <div id="locker-list">
+              <p style="color:var(--muted);font-size:13px;">No saved credentials yet.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROFILE -->
+        <div class="section" id="sec-profile">
+          <div class="section-title">My Profile</div>
+          <div class="section-sub">Admin account settings</div>
+          <div class="card">
+            <h3>Account Info</h3>
+            <div id="profile-info" style="margin-bottom:24px;"></div>
+            <h3>Update Details</h3>
+            <div class="alert alert-err" id="profile-err"></div>
+            <div class="alert alert-ok" id="profile-ok"></div>
+            <div class="form-row" style="margin-bottom:12px;">
+              <input id="profile-name" placeholder="Full name" />
+              <input id="profile-phone" placeholder="Phone" />
+            </div>
+            <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+          </div>
+          <div class="card">
+            <h3>Change Password</h3>
+            <div class="alert alert-err" id="pw-err"></div>
+            <div class="alert alert-ok" id="pw-ok"></div>
+            <div class="form-row">
+              <input type="password" id="pw-old" placeholder="Current password" />
+              <input type="password" id="pw-new" placeholder="New password" />
+              <input type="password" id="pw-confirm" placeholder="Confirm new password" />
+              <button class="btn btn-primary" onclick="changePassword()">Change Password</button>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+
+    <!-- MOBILE NAV -->
+    <nav class="mobile-nav">
+      <div class="m-nav-item active" id="mb-overview" onclick="showSection('overview',this)"><i
+          class="fa fa-chart-pie"></i><span>Overview</span></div>
+      <div class="m-nav-item" id="mb-operators" onclick="showSection('operators',this)"><i
+          class="fa fa-building"></i><span>Operators</span></div>
+      <div class="m-nav-item" id="mb-locations" onclick="showSection('locations',this)"><i
+          class="fa fa-map-marker-alt"></i><span>Locations</span></div>
+      <div class="m-nav-item" id="mb-locker" onclick="showSection('locker',this)"><i
+          class="fa fa-lock"></i><span>Locker</span></div>
+      <div class="m-nav-item" id="mb-profile" onclick="showSection('profile',this)"><i
+          class="fa fa-user-circle"></i><span>Profile</span></div>
+      <div class="m-nav-item" onclick="toggleNotifs()" style="position:relative;">
+        <i class="fa fa-bell"></i>
+        <span class="bell-count" id="m-bell-count"
+          style="display:none;position:absolute;top:-4px;right:-4px;background:var(--danger);color:white;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center;">0</span>
+        <span>Alerts</span>
+      </div>
+      <div class="m-nav-item" onclick="logout()" style="color:var(--danger);"><i
+          class="fa fa-sign-out-alt"></i><span>Logout</span></div>
+    </nav>
+
+    <!-- NOTIFICATION PANEL -->
+    <div class="notif-panel" id="notif-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <h3 style="font-size:18px;font-weight:800;">Notifications</h3>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleNotifs()"><i class="fa fa-times"></i></button>
+        </div>
+      </div>
+      <div id="notif-list"
+        style="overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:var(--border) transparent;"></div>
+    </div>
+
+    <!-- CONFIRM POPUP -->
+    <div class="modal-backdrop" id="ad-confirm">
+      <div class="modal-box" style="text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;"><i class="fa fa-triangle-exclamation"
+            style="color:#f59e0b;"></i></div>
+        <h3 id="ad-confirm-title" style="font-size:18px;font-weight:800;margin-bottom:8px;"></h3>
+        <p id="ad-confirm-msg" style="color:var(--muted);font-size:14px;margin-bottom:24px;"></p>
+        <div style="display:flex;gap:12px;">
+          <button class="btn btn-ghost" style="flex:1;" onclick="adConfirmResolve(false)">Cancel</button>
+          <button id="ad-confirm-ok" class="btn" style="flex:1;color:white;background:#ef4444;"
+            onclick="adConfirmResolve(true)">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCKER UNLOCK MODAL -->
+    <div class="modal-backdrop" id="locker-unlock-modal">
+      <div class="modal-box"
+        style="max-width:380px;text-align:center;border:2px solid rgba(239,68,68,0.4);box-shadow:0 0 40px rgba(239,68,68,0.15);">
+        <div style="font-size:52px;margin-bottom:12px;"><i class="fa fa-lock" style="color:#ef4444;"></i></div>
+        <h3 style="font-size:18px;font-weight:800;margin-bottom:8px;color:#f87171;">Locker — Password Required</h3>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Enter your account password to access saved
+          credentials.</p>
+        <div class="alert alert-err" id="locker-unlock-err"></div>
+        <input type="password" id="locker-unlock-pass" placeholder="Your password"
+          style="margin-bottom:16px;border-color:rgba(239,68,68,0.4);" />
+        <div style="display:flex;gap:12px;">
+          <button class="btn btn-ghost" style="flex:1;" onclick="closeLockerUnlock()">Cancel</button>
+          <button class="btn btn-primary" style="flex:1;background:#ef4444;" onclick="submitLockerUnlock()"><i
+              class="fa fa-unlock"></i> Unlock</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCKER ENTRY MODAL -->
+    <div class="modal-backdrop" id="locker-entry-modal">
+      <div class="modal-box" style="max-width:420px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <h3 style="font-size:18px;font-weight:800;"><i class="fa fa-key"
+              style="color:var(--primary);margin-right:8px;"></i>Credential</h3>
+          <button class="btn btn-ghost btn-sm" onclick="closeLockerEntry()"><i class="fa fa-times"></i></button>
+        </div>
+        <div id="locker-entry-body"></div>
+      </div>
+    </div>
+
   </div>
-</div>
 
-<script type="module">
-import { api, setToken, clearToken, getToken } from './api.js';
-window.api = api;
+  <script src="./api.js"></script>
+  <script>
+    const { api, setToken, clearToken, getToken } = window.BookItApi;
+    window.api = api;
 
-// ── AUTH ──────────────────────────────────────────────
-window.doLogin = async () => {
-  const email    = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  try {
-    const data = await api.loginUser({ email, password });
-    if (data.user.role !== 'admin') throw new Error('Not an admin account');
-    setToken(data.token);
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display    = 'block';
-    init();
-  } catch(e) {
-    const el = document.getElementById('login-err');
-    el.textContent = e.message; el.style.display = 'block';
-  }
-};
+    const parseJwt = (token) => {
+      try {
+        const part = token.split('.')[1];
+        if (!part) return null;
+        const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(atob(b64));
+      } catch { return null; }
+    };
+    const tokenRole = () => parseJwt(getToken() || '')?.role || null;
 
-window.logout = () => {
-  clearToken();
-  location.reload();
-};
+    // ── CONFIRM POPUP ─────────────────────────────────────
+    let _adConfirmResolve = null;
+    const showConfirm = (title, msg) => {
+      document.getElementById('ad-confirm-title').textContent = title;
+      document.getElementById('ad-confirm-msg').textContent = msg;
+      document.getElementById('ad-confirm').classList.add('open');
+      return new Promise(res => { _adConfirmResolve = res; });
+    };
+    window.adConfirmResolve = (val) => {
+      document.getElementById('ad-confirm').classList.remove('open');
+      if (_adConfirmResolve) { _adConfirmResolve(val); _adConfirmResolve = null; }
+    };
 
-// ── INIT ──────────────────────────────────────────────
-async function init() {
-  loadOverview();
-  loadOperators();
-  loadLocations();
-  loadNotifications();
-  setInterval(loadNotifications, 30000);
-}
+    // ── TOAST ─────────────────────────────────────────────
+    const toastEl = document.createElement('div');
+    toastEl.style.cssText = 'position:fixed;top:24px;right:24px;z-index:9000;display:flex;flex-direction:column;gap:10px;pointer-events:none;';
+    document.body.appendChild(toastEl);
+    const showToast = (msg, type = 'info') => {
+      const colors = { success: '#10b981', error: '#ef4444', info: '#059669' };
+      const t = document.createElement('div');
+      t.style.cssText = `background:var(--card);border:1px solid var(--border);border-left:4px solid ${colors[type] || colors.info};padding:14px 18px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.3);min-width:280px;font-size:14px;font-weight:600;color:var(--text);pointer-events:auto;transform:translateX(120%);transition:transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275);`;
+      t.textContent = msg;
+      toastEl.appendChild(t);
+      setTimeout(() => t.style.transform = 'translateX(0)', 10);
+      setTimeout(() => { t.style.transform = 'translateX(120%)'; setTimeout(() => t.remove(), 350); }, 4000);
+    };
 
-// ── NAVIGATION ────────────────────────────────────────
-window.showSection = (name) => {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById(`sec-${name}`).classList.add('active');
-  event.target.classList.add('active');
-};
+    // ── THEME ─────────────────────────────────────────────
+    window.toggleAdTheme = () => {
+      const isLight = document.body.classList.toggle('light');
+      localStorage.setItem('admin-theme', isLight ? 'light' : 'dark');
+      const btn = document.getElementById('ad-theme-btn');
+      if (btn) btn.innerHTML = isLight ? '<i class="fa fa-moon"></i>' : '<i class="fa fa-sun"></i>';
+    };
+    (function () {
+      if (localStorage.getItem('admin-theme') === 'light') {
+        const btn = document.getElementById('ad-theme-btn');
+        if (btn) btn.innerHTML = '<i class="fa fa-moon"></i>';
+      }
+    })();
 
-// ── OVERVIEW ──────────────────────────────────────────
-async function loadOverview() {
-  const [ops, locs] = await Promise.all([api.getOperators(), api.getLocations()]);
-  document.getElementById('stat-ops').textContent  = ops.length;
-  document.getElementById('stat-locs').textContent = locs.length;
-}
+    // ── AUTH ──────────────────────────────────────────────
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
+    });
 
-// ── OPERATORS ─────────────────────────────────────────
-async function loadOperators() {
-  const ops  = await api.getOperators();
-  const tbody = document.getElementById('op-table');
-  tbody.innerHTML = ops.map(o => `
-    <tr>
-      <td>${o.company_name}</td>
-      <td>${o.contact || '—'}</td>
-      <td><span class="badge ${o.is_active ? 'badge-green' : 'badge-red'}">${o.is_active ? 'Active' : 'Suspended'}</span></td>
-      <td style="display:flex;gap:8px;">
-        <button class="btn btn-ghost btn-sm" onclick="toggleOp('${o.id}')">${o.is_active ? 'Suspend' : 'Activate'}</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteOp('${o.id}')">Delete</button>
-      </td>
-    </tr>
-  `).join('');
-}
+    window.doLogin = async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const err = document.getElementById('login-err');
+      err.style.display = 'none';
+      try {
+        const data = await api.loginUser({ email, password });
+        if (data.user.role !== 'admin') throw new Error('Not an admin account');
+        setToken(data.token);
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        init();
+      } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+    };
 
-window.createOperator = async () => {
-  const name    = document.getElementById('op-name').value.trim();
-  const contact = document.getElementById('op-contact').value.trim();
-  const err = document.getElementById('op-err');
-  const ok  = document.getElementById('op-ok');
-  err.style.display = 'none'; ok.style.display = 'none';
-  try {
-    const data = await api.createOperator({ company_name: name, contact });
-    document.getElementById('op-pass-val').textContent = data.default_password;
-    document.getElementById('op-pass').style.display   = 'block';
-    ok.textContent = `Operator "${data.company_name}" created`; ok.style.display = 'block';
-    document.getElementById('op-name').value    = '';
-    document.getElementById('op-contact').value = '';
-    loadOperators(); loadOverview();
-  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
-};
+    window.logout = () => { clearToken(); location.reload(); };
 
-window.toggleOp = async (id) => {
-  await api.toggleOperator(id);
-  loadOperators();
-};
+    // ── INIT ──────────────────────────────────────────────
+    async function init() {
+      loadOverview();
+      loadOperators();
+      loadLocations();
+      loadNotifications();
+      setInterval(loadNotifications, 30000);
+    }
 
-window.deleteOp = async (id) => {
-  if (!confirm('Delete this operator?')) return;
-  await api.deleteOperator(id);
-  loadOperators(); loadOverview();
-};
+    // ── NAVIGATION ────────────────────────────────────────
+    window.showSection = (name, el) => {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.nav-item, .m-nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById(`sec-${name}`).classList.add('active');
+      if (el) el.classList.add('active');
+      const sd = document.getElementById(`sd-${name}`);
+      const mb = document.getElementById(`mb-${name}`);
+      if (sd) sd.classList.add('active');
+      if (mb) mb.classList.add('active');
+      if (name === 'locker') { openLockerUnlock(); return; }
+      if (name === 'profile') loadProfile();
+    };
 
-// ── LOCATIONS ─────────────────────────────────────────
-async function loadLocations() {
-  const locs  = await api.getLocations();
-  const tbody = document.getElementById('loc-table');
-  tbody.innerHTML = locs.map(l => `
-    <tr>
-      <td>${l.name}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteLoc('${l.id}')">Delete</button></td>
-    </tr>
-  `).join('');
-}
+    // ── OVERVIEW ──────────────────────────────────────────
+    async function loadOverview() {
+      try {
+        const [ops, locs] = await Promise.all([api.getOperators(), api.getLocations()]);
+        document.getElementById('stat-ops').textContent = ops.length;
+        document.getElementById('stat-locs').textContent = locs.length;
+      } catch { }
+    }
 
-window.createLocation = async () => {
-  const name = document.getElementById('loc-name').value.trim();
-  const err  = document.getElementById('loc-err');
-  err.style.display = 'none';
-  try {
-    await api.createLocation({ name });
-    document.getElementById('loc-name').value = '';
-    loadLocations(); loadOverview();
-  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
-};
+    // ── OPERATORS ─────────────────────────────────────────
+    async function loadOperators() {
+      try {
+        const ops = await api.getOperators();
+        document.getElementById('op-table').innerHTML = ops.map(o => `
+      <tr>
+        <td data-label="Company">${o.company_name}</td>
+        <td data-label="Contact">${o.contact || '—'}</td>
+        <td data-label="Status"><span class="badge ${o.is_active ? 'badge-green' : 'badge-red'}">${o.is_active ? 'Active' : 'Suspended'}</span></td>
+        <td data-label="Actions" style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="toggleOp('${o.id}')">${o.is_active ? 'Suspend' : 'Activate'}</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteOp('${o.id}')">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+      } catch (e) { showToast(e.message, 'error'); }
+    }
 
-window.deleteLoc = async (id) => {
-  if (!confirm('Delete this location?')) return;
-  await api.deleteLocation(id);
-  loadLocations(); loadOverview();
-};
+    window.createOperator = async () => {
+      const name = document.getElementById('op-name').value.trim();
+      const contact = document.getElementById('op-contact').value.trim();
+      const err = document.getElementById('op-err');
+      const ok = document.getElementById('op-ok');
+      err.style.display = 'none'; ok.style.display = 'none';
+      try {
+        const data = await api.createOperator({ company_name: name, contact });
+        document.getElementById('op-pass-val').textContent = data.default_password;
+        document.getElementById('op-pass').style.display = 'block';
+        ok.textContent = `Operator "${data.company_name}" created`; ok.style.display = 'block';
+        document.getElementById('op-name').value = '';
+        document.getElementById('op-contact').value = '';
+        loadOperators(); loadOverview();
+      } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+    };
 
-// ── NOTIFICATIONS ─────────────────────────────────────
-async function loadNotifications() {
-  const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
-  const count = unread.unread;
-  const bell  = document.getElementById('bell-count');
-  bell.textContent  = count;
-  bell.style.display = count > 0 ? 'flex' : 'none';
+    window.toggleOp = async (id) => {
+      try { await api.toggleOperator(id); loadOperators(); showToast('Operator status updated', 'success'); }
+      catch (e) { showToast(e.message, 'error'); }
+    };
 
-  document.getElementById('notif-list').innerHTML = notifs.length
-    ? notifs.map(n => `
-        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${n.id}', this)">
-          <p>${n.message}</p>
-          <small>${new Date(n.createdAt).toLocaleString()}</small>
+    window.deleteOp = async (id) => {
+      const ok = await showConfirm('Delete Operator', 'This will permanently remove the operator.');
+      if (!ok) return;
+      try { await api.deleteOperator(id); loadOperators(); loadOverview(); showToast('Operator deleted', 'success'); }
+      catch (e) { showToast(e.message, 'error'); }
+    };
+
+    // ── LOCATIONS ─────────────────────────────────────────
+    async function loadLocations() {
+      try {
+        const locs = await api.getLocations();
+        document.getElementById('loc-table').innerHTML = locs.map(l => `
+      <tr>
+        <td data-label="Name">${l.name}</td>
+        <td data-label="Actions"><button class="btn btn-danger btn-sm" onclick="deleteLoc('${l.id}')">Delete</button></td>
+      </tr>
+    `).join('');
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    window.createLocation = async () => {
+      const name = document.getElementById('loc-name').value.trim();
+      const err = document.getElementById('loc-err');
+      err.style.display = 'none';
+      try {
+        await api.createLocation({ name });
+        document.getElementById('loc-name').value = '';
+        await loadLocations(); await loadOverview();
+        showToast('Location added', 'success');
+      } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+    };
+
+    window.deleteLoc = async (id) => {
+      const ok = await showConfirm('Delete Location', 'This location will be permanently removed.');
+      if (!ok) return;
+      try { await api.deleteLocation(id); loadLocations(); loadOverview(); showToast('Location deleted', 'success'); }
+      catch (e) { showToast(e.message, 'error'); }
+    };
+
+    // ── NOTIFICATIONS ─────────────────────────────────────
+    window.toggleNotifs = () => document.getElementById('notif-panel').classList.toggle('open');
+
+    async function loadNotifications() {
+      try {
+        const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
+        const count = unread.unread;
+        const bell = document.getElementById('bell-count');
+        const mbell = document.getElementById('m-bell-count');
+        bell.textContent = count; bell.style.display = count > 0 ? 'flex' : 'none';
+        if (mbell) { mbell.textContent = count; mbell.style.display = count > 0 ? 'flex' : 'none'; }
+
+        document.getElementById('notif-list').innerHTML = notifs.length ? notifs.map(n => `
+      <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${n.id}',this)">
+        <div class="notif-icon"><i class="fa fa-bell"></i></div>
+        <div style="flex:1;">
+          <p style="font-size:13px;font-weight:600;">${n.message}</p>
+          <small style="color:var(--muted);font-size:11px;">${new Date(n.createdAt).toLocaleTimeString()}</small>
         </div>
-      `).join('')
-    : '<div style="padding:24px;text-align:center;color:#64748b;">No notifications</div>';
-}
+      </div>
+    `).join('') : `<div style="text-align:center;padding:48px 20px;">
+      <i class="fa fa-bell-slash" style="font-size:48px;color:var(--border);margin-bottom:16px;display:block;"></i>
+      <p style="font-weight:700;">No notifications yet</p>
+    </div>`;
+      } catch { }
+    }
 
-window.toggleNotifs = () => {
-  document.getElementById('notif-dropdown').classList.toggle('open');
-};
+    window.readNotif = async (id, el) => { await api.markRead(id); el.classList.remove('unread'); loadNotifications(); };
+    window.markAllRead = async () => { await api.markAllRead(); loadNotifications(); };
 
-window.readNotif = async (id, el) => {
-  await api.markRead(id);
-  el.classList.remove('unread');
-  loadNotifications();
-};
+    // ── LOCKER ────────────────────────────────────────────
+    // ── LOCKER (DB-driven) ────────────────────────────────
+    let _lockerData = null;
 
-window.markAllRead = async () => {
-  await api.markAllRead();
-  loadNotifications();
-};
+    window.copyText = (text) => {
+      navigator.clipboard.writeText(text).then(() => showToast('Copied!', 'success'));
+    };
 
-// close dropdown on outside click
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('#bell-btn') && !e.target.closest('#notif-dropdown')) {
-    document.getElementById('notif-dropdown').classList.remove('open');
-  }
-});
+    const openLockerUnlock = () => {
+      _lockerData = null;
+      const err = document.getElementById('locker-unlock-err');
+      err.style.display = 'none'; err.textContent = '';
+      document.getElementById('locker-unlock-pass').value = '';
+      document.getElementById('locker-unlock-modal').classList.add('open');
+      setTimeout(() => document.getElementById('locker-unlock-pass').focus(), 100);
+    };
 
-// auto login if token exists
-if (getToken()) {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('dashboard').style.display    = 'block';
-  init();
-}
-</script>
+    window.closeLockerUnlock = () => {
+      document.getElementById('locker-unlock-modal').classList.remove('open');
+      if (!_lockerData) showSection('overview', document.getElementById('sd-overview'));
+    };
+
+    window.submitLockerUnlock = async () => {
+      const pass = document.getElementById('locker-unlock-pass').value;
+      const err = document.getElementById('locker-unlock-err');
+      err.style.display = 'none';
+      if (!pass) { err.textContent = 'Password required'; err.style.display = 'block'; return; }
+      const btn = document.querySelector('#locker-unlock-modal .btn-primary');
+      btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Verifying...';
+      try {
+        _lockerData = await api.getLocker({ password: pass });
+        document.getElementById('locker-unlock-modal').classList.remove('open');
+        renderLockerList();
+      } catch (e) {
+        err.textContent = e.message || 'Incorrect password';
+        err.style.display = 'block';
+      } finally {
+        btn.disabled = false; btn.innerHTML = '<i class="fa fa-unlock"></i> Unlock';
+      }
+    };
+
+    const renderLockerList = () => {
+      const el = document.getElementById('locker-list');
+      if (!_lockerData || !_lockerData.length) {
+        el.innerHTML = '<p style="color:var(--muted);font-size:13px;">No operators found.</p>';
+        return;
+      }
+      el.innerHTML = _lockerData.map((o, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg);border-radius:12px;border:1px solid var(--border);margin-bottom:10px;">
+      <div>
+        <div style="font-weight:700;font-size:14px;">${o.company_name}</div>
+        <div style="font-size:12px;margin-top:3px;">
+          ${o.default_password
+          ? '<span style="color:var(--muted);">Default password set</span>'
+          : '<span style="color:#f59e0b;"><i class="fa fa-check-circle"></i> Password changed</span>'}
+        </div>
+      </div>
+      ${o.default_password
+          ? `<button class="btn btn-ghost btn-sm" onclick="viewLockerEntry(${i})"><i class="fa fa-eye"></i> View</button>`
+          : '<span style="font-size:12px;color:var(--muted);">—</span>'}
+    </div>
+  `).join('');
+    };
+
+    window.viewLockerEntry = (i) => {
+      const o = _lockerData?.[i];
+      if (!o) return;
+      document.getElementById('locker-entry-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="background:var(--bg);border-radius:12px;padding:16px;">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Operator</div>
+        <div style="font-weight:700;font-size:16px;">${o.company_name}</div>
+        ${o.contact ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${o.contact}</div>` : ''}
+      </div>
+      <div style="background:var(--bg);border-radius:12px;padding:16px;">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:8px;">Default Password</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <span style="font-family:monospace;font-size:22px;font-weight:900;color:var(--primary);letter-spacing:3px;">${o.default_password}</span>
+          <button class="btn btn-ghost btn-sm" onclick="copyText('${o.default_password}')"><i class="fa fa-copy"></i> Copy</button>
+        </div>
+      </div>
+    </div>
+  `;
+      document.getElementById('locker-entry-modal').classList.add('open');
+    };
+
+    window.closeLockerEntry = () => {
+      document.getElementById('locker-entry-modal').classList.remove('open');
+    };
+
+    document.getElementById('locker-unlock-pass').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitLockerUnlock();
+    });
+
+    // ── PROFILE ───────────────────────────────────────────
+    async function loadProfile() {
+      try {
+        const me = await api.getMe();
+        document.getElementById('profile-name').value = me.name || '';
+        document.getElementById('profile-phone').value = me.phone || '';
+        document.getElementById('profile-info').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Name</div>
+          <div style="font-weight:700;">${me.name}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Email</div>
+          <div style="font-weight:700;font-size:13px;">${me.email}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Role</div>
+          <span class="badge badge-green">${me.role}</span>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Member Since</div>
+          <div style="font-weight:700;">${new Date(me.createdAt).toLocaleDateString()}</div>
+        </div>
+      </div>
+    `;
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    window.saveProfile = async () => {
+      const err = document.getElementById('profile-err');
+      const ok = document.getElementById('profile-ok');
+      err.style.display = 'none'; ok.style.display = 'none';
+      try {
+        await api.updateMe({
+          name: document.getElementById('profile-name').value.trim(),
+          phone: document.getElementById('profile-phone').value.trim(),
+        });
+        ok.textContent = 'Profile updated'; ok.style.display = 'block';
+        loadProfile();
+      } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+    };
+
+    window.changePassword = async () => {
+      const err = document.getElementById('pw-err');
+      const ok = document.getElementById('pw-ok');
+      err.style.display = 'none'; ok.style.display = 'none';
+      const old_password = document.getElementById('pw-old').value;
+      const new_password = document.getElementById('pw-new').value;
+      const confirm = document.getElementById('pw-confirm').value;
+      if (new_password !== confirm) { err.textContent = 'Passwords do not match'; err.style.display = 'block'; return; }
+      if (new_password.length < 6) { err.textContent = 'Min 6 characters'; err.style.display = 'block'; return; }
+      try {
+        await api.updateMe({ old_password, new_password });
+        ok.textContent = 'Password changed'; ok.style.display = 'block';
+        ['pw-old', 'pw-new', 'pw-confirm'].forEach(id => document.getElementById(id).value = '');
+      } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
+    };
+
+    // ── LOADER & STARTUP ──────────────────────────────────
+    const hideLoader = (cb) => {
+      const el = document.getElementById('admin-loader');
+      cb && cb(); // show correct screen FIRST
+      el.style.opacity = '0';
+      el.style.pointerEvents = 'none';
+      setTimeout(() => { el.style.display = 'none'; }, 500);
+    };
+
+    if (getToken()) {
+      // If token exists but isn't admin, force login
+      if (tokenRole() !== 'admin') {
+        clearToken();
+        hideLoader(() => {
+          document.getElementById('login-screen').style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),#0a0f1e),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),#0a0f1e);';
+        });
+      } else {
+        // validate admin token by calling an admin-only endpoint
+        api.getOperators().then(() => {
+          hideLoader(() => {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            init();
+          });
+        }).catch((e) => {
+          const isAuth = e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token'));
+          if (isAuth) clearToken();
+          hideLoader(() => {
+            document.getElementById('login-screen').style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),#0a0f1e),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),#0a0f1e);';
+          });
+        });
+      }
+    } else {
+      hideLoader(() => {
+        document.getElementById('login-screen').style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),#0a0f1e),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),#0a0f1e);';
+      });
+    }
+  </script>
 </body>
+
 </html>

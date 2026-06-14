@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../../config/db.js';
+import db from '../../config/local.db.js';
 
 const Notification = sequelize.define('Notification', {
   id:             { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
@@ -11,7 +11,8 @@ const Notification = sequelize.define('Notification', {
       'ticket_paid',
       'ticket_cancelled',
       'bus_arrived',
-      'new_booking'       // operator gets this when user books on their bus
+      'bus_departed',
+      'new_booking'
     ),
     allowNull: false,
   },

@@ -1,858 +1,1367 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>BookIt — Driver Portal</title>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
   <style>
-    :root{
-      --bg: #050b16;
-      --panel: #0b1220;
-      --card: #0f172a;
-      --border: #24314a;
-      --text: #e5e7eb;
-      --muted: #94a3b8;
-      --orange: #fb923c;
-      --orange2: #f97316;
-      --green: #22c55e;
-      --amber: #f59e0b;
-      --red: #ef4444;
-      --shadow: 0 18px 50px rgba(0,0,0,0.55);
+    :root {
+      --bg: #0a0f1e;
+      --sidebar: #111827;
+      --card: #111827;
+      --border: #1f2937;
+      --text: #f9fafb;
+      --muted: #9ca3af;
+      --primary: #059669;
+      --primary-glow: rgba(5, 150, 105, 0.18);
+      --success: #10b981;
+      --error: #ef4444;
+      --radius: 16px;
+      --sidebar-width: 280px;
     }
 
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color: transparent;}
-    body{
-      font-family:'Plus Jakarta Sans',system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background: radial-gradient(circle at top right, rgba(251,146,60,0.18), transparent 55%),
-                  radial-gradient(circle at bottom left, rgba(34,197,94,0.10), transparent 55%),
-                  var(--bg);
+    body.light {
+      --bg: #f0f4f8;
+      --sidebar: #ffffff;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #475569;
+    }
+
+    body.light {
+      background: var(--bg);
+    }
+
+    body.light .sidebar {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+
+    body.light .nav-link {
+      color: #475569;
+    }
+
+    body.light .nav-link:hover {
+      background: rgba(5, 150, 105, 0.06);
+      color: #0f172a;
+    }
+
+    body.light .mobile-nav {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+
+    body.light .m-nav-item {
+      color: #475569;
+    }
+
+    body.light .glass-card {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+
+    body.light .passenger-card {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+
+    body.light .input {
+      background: #f8fafc;
+      color: #0f172a;
+      border-color: #cbd5e1;
+    }
+
+    body.light .input:focus {
+      background: #fff;
+    }
+
+    body.light .btn-ghost {
+      background: #e2e8f0;
+      color: #0f172a;
+      border-color: #cbd5e1;
+    }
+
+    body.light .toast {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+
+    body.light .notif-panel {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+
+    body.light .notif-item {
+      background: #f8fafc;
+    }
+
+    body.light #ticket-result-box {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+
+    body.light #qr-modal>div {
+      background: #ffffff;
+      border-color: #e2e8f0;
+    }
+
+    body.light #dr-loader {
+      background: #f0f4f8;
+    }
+
+    body.light #dr-loader img {
+      filter: none;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg);
       color: var(--text);
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    .mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;}
-    .hidden{display:none !important;}
+    .hidden {
+      display: none !important;
+    }
 
-    /* LOGIN */
-    #login-screen{min-height:100vh;display:grid;place-items:center;padding:18px;}
-    .login-card{
-      width:100%;
-      max-width:520px;
-      background: rgba(15,23,42,0.72);
-      border:1px solid var(--border);
-      border-radius:22px;
-      box-shadow: var(--shadow);
-      padding:28px;
-      backdrop-filter: blur(14px);
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
     }
-    .login-title{
-      font-size:22px;
-      font-weight:950;
-      letter-spacing:-0.02em;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
+
+    /* --- LOGIN UI --- */
+    #login-screen {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: radial-gradient(circle at top right, rgba(5, 150, 105, 0.18), var(--bg)), radial-gradient(circle at bottom left, rgba(16, 185, 129, 0.10), var(--bg));
     }
-    .pill{
-      border:1px solid rgba(251,146,60,0.25);
-      background: rgba(251,146,60,0.10);
-      color: #fdba74;
-      border-radius:999px;
-      padding:6px 12px;
-      font-weight:900;
-      font-size:12px;
-      letter-spacing:0.08em;
-      text-transform:uppercase;
+
+    .login-box {
+      width: 100%;
+      max-width: 400px;
+      background: var(--card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      padding: 40px;
+      border-radius: 24px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     }
-    .login-sub{margin-top:10px;color:var(--muted);font-weight:750;font-size:14px;line-height:1.4;}
-    .field{margin-top:16px;}
-    .label{display:block;margin-bottom:10px;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:0.14em;font-size:12px;}
-    .input{
-      width:100%;
-      border:1px solid var(--border);
-      background: rgba(2,6,23,0.38);
-      color: var(--text);
-      padding:16px 16px;
-      border-radius:16px;
-      font-size:18px;
-      font-weight:800;
-      outline:none;
+
+    .login-title {
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 8px;
+      color: var(--primary);
+      text-align: center;
     }
-    .input:focus{border-color: rgba(251,146,60,0.55); box-shadow: 0 0 0 6px rgba(251,146,60,0.14);}
-    .btn{
-      border:none;
-      border-radius:18px;
-      padding:16px 18px;
-      font-size:18px;
-      font-weight:950;
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      transition: 0.15s;
-      user-select:none;
-    }
-    .btn:disabled{opacity:0.55;cursor:not-allowed;}
-    .btn-primary{background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #0b1220; box-shadow: 0 12px 30px rgba(249,115,22,0.20);}
-    .btn-primary:active{transform: translateY(1px);}
-    .btn-ghost{background: rgba(148,163,184,0.14); color: var(--text); border: 1px solid rgba(148,163,184,0.18);}
-    .alert{
-      display:none;
-      margin-top: 16px;
-      padding: 14px 14px;
-      border-radius: 16px;
-      border: 1px solid rgba(239,68,68,0.25);
-      background: rgba(239,68,68,0.10);
-      color: #fecaca;
-      font-weight: 850;
+
+    .login-subtitle {
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 32px;
       font-size: 14px;
     }
 
-    /* DASHBOARD */
-    #dashboard{display:none; min-height:100vh;}
-    .header{
-      position: sticky;
-      top: 0;
-      z-index: 90;
-      background: rgba(5,11,22,0.82);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border);
+    .input-group {
+      margin-bottom: 20px;
     }
-    .banner{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding: 14px 16px;
-    }
-    .banner-left{display:flex;flex-direction:column;gap:4px;min-width:0;}
-    .banner-kicker{
-      font-weight:950;
-      letter-spacing:0.12em;
-      text-transform:uppercase;
-      font-size:12px;
-      color: var(--muted);
-    }
-    .banner-msg{
-      font-size:16px;
-      font-weight:950;
-      letter-spacing:-0.01em;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .banner-live{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(34,197,94,0.22);
-      background: rgba(34,197,94,0.10);
-      color: #86efac;
-      font-weight: 950;
-      font-size: 12px;
-      letter-spacing: 0.10em;
-      text-transform: uppercase;
-      flex-shrink:0;
-    }
-    .dot{width:8px;height:8px;border-radius:50%;background: var(--green);box-shadow:0 0 0 6px rgba(34,197,94,0.12);}
-    .banner-actions{display:flex;gap:10px;align-items:center;flex-shrink:0;}
 
-    .content{padding: 16px 16px 96px; max-width: 980px; margin: 0 auto;}
-    .tabs{
+    .input-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      letter-spacing: 0.05em;
+    }
+
+    .input {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      color: white;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    .input:focus {
+      border-color: var(--primary);
+      outline: none;
+      background: var(--bg);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      border: none;
+      font-weight: 800;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      box-shadow: 0 4px 14px var(--primary-glow);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+    }
+
+    /* --- DASHBOARD LAYOUT --- */
+    #dashboard {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* SIDEBAR (Desktop) */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 32px 16px;
+      position: fixed;
+      height: 100vh;
+      z-index: 50;
+    }
+
+    .sidebar-logo {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--primary);
+      margin-bottom: 48px;
+      padding-left: 16px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 600;
+      border-radius: 12px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.03);
+      color: white;
+    }
+
+    .nav-link.active {
+      background: var(--primary-glow);
+      color: var(--primary);
+    }
+
+    .main-content {
+      flex: 1;
+      margin-left: var(--sidebar-width);
+      padding: 40px;
+      max-width: 1200px;
+    }
+
+    /* MOBILE NAVIGATION */
+    .mobile-nav {
+      display: none;
       position: fixed;
       bottom: 0;
       left: 0;
       right: 0;
-      z-index: 95;
-      background: rgba(5,11,22,0.82);
-      backdrop-filter: blur(14px);
+      background: var(--card);
       border-top: 1px solid var(--border);
-      padding: 12px 12px;
-      display:flex;
-      gap: 10px;
-      justify-content: space-between;
-    }
-    .tabbtn{
-      flex:1;
-      background: rgba(148,163,184,0.12);
-      border: 1px solid rgba(148,163,184,0.18);
-      color: var(--text);
-      border-radius: 18px;
-      padding: 14px 12px;
-      font-weight: 950;
-      font-size: 14px;
-      cursor:pointer;
-    }
-    .tabbtn.active{
-      background: rgba(251,146,60,0.14);
-      border-color: rgba(251,146,60,0.24);
-      color: #fdba74;
+      padding: 8px 4px;
+      justify-content: space-around;
+      z-index: 100;
     }
 
-    .section{display:none;}
-    .section.active{display:block;}
-
-    .hero{
-      border: 1px solid var(--border);
-      background: rgba(15,23,42,0.70);
-      border-radius: 22px;
-      padding: 18px;
-      box-shadow: var(--shadow);
-    }
-    .hero-top{
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-    .hero-label{color:var(--muted);font-weight:950;text-transform:uppercase;letter-spacing:0.14em;font-size:12px;}
-    .plate{
-      margin-top: 10px;
-      font-size: 56px;
-      font-weight: 1000;
-      letter-spacing: -0.05em;
-      line-height: 1.0;
-      color: #fdba74;
-    }
-    .route{
-      margin-top: 10px;
-      font-size: 20px;
-      font-weight: 950;
-      letter-spacing: -0.02em;
-    }
-    .meta{
-      margin-top: 10px;
-      color: var(--muted);
-      font-weight: 900;
-      font-size: 15px;
-    }
-    .countdown{
-      margin-top: 10px;
-      font-size: 22px;
-      font-weight: 1000;
-      color: #86efac;
-      letter-spacing: -0.02em;
-    }
-    .bigcount-wrap{
-      min-width: 260px;
-      border: 1px solid rgba(34,197,94,0.22);
-      background: rgba(34,197,94,0.08);
-      border-radius: 22px;
-      padding: 16px;
-    }
-    .bigcount{
-      margin-top: 10px;
-      font-size: 72px;
-      font-weight: 1100;
-      letter-spacing: -0.07em;
-      line-height: 1.0;
-      color: #86efac;
-    }
-    .bigcount-sub{margin-top: 10px; color: var(--muted); font-weight: 900;}
-
-    .toolbar{
-      display:flex;
-      gap: 12px;
+    .m-nav-item {
+      display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      margin: 16px 0;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 12px;
+      cursor: pointer;
+      flex: 1;
+      transition: 0.2s;
     }
-    .title{
+
+    .m-nav-item i {
       font-size: 20px;
-      font-weight: 1000;
-      letter-spacing: -0.02em;
     }
 
-    .cardlist{display:flex;flex-direction:column;gap:12px;}
-    .pcard{
-      border: 1px solid var(--border);
-      background: rgba(15,23,42,0.72);
-      border-radius: 22px;
-      padding: 14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 14px;
+    .m-nav-item.active {
+      color: var(--primary);
     }
-    .seat{
-      width: 84px;
-      height: 84px;
-      border-radius: 22px;
-      border: 1px solid rgba(251,146,60,0.22);
-      background: rgba(251,146,60,0.10);
-      display:grid;
-      place-items:center;
-      color: #fdba74;
-      font-weight: 1100;
-      font-size: 40px;
-      flex-shrink:0;
-    }
-    .pinfo{min-width:0;flex:1;}
-    .pname{font-size: 18px; font-weight: 1000; letter-spacing: -0.02em;}
-    .stops{margin-top: 8px; display:flex; flex-direction:column; gap: 6px; font-weight: 950;}
-    .stopline{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: 18px;
-      border: 1px solid rgba(148,163,184,0.16);
-      background: rgba(2,6,23,0.24);
-    }
-    .stopline.pickup{border-color: rgba(34,197,94,0.22); background: rgba(34,197,94,0.08);}
-    .stopline.dropoff{border-color: rgba(245,158,11,0.22); background: rgba(245,158,11,0.10);}
-    .stopbadge{font-size: 12px; font-weight: 1100; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted);}
-    .stopval{font-size: 16px; font-weight: 1100; color: var(--text); letter-spacing: -0.01em;}
-    .btn-notify{min-width: 190px;}
 
-    /* VALIDATE */
-    .validate-grid{display:grid;grid-template-columns: 1fr;gap: 12px;}
-    .bigbtn{
-      width:100%;
-      padding: 18px 16px;
-      border-radius: 22px;
-      border: 1px solid rgba(251,146,60,0.25);
-      background: rgba(251,146,60,0.10);
-      color: #fdba74;
-      font-size: 18px;
-      font-weight: 1050;
-      cursor:pointer;
-    }
-    .bigbtn.secondary{
-      border-color: rgba(148,163,184,0.18);
-      background: rgba(148,163,184,0.10);
+    .m-nav-item:hover {
       color: var(--text);
     }
-    .validate-panel{
+
+    /* --- TOAST NOTIFICATIONS (Right Aligned) --- */
+    #toast-container {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .toast {
+      width: 320px;
+      background: var(--card);
       border: 1px solid var(--border);
-      background: rgba(15,23,42,0.72);
-      border-radius: 22px;
       padding: 16px;
-      margin-top: 12px;
+      border-radius: 16px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+      display: flex;
+      gap: 12px;
+      transform: translateX(120%);
+      transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: auto;
     }
 
-    /* OVERLAY RESULT */
-    #result-overlay{
-      position:fixed;
-      inset:0;
+    .toast.show {
+      transform: translateX(0);
+    }
+
+    .toast-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 18px;
+    }
+
+    .toast-info {
+      flex: 1;
+    }
+
+    .toast-title {
+      font-weight: 800;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .toast-body {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    /* CARDS & ELEMENTS */
+    .glass-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 24px;
+      border-radius: 16px;
+      margin-bottom: 24px;
+    }
+
+    .hero-stat {
+      font-size: 48px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      color: var(--primary);
+      margin: 8px 0;
+    }
+
+    .passenger-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--card);
+      padding: 16px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+      transition: 0.2s;
+    }
+
+    .passenger-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 4px 16px rgba(5, 150, 105, 0.12);
+    }
+
+    .seat-label {
+      width: 48px;
+      height: 48px;
+      background: var(--primary-glow);
+      color: var(--primary);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    /* NOTIFICATION PANEL */
+    .notif-panel {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 400px;
+      height: 100vh;
+      background: var(--card);
+      border-left: 1px solid var(--border);
       z-index: 200;
-      display:none;
-      padding: 18px;
-      background: rgba(2,6,23,0.96);
-    }
-    .overlay-card{
-      max-width: 860px;
-      margin: 0 auto;
-      border: 2px solid var(--border);
-      border-radius: 26px;
-      background: rgba(15,23,42,0.86);
-      padding: 18px;
-      box-shadow: var(--shadow);
-    }
-    .overlay-top{display:flex;align-items:center;justify-content:space-between;gap: 12px;}
-    .overlay-title{font-size: 22px;font-weight: 1100;letter-spacing: -0.02em;}
-    .mark{
-      width: 110px;
-      height: 110px;
-      border-radius: 28px;
-      display:grid;
-      place-items:center;
-      font-size: 64px;
-      font-weight: 1100;
-      margin: 16px 0 10px;
-      border: 2px solid transparent;
-    }
-    .mark.ok{background: rgba(34,197,94,0.10); border-color: rgba(34,197,94,0.22); color: #86efac;}
-    .mark.bad{background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.22); color: #fecaca;}
-    .overlay-body{
-      margin-top: 10px;
-      font-size: 20px;
-      font-weight: 1000;
-      line-height: 1.35;
-      letter-spacing: -0.01em;
-    }
-    .overlay-grid{margin-top: 14px;display:grid;grid-template-columns: 1fr;gap: 10px;}
-    .kv{
-      border: 1px solid rgba(148,163,184,0.16);
-      background: rgba(2,6,23,0.24);
-      border-radius: 18px;
-      padding: 12px;
-      display:flex;
-      justify-content:space-between;
-      gap: 10px;
-    }
-    .kv span{color: var(--muted); font-weight: 950; text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px;}
-    .kv b{font-weight: 1100;}
-
-    /* QR MODAL */
-    #qr-modal{
-      position:fixed;
-      inset:0;
-      z-index: 210;
-      display:none;
-      padding: 16px;
-      background: rgba(0,0,0,0.82);
-    }
-    .qr-card{
-      max-width: 620px;
-      margin: 0 auto;
-      border: 2px solid var(--border);
-      border-radius: 26px;
-      background: rgba(15,23,42,0.86);
-      padding: 16px;
-      box-shadow: var(--shadow);
-    }
-    #qr-reader{margin-top: 12px;}
-
-    @media (max-width: 720px){
-      .pcard{flex-wrap: wrap; align-items: stretch;}
-      .pinfo{width: 100%;}
-      .btn-notify{width: 100%; min-width: 0;}
+      transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 24px;
+      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
     }
 
-@media (max-width: 520px){
-      .plate{font-size: 46px;}
-      .bigcount{font-size: 64px;}
-      .seat{width: 74px;height: 74px;font-size: 36px;}
-      .btn-notify{width: 100%; min-width: 0;}
+    .notif-panel.open {
+      right: 0;
     }
 
-  /* Universal Skeletons - Step 2 */
-  .skeleton { 
-    background: linear-gradient(90deg, var(--panel) 0%, var(--border) 50%, var(--panel) 100%); 
-    background-size: 200% 100%; 
-    animation: shimmer 1.5s infinite linear; 
-    border-radius: 18px; 
-    height: 16px;
-  }
-  .skeleton-card { height: 120px; }
-  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-  
-  /* Empty States */
-  .empty-state {
-    text-align: center; padding: 60px 20px; color: var(--muted);
-  }
-  .empty-state i { font-size: 64px; opacity: 0.3; margin-bottom: 20px; display: block; }
+    .notif-item {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      gap: 12px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .notif-item:hover {
+      border-color: var(--border);
+    }
+
+    .notif-item.unread {
+      border-left: 3px solid var(--primary);
+      background: var(--primary-glow);
+    }
+
+    .notif-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+      color: var(--primary);
+    }
+
+    .bell-wrap {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .bell-count {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      background: var(--error);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (max-width: 1024px) {
+      .notif-panel {
+        width: 100%;
+        right: -100%;
+      }
+    }
+
+    /* --- RESPONSIVENESS --- */
+    @media (max-width: 1024px) {
+      .sidebar {
+        display: none;
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 24px 16px 100px;
+      }
+
+      .mobile-nav {
+        display: flex;
+      }
+
+      .hero-stat {
+        font-size: 36px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .toast {
+        width: calc(100vw - 48px);
+        right: 24px;
+      }
+    }
+
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      20% {
+        transform: translateX(-10px);
+      }
+
+      40% {
+        transform: translateX(10px);
+      }
+
+      60% {
+        transform: translateX(-8px);
+      }
+
+      80% {
+        transform: translateX(8px);
+      }
+    }
+
+    .shake {
+      animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+      border-color: var(--error) !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25) !important;
+    }
   </style>
 </head>
+<style>
+  .alert {
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    font-size: 14px;
+    display: none;
+    font-weight: 600;
+  }
+
+  .alert-err {
+    background: rgba(239, 68, 68, 0.12);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+  }
+
+  .alert-ok {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+  }
+</style>
+
 <body>
-  <div id="login-screen">
-    <div class="login-card">
-      <div class="login-title">
-        <span>Driver Portal</span>
-        <span class="pill">High Contrast</span>
+  <script>if (localStorage.getItem('driver-theme') === 'light') document.body.classList.add('light');</script>
+  <div id="dr-loader"
+    style="position:fixed;inset:0;z-index:9999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;transition:opacity 0.5s ease;">
+    <img src="./download.png" alt="BookIt"
+      style="width:140px;height:auto;filter:brightness(0) invert(1);animation:drpulse 1.4s ease-in-out infinite;">
+    <div style="width:160px;height:4px;background:var(--border);border-radius:99px;overflow:hidden;">
+      <div
+        style="height:100%;width:40%;background:var(--primary);border-radius:99px;animation:drbar 3.5s ease-in-out infinite;">
       </div>
-      <div class="login-sub">Built for quick glances between stops: big info, bold actions, no clutter.</div>
+    </div>
+    <div style="font-size:13px;color:var(--muted);font-weight:600;">Loading Driver Portal...</div>
+  </div>
 
-      <div id="login-err" class="alert"></div>
+  <style>
+    @keyframes drpulse {
 
-      <div class="field">
-        <label class="label" for="phone">Phone</label>
-        <input class="input" id="phone" inputmode="tel" placeholder="+250 7xx xxx xxx" autocomplete="username">
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.35
+      }
+    }
+
+    @keyframes drbar {
+      0% {
+        transform: translateX(-100%)
+      }
+
+      100% {
+        transform: translateX(400%)
+      }
+    }
+  </style>
+
+  <!-- Login Section -->
+  <div id="login-screen" style="display:none;">
+    <div class="login-box">
+      <div style="text-align:center;margin-bottom:28px;">
+        <img src="./download.png" alt="BookIt" style="height:72px;width:auto;filter:brightness(0) invert(1);">
+        <p style="color:var(--muted);font-size:13px;margin-top:8px;">Driver Portal</p>
       </div>
-      <div class="field">
-        <label class="label" for="password">Password</label>
-        <input class="input" id="password" type="password" placeholder="••••••••" autocomplete="current-password">
+
+      <div id="login-err" class="hidden"
+        style="color:var(--error);background:rgba(239,68,68,0.1);padding:12px;border-radius:12px;margin-bottom:20px;font-size:13px;font-weight:600;text-align:center;">
       </div>
-      <div class="field" style="display:flex; gap: 12px;">
-        <button class="btn btn-primary" style="flex:1;" onclick="doLogin()">Sign In</button>
-        <button class="btn btn-ghost" onclick="location.reload()">Reset</button>
+
+      <div class="input-group">
+        <label class="input-label">Phone Number</label>
+        <input class="input" id="phone" type="tel" placeholder="+250 7xx xxx xxx">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Password</label>
+        <input class="input" id="password" type="password" placeholder="••••••••">
+      </div>
+
+      <div style="margin-top:24px;display:grid;gap:12px;">
+        <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
       </div>
     </div>
   </div>
 
-  <div id="dashboard">
-    <div class="header">
-      <div class="banner">
-        <div class="banner-left">
-          <div class="banner-kicker">Notifications</div>
-          <div class="banner-msg" id="notif-banner-text">Ready.</div>
-        </div>
-        <div class="banner-actions">
-          <div class="banner-live" title="Auto-refreshing">
-            <span class="dot"></span> LIVE
-          </div>
-          <button class="btn btn-ghost" style="padding:12px 14px; border-radius:16px; font-size:14px;" onclick="logout()">Logout</button>
-        </div>
+  <!-- Dashboard Section -->
+  <div id="dashboard" style="display:none;">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div style="margin-bottom:40px; padding:0 8px;">
+        <img src="./download.png" alt="BookIt"
+          style="width:100%; max-height:72px; object-fit:contain; filter:brightness(0) invert(1);">
       </div>
-    </div>
+      <nav style="flex: 1;">
+        <div class="nav-link active" onclick="showSection('home')" id="sd-home">
+          <i class="fa fa-house"></i> Dashboard
+        </div>
+        <div class="nav-link" onclick="showSection('passengers')" id="sd-passengers">
+          <i class="fa fa-users"></i> Passengers
+        </div>
+        <div class="nav-link" onclick="showSection('validate')" id="sd-validate">
+          <i class="fa fa-shield-halved"></i> Validate
+        </div>
+        <div class="nav-link" onclick="showSection('profile')" id="sd-profile">
+          <i class="fa fa-user-circle"></i> Profile
+        </div>
+      </nav>
+      <div class="nav-link" onclick="logout()" style="color: var(--error);">
+        <i class="fa fa-right-from-bracket"></i> Logout
+      </div>
+      <div class="nav-link" onclick="toggleDrTheme()" id="dr-theme-btn" style="margin-top:auto;">
+        <i class="fa fa-moon"></i> Light Mode
+      </div>
+    </aside>
 
-    <div class="content">
-      <div class="toolbar">
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <div style="margin-bottom:32px; display: flex; justify-content: space-between; align-items: flex-end;">
         <div>
-          <div class="title">Driver — <span id="driver-name">—</span></div>
-          <div class="meta">Today: <span class="mono" id="today-date">—</span></div>
+          <h1 style="font-size:28px; font-weight:900;">Welcome, <span id="driver-name"
+              style="color:var(--primary);">Driver</span></h1>
+          <p style="color:var(--muted); font-size:14px;" id="today-date"></p>
         </div>
-        <div style="display:flex; gap: 10px; align-items:center;">
-          <button class="btn btn-ghost" style="padding:12px 14px; border-radius:16px; font-size:14px;" onclick="refreshAll()">Refresh</button>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+          <div id="gps-indicator"
+            style="display: none; align-items: center; gap: 8px; background: var(--primary-glow); padding: 8px 14px; border-radius: 20px; border: 1px solid var(--primary);">
+            <span
+              style="width: 8px; height: 8px; background: var(--primary); border-radius: 50%; animation: drpulse 1.4s ease-in-out infinite;"></span>
+            <span
+              style="font-size: 11px; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em;">GPS
+              Live</span>
+          </div>
+          <div id="coords-display"
+            style="font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); display: none; text-align: right;">
+            Lat: <span id="lat-val">0</span><br>Lng: <span id="lng-val">0</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="manualLocationUpdate()" id="refresh-gps-btn"
+            style="padding: 4px 10px; height: auto; min-height: 0; font-size: 11px; font-weight: 700;">
+            <i class="fa fa-location-crosshairs"></i> Refresh GPS
+          </button>
         </div>
       </div>
+      <!-- Section: Home -->
+      <section id="sec-home" class="section">
 
-      <div class="section active" id="sec-home">
-        <div class="hero">
-          <div class="hero-top">
-            <div style="flex:1; min-width: 260px;">
-              <div class="hero-label">Bus</div>
-              <div id="home-plate" class="plate">—</div>
-              <div id="home-route" class="route">—</div>
-              <div id="home-depart" class="meta">Departure: —</div>
-              <div id="home-countdown" class="countdown">—</div>
-            </div>
-            <div class="bigcount-wrap">
-              <div class="hero-label">Passengers Today</div>
-              <div id="home-passengers" class="bigcount">0</div>
-              <div class="bigcount-sub">paid tickets for selected date</div>
-              <button class="btn btn-primary" style="width:100%; margin-top: 12px;" onclick="showSection('passengers')">View passenger list</button>
-            </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+          <div class="glass-card">
+            <div class="input-label">Active Vehicle</div>
+            <div id="home-plate" class="hero-stat">---</div>
+            <div id="home-route" style="font-weight: 700; margin-bottom: 8px;">---</div>
+            <div id="home-depart" style="color: var(--muted); font-size: 14px;">Departure: ---</div>
+          </div>
+          <div class="glass-card">
+            <div class="input-label">Estimated Occupancy</div>
+            <div id="home-passengers" class="hero-stat">0</div>
+            <div id="home-countdown" style="font-weight: 800; color: var(--success); font-size: 20px;">00:00:00</div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="section" id="sec-passengers">
-        <div class="toolbar">
-          <div class="title">Passenger List</div>
-          <div style="display:flex; gap: 12px; align-items:center;">
-            <input class="input" style="max-width: 220px; padding: 12px 14px; font-size: 16px;" type="date" id="pass-date" />
-            <button class="btn btn-primary" style="padding: 12px 14px; border-radius: 16px;" onclick="loadPassengers()">Load</button>
+      <!-- Section: Passengers -->
+      <section id="sec-passengers" class="section hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+          <h1 style="font-size: 28px; font-weight: 900;">Manifest</h1>
+          <input type="date" id="pass-date" class="input" style="width: auto;" onchange="loadPassengers()">
+        </div>
+        <div id="passenger-list">
+          <!-- Injected via JS -->
+        </div>
+      </section>
+
+      <!-- Section: Validate -->
+      <section id="sec-validate" class="section hidden">
+        <h1 style="font-size: 28px; font-weight: 900; margin-bottom: 32px;">Validation Center</h1>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+          <button class="btn btn-primary" style="height: 120px; flex-direction: column;" onclick="openQrScanner()">
+            <i class="fa fa-camera" style="font-size:28px;"></i> Open Camera
+          </button>
+          <button class="btn btn-ghost" style="height: 120px; flex-direction: column;" onclick="toggleManualEntry()">
+            <i class="fa fa-keyboard" style="font-size:28px;"></i> Manual Code
+          </button>
+        </div>
+
+        <div id="manual-entry" class="glass-card hidden">
+          <div class="input-label">Enter Ticket Number</div>
+          <div style="display: flex; gap: 12px; margin-top: 12px;">
+            <input class="input" id="val-number" placeholder="BK-0000-00" style="text-transform: uppercase;">
+            <button class="btn btn-primary" style="width: auto; padding: 0 32px;"
+              onclick="validateNumber()">Verify</button>
           </div>
         </div>
-        <div id="passenger-list" class="cardlist"></div>
-      </div>
+      </section>
 
-      <div class="section" id="sec-validate">
-        <div class="title">Validate Ticket</div>
-        <div class="meta" style="margin-top: 8px;">Two options: scan QR or enter ticket number.</div>
-
-        <div class="validate-grid" style="margin-top: 14px;">
-          <button class="bigbtn" onclick="openQrScanner()">Scan QR</button>
-          <button class="bigbtn secondary" onclick="showNumberValidate()">Enter Number</button>
-        </div>
-
-        <div id="number-validate" class="validate-panel hidden">
-          <div class="hero-label">Ticket Number</div>
-          <div style="display:flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
-            <input class="input" id="val-number" placeholder="e.g. BK-4821-XZ" style="flex:1; min-width: 240px;">
-            <button class="btn btn-primary" style="min-width: 180px;" onclick="validateNumber()">Validate</button>
+      <!-- PROFILE -->
+      <section id="sec-profile" class="section hidden">
+        <h1 style="font-size:28px;font-weight:900;margin-bottom:32px;">My <span
+            style="color:var(--primary);">Profile</span></h1>
+        <div class="glass-card">
+          <div class="input-label">Account Info</div>
+          <div id="profile-info" style="margin:16px 0 24px;"></div>
+          <div class="input-label" style="margin-bottom:12px;">Update Details</div>
+          <div class="alert alert-err" id="profile-err"></div>
+          <div class="alert alert-ok" id="profile-ok"></div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;">
+            <input class="input" id="profile-name" placeholder="Full name" />
+            <input class="input" id="profile-phone" placeholder="Phone" />
           </div>
-          <div id="val-err" class="alert" style="margin-top: 12px;"></div>
+          <button class="btn btn-primary" style="width:100%;" onclick="saveProfile()">Save Changes</button>
         </div>
+        <div class="glass-card" style="margin-top:24px;">
+          <div class="input-label" style="margin-bottom:12px;">Change Password</div>
+          <div class="alert alert-err" id="pw-err"></div>
+          <div class="alert alert-ok" id="pw-ok"></div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;">
+            <input class="input" type="password" id="pw-old" placeholder="Current password" />
+            <input class="input" type="password" id="pw-new" placeholder="New password" />
+            <input class="input" type="password" id="pw-confirm" placeholder="Confirm new password" />
+          </div>
+          <button class="btn btn-primary" style="width:100%;" onclick="changePassword()">Change Password</button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Mobile Bottom Nav -->
+    <nav class="mobile-nav">
+      <div class="m-nav-item active" id="mb-home" onclick="showSection('home')">
+        <i class="fa fa-house"></i>
+        <span>Home</span>
       </div>
-    </div>
-
-    <div class="tabs">
-      <button class="tabbtn active" id="tab-home" onclick="showSection('home')">Home</button>
-      <button class="tabbtn" id="tab-passengers" onclick="showSection('passengers')">Passengers</button>
-      <button class="tabbtn" id="tab-validate" onclick="showSection('validate')">Validate</button>
-    </div>
-
-    <div id="result-overlay">
-      <div class="overlay-card">
-        <div class="overlay-top">
-          <div class="overlay-title" id="result-title">Result</div>
-          <button class="btn btn-ghost" style="padding:12px 14px; border-radius:16px; font-size:14px;" onclick="closeResult()">Close</button>
-        </div>
-        <div id="result-mark" class="mark ok">✓</div>
-        <div id="result-body" class="overlay-body">—</div>
-        <div id="result-grid" class="overlay-grid"></div>
+      <div class="m-nav-item" id="mb-passengers" onclick="showSection('passengers')">
+        <i class="fa fa-users"></i>
+        <span>Manifest</span>
       </div>
-    </div>
-
-    <div id="qr-modal">
-      <div class="qr-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; gap: 12px;">
-          <div class="overlay-title">Scan QR</div>
-          <button class="btn btn-ghost" style="padding:12px 14px; border-radius:16px; font-size:14px;" onclick="closeQrScanner()">Close</button>
+      <div class="m-nav-item" id="mb-validate" onclick="showSection('validate')">
+        <i class="fa fa-shield-halved"></i>
+        <span>Verify</span>
+      </div>
+      <div class="m-nav-item" id="mb-profile" onclick="showSection('profile')">
+        <i class="fa fa-user-circle"></i>
+        <span>Profile</span>
+      </div>
+      <div class="m-nav-item" onclick="toggleDriverNotifs()" style="position:relative;">
+        <div style="position:relative; display:inline-flex;">
+          <i class="fa fa-bell"></i>
+          <span id="dr-m-bell-count"
+            style="display:none; position:absolute; top:-6px; right:-8px; background:#ef4444; color:white; font-size:9px; font-weight:700; width:16px; height:16px; border-radius:50%; align-items:center; justify-content:center;">0</span>
         </div>
-        <div id="qr-reader"></div>
-        <div class="meta" style="margin-top: 10px;">If scanning fails, use “Enter Number”.</div>
+        <span>Alerts</span>
+      </div>
+      <div class="m-nav-item" onclick="logout()" style="color:#ef4444;">
+        <i class="fa fa-right-from-bracket"></i>
+        <span>Logout</span>
+      </div>
+      <div class="m-nav-item" onclick="toggleDrTheme()" id="dr-m-theme-btn">
+        <i class="fa fa-moon"></i>
+        <span>Theme</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- NOTIFICATION PANEL -->
+  <div class="notif-panel" id="dr-notif-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+      <h3 style="font-size:18px; font-weight:800;">Notifications</h3>
+      <button onclick="toggleDriverNotifs()"
+        style="background:var(--border); border:none; color:var(--text); padding:8px 12px; border-radius:10px; cursor:pointer; font-size:14px;"><i
+          class="fa fa-times"></i></button>
+    </div>
+    <div id="dr-notif-list"
+      style="overflow-y:auto; flex:1; scrollbar-width:thin; scrollbar-color:var(--border) transparent;"></div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- QR Overlay -->
+  <!-- TICKET RESULT MODAL -->
+  <div id="ticket-result-modal"
+    style="position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:3000;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(10px);">
+    <div id="ticket-result-box"
+      style="width:100%;max-width:420px;background:var(--card);border-radius:24px;padding:32px;border:1px solid var(--border);text-align:center;">
+      <div id="ticket-result-icon" style="font-size:64px;margin-bottom:16px;"></div>
+      <h2 id="ticket-result-title" style="font-size:24px;font-weight:900;margin-bottom:8px;"></h2>
+      <p id="ticket-result-msg" style="color:var(--muted);font-size:14px;margin-bottom:24px;"></p>
+      <div id="ticket-result-details" style="text-align:left;margin-bottom:24px;"></div>
+      <button onclick="closeTicketResult()"
+        style="width:100%;padding:14px;border-radius:12px;border:none;background:var(--primary);color:white;font-size:16px;font-weight:700;cursor:pointer;">Done</button>
+    </div>
+  </div>
+
+  <div id="qr-modal"
+    style="position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px;">
+    <div
+      style="width: 100%; max-width: 480px; background: var(--card); border: 1px solid var(--border); border-radius: 24px; overflow: hidden;">
+      <div
+        style="padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border);">
+        <div>
+          <div style="font-weight: 900; font-size: 18px;">Scan QR Code</div>
+          <div style="color: var(--muted); font-size: 13px; margin-top: 2px;">Point camera at passenger's ticket QR
+          </div>
+        </div>
+        <button class="btn btn-ghost" style="width: auto; padding: 8px 16px; font-size: 14px;"
+          onclick="closeQrScanner()"><i class="fa fa-times"></i> Close</button>
+      </div>
+      <div style="padding: 24px;">
+        <div id="qr-reader" style="width: 100%; border-radius: 16px; overflow: hidden;"></div>
+        <p style="text-align: center; color: var(--muted); font-size: 13px; margin-top: 16px;">If scanning fails, use
+          Manual Code instead.</p>
       </div>
     </div>
   </div>
 
-  <script type="module">
-    import { api, setToken, clearToken, getToken } from './api.js';
+  <script src="./api.js"></script>
+  <script>
+    const { api, setToken, clearToken, getToken } = window.BookItApi;
     window.api = api;
 
+    const parseJwt = (token) => {
+      try {
+        const part = token.split('.')[1];
+        if (!part) return null;
+        const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+        return JSON.parse(atob(b64));
+      } catch { return null; }
+    };
+    const tokenRole = () => parseJwt(getToken() || '')?.role || null;
+
     const $ = (sel) => document.querySelector(sel);
-    const todayDateOnly = () => new Date().toISOString().slice(0, 10);
 
     const driverState = {
-      name: '—',
+      name: 'Driver',
       bus: null,
-      lastNotifId: null,
-      countdownTimer: null,
-      qr: null,
       passengers: [],
+      qr: null,
+      lastNotifId: null,
+      watchId: null
     };
 
+    // --- UI LOGIC ---
+    window.showSection = (name) => {
+      document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+      $(`#sec-${name}`).classList.remove('hidden');
+
+      // Update Sidebar
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      $(`#sd-${name}`)?.classList.add('active');
+
+      // Update Mobile Nav
+      if (name === 'profile') loadProfile();
+      document.querySelectorAll('.m-nav-item').forEach(l => l.classList.remove('active'));
+      if (name === 'profile') loadProfile();
+      $(`#mb-${name}`)?.classList.add('active');
+    };
+
+    window.toggleManualEntry = () => $('#manual-entry').classList.toggle('hidden');
+
+    window.pushToast = (title, body, type = 'info') => {
+      const container = $('#toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+
+      const icon = type === 'success' ? '<i class="fa fa-circle-check"></i>' : type === 'error' ? '<i class="fa fa-circle-xmark"></i>' : '<i class="fa fa-bell"></i>';
+      const color = type === 'success' ? 'var(--success)' : type === 'error' ? 'var(--error)' : 'var(--primary)';
+
+
+      toast.innerHTML = `
+        <div class="toast-icon" style="background: ${color}20; color: ${color}">${icon}</div>
+        <div class="toast-info">
+          <div class="toast-title">${title}</div>
+          <div class="toast-body">${body}</div>
+        </div>
+      `;
+
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
+      setTimeout(() => {
+
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+      }, 5000);
+    };
+
+    // --- FUNCTIONALITY ---
     window.doLogin = async () => {
       const phone = $('#phone').value;
       const password = $('#password').value;
+      const err = $('#login-err');
+      err.classList.add('hidden');
+
       try {
         const data = await api.loginDriver({ phone, password });
         setToken(data.token);
         driverState.name = data.driver?.name || 'Driver';
         driverState.bus = data.driver?.bus || null;
+        driverState.bus_id = data.driver?.bus_id || data.driver?.bus?.id;
+        localStorage.setItem('driver', JSON.stringify({ name: driverState.name, bus: driverState.bus, bus_id: driverState.bus_id }));
         $('#driver-name').textContent = driverState.name;
         $('#login-screen').style.display = 'none';
-        $('#dashboard').style.display = 'block';
+        $('#dashboard').classList.remove('hidden');
         init();
       } catch (e) {
-        const el = $('#login-err');
-        el.textContent = e.message || 'Login failed';
-        el.style.display = 'block';
+        err.textContent = e.message || 'Authentication failed';
+        err.classList.remove('hidden');
       }
     };
 
-    window.logout = () => { clearToken(); location.reload(); };
+    window.toggleDrTheme = () => {
+      const isLight = document.body.classList.toggle('light');
+      localStorage.setItem('driver-theme', isLight ? 'light' : 'dark');
+      const icon = isLight ? 'fa-moon' : 'fa-sun';
+      const label = isLight ? 'Dark Mode' : 'Light Mode';
+      const btn = document.getElementById('dr-theme-btn');
+      const mbtn = document.getElementById('dr-m-theme-btn');
+      if (btn) btn.innerHTML = `<i class="fa ${icon}"></i> ${label}`;
+      if (mbtn) mbtn.innerHTML = `<i class="fa ${icon}"></i><span>Theme</span>`;
+    };
+
+    // apply saved theme
+    (function () {
+      if (localStorage.getItem('driver-theme') === 'light') {
+        document.body.classList.add('light');
+        const btn = document.getElementById('dr-theme-btn');
+        const mbtn = document.getElementById('dr-m-theme-btn');
+        if (btn) btn.innerHTML = '<i class="fa fa-moon"></i> Dark Mode';
+        if (mbtn) mbtn.innerHTML = '<i class="fa fa-moon"></i><span>Theme</span>';
+      }
+    })();
+
+    window.logout = () => {
+      if (driverState.watchId) navigator.geolocation.clearWatch(driverState.watchId);
+      clearToken();
+      localStorage.removeItem('driver');
+      location.reload();
+    };
 
     function init() {
-      $('#today-date').textContent = todayDateOnly();
-      $('#pass-date').value = todayDateOnly();
+      $('#today-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+      $('#pass-date').value = new Date().toISOString().split('T')[0];
       refreshAll();
-      setInterval(loadNotifications, 15000);
+      setInterval(loadNotifications, 10000);
+      startLocationTracking();
     }
 
-    window.refreshAll = async () => {
+    async function refreshAll() {
       await loadPassengers();
       await loadNotifications();
-      updateHomeFromPassengers();
-    };
-
-    window.showSection = (name) => {
-      const page = name === 'home' || name === 'passengers' || name === 'validate' ? name : 'home';
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      $(`#sec-${page}`).classList.add('active');
-      document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
-      $(`#tab-${page}`).classList.add('active');
-      if (page === 'validate') $('#number-validate').classList.add('hidden');
-    };
-
-    window.showNumberValidate = () => {
-      showSection('validate');
-      $('#number-validate').classList.remove('hidden');
-      $('#val-err').style.display = 'none';
-      $('#val-number').focus();
-    };
+      updateDashboard();
+    }
 
     window.loadPassengers = async () => {
       const date = $('#pass-date').value;
-      const list = $('#passenger-list');
+      const listEl = $('#passenger-list');
       try {
         const passengers = await api.getPassengers(date);
         driverState.passengers = passengers || [];
         if (!passengers.length) {
-          list.innerHTML = `<div class="hero" style="box-shadow:none; padding: 16px;"><div class="meta" style="margin:0; font-weight: 950;">No passengers for this date.</div></div>`;
-          updateHomeFromPassengers();
+          listEl.innerHTML = `<div class="glass-card" style="text-align:center;color:var(--muted)">No bookings for today.</div>`;
           return;
         }
-        list.innerHTML = passengers
-          .slice()
-          .sort((a, b) => (a.seat_number ?? 0) - (b.seat_number ?? 0))
-          .map(t => `
-            <div class="pcard">
-              <div class="seat">${t.seat_number ?? '—'}</div>
-              <div class="pinfo">
-                <div class="pname">${t.user?.name || 'Unknown passenger'}</div>
-                <div class="stops">
-                  <div class="stopline pickup">
-                    <div>
-                      <div class="stopbadge">Pickup (Boards)</div>
-                      <div class="stopval">${t.boardingStop?.location?.name || '—'}</div>
-                    </div>
-                    <div class="mono" style="font-weight: 1000; color: #86efac;">GO</div>
-                  </div>
-                  <div class="stopline dropoff">
-                    <div>
-                      <div class="stopbadge">Dropoff (Exit)</div>
-                      <div class="stopval">${t.dropoffStop?.location?.name || '—'}</div>
-                    </div>
-                    <div class="mono" style="font-weight: 1000; color: #fcd34d;">EXIT</div>
-                  </div>
-                </div>
-              </div>
-              <button class="btn btn-primary btn-notify" onclick="notifyExit('${t.id}')">🔔 Notify Exit</button>
+        listEl.innerHTML = passengers.map(t => `
+          <div class="passenger-card">
+            <div class="seat-label">${t.seat_number || '??'}</div>
+            <div style="flex: 1;">
+              <div style="font-weight: 800;">${t.user?.name || 'Guest'}</div>
+              <div style="font-size: 12px; color: var(--muted);">${t.boardingStop?.location?.name} → ${t.dropoffStop?.location?.name}</div>
             </div>
-          `).join('');
-        updateHomeFromPassengers();
+            <button class="btn btn-ghost" style="width: auto; padding: 8px 12px; font-size: 12px;" onclick="notifyExit('${t.id}')">Exit</button>
+          </div>
+        `).join('');
+        updateDashboard();
       } catch (e) {
-        list.innerHTML = `<div class="hero" style="box-shadow:none; padding: 16px;"><div class="meta" style="margin:0; font-weight: 950; color:#fecaca;">${e.message}</div></div>`;
+        pushToast('Sync Error', 'Could not load manifest', 'error');
       }
     };
 
-    window.notifyExit = async (ticket_id) => {
+    window.notifyExit = async (id) => {
       try {
-        await api.notifyExit(ticket_id);
-        $('#notif-banner-text').textContent = 'Exit notification sent ✅';
+        await api.notifyExit(id);
+        pushToast('Success', 'Exit status updated', 'success');
       } catch (e) {
-        $('#notif-banner-text').textContent = e.message || 'Failed to notify exit';
+        pushToast('Error', 'Failed to update exit', 'error');
       }
     };
 
-    window.validateNumber = async () => {
-      const ticket_number = $('#val-number').value.trim();
-      const err = $('#val-err');
-      err.style.display = 'none';
-      try {
-        const data = await api.validateNumber({ ticket_number });
-        showResult(data);
-      } catch (e) {
-        err.textContent = e.message || 'Validation failed';
-        err.style.display = 'block';
+    function updateDashboard() {
+      const p = driverState.passengers;
+      const b = driverState.bus;
+      $('#home-passengers').textContent = p.length;
+      if (b) {
+        $('#home-plate').textContent = b.plate_number;
+        $('#home-route').textContent = b.route?.name || 'Assigned Route';
+        $('#home-depart').textContent = `Scheduled: ${b.departure_time || '--:--'}`;
       }
+    }
+
+    window.manualLocationUpdate = () => {
+      if (!navigator.geolocation) return pushToast('GPS Error', 'Geolocation not supported', 'error');
+      const btn = $('#refresh-gps-btn');
+      const icon = btn.querySelector('i');
+      const originalIcon = icon.className;
+
+      icon.className = 'fa fa-spinner fa-spin';
+      btn.disabled = true;
+
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          try {
+            await updateBusCoords(pos.coords.latitude, pos.coords.longitude);
+            pushToast('GPS Updated', 'Your location has been synced.', 'success');
+          } catch (e) {
+            pushToast('GPS Error', e.message, 'error');
+          }
+          icon.className = originalIcon;
+          btn.disabled = false;
+        },
+        (err) => {
+          icon.className = originalIcon;
+          btn.disabled = false;
+          const msg = err.code === 3 ? 'GPS Timeout: Please move to a clearer area.' : err.message;
+          pushToast('GPS Error', msg, 'error');
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
     };
+
+    window.startLocationTracking = () => {
+      if (!navigator.geolocation) return;
+      if (driverState.watchId) return;
+
+      driverState.watchId = navigator.geolocation.watchPosition(
+        async (pos) => {
+          try {
+            await updateBusCoords(pos.coords.latitude, pos.coords.longitude);
+          } catch (e) {
+            console.warn('[GPS] Background update failed:', e.message);
+          }
+        },
+        (err) => {
+          console.warn('GPS error:', err.message);
+          $('#gps-indicator').style.display = 'none';
+          $('#coords-display').style.display = 'none';
+          if (err.code === 1) pushToast('GPS Required', 'Please enable location permissions to track your bus.', 'info');
+          if (err.code === 3) console.warn('[GPS] WatchPosition Timeout');
+        },
+        { enableHighAccuracy: false, maximumAge: 30000, timeout: 27000 }
+      );
+
+      // Auto-update heartbeat: ensures server receives location even if watchPosition stalls
+      setInterval(() => {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            try { await updateBusCoords(pos.coords.latitude, pos.coords.longitude); } catch (e) { }
+          },
+          null,
+          { enableHighAccuracy: false, timeout: 10000 }
+        );
+      }, 45000);
+    };
+
+    async function updateBusCoords(lat, lng) {
+      const busId = driverState.bus?.id || driverState.bus_id;
+      if (!busId) throw new Error('No bus assigned to your account.');
+
+      try {
+        const res = await api.updateBusLocation(busId, {
+          last_lat: lat,
+          last_lng: lng
+        });
+
+        // Log result for debugging
+        console.log('[GPS] Server response:', res);
+
+        // Update UI
+        $('#gps-indicator').style.display = 'flex';
+        $('#coords-display').style.display = 'block';
+        $('#lat-val').textContent = lat.toFixed(6);
+        $('#lng-val').textContent = lng.toFixed(6);
+      } catch (e) {
+        console.error('[GPS] Location update failed:', e.message);
+        throw e; // Re-throw so the UI knows it failed
+      }
+    }
+
+    window.toggleDriverNotifs = () => document.getElementById('dr-notif-panel').classList.toggle('open');
 
     async function loadNotifications() {
       try {
         const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
-        const latestUnread = (notifs || []).find(n => !n.is_read) || notifs?.[0] || null;
-        const count = unread?.unread ?? 0;
-        $('.banner-kicker').textContent = count > 0 ? `Notifications (${count})` : 'Notifications';
-        if (!latestUnread) {
-          $('#notif-banner-text').textContent = 'Ready.';
-          return;
+        const count = unread.unread || 0;
+        const mbell = document.getElementById('dr-m-bell-count');
+        if (mbell) { mbell.textContent = count; mbell.style.display = count > 0 ? 'flex' : 'none'; }
+
+        document.getElementById('dr-notif-list').innerHTML = notifs.length ? notifs.map(n => `
+          <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markDrNotif('${n.id}', this)">
+            <div class="notif-icon"><i class="fa fa-bell"></i></div>
+            <div style="flex:1;">
+              <p style="font-size:13px; font-weight:600;">${n.message}</p>
+              <small style="color:var(--muted); font-size:11px;">${new Date(n.createdAt).toLocaleTimeString()}</small>
+            </div>
+          </div>
+        `).join('') : `
+          <div style="text-align:center; padding:48px 20px;">
+            <i class="fa fa-bell-slash" style="font-size:48px; color:var(--border); margin-bottom:16px; display:block;"></i>
+            <p style="font-weight:700;">No notifications yet</p>
+            <p style="color:var(--muted); font-size:13px; margin-top:6px;">Trip updates will appear here.</p>
+          </div>
+        `;
+
+        // toast for new unread
+        const latest = notifs.find(n => !n.is_read);
+        if (latest && latest.id !== driverState.lastNotifId) {
+          driverState.lastNotifId = latest.id;
+          pushToast('New Notification', latest.message);
         }
-        $('#notif-banner-text').textContent = latestUnread.message || 'Notification received';
-        if (!latestUnread.is_read && latestUnread.id && latestUnread.id !== driverState.lastNotifId) {
-          driverState.lastNotifId = latestUnread.id;
-          try { await api.markRead(latestUnread.id); } catch {}
-        }
-      } catch {
-        // keep previous
+      } catch { }
+    }
+
+    window.markDrNotif = async (id, el) => {
+      await api.markRead(id);
+      el.classList.remove('unread');
+      loadNotifications();
+    };
+
+    // --- VALIDATION ---
+    const showTicketResult = (data) => {
+      const modal = document.getElementById('ticket-result-modal');
+      const box = document.getElementById('ticket-result-box');
+      const icon = document.getElementById('ticket-result-icon');
+      const title = document.getElementById('ticket-result-title');
+      const msg = document.getElementById('ticket-result-msg');
+      const det = document.getElementById('ticket-result-details');
+
+      if (data.valid) {
+        box.style.borderColor = 'rgba(16,185,129,0.4)';
+        box.style.boxShadow = '0 0 40px rgba(16,185,129,0.15)';
+        icon.innerHTML = '<i class="fa fa-circle-check" style="color:#10b981;"></i>';
+        title.textContent = 'Valid Ticket';
+        title.style.color = '#10b981';
+        msg.textContent = 'Passenger is cleared to board.';
+        const t = data.ticket;
+        det.innerHTML = `
+          <div style="background:var(--bg);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);font-size:12px;">PASSENGER</span><strong>${t.passenger?.name || '—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);font-size:12px;">SEAT</span><strong style="font-size:22px;color:var(--primary);">${t.seat_number}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);font-size:12px;">BOARDING</span><strong>${t.boarding || '—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);font-size:12px;">EXIT</span><strong>${t.dropoff || '—'}</strong></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--muted);font-size:12px;">TICKET #</span><strong style="font-family:monospace;font-size:13px;color:var(--primary);">${t.ticket_number || '—'}</strong></div>
+          </div>
+        `;
+      } else {
+        box.style.borderColor = 'rgba(239,68,68,0.4)';
+        box.style.boxShadow = '0 0 40px rgba(239,68,68,0.15)';
+        icon.innerHTML = '<i class="fa fa-circle-xmark" style="color:#ef4444;"></i>';
+        title.textContent = 'Invalid Ticket';
+        title.style.color = '#ef4444';
+        msg.textContent = data.reason || 'Ticket not found or already used.';
+        det.innerHTML = '';
+        // shake the box
+        box.classList.remove('shake');
+        void box.offsetWidth;
+        box.classList.add('shake');
+        pushToast('Invalid', data.reason || 'Ticket not valid', 'error');
       }
-    }
+      modal.style.display = 'flex';
+    };
 
-    function updateHomeFromPassengers() {
-      const date = $('#pass-date')?.value || todayDateOnly();
-      const passengers = driverState.passengers || [];
-      $('#home-passengers').textContent = passengers.length;
+    window.closeTicketResult = () => {
+      document.getElementById('ticket-result-modal').style.display = 'none';
+      document.getElementById('ticket-result-box').style.borderColor = '';
+      document.getElementById('ticket-result-box').style.boxShadow = '';
+    };
 
-      const first = passengers[0] || null;
-      const plate = first?.bus?.plate_number || driverState.bus?.plate_number || '—';
-      const routeFrom = first?.bus?.route?.fromLocation?.name;
-      const routeTo = first?.bus?.route?.toLocation?.name;
-      const route = routeFrom && routeTo ? `${routeFrom} → ${routeTo}` : '—';
-      const departRaw = first?.bus?.departure_time || driverState.bus?.departure_time || '—';
-      const depart = String(departRaw || '—').slice(0, 5);
-
-      $('#home-plate').textContent = plate;
-      $('#home-route').textContent = route;
-      $('#home-depart').textContent = `Departure: ${depart} • ${date}`;
-
-      startCountdown(departRaw);
-    }
-
-    function startCountdown(departure_time) {
-      if (driverState.countdownTimer) clearInterval(driverState.countdownTimer);
-      const el = $('#home-countdown');
-      if (!departure_time || departure_time === '—') { el.textContent = '—'; return; }
-
-      const tick = () => {
-        const now = new Date();
-        const [h, m] = String(departure_time).split(':').map(Number);
-        if (Number.isNaN(h) || Number.isNaN(m)) { el.textContent = '—'; return; }
-        const dep = new Date();
-        dep.setHours(h, m, 0, 0);
-        const diff = dep.getTime() - now.getTime();
-        if (diff <= 0) {
-          el.textContent = 'Departed';
-          el.style.color = '#fcd34d';
-          return;
-        }
-        const mins = Math.floor(diff / 60000);
-        const hrs = Math.floor(mins / 60);
-        const rem = mins % 60;
-        el.style.color = '#86efac';
-        el.textContent = `Departs in ${hrs ? `${hrs}h ` : ''}${rem}m`;
-      };
-
-      tick();
-      driverState.countdownTimer = setInterval(tick, 1000);
-    }
-
-    function showResult(data) {
-      const ok = !!data?.valid;
-      $('#result-overlay').style.display = 'block';
-      $('#result-title').textContent = ok ? 'VALID' : 'INVALID';
-      $('#result-mark').className = `mark ${ok ? 'ok' : 'bad'}`;
-      $('#result-mark').textContent = ok ? '✓' : '✕';
-
-      if (!ok) {
-        $('#result-body').textContent = data?.reason ? String(data.reason) : 'Invalid ticket';
-        $('#result-grid').innerHTML = '';
-        return;
+    window.validateNumber = async () => {
+      const num = $('#val-number').value.trim();
+      if (!num) return;
+      try {
+        const data = await api.validateNumber({ ticket_number: num });
+        showTicketResult(data);
+        if (data.valid) $('#val-number').value = '';
+      } catch (e) {
+        showTicketResult({ valid: false, reason: e.message });
       }
-
-      const t = data.ticket || {};
-      $('#result-body').textContent = `${t.passenger?.name || 'Passenger'} — Seat ${t.seat_number ?? '—'}`;
-      $('#result-grid').innerHTML = `
-        <div class="kv"><span>Bus</span><b class="mono">${t.plate_number || '—'}</b></div>
-        <div class="kv"><span>Departure</span><b class="mono">${String(t.departure_time || '—').slice(0,5)}</b></div>
-        <div class="kv"><span>Boards</span><b>${t.boarding || '—'}</b></div>
-        <div class="kv"><span>Exit</span><b>${t.dropoff || '—'}</b></div>
-        <div class="kv"><span>Date</span><b class="mono">${t.travel_date || '—'}</b></div>
-        <div class="kv"><span>Ticket #</span><b class="mono">${t.ticket_number || '—'}</b></div>
-      `;
-    }
-
-    window.closeResult = () => { $('#result-overlay').style.display = 'none'; };
+    };
 
     window.openQrScanner = async () => {
-      $('#qr-modal').style.display = 'block';
+      $('#qr-modal').style.display = 'flex';
       if (!driverState.qr) driverState.qr = new Html5Qrcode('qr-reader');
-
-      const onScanSuccess = async (decodedText) => {
-        try {
-          const data = await api.validateQR({ token: decodedText });
-          await closeQrScanner();
-          showResult(data);
-        } catch (e) {
-          await closeQrScanner();
-          showResult({ valid: false, reason: e.message || 'QR validation failed' });
-        }
-      };
-
       try {
         await driverState.qr.start(
           { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 260, height: 260 } },
-          onScanSuccess
+          { fps: 10, qrbox: { width: 240, height: 240 } },
+          async (text) => {
+            try {
+              await closeQrScanner();
+              const data = await api.validateQR({ token: text });
+              showTicketResult(data);
+            } catch (e) {
+              await closeQrScanner();
+              showTicketResult({ valid: false, reason: e.message });
+            }
+          }
         );
       } catch (e) {
         await closeQrScanner();
-        showResult({ valid: false, reason: e.message || 'Unable to start camera scanner' });
+        pushToast('Camera Error', 'Could not access camera', 'error');
       }
     };
 
     window.closeQrScanner = async () => {
       $('#qr-modal').style.display = 'none';
-      try {
-        if (driverState.qr && driverState.qr.isScanning) await driverState.qr.stop();
-      } catch {}
+      try { if (driverState.qr?.isScanning) await driverState.qr.stop(); } catch { }
     };
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && document.activeElement === $('#password')) doLogin();
-      if (e.key === 'Escape') {
-        if ($('#result-overlay').style.display === 'block') closeResult();
-        if ($('#qr-modal').style.display === 'block') closeQrScanner();
-      }
-    });
+    const hideDrLoader = (cb) => {
+      const el = document.getElementById('dr-loader');
+      setTimeout(() => {
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        setTimeout(() => { el.style.display = 'none'; cb && cb(); }, 500);
+      }, 3500);
+    };
 
+    // If a token exists but it's for a different role (user/admin/operator), force login.
+    if (getToken() && tokenRole() !== 'driver') {
+      clearToken();
+      localStorage.removeItem('driver');
+    }
+
+    // Auto-login if token exists
     if (getToken()) {
-      $('#login-screen').style.display = 'none';
-      $('#dashboard').style.display = 'block';
-      init();
+      api.getPassengers(new Date().toISOString().split('T')[0]).then(() => {
+        try {
+          const saved = JSON.parse(localStorage.getItem('driver') || 'null');
+          if (saved?.name) {
+            driverState.name = saved.name;
+            driverState.bus = saved.bus;
+            driverState.bus_id = saved.bus_id;
+            $('#driver-name').textContent = saved.name;
+          }
+        } catch { }
+        hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').style.display = 'block'; init(); });
+      }).catch((e) => {
+        const msg = (e && e.message) ? String(e.message) : '';
+        const isAuthErr = msg.includes('401') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('access only') || msg.toLowerCase().includes('suspended') || msg.includes('403');
+        if (isAuthErr) {
+          clearToken();
+          localStorage.removeItem('driver');
+          hideDrLoader(() => {
+            const err = document.getElementById('login-err');
+            err.textContent = msg || 'Please login';
+            err.classList.remove('hidden');
+            $('#login-screen').style.display = 'flex';
+          });
+        } else {
+          // server error — show dashboard anyway
+          try {
+            const saved = JSON.parse(localStorage.getItem('driver') || 'null');
+            if (saved?.name) { driverState.name = saved.name; driverState.bus = saved.bus; $('#driver-name').textContent = saved.name; }
+          } catch { }
+          hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').style.display = 'block'; init(); });
+        }
+      });
+    } else {
+      hideDrLoader(() => { $('#login-screen').style.display = 'flex'; });
     }
   </script>
 </body>
+
 </html>

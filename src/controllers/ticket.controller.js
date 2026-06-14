@@ -41,11 +41,11 @@ export const getAllTickets       = async (req, res) => {
 };
 
 export const validateByQR       = async (req, res) => {
-  try { res.status(200).json(await svc.validateByQR(req.body.token)); }
+  try { res.status(200).json(await svc.validateByQR(req.body.token, req.user)); }
   catch (err) { res.status(400).json({ message: err.message }); }
 };
 
 export const validateByNumber   = async (req, res) => {
-  try { res.status(200).json(await svc.validateByNumber(req.body.ticket_number)); }
+  try { res.status(200).json(await svc.validateByNumber(req.body.ticket_number, req.user)); }
   catch (err) { res.status(400).json({ message: err.message }); }
 };

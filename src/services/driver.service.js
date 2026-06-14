@@ -1,13 +1,24 @@
 import bcrypt   from 'bcrypt';
 import jwt      from 'jsonwebtoken';
+import crypto   from 'crypto';
 import Driver   from '../database/models/driver.js';
 import Bus      from '../database/models/bus.js';
 import Operator from '../database/models/operator.js';
+import { encryptPassword } from '../utils/crypto.utils.js';
 
 const driverIncludes = [
   { model: Operator, as: 'operator', attributes: ['id', 'company_name'] },
   { model: Bus,      as: 'bus',      attributes: ['id', 'plate_number', 'departure_time'] },
 ];
+
+export const getDriverMe = async (driver_id) => {
+  const driver = await Driver.findByPk(driver_id, {
+    attributes: ['id','name','email','phone','bus_id','is_active','must_update_profile','createdAt'],
+    include: driverIncludes,
+  });
+  if (!driver) throw new Error('Driver not found');
+  return driver;
+};
 
 export const createDriver = async (operator_id, { name, phone, bus_id }) => {
   if (await Driver.findOne({ where: { phone } })) throw new Error('Phone already in use');
@@ -17,8 +28,7 @@ export const createDriver = async (operator_id, { name, phone, bus_id }) => {
     if (existing) throw new Error('Bus already has a driver assigned');
   }
 
-  const initials      = name.split(' ').map(w => w[0].toUpperCase()).join('');
-  const plainPassword = `${initials}@Driver1`;
+  const plainPassword = crypto.randomBytes(4).toString('hex').toUpperCase();
   const password_hash = await bcrypt.hash(plainPassword, 10);
 
   const driver = await Driver.create({
@@ -27,6 +37,7 @@ export const createDriver = async (operator_id, { name, phone, bus_id }) => {
     name,
     phone,
     password_hash,
+    default_password: encryptPassword(plainPassword),
     must_update_profile: true,
   });
 
@@ -40,13 +51,22 @@ export const createDriver = async (operator_id, { name, phone, bus_id }) => {
 };
 
 export const loginDriver = async ({ phone, password }) => {
+  const { checkLockout, recordFailure, clearFailures, MAX_ATTEMPTS, failedAttempts } = await import('./auth.service.js');
+  checkLockout(phone);
   const driver = await Driver.findOne({ where: { phone }, include: driverIncludes });
-  if (!driver)           throw new Error('Invalid credentials');
+  if (!driver || !await bcrypt.compare(password, driver.password_hash)) {
+    recordFailure(phone);
+    const record = failedAttempts.get(phone);
+    const remaining = MAX_ATTEMPTS - (record?.count || 0);
+    throw new Error(remaining > 0
+      ? `Invalid credentials. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`
+      : 'Account locked for 15 minutes.');
+  }
   if (!driver.is_active) throw new Error('Account suspended');
-  if (!await bcrypt.compare(password, driver.password_hash)) throw new Error('Invalid credentials');
+  clearFailures(phone);
 
   const token = jwt.sign(
-    { id: driver.id, phone: driver.phone, bus_id: driver.bus_id, operator_id: driver.operator_id, role: 'driver' },
+    { id: driver.id, phone: driver.phone, role: 'driver' },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -72,6 +92,7 @@ export const updateProfile = async (driver_id, { name, email, phone, old_passwor
     if (!old_password) throw new Error('Old password required');
     if (!await bcrypt.compare(old_password, driver.password_hash)) throw new Error('Old password incorrect');
     driver.password_hash = await bcrypt.hash(new_password, 10);
+    driver.default_password = null;
   }
 
   if (email && email !== driver.email) {

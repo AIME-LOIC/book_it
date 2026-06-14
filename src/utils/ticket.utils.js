@@ -2,7 +2,8 @@ import jwt    from 'jsonwebtoken';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 
-const QR_SECRET = process.env.QR_SECRET || 'qr_bookit_secret_key';
+const QR_SECRET = process.env.QR_SECRET;
+if (!QR_SECRET) throw new Error('QR_SECRET environment variable is not set');
 
 export const generateTicketNumber = () => {
   const digits  = Math.floor(1000 + Math.random() * 9000);

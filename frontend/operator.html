@@ -4,134 +4,369 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BookIt — Operator</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --bg:      #0a0f1e;
+    --card:    #111827;
+    --border:  #1f2937;
+    --text:    #f9fafb;
+    --muted:   #9ca3af;
+    --primary: #059669;
+    --primary-hover: #047857;
+    --primary-glow: rgba(5,150,105,0.18);
+    --danger:  #ef4444;
+    --success: #10b981;
+    --warning: #f59e0b;
+  }
+
+  body.light {
+    --bg:     #f0f4f8;
+    --card:   #ffffff;
+    --border: #e2e8f0;
+    --text:   #0f172a;
+    --muted:  #475569;
+  }
+  body.light { background: var(--bg); }
+  body.light .topbar { background: #ffffff; border-color: #e2e8f0; }
+  body.light .sidebar { background: #ffffff; border-color: #e2e8f0; }
+  body.light .nav-item:hover { background: rgba(5,150,105,0.06); }
+  body.light input, body.light select { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+  body.light input:focus, body.light select:focus { background: #fff; }
+  body.light .btn-ghost { background: #e2e8f0; color: #0f172a; }
+  body.light .btn-ghost:hover { background: #cbd5e1; }
+  body.light .logout-btn { background: #e2e8f0; color: #475569; }
+  body.light tr:hover td { background: rgba(5,150,105,0.04); }
+  body.light .notif-panel { background: #ffffff; border-color: #e2e8f0; }
+  body.light .notif-item { background: #f8fafc; }
+  body.light .modal-box { background: #ffffff; border-color: #e2e8f0; }
+  body.light .revenue-box { background: #f8fafc; border-color: #e2e8f0; }
+  body.light .stop-row { border-color: #e2e8f0; }
+  body.light .skeleton { background: linear-gradient(90deg, #e2e8f0 0%, #f1f5f9 50%, #e2e8f0 100%); background-size:200% 100%; }
+  body.light #op-loader { background: #f0f4f8; }
+  body.light #op-loader img { filter: none; }
+
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'Segoe UI',sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; }
-  #login-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; }
-  .login-card { background:#1e293b; border-radius:16px; padding:48px 40px; width:400px; box-shadow:0 25px 50px rgba(0,0,0,0.5); }
-  .login-card h1 { font-size:28px; color:#a78bfa; margin-bottom:8px; }
-  .login-card p { color:#94a3b8; margin-bottom:32px; }
+
+  body {
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* LOGIN */
+  #login-screen { display:flex; align-items:center; justify-content:center; min-height:100vh; background: radial-gradient(circle at top right, rgba(5,150,105,0.18), var(--bg)), radial-gradient(circle at bottom left, rgba(16,185,129,0.10), var(--bg)); }
+  .login-card { background:var(--card); border-radius:24px; padding:48px 40px; width:420px; box-shadow:0 25px 50px rgba(0,0,0,0.5); border:1px solid var(--border); }
+  .login-card h1 { font-size:28px; font-weight:900; color:var(--primary); margin-bottom:8px; letter-spacing:-0.5px; }
+  .login-card p { color:var(--muted); margin-bottom:32px; font-size:14px; }
+
+  /* DASHBOARD */
   #dashboard { display:none; }
-  .topbar { background:#1e293b; border-bottom:1px solid #334155; padding:16px 32px; display:flex; align-items:center; justify-content:space-between; }
-  .topbar h1 { color:#a78bfa; font-size:20px; }
-  .topbar-right { display:flex; align-items:center; gap:16px; position:relative; }
-  .bell-btn { position:relative; background:#334155; border:none; color:#e2e8f0; width:40px; height:40px; border-radius:50%; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; }
-  .bell-count { position:absolute; top:-4px; right:-4px; background:#ef4444; color:white; font-size:10px; font-weight:700; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
-  .notif-dropdown { display:none; position:absolute; top:50px; right:0; background:#1e293b; border:1px solid #334155; border-radius:12px; width:360px; max-height:400px; overflow-y:auto; z-index:100; box-shadow:0 20px 40px rgba(0,0,0,0.4); }
-  .notif-dropdown.open { display:block; }
-  .notif-header { padding:16px; border-bottom:1px solid #334155; display:flex; justify-content:space-between; align-items:center; }
-  .notif-item { padding:14px 16px; border-bottom:1px solid #1e293b; cursor:pointer; transition:background 0.2s; }
-  .notif-item:hover { background:#334155; }
-  .notif-item.unread { border-left:3px solid #a78bfa; }
-  .notif-item p { font-size:13px; color:#cbd5e1; }
-  .notif-item small { color:#64748b; font-size:11px; }
-  .layout { display:flex; height:calc(100vh - 65px); }
-  .sidebar { width:220px; background:#1e293b; border-right:1px solid #334155; padding:24px 0; }
-  .nav-item { padding:12px 24px; cursor:pointer; color:#94a3b8; transition:all 0.2s; display:flex; align-items:center; gap:10px; font-size:14px; }
-  .nav-item:hover,.nav-item.active { background:#334155; color:#a78bfa; }
-  .main { flex:1; padding:32px; overflow-y:auto; }
+
+  /* TOPBAR */
+  .topbar { background:var(--card); border-bottom:1px solid var(--border); padding:12px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:50; overflow:hidden; }
+  .topbar-right { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+  .bell-btn { position:relative; background:var(--border); border:none; color:var(--text); width:40px; height:40px; border-radius:12px; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; transition:0.2s; }
+  .bell-btn:hover { background:var(--primary-glow); color:var(--primary); }
+  /* NOTIFICATION PANEL */
+  .notif-panel {
+    position: fixed;
+    top: 0; right: -420px;
+    width: 400px; height: 100vh;
+    background: var(--card);
+    border-left: 1px solid var(--border);
+    z-index: 200;
+    transition: right 0.4s cubic-bezier(0.4,0,0.2,1);
+    padding: 24px;
+    box-shadow: -10px 0 40px rgba(0,0,0,0.4);
+    display: flex;
+    flex-direction: column;
+  }
+  .notif-panel.open { right: 0; }
+  .notif-item {
+    background: var(--bg);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 12px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .notif-item:hover { border-color: var(--border); }
+  .notif-item.unread { border-left: 3px solid var(--primary); background: var(--primary-glow); }
+  .notif-icon { width: 38px; height: 38px; border-radius: 10px; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; color: var(--primary); }
+  .bell-count { position:absolute; top:-4px; right:-4px; background:var(--danger); color:white; font-size:10px; font-weight:700; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+
+  /* LAYOUT */
+  .layout { display:flex; height:calc(100vh - 65px); overflow:hidden; }
+  .sidebar { width:240px; background:var(--card); border-right:1px solid var(--border); padding:24px 12px; display:flex; flex-direction:column; overflow-y:auto; }
+  .nav-item { padding:12px 16px; cursor:pointer; color:var(--muted); transition:all 0.2s; display:flex; align-items:center; gap:10px; font-size:14px; font-weight:600; border-radius:12px; margin-bottom:4px; }
+  .nav-item:hover { background:rgba(255,255,255,0.04); color:var(--text); }
+  .nav-item.active { background:var(--primary-glow); color:var(--primary); }
+  .main { flex:1; padding:32px; overflow-y:auto; overflow-x:hidden; }
+
+  /* SECTIONS */
   .section { display:none; }
   .section.active { display:block; }
-  .section-title { font-size:22px; font-weight:700; color:#f1f5f9; margin-bottom:24px; }
-  .card { background:#1e293b; border-radius:12px; padding:24px; border:1px solid #334155; margin-bottom:24px; }
-  .card h3 { font-size:16px; color:#94a3b8; margin-bottom:16px; }
+  .section-title { font-size:24px; font-weight:800; color:var(--text); margin-bottom:24px; letter-spacing:-0.5px; }
+
+  /* CARDS */
+  .card { background:var(--card); border-radius:16px; padding:24px; border:1px solid var(--border); margin-bottom:24px; }
+  .card h3 { font-size:14px; font-weight:700; color:var(--muted); margin-bottom:16px; text-transform:uppercase; letter-spacing:0.05em; }
+
+  /* FORMS */
   .form-row { display:flex; gap:12px; flex-wrap:wrap; }
-  input,select { background:#0f172a; border:1px solid #334155; color:#e2e8f0; padding:10px 14px; border-radius:8px; font-size:14px; flex:1; min-width:180px; outline:none; transition:border 0.2s; }
-  input:focus,select:focus { border-color:#a78bfa; }
-  .btn { padding:10px 20px; border-radius:8px; border:none; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.2s; }
-  .btn-primary { background:#a78bfa; color:#0f172a; }
-  .btn-primary:hover { background:#8b5cf6; }
-  .btn-danger { background:#ef4444; color:white; }
-  .btn-ghost { background:#334155; color:#e2e8f0; }
-  .btn-ghost:hover { background:#475569; }
-  .btn-sm { padding:6px 12px; font-size:12px; }
+  input, select { background:var(--bg); border:1px solid var(--border); color:var(--text); padding:12px 16px; border-radius:12px; font-size:14px; font-family:inherit; flex:1; min-width:180px; outline:none; transition:border 0.2s; }
+  input:focus, select:focus { border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-glow); }
+  input::placeholder { color:var(--muted); }
+
+  /* BUTTONS */
+  .btn { padding:11px 20px; border-radius:12px; border:none; cursor:pointer; font-size:14px; font-weight:700; font-family:inherit; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; }
+  .btn-primary { background:var(--primary); color:white; }
+  .btn-primary:hover { background:var(--primary-hover); transform:translateY(-1px); }
+  .btn-danger { background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.25); }
+  .btn-danger:hover { background:var(--danger); color:white; }
+  .btn-ghost { background:var(--border); color:var(--text); }
+  .btn-ghost:hover { background:#374151; }
+  .btn-sm { padding:6px 12px; font-size:12px; border-radius:8px; }
+
+  /* TABLES */
   table { width:100%; border-collapse:collapse; }
-  th { text-align:left; padding:12px 16px; color:#64748b; font-size:12px; text-transform:uppercase; border-bottom:1px solid #334155; }
-  td { padding:14px 16px; font-size:14px; border-bottom:1px solid #1e293b; }
-  tr:hover td { background:#1a2744; }
-  .badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; }
-  .badge-green { background:#052e16; color:#4ade80; }
-  .badge-red { background:#450a0a; color:#f87171; }
-  .badge-yellow { background:#431407; color:#fb923c; }
-  .badge-blue { background:#0c1a3d; color:#60a5fa; }
-  .alert { padding:12px 16px; border-radius:8px; margin-bottom:16px; font-size:14px; display:none; }
-  .alert-err { background:#450a0a; color:#f87171; border:1px solid #7f1d1d; }
-  .alert-ok { background:#052e16; color:#4ade80; border:1px solid #14532d; }
+  th { text-align:left; padding:12px 16px; color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; border-bottom:1px solid var(--border); }
+  td { padding:14px 16px; font-size:14px; border-bottom:1px solid var(--border); color:var(--text); }
+  tr:hover td { background:rgba(255,255,255,0.02); }
+
+  /* BADGES */
+  .badge { padding:4px 10px; border-radius:999px; font-size:11px; font-weight:700; }
+  .badge-green { background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.25); }
+  .badge-red { background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.25); }
+  .badge-yellow { background:rgba(245,158,11,0.15); color:#fcd34d; border:1px solid rgba(245,158,11,0.25); }
+  .badge-blue { background:rgba(96,165,250,0.15); color:#93c5fd; border:1px solid rgba(96,165,250,0.25); }
+
+  /* ALERTS */
+  .alert { padding:12px 16px; border-radius:12px; margin-bottom:16px; font-size:14px; display:none; font-weight:600; }
+  .alert-err { background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.25); }
+  .alert-ok  { background:rgba(16,185,129,0.12); color:#34d399; border:1px solid rgba(16,185,129,0.25); }
+
+  /* STATS */
   .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:16px; margin-bottom:24px; }
-  .stat-card { background:#1e293b; border-radius:12px; padding:20px; border:1px solid #334155; }
-  .stat-card .num { font-size:32px; font-weight:700; color:#a78bfa; }
-  .stat-card .lbl { font-size:13px; color:#64748b; margin-top:4px; }
-  .logout-btn { background:#334155; border:none; color:#94a3b8; padding:8px 16px; border-radius:8px; cursor:pointer; font-size:14px; }
-  .default-pass { background:#0f172a; border:1px solid #a78bfa; border-radius:8px; padding:12px 16px; margin-top:12px; display:none; }
-  .default-pass span { color:#a78bfa; font-weight:700; font-size:16px; }
+  .stat-card { background:var(--card); border-radius:16px; padding:20px; border:1px solid var(--border); transition:0.2s; position:relative; }
+  .stat-card:hover { border-color:var(--primary); transform:translateY(-2px); box-shadow:0 8px 24px rgba(5,150,105,0.12); }
+  .stat-card::after { content:'\f061'; font-family:'Font Awesome 6 Free'; font-weight:900; position:absolute; top:16px; right:16px; font-size:11px; color:var(--border); transition:0.2s; }
+  .stat-card:hover::after { color:var(--primary); }
+  .stat-card .num { font-size:32px; font-weight:800; color:var(--primary); letter-spacing:-1px; }
+  .stat-card .lbl { font-size:13px; color:var(--muted); margin-top:4px; font-weight:600; }
+
+  /* MISC */
+  .logout-btn { background:var(--border); border:none; color:var(--muted); padding:8px 16px; border-radius:10px; cursor:pointer; font-size:14px; font-family:inherit; font-weight:600; transition:0.2s; }
+  .logout-btn:hover { color:var(--danger); }
+  .default-pass { background:var(--bg); border:1px solid var(--primary); border-radius:12px; padding:12px 16px; margin-top:12px; display:none; }
+  .default-pass span { color:var(--primary); font-weight:700; font-size:16px; }
   .stops-list { margin-top:12px; }
-  .stop-row { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid #334155; font-size:13px; }
-  .stop-order { background:#334155; color:#a78bfa; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; }
-  .revenue-box { background:#0f172a; border-radius:8px; padding:16px; margin-top:12px; }
-  .revenue-box .total { font-size:28px; font-weight:700; color:#4ade80; }
-.revenue-box .lbl { color:#64748b; font-size:13px; }
+  .stop-row { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
+  .stop-order { background:var(--primary-glow); color:var(--primary); width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; flex-shrink:0; }
+  .revenue-box { background:var(--bg); border-radius:12px; padding:20px; margin-top:12px; border:1px solid var(--border); }
+  .revenue-box .total { font-size:32px; font-weight:800; color:var(--success); letter-spacing:-1px; }
+  .revenue-box .lbl { color:var(--muted); font-size:13px; font-weight:600; }
 
-  /* Universal Skeletons - Step 2 */
-  .skeleton { 
-    background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%); 
-    background-size: 200% 100%; 
-    animation: shimmer 1.5s infinite linear; 
-    border-radius: 8px; 
-    height: 16px;
+  /* LOADER */
+  #op-loader { position:fixed; inset:0; z-index:9999; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px; transition:opacity 0.5s ease; }
+  #op-loader.hide { opacity:0; pointer-events:none; }
+  #op-loader img { width:140px; height:auto; filter:brightness(0) invert(1); animation:opulse 1.4s ease-in-out infinite; }
+  @keyframes opulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
+  .op-loader-bar { width:160px; height:4px; background:var(--border); border-radius:99px; overflow:hidden; }
+  .op-loader-fill { height:100%; width:40%; background:var(--primary); border-radius:99px; animation:obar 3.5s ease-in-out infinite; }
+  @keyframes obar { 0%{transform:translateX(-100%)} 100%{transform:translateX(400%)} }
+  .op-loader-text { font-size:13px; color:var(--muted); font-weight:600; }
+
+  /* STOPS MODAL */
+  .modal-backdrop { position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:500; display:none; align-items:center; justify-content:center; padding:20px; backdrop-filter:blur(6px); }
+  .modal-backdrop.open { display:flex; }
+  .modal-box { background:var(--card); border:1px solid var(--border); border-radius:24px; padding:28px; width:100%; max-width:520px; max-height:85vh; display:flex; flex-direction:column; }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .modal-header h3 { font-size:18px; font-weight:800; }
+  .modal-body { overflow-y:auto; flex:1; padding-right:4px; scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+  .modal-body::-webkit-scrollbar { width:4px; }
+  .modal-body::-webkit-scrollbar-track { background:transparent; }
+  .modal-body::-webkit-scrollbar-thumb { background:var(--border); border-radius:99px; }
+  .modal-body::-webkit-scrollbar-thumb:hover { background:var(--primary); }
+  .skeleton { background: linear-gradient(90deg, var(--card) 0%, #1f2937 50%, var(--card) 100%); background-size:200% 100%; animation:shimmer 1.5s infinite linear; border-radius:8px; height:16px; }
+  .skeleton-card { height:120px; }
+  .skeleton-line { height:12px; margin-bottom:8px; }
+  .skeleton-table-row { height:48px; }
+  @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+
+  /* RESPONSIVE */
+  .mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 6px 0;
+    z-index: 100;
+    justify-content: space-around;
+    backdrop-filter: blur(12px);
+    overflow: hidden;
   }
-  .skeleton-card { height: 120px; }
-  .skeleton-line { height: 12px; margin-bottom: 8px; }
-  .skeleton-table-row { height: 48px; }
-  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-  
-  /* Empty States */
-  .empty-state { text-align: center; padding: 60px 20px; color: #64748b; }
-  .empty-state i { font-size: 64px; opacity: 0.3; margin-bottom: 20px; display: block; }
+  .m-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 6px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: 0.2s;
+    flex: 1;
+    min-width: 0;
+  }
+  .m-nav-item i { font-size: 20px; }
+  .m-nav-item span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .m-nav-item.active { color: var(--primary); }
 
+  #mobile-more-menu {
+    display: none;
+    position: fixed;
+    bottom: 62px;
+    right: 8px;
+    width: 180px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    z-index: 200;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    overflow: hidden;
+  }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .mobile-nav { display: flex; }
+    .layout { height: calc(100vh - 65px); }
+    .main { padding: 16px 16px 80px; overflow-x: hidden; }
+    .topbar { padding: 10px 16px; }
+    .form-row { flex-direction: column; }
+    input, select { min-width: 0; width: 100%; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .section-title { font-size: 20px; }
+    .card { padding: 14px; border-radius: 12px; overflow: hidden; }
+    .notif-panel { width: 100%; right: -100%; }
+
+    /* CARD-STYLE TABLES ON MOBILE */
+    table thead { display: none; }
+    table, tbody, tr, td { display: block; width: 100%; }
+    tr {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+    tr:hover { background: var(--card); }
+    td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      border: none;
+      font-size: 13px;
+      border-bottom: 1px solid var(--border);
+      word-break: break-word;
+    }
+    td:last-child { border-bottom: none; padding-bottom: 0; }
+    td:first-child { padding-top: 0; }
+    td::before {
+      content: attr(data-label);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+      margin-right: 12px;
+    }
+    td[data-label="Actions"] { justify-content: flex-end; gap: 8px; }
+    td[data-label="Actions"]::before { display: none; }
+  }
+
+  @media (max-width: 480px) {
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stat-card .num { font-size: 24px; }
+  }
+    .stat-card .num { font-size: 24px; }
+  }
 </style>
 </head>
 <body>
+<script>if(localStorage.getItem('op-theme')==='light')document.body.classList.add('light');</script>
 
-<div id="login-screen">
+<!-- LOADER -->
+<div id="op-loader">
+  <img src="./download.png" alt="BookIt">
+  <div class="op-loader-bar"><div class="op-loader-fill"></div></div>
+  <div class="op-loader-text">Loading Operator Dashboard...</div>
+</div>
+
+<div id="login-screen" style="display:none;">
   <div class="login-card">
-    <h1>🚌 BookIt</h1>
-    <p>Operator Dashboard</p>
+    <div style="text-align:center; margin-bottom:28px;">
+      <img src="./download.png" alt="BookIt" style="height:64px; width:auto; filter:brightness(0) invert(1);">
+      <p style="color:var(--muted); font-size:13px; margin-top:8px;">Operator Dashboard</p>
+    </div>
     <div class="alert alert-err" id="login-err"></div>
     <div style="display:flex;flex-direction:column;gap:12px;">
-      <input id="company"  placeholder="Company name" />
+      <input id="company" placeholder="Company name" />
       <input id="password" type="password" placeholder="Password" />
       <button class="btn btn-primary" onclick="doLogin()">Sign In</button>
     </div>
   </div>
 </div>
 
-<div id="dashboard">
+<div id="dashboard" style="display:none;">
   <div class="topbar">
-    <h1>🚌 <span id="company-name">Operator</span></h1>
+    <img src="./download.png" alt="BookIt" style="height:44px;width:auto;filter:brightness(0) invert(1);flex-shrink:0;">
     <div class="topbar-right">
       <button class="bell-btn" onclick="toggleNotifs()" id="bell-btn">
-        🔔<span class="bell-count" id="bell-count" style="display:none">0</span>
+        <i class="fa fa-bell"></i><span class="bell-count" id="bell-count" style="display:none">0</span>
       </button>
-      <div class="notif-dropdown" id="notif-dropdown">
-        <div class="notif-header">
-          <span>Notifications</span>
-          <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
-        </div>
-        <div id="notif-list"></div>
-      </div>
-      <button class="logout-btn" onclick="logout()">Logout</button>
+      <button id="op-theme-btn" onclick="toggleOpTheme()" style="background:var(--border);border:none;color:var(--muted);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:15px;transition:0.2s;display:flex;align-items:center;justify-content:center;" title="Toggle theme"><i class="fa fa-moon"></i></button>
+      <button onclick="logout()" style="background:var(--border);border:none;color:var(--muted);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:0.2s;" title="Logout"><i class="fa fa-sign-out-alt"></i></button>
     </div>
+  </div>
+
+  <!-- NOTIFICATION PANEL -->
+  <div class="notif-panel" id="notif-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
+      <h3 style="font-size:18px; font-weight:800;">Notifications</h3>
+      <div style="display:flex; gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="markAllRead()">Mark all read</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleNotifs()"><i class="fa fa-times"></i></button>
+      </div>
+    </div>
+    <div id="notif-list" style="overflow-y:auto; flex:1; scrollbar-width:thin; scrollbar-color:var(--border) transparent;"></div>
   </div>
 
   <div class="layout">
     <div class="sidebar">
-      <div class="nav-item active" onclick="showSection('overview',this)">📊 Overview</div>
-      <div class="nav-item" onclick="showSection('routes',this)">🗺️ Routes</div>
-      <div class="nav-item" onclick="showSection('buses',this)">🚌 Buses</div>
-      <div class="nav-item" onclick="showSection('drivers',this)">👤 Drivers</div>
-      <div class="nav-item" onclick="showSection('tickets',this)">🎫 Tickets</div>
-      <div class="nav-item" onclick="showSection('revenue',this)">💰 Revenue</div>
-      <div class="nav-item" onclick="showSection('locations',this)">📍 Locations</div>
+      <div class="nav-item active" onclick="showSection('overview',this)" id="sd-overview"><i class="fa fa-chart-pie"></i> Overview</div>
+      <div class="nav-item" onclick="showSection('routes',this)" id="sd-routes"><i class="fa fa-route"></i> Routes</div>
+      <div class="nav-item" onclick="showSection('buses',this)" id="sd-buses"><i class="fa fa-bus"></i> Buses</div>
+      <div class="nav-item" onclick="showSection('drivers',this)" id="sd-drivers"><i class="fa fa-user"></i> Drivers</div>
+      <div class="nav-item" onclick="showSection('tickets',this)" id="sd-tickets"><i class="fa fa-ticket"></i> Tickets</div>
+      <div class="nav-item" onclick="showSection('revenue',this)" id="sd-revenue"><i class="fa fa-money-bill"></i> Revenue</div>
+      <div class="nav-item" onclick="showSection('locations',this)" id="sd-locations"><i class="fa fa-map-marker-alt"></i> Locations</div>
+      <div class="nav-item" onclick="showSection('locker',this)" id="sd-locker"><i class="fa fa-lock"></i> Locker</div>
+      <div class="nav-item" onclick="showSection('profile',this)" id="sd-profile"><i class="fa fa-user-circle"></i> Profile</div>
     </div>
 
     <div class="main">
@@ -140,11 +375,21 @@
       <div class="section active" id="sec-overview">
         <div class="section-title">Overview</div>
         <div class="stats">
-          <div class="stat-card"><div class="num" id="s-routes">—</div><div class="lbl">Routes</div></div>
-          <div class="stat-card"><div class="num" id="s-buses">—</div><div class="lbl">Buses</div></div>
-          <div class="stat-card"><div class="num" id="s-drivers">—</div><div class="lbl">Drivers</div></div>
-          <div class="stat-card"><div class="num" id="s-tickets">—</div><div class="lbl">Tickets Today</div></div>
-          <div class="stat-card"><div class="num" id="s-revenue">—</div><div class="lbl">Revenue (RWF)</div></div>
+          <div class="stat-card" onclick="showSection('routes', document.getElementById('sd-routes'))" style="cursor:pointer;">
+            <div class="num" id="s-routes">—</div><div class="lbl">Routes</div>
+          </div>
+          <div class="stat-card" onclick="showSection('buses', document.getElementById('sd-buses'))" style="cursor:pointer;">
+            <div class="num" id="s-buses">—</div><div class="lbl">Buses</div>
+          </div>
+          <div class="stat-card" onclick="showSection('drivers', document.getElementById('sd-drivers'))" style="cursor:pointer;">
+            <div class="num" id="s-drivers">—</div><div class="lbl">Drivers</div>
+          </div>
+          <div class="stat-card" onclick="showSection('tickets', document.getElementById('sd-tickets'))" style="cursor:pointer;">
+            <div class="num" id="s-tickets">—</div><div class="lbl">Tickets Today</div>
+          </div>
+          <div class="stat-card" onclick="showSection('revenue', document.getElementById('sd-revenue'))" style="cursor:pointer;">
+            <div class="num" id="s-revenue">—</div><div class="lbl">Revenue (RWF)</div>
+          </div>
         </div>
       </div>
 
@@ -170,21 +415,7 @@
           </table>
         </div>
 
-        <!-- ADD STOPS PANEL -->
-        <div class="card" id="stops-panel" style="display:none;">
-          <h3>Manage Stops — <span id="stops-route-name"></span></h3>
-          <div class="alert alert-err" id="st-err"></div>
-          <div id="stops-list" class="stops-list"></div>
-          <div style="margin-top:16px;">
-            <p style="color:#64748b;font-size:13px;margin-bottom:12px;">Add new stop:</p>
-            <div class="form-row">
-              <select id="st-loc"></select>
-              <input id="st-order" type="number" placeholder="Order (1,2,3...)" style="max-width:120px;" />
-              <input id="st-price" type="number" placeholder="Price from origin" style="max-width:160px;" />
-              <button class="btn btn-primary" onclick="addStop()">Add Stop</button>
-            </div>
-          </div>
-        </div>
+        <!-- STOPS PANEL REMOVED - now a modal -->
       </div>
 
       <!-- BUSES -->
@@ -205,7 +436,7 @@
         <div class="card">
           <h3>My Buses</h3>
           <table>
-            <thead><tr><th>Plate</th><th>Route</th><th>Departure</th><th>Capacity</th><th>Actions</th></tr></thead>
+            <thead><tr><th>Plate</th><th>Route</th><th>Departure</th><th>Capacity</th><th>Status</th><th>Actions</th></tr></thead>
             <tbody id="bus-table"></tbody>
           </table>
         </div>
@@ -285,13 +516,185 @@
         </div>
       </div>
 
+      <!-- LOCKER -->
+      <div class="section" id="sec-locker">
+        <div class="section-title">Password Locker</div>
+        <div class="card">
+          <h3>Saved Credentials</h3>
+          <p style="color:var(--muted);font-size:13px;margin-bottom:16px;">Default passwords for drivers you created. Requires your account password to view.</p>
+          <div id="locker-list"><p style="color:var(--muted);font-size:13px;">No saved credentials yet.</p></div>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div class="section" id="sec-profile">
+        <div class="section-title">My Profile</div>
+        <div class="card">
+          <h3>Account Info</h3>
+          <div id="profile-info" style="margin-bottom:24px;"></div>
+          <h3>Update Details</h3>
+          <div class="alert alert-err" id="profile-err"></div>
+          <div class="alert alert-ok"  id="profile-ok"></div>
+          <div class="form-row" style="margin-bottom:12px;">
+            <input id="profile-name"  placeholder="Company name" />
+            <input id="profile-phone" placeholder="Contact / Phone" />
+          </div>
+          <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+        </div>
+        <div class="card">
+          <h3>Change Password</h3>
+          <div class="alert alert-err" id="pw-err"></div>
+          <div class="alert alert-ok"  id="pw-ok"></div>
+          <div class="form-row">
+            <input type="password" id="pw-old" placeholder="Current password" />
+            <input type="password" id="pw-new" placeholder="New password" />
+            <input type="password" id="pw-confirm" placeholder="Confirm new password" />
+            <button class="btn btn-primary" onclick="changePassword()">Change Password</button>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
+  <div class="modal-backdrop" id="op-confirm">
+    <div class="modal-box" style="max-width:360px;text-align:center;">
+      <div style="font-size:48px;margin-bottom:12px;"><i class="fa fa-triangle-exclamation" style="color:#f59e0b;"></i></div>
+      <h3 id="op-confirm-title" style="font-size:18px;font-weight:800;margin-bottom:8px;"></h3>
+      <p id="op-confirm-msg" style="color:var(--muted);font-size:14px;margin-bottom:24px;"></p>
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-ghost" style="flex:1;" onclick="opConfirmResolve(false)">Cancel</button>
+        <button id="op-confirm-ok" class="btn" style="flex:1;color:white;" onclick="opConfirmResolve(true)">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TICKET DETAIL MODAL -->
+  <div class="modal-backdrop" id="ticket-modal">
+    <div class="modal-box" style="max-width:480px;">
+      <div class="modal-header">
+        <h3>Ticket Details</h3>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ticket-modal').classList.remove('open')"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="modal-body" id="ticket-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- STOPS MODAL -->
+  <div class="modal-backdrop" id="stops-modal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Stops — <span id="stops-route-name"></span></h3>
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('stops-modal').classList.remove('open')"><i class="fa fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-err" id="st-err"></div>
+        <div id="stops-list" class="stops-list"></div>
+        <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+          <p style="color:var(--muted); font-size:13px; font-weight:600; margin-bottom:12px;">Add new stop</p>
+          <div class="form-row">
+            <select id="st-loc"></select>
+            <input id="st-order" type="number" placeholder="Order (1,2,3...)" style="max-width:120px;" />
+            <input id="st-price" type="number" placeholder="Price from origin" />
+            <button class="btn btn-primary" onclick="addStop()">Add</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE NAV -->
+  <nav class="mobile-nav">
+    <div class="m-nav-item active" id="mb-overview" onclick="showSection('overview',this)"><i class="fa fa-chart-pie"></i><span>Home</span></div>
+    <div class="m-nav-item" id="mb-buses" onclick="showSection('buses',this)"><i class="fa fa-bus"></i><span>Buses</span></div>
+    <div class="m-nav-item" id="mb-drivers" onclick="showSection('drivers',this)"><i class="fa fa-user"></i><span>Drivers</span></div>
+    <div class="m-nav-item" id="mb-tickets" onclick="showSection('tickets',this)"><i class="fa fa-ticket"></i><span>Tickets</span></div>
+    <div class="m-nav-item" onclick="toggleMobileMore()" id="mb-more"><i class="fa fa-ellipsis-v"></i><span>More</span></div>
+  </nav>
+
+  <!-- MOBILE MORE MENU — vertical compact, right-anchored -->
+  <div id="mobile-more-menu">
+    <div onclick="showSection('routes',document.getElementById('sd-routes'));toggleMobileMore()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);"><i class="fa fa-route" style="width:18px;text-align:center;"></i> Routes</div>
+    <div onclick="showSection('revenue',document.getElementById('sd-revenue'));toggleMobileMore()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);"><i class="fa fa-money-bill" style="width:18px;text-align:center;"></i> Revenue</div>
+    <div onclick="showSection('locations',document.getElementById('sd-locations'));toggleMobileMore()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);"><i class="fa fa-map-marker-alt" style="width:18px;text-align:center;"></i> Locations</div>
+    <div onclick="showSection('locker',document.getElementById('sd-locker'));toggleMobileMore()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border);"><i class="fa fa-lock" style="width:18px;text-align:center;"></i> Locker</div>
+    <div onclick="logout()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;color:#ef4444;font-weight:600;font-size:13px;cursor:pointer;"><i class="fa fa-sign-out-alt" style="width:18px;text-align:center;"></i> Logout</div>
+    <div onclick="showSection('profile',document.getElementById('sd-profile'));toggleMobileMore()" style="display:flex;align-items:center;gap:12px;padding:13px 16px;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer;border-top:1px solid var(--border);"><i class="fa fa-user-circle" style="width:18px;text-align:center;"></i> Profile</div>
+  </div>
+
+  <!-- LOCKER UNLOCK MODAL -->
+  <div class="modal-backdrop" id="locker-unlock-modal">
+    <div class="modal-box" style="max-width:380px;text-align:center;border:2px solid rgba(239,68,68,0.4);box-shadow:0 0 40px rgba(239,68,68,0.15);">
+      <div style="font-size:52px;margin-bottom:12px;"><i class="fa fa-lock" style="color:#ef4444;"></i></div>
+      <h3 style="font-size:18px;font-weight:800;margin-bottom:8px;color:#f87171;">Locker — Password Required</h3>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">Enter your account password to access saved credentials.</p>
+      <div class="alert alert-err" id="locker-unlock-err"></div>
+      <input type="password" id="locker-unlock-pass" placeholder="Your password" style="margin-bottom:16px;border-color:rgba(239,68,68,0.4);" />
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-ghost" style="flex:1;" onclick="closeLockerUnlock()">Cancel</button>
+        <button class="btn btn-primary" style="flex:1;background:#ef4444;" onclick="submitLockerUnlock()"><i class="fa fa-unlock"></i> Unlock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOCKER ENTRY MODAL -->
+  <div class="modal-backdrop" id="locker-entry-modal">
+    <div class="modal-box" style="max-width:420px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+        <h3 style="font-size:18px;font-weight:800;"><i class="fa fa-key" style="color:var(--primary);margin-right:8px;"></i>Credential</h3>
+        <button class="btn btn-ghost btn-sm" onclick="closeLockerEntry()"><i class="fa fa-times"></i></button>
+      </div>
+      <div id="locker-entry-body"></div>
+    </div>
+  </div>
+
 </div>
 
-<script type="module">
-import { api, setToken, clearToken, getToken } from './api.js';
+<script src="./api.js"></script>
+<script>
+const { api, setToken, clearToken, getToken } = window.BookItApi;
 window.api = api;
+
+const parseJwt = (token) => {
+  try {
+    const part = token.split('.')[1];
+    if (!part) return null;
+    const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(b64));
+  } catch { return null; }
+};
+const tokenRole = () => parseJwt(getToken() || '')?.role || null;
+
+// ── TOAST ─────────────────────────────────────────────
+const toastContainer = document.createElement('div');
+toastContainer.style.cssText = 'position:fixed;top:24px;right:24px;z-index:9000;display:flex;flex-direction:column;gap:10px;pointer-events:none;';
+document.body.appendChild(toastContainer);
+
+const showToast = (msg, type = 'info') => {
+  const t = document.createElement('div');
+  const colors = { success: '#10b981', error: '#ef4444', info: '#059669', warning: '#f59e0b' };
+  const icons  = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info', warning: 'fa-triangle-exclamation' };
+  t.style.cssText = `background:var(--card);border:1px solid var(--border);border-left:4px solid ${colors[type]||colors.info};padding:14px 18px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;min-width:280px;max-width:360px;pointer-events:auto;transform:translateX(120%);transition:transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275);`;
+  t.innerHTML = `<i class="fa ${icons[type]||icons.info}" style="color:${colors[type]||colors.info};font-size:18px;"></i><span style="font-size:14px;font-weight:600;color:var(--text);">${msg}</span>`;
+  toastContainer.appendChild(t);
+  setTimeout(() => t.style.transform = 'translateX(0)', 10);
+  setTimeout(() => { t.style.transform = 'translateX(120%)'; setTimeout(() => t.remove(), 350); }, 4000);
+};
+
+// ── CONFIRM POPUP ─────────────────────────────────────
+let _confirmResolve = null;
+const showConfirm = (title, msg, okLabel = 'Delete', okColor = '#ef4444') => {
+  document.getElementById('op-confirm-title').textContent = title;
+  document.getElementById('op-confirm-msg').textContent   = msg;
+  const btn = document.getElementById('op-confirm-ok');
+  btn.textContent = okLabel;
+  btn.style.background = okColor;
+  document.getElementById('op-confirm').classList.add('open');
+  return new Promise(res => { _confirmResolve = res; });
+};
+window.opConfirmResolve = (val) => {
+  document.getElementById('op-confirm').classList.remove('open');
+  if (_confirmResolve) { _confirmResolve(val); _confirmResolve = null; }
+};
 
 let currentRouteId = null;
 let locations      = [];
@@ -304,7 +707,7 @@ window.doLogin = async () => {
   try {
     const data = await api.loginOperator({ company_name, password });
     setToken(data.token);
-    document.getElementById('company-name').textContent = data.operator.company_name;
+    localStorage.setItem('operator', JSON.stringify({ company_name: data.operator.company_name }));
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display    = 'block';
     init();
@@ -313,6 +716,22 @@ window.doLogin = async () => {
     el.textContent = e.message; el.style.display = 'block';
   }
 };
+
+window.toggleOpTheme = () => {
+  const isLight = document.body.classList.toggle('light');
+  localStorage.setItem('op-theme', isLight ? 'light' : 'dark');
+  const btn = document.getElementById('op-theme-btn');
+  if (btn) btn.innerHTML = isLight ? '<i class="fa fa-moon"></i>' : '<i class="fa fa-sun"></i>';
+};
+
+// apply saved theme
+(function(){
+  if (localStorage.getItem('op-theme') === 'light') {
+    document.body.classList.add('light');
+    const btn = document.getElementById('op-theme-btn');
+    if (btn) btn.innerHTML = '<i class="fa fa-moon"></i>';
+  }
+})();
 
 window.logout = () => { clearToken(); location.reload(); };
 
@@ -335,10 +754,17 @@ async function init() {
 window.showSection = (name, el) => {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.m-nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById(`sec-${name}`).classList.add('active');
   el.classList.add('active');
+  const mb = document.getElementById(`mb-${name}`);
+  if (mb) mb.classList.add('active');
+  const sd = document.getElementById(`sd-${name}`);
+  if (sd) sd.classList.add('active');
   if (name === 'tickets') loadTickets();
   if (name === 'revenue') calcRevenue();
+  if (name === 'locker') { openLockerUnlock(); return; }
+  if (name === 'profile') loadProfile();
 };
 
 // ── OVERVIEW ──────────────────────────────────────────
@@ -401,12 +827,12 @@ async function renderRoutes() {
   const tbody = document.getElementById('rt-table');
   tbody.innerHTML = myRoutes.map(r => `
     <tr>
-      <td>${r.fromLocation.name}</td>
-      <td>${r.toLocation.name}</td>
-      <td>${Number(r.price).toLocaleString()} RWF</td>
-      <td>${(r.stops||[]).length} stops</td>
-      <td><span class="badge ${r.is_reverse ? 'badge-yellow' : 'badge-blue'}">${r.is_reverse ? 'Reverse' : 'Main'}</span></td>
-      <td style="display:flex;gap:6px;">
+      <td data-label="From">${r.fromLocation.name}</td>
+      <td data-label="To">${r.toLocation.name}</td>
+      <td data-label="Price">${Number(r.price).toLocaleString()} RWF</td>
+      <td data-label="Stops">${(r.stops||[]).length} stops</td>
+      <td data-label="Type"><span class="badge ${r.is_reverse ? 'badge-yellow' : 'badge-blue'}">${r.is_reverse ? 'Reverse' : 'Main'}</span></td>
+      <td data-label="Actions" style="display:flex;gap:6px;">
         <button class="btn btn-ghost btn-sm" onclick="openStops('${r.id}','${r.fromLocation.name} → ${r.toLocation.name}')">Stops</button>
         <button class="btn btn-danger btn-sm" onclick="deleteRoute('${r.id}')">Delete</button>
       </td>
@@ -424,6 +850,7 @@ window.createRoute = async () => {
   err.style.display = 'none'; ok.style.display = 'none';
   try {
     const data = await api.createRoute({ from_location_id: from, to_location_id: to, price: parseFloat(price) });
+    showToast(`Route created${data.reverse ? ' + reverse' : ''}`, 'success');
     ok.textContent = `Route created${data.reverse ? ' + reverse auto-generated' : ''}`;
     ok.style.display = 'block';
     renderRoutes();
@@ -431,16 +858,20 @@ window.createRoute = async () => {
 };
 
 window.deleteRoute = async (id) => {
-  if (!confirm('Delete route?')) return;
-  await api.deleteRoute(id);
-  renderRoutes();
+  const ok = await showConfirm('Delete Route', 'This will also remove all stops on this route.');
+  if (!ok) return;
+  try {
+    await api.deleteRoute(id);
+    showToast('Route deleted', 'success');
+    renderRoutes();
+  } catch(e) { showToast(e.message, 'error'); }
 };
 
 // ── STOPS ─────────────────────────────────────────────
 window.openStops = async (route_id, name) => {
   currentRouteId = route_id;
   document.getElementById('stops-route-name').textContent = name;
-  document.getElementById('stops-panel').style.display    = 'block';
+  document.getElementById('stops-modal').classList.add('open');
   populateStopSelect();
   renderStops();
 };
@@ -486,11 +917,18 @@ async function renderBuses() {
   const tbody = document.getElementById('bus-table');
   tbody.innerHTML = myBuses.map(b => `
     <tr>
-      <td>${b.plate_number}</td>
-      <td>${b.route?.fromLocation?.name||'?'} → ${b.route?.toLocation?.name||'?'}</td>
-      <td>${b.departure_time}</td>
-      <td>${b.capacity}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="deleteBus('${b.id}')">Delete</button></td>
+      <td data-label="Plate">${b.plate_number}</td>
+      <td data-label="Route">${b.route?.fromLocation?.name||'?'} → ${b.route?.toLocation?.name||'?'}</td>
+      <td data-label="Departure">
+        <input type="time" value="${String(b.departure_time).slice(0,5)}" onblur="updateDeparture('${b.id}', this.value)"
+          style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;font-size:13px;font-family:inherit;">
+      </td>
+      <td data-label="Capacity">${b.capacity}</td>
+      <td data-label="Status"><span class="badge ${b.is_active ? 'badge-green' : 'badge-red'}">${b.is_active ? 'Active' : 'Departed — reactivates at midnight'}</span></td>
+      <td data-label="Actions" style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${!b.is_active ? `<button class="btn btn-ghost btn-sm" onclick="reactivateBus('${b.id}')"><i class="fa fa-rotate-right"></i> Reactivate</button>` : ''}
+        <button class="btn btn-danger btn-sm" onclick="deleteBus('${b.id}')">Delete</button>
+      </td>
     </tr>
   `).join('');
   populateDriverBusSelect();
@@ -511,10 +949,29 @@ window.createBus = async () => {
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
 
+window.reactivateBus = async (id) => {
+  try {
+    await api.updateBus(id, { is_active: true });
+    showToast('Bus reactivated', 'success');
+    renderBuses();
+  } catch(e) { showToast(e.message, 'error'); }
+};
+
+window.updateDeparture = async (id, time) => {
+  try {
+    await api.updateBus(id, { departure_time: time, is_active: true });
+    showToast('Departure time updated', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+};
+
 window.deleteBus = async (id) => {
-  if (!confirm('Delete bus?')) return;
-  await api.deleteBus(id);
-  renderBuses();
+  const ok = await showConfirm('Delete Bus', 'This bus will be permanently removed.');
+  if (!ok) return;
+  try {
+    await api.deleteBus(id);
+    showToast('Bus deleted', 'success');
+    renderBuses();
+  } catch(e) { showToast(e.message, 'error'); }
 };
 
 // ── DRIVERS ───────────────────────────────────────────
@@ -523,11 +980,11 @@ async function loadDrivers() {
   const tbody   = document.getElementById('drv-table');
   tbody.innerHTML = drivers.map(d => `
     <tr>
-      <td>${d.name}</td>
-      <td>${d.phone}</td>
-      <td>${d.bus?.plate_number || '—'}</td>
-      <td><span class="badge ${d.is_active ? 'badge-green' : 'badge-red'}">${d.is_active ? 'Active' : 'Suspended'}</span></td>
-      <td style="display:flex;gap:6px;">
+      <td data-label="Name">${d.name}</td>
+      <td data-label="Phone">${d.phone}</td>
+      <td data-label="Bus">${d.bus?.plate_number || '—'}</td>
+      <td data-label="Status"><span class="badge ${d.is_active ? 'badge-green' : 'badge-red'}">${d.is_active ? 'Active' : 'Suspended'}</span></td>
+      <td data-label="Actions" style="display:flex;gap:6px;">
         <button class="btn btn-ghost btn-sm" onclick="toggleDrv('${d.id}')">${d.is_active ? 'Suspend' : 'Activate'}</button>
         <button class="btn btn-danger btn-sm" onclick="deleteDrv('${d.id}')">Delete</button>
       </td>
@@ -554,30 +1011,99 @@ window.createDriver = async () => {
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
 
-window.toggleDrv = async (id) => { await api.toggleDriver(id); loadDrivers(); };
+window.toggleDrv = async (id) => {
+  try {
+    await api.toggleDriver(id);
+    showToast('Driver status updated', 'success');
+    loadDrivers();
+  } catch(e) { showToast(e.message, 'error'); }
+};
 window.deleteDrv = async (id) => {
-  if (!confirm('Delete driver?')) return;
-  // no delete driver endpoint yet, skip
+  const ok = await showConfirm('Delete Driver', 'This driver will be permanently removed.');
+  if (!ok) return;
+  try {
+    await api.deleteDriver(id);
+    showToast('Driver deleted', 'success');
+    loadDrivers();
+  } catch(e) { showToast(e.message, 'error'); }
 };
 
 // ── TICKETS ───────────────────────────────────────────
+let ticketsCache = {};
+
 async function loadTickets() {
   const tickets = await api.getOperatorTickets();
   const statusColor = { paid:'badge-green', pending:'badge-yellow', cancelled:'badge-red' };
-  document.getElementById('tkt-table').innerHTML = tickets.map(t => `
-    <tr>
-      <td>${t.ticket_number || '—'}</td>
-      <td>${t.user?.name || '—'}</td>
-      <td>${t.bus?.plate_number || '—'}</td>
-      <td>${t.boardingStop?.location?.name || '—'}</td>
-      <td>${t.dropoffStop?.location?.name  || '—'}</td>
-      <td>${t.seat_number}</td>
-      <td>${t.travel_date}</td>
-      <td>${Number(t.price).toLocaleString()} RWF</td>
-      <td><span class="badge ${statusColor[t.status]||''}">${t.status}</span></td>
+  ticketsCache = {};
+  tickets.forEach(t => ticketsCache[t.id] = t);
+  document.getElementById('tkt-table').innerHTML = tickets.length ? tickets.map(t => `
+    <tr style="cursor:pointer;" onclick="openTicket('${t.id}')">
+      <td data-label="Ticket #">${t.ticket_number || '—'}</td>
+      <td data-label="Passenger">${t.user?.name || '—'}</td>
+      <td data-label="Bus">${t.bus?.plate_number || '—'}</td>
+      <td data-label="Boarding">${t.boardingStop?.location?.name || '—'}</td>
+      <td data-label="Dropoff">${t.dropoffStop?.location?.name  || '—'}</td>
+      <td data-label="Seat">${t.seat_number}</td>
+      <td data-label="Date">${t.travel_date}</td>
+      <td data-label="Price">${Number(t.price).toLocaleString()} RWF</td>
+      <td data-label="Status"><span class="badge ${statusColor[t.status]||''}">${t.status}</span></td>
     </tr>
-  `).join('');
+  `).join('') : '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--muted);">No tickets yet</td></tr>';
 }
+
+window.openTicket = (id) => {
+  const t = ticketsCache[id];
+  if (!t) return;
+  const statusColor = { paid:'badge-green', pending:'badge-yellow', cancelled:'badge-red' };
+  const qrUrl = t.ticket_number ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&qzone=2&data=${encodeURIComponent(t.ticket_number)}` : null;
+  document.getElementById('ticket-modal-body').innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+      <img src="./download.png" style="height:80px; filter:brightness(0) invert(1);">
+      <span class="badge badge-${statusColor[t.status]||''}">${t.status}</span>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:16px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin-bottom:16px;">
+      <div style="text-align:center; flex:1;">
+        <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">FROM</div>
+        <div style="font-size:20px; font-weight:900;">${t.boardingStop?.location?.name || '—'}</div>
+      </div>
+      <i class="fa fa-arrow-right" style="color:var(--primary);"></i>
+      <div style="text-align:center; flex:1;">
+        <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">TO</div>
+        <div style="font-size:20px; font-weight:900;">${t.dropoffStop?.location?.name || '—'}</div>
+      </div>
+    </div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
+      <div style="background:var(--bg); border-radius:12px; padding:12px;">
+        <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">PASSENGER</div>
+        <div style="font-weight:700;">${t.user?.name || '—'}</div>
+      </div>
+      <div style="background:var(--bg); border-radius:12px; padding:12px;">
+        <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">BUS</div>
+        <div style="font-weight:700;">${t.bus?.plate_number || '—'}</div>
+      </div>
+      <div style="background:var(--bg); border-radius:12px; padding:12px;">
+        <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">DATE</div>
+        <div style="font-weight:700;">${t.travel_date}</div>
+      </div>
+      <div style="background:var(--bg); border-radius:12px; padding:12px; text-align:center;">
+        <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">SEAT</div>
+        <div style="font-size:24px; font-weight:900; color:var(--primary);">${t.seat_number}</div>
+      </div>
+      <div style="background:var(--bg); border-radius:12px; padding:12px;">
+        <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">PRICE</div>
+        <div style="font-weight:700;">${Number(t.price).toLocaleString()} RWF</div>
+      </div>
+      <div style="background:var(--bg); border-radius:12px; padding:12px;">
+        <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">TICKET #</div>
+        <div style="font-weight:700; font-family:monospace; font-size:13px; color:var(--primary);">${t.ticket_number || 'PENDING'}</div>
+      </div>
+    </div>
+    ${qrUrl ? `<div style="text-align:center; padding-top:16px; border-top:1px solid var(--border);">
+      <img src="${qrUrl}" style="background:#fff; padding:12px; border-radius:12px;">
+    </div>` : ''}
+  `;
+  document.getElementById('ticket-modal').classList.add('open');
+};
 
 // ── REVENUE ───────────────────────────────────────────
 window.calcRevenue = async () => {
@@ -613,27 +1139,255 @@ async function loadNotifications() {
   document.getElementById('notif-list').innerHTML = notifs.length
     ? notifs.map(n => `
         <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${n.id}',this)">
-          <p>${n.message}</p>
-          <small>${new Date(n.createdAt).toLocaleString()}</small>
+          <div class="notif-icon"><i class="fa fa-bell"></i></div>
+          <div style="flex:1;">
+            <p style="font-size:13px; font-weight:600; color:var(--text);">${n.message}</p>
+            <small style="color:var(--muted); font-size:11px;">${new Date(n.createdAt).toLocaleTimeString()}</small>
+          </div>
         </div>
       `).join('')
-    : '<div style="padding:24px;text-align:center;color:#64748b;">No notifications</div>';
+    : `<div style="text-align:center; padding:48px 20px;">
+        <i class="fa fa-bell-slash" style="font-size:48px; color:var(--border); margin-bottom:16px; display:block;"></i>
+        <p style="font-weight:700; font-size:15px;">No notifications yet</p>
+        <p style="color:var(--muted); font-size:13px; margin-top:6px;">Booking updates will appear here.</p>
+      </div>`;
 }
 
-window.toggleNotifs = () => document.getElementById('notif-dropdown').classList.toggle('open');
+window.toggleNotifs = () => document.getElementById('notif-panel').classList.toggle('open');
+
+// ── PROFILE ───────────────────────────────────────────
+async function loadProfile() {
+  try {
+    const me = await api.getMe();
+    document.getElementById('profile-name').value  = me.company_name || '';
+    document.getElementById('profile-phone').value = me.contact || '';
+    document.getElementById('profile-info').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Company</div>
+          <div style="font-weight:700;">${me.company_name}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Contact</div>
+          <div style="font-weight:700;">${me.contact || '—'}</div>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Status</div>
+          <span class="badge ${me.is_active ? 'badge-green' : 'badge-red'}">${me.is_active ? 'Active' : 'Suspended'}</span>
+        </div>
+        <div style="background:var(--bg);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Member Since</div>
+          <div style="font-weight:700;">${new Date(me.createdAt).toLocaleDateString()}</div>
+        </div>
+      </div>
+    `;
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+window.saveProfile = async () => {
+  const err = document.getElementById('profile-err');
+  const ok  = document.getElementById('profile-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  try {
+    await api.updateMe({
+      name:  document.getElementById('profile-name').value.trim(),
+      phone: document.getElementById('profile-phone').value.trim(),
+    });
+    ok.textContent = 'Profile updated'; ok.style.display = 'block';
+    loadProfile();
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
+
+window.changePassword = async () => {
+  const err = document.getElementById('pw-err');
+  const ok  = document.getElementById('pw-ok');
+  err.style.display = 'none'; ok.style.display = 'none';
+  const old_password = document.getElementById('pw-old').value;
+  const new_password = document.getElementById('pw-new').value;
+  const confirm      = document.getElementById('pw-confirm').value;
+  if (new_password !== confirm) { err.textContent = 'Passwords do not match'; err.style.display = 'block'; return; }
+  if (new_password.length < 6)  { err.textContent = 'Password must be at least 6 characters'; err.style.display = 'block'; return; }
+  try {
+    await api.updateMe({ old_password, new_password });
+    ok.textContent = 'Password changed successfully'; ok.style.display = 'block';
+    document.getElementById('pw-old').value = '';
+    document.getElementById('pw-new').value = '';
+    document.getElementById('pw-confirm').value = '';
+  } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
+};
+
+window.toggleMobileMore = () => {
+  const m = document.getElementById('mobile-more-menu');
+  m.style.display = m.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('mb-more').classList.toggle('active', m.style.display === 'block');
+};
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#mb-more') && !e.target.closest('#mobile-more-menu')) {
+    const m = document.getElementById('mobile-more-menu');
+    if (m) m.style.display = 'none';
+    const mb = document.getElementById('mb-more');
+    if (mb) mb.classList.remove('active');
+  }
+});
 window.readNotif = async (id, el) => { await api.markRead(id); el.classList.remove('unread'); loadNotifications(); };
 window.markAllRead = async () => { await api.markAllRead(); loadNotifications(); };
 
+// ── LOCKER ────────────────────────────────────────────
+// ── LOCKER (DB-driven) ────────────────────────────────────
+let _lockerData = null;
+
+window.copyText = (text) => {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied!', 'success'));
+};
+
+// Called when user clicks Locker nav — show unlock popup immediately
+const openLockerUnlock = () => {
+  _lockerData = null;
+  const err = document.getElementById('locker-unlock-err');
+  err.style.display = 'none'; err.textContent = '';
+  document.getElementById('locker-unlock-pass').value = '';
+  document.getElementById('locker-unlock-modal').classList.add('open');
+  setTimeout(() => document.getElementById('locker-unlock-pass').focus(), 100);
+};
+
+window.closeLockerUnlock = () => {
+  document.getElementById('locker-unlock-modal').classList.remove('open');
+  // go back to previous section if locker was never unlocked
+  if (!_lockerData) showSection('overview', document.getElementById('sd-overview'));
+};
+
+window.submitLockerUnlock = async () => {
+  const pass = document.getElementById('locker-unlock-pass').value;
+  const err  = document.getElementById('locker-unlock-err');
+  err.style.display = 'none';
+  if (!pass) { err.textContent = 'Password required'; err.style.display = 'block'; return; }
+  const btn = document.querySelector('#locker-unlock-modal .btn-primary');
+  btn.disabled = true; btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Verifying...';
+  try {
+    _lockerData = await api.getLocker({ password: pass });
+    document.getElementById('locker-unlock-modal').classList.remove('open');
+    renderLockerList();
+  } catch(e) {
+    err.textContent = e.message || 'Incorrect password';
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<i class="fa fa-unlock"></i> Unlock';
+  }
+};
+
+const renderLockerList = () => {
+  const el = document.getElementById('locker-list');
+  if (!_lockerData || !_lockerData.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;">No drivers found.</p>';
+    return;
+  }
+  el.innerHTML = _lockerData.map((d, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg);border-radius:12px;border:1px solid var(--border);margin-bottom:10px;">
+      <div>
+        <div style="font-weight:700;font-size:14px;">${d.name}${d.plate ? ` <span style="color:var(--muted);font-weight:600;font-size:13px;">· ${d.plate}</span>` : ''}</div>
+        <div style="font-size:12px;margin-top:3px;">
+          ${d.default_password
+            ? `<span style="color:var(--muted);">Password set</span>`
+            : `<span style="color:#f59e0b;"><i class="fa fa-check-circle"></i> Changed password</span>`}
+        </div>
+      </div>
+      ${d.default_password
+        ? `<button class="btn btn-ghost btn-sm" onclick="viewLockerEntry(${i})"><i class="fa fa-eye"></i> View</button>`
+        : `<span style="font-size:12px;color:var(--muted);">—</span>`}
+    </div>
+  `).join('');
+};
+
+window.viewLockerEntry = (i) => {
+  const d = _lockerData?.[i];
+  if (!d) return;
+  document.getElementById('locker-entry-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="background:var(--bg);border-radius:12px;padding:16px;">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Driver</div>
+        <div style="font-weight:700;font-size:16px;">${d.name}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${d.phone}</div>
+      </div>
+      ${d.plate ? `<div style="background:var(--bg);border-radius:12px;padding:16px;">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Bus Plate</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-family:monospace;font-size:15px;font-weight:700;">${d.plate}</span>
+          <button class="btn btn-ghost btn-sm" onclick="copyText('${d.plate}')"><i class="fa fa-copy"></i> Copy</button>
+        </div>
+      </div>` : ''}
+      <div style="background:var(--bg);border-radius:12px;padding:16px;">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:8px;">Default Password</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <span style="font-family:monospace;font-size:22px;font-weight:900;color:var(--primary);letter-spacing:3px;">${d.default_password}</span>
+          <button class="btn btn-ghost btn-sm" onclick="copyText('${d.default_password}')"><i class="fa fa-copy"></i> Copy</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('locker-entry-modal').classList.add('open');
+};
+
+window.closeLockerEntry = () => {
+  document.getElementById('locker-entry-modal').classList.remove('open');
+};
+
+document.getElementById('locker-unlock-pass').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') submitLockerUnlock();
+});
+
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('#bell-btn') && !e.target.closest('#notif-dropdown')) {
-    document.getElementById('notif-dropdown').classList.remove('open');
+  if (!e.target.closest('#bell-btn') && !e.target.closest('#notif-panel')) {
+    document.getElementById('notif-panel').classList.remove('open');
   }
 });
 
+const hideOpLoader = (cb) => {
+  const el = document.getElementById('op-loader');
+  setTimeout(() => {
+    el.classList.add('hide');
+    setTimeout(() => { el.style.display = 'none'; cb && cb(); }, 500);
+  }, 3500);
+};
+
+// If a token exists but it's for a different role (user/admin/driver), force login.
+if (getToken() && tokenRole() !== 'operator') {
+  clearToken();
+  localStorage.removeItem('operator');
+}
+
 if (getToken()) {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('dashboard').style.display    = 'block';
-  init();
+  api.getMyRoutes().then(() => {
+    hideOpLoader(() => {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      init();
+    });
+  }).catch((e) => {
+    const msg = (e && e.message) ? String(e.message) : '';
+    const isAuthErr = msg.includes('401') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('access only') || msg.includes('403');
+    if (isAuthErr) {
+      clearToken();
+      localStorage.removeItem('operator');
+      hideOpLoader(() => {
+        const err = document.getElementById('login-err');
+        err.textContent = msg || 'Please login';
+        err.style.display = 'block';
+        document.getElementById('login-screen').style.display = 'flex';
+      });
+    } else {
+      // server error — show dashboard anyway
+      hideOpLoader(() => {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        init();
+      });
+    }
+  });
+} else {
+  hideOpLoader(() => {
+    document.getElementById('login-screen').style.display = 'flex';
+  });
 }
 </script>
 </body>

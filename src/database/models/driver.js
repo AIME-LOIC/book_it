@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../../config/db.js';
+import db from '../../config/local.db.js';
 import Operator  from './operator.js';
 import Bus       from './bus.js';
 
@@ -11,6 +11,7 @@ const Driver = sequelize.define('Driver', {
   email:               { type: DataTypes.STRING(150), allowNull: true,  unique: true },
   phone:               { type: DataTypes.STRING(20),  allowNull: false, unique: true },
   password_hash:       { type: DataTypes.STRING(255), allowNull: false },
+  default_password:    { type: DataTypes.STRING(100), allowNull: true },
   must_update_profile: { type: DataTypes.BOOLEAN, defaultValue: true },
   is_active:           { type: DataTypes.BOOLEAN, defaultValue: true },
 }, {

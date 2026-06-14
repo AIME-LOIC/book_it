@@ -1,12 +1,19 @@
 {
   "name": "bookit",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Rwanda bus ticket booking platform",
+  "main": "server.js",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js"
+    "start": "node --dns-result-order=ipv4first server.js",
+    "dev": "nodemon --exec 'node --dns-result-order=ipv4first' server.js",
+    "dev:local": "DOTENV_CONFIG_PATH=.env.local nodemon --exec 'node --dns-result-order=ipv4first' server.js",
+    "start:local": "DOTENV_CONFIG_PATH=.env.local node --dns-result-order=ipv4first server.js",
+    "db:sync": "node --dns-result-order=ipv4first src/database/sync.js",
+    "db:seed": "node --dns-result-order=ipv4first src/database/seed.js"
   },
   "keywords": [],
   "author": "",
@@ -17,11 +24,17 @@
     "crypto": "^1.0.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
+    "express-validator": "^7.3.2",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.22.1",
-    "qrcode": "^1.5.4"
+    "pg": "^8.20.0",
+    "pg-hstore": "^2.3.4",
+    "qrcode": "^1.5.4",
+    "sequelize": "^6.37.8"
   },
   "devDependencies": {
-    "sequelize": "^6.37.8"
+    "nodemon": "^3.1.0"
   }
 }
