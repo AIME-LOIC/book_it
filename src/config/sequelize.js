@@ -2,7 +2,7 @@ import dns from 'node:dns/promises';
 import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ path: process.env.DOTENV_CONFIG_PATH || '.env' });
 
 const useLocal = process.env.USE_LOCAL_DB === 'true' || Boolean(process.env.DOTENV_CONFIG_PATH);
 

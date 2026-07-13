@@ -1,7 +1,9 @@
 # Environment variables (CRITICAL — contains DB password, JWT secrets)
-.env
-.env.local
-.env.*.local
+# Broad wildcard first: blocks ANY .env* file, including ones added later
+# (.env.production bypassed the old narrower patterns below — don't repeat that).
+.env*
+!.env.example
+!.env.production.example
 
 # Dependencies
 node_modules/

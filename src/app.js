@@ -21,7 +21,9 @@ import { checkDepartedBuses, checkMidnightReactivation } from './services/schedu
 dotenv.config();
 
 // Fail fast if critical env vars are missing
-const required = ['JWT_SECRET', 'QR_SECRET'];
+const required = process.env.NODE_ENV === 'production'
+  ? ['JWT_SECRET', 'QR_SECRET', 'DEFAULT_PW_SECRET', 'ALLOWED_ORIGINS']
+  : ['JWT_SECRET', 'QR_SECRET'];
 const dbVars = process.env.DATABASE_URL
   ? ['DATABASE_URL']
   : ['DB_HOST', 'DB_USER', 'DB_NAME'];
@@ -64,8 +66,10 @@ app.use(cors({
       .filter(Boolean);
     const cleanOrigin = origin.replace(/\/+$/, '');
     // if ALLOWED_ORIGINS isn't set, don't block browser clients (common deployment pitfall)
-    if (envOrigins.length === 0) return callback(null, true);
-    if (envOrigins.includes(cleanOrigin)) return callback(null, true);
+    if (envOrigins.length === 0 && process.env.NODE_ENV === 'production') {
+      return callback(new Error('CORS: origin not allowed'));
+    }
+    if (envOrigins.length === 0) return callback(null, true); // dev convenience only
     // allow same render.com domain
     if (origin.endsWith('.onrender.com')) return callback(null, true);
     // development: allow localhost and LAN

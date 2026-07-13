@@ -1912,6 +1912,10 @@
           <button class="eye-btn" type="button" onclick="toggleEye('reg-password', this)"><i
               class="fa fa-eye"></i></button>
         </div>
+        <label style="display:flex; align-items:flex-start; gap:10px; font-size:13px; color:var(--text-muted); cursor:pointer; user-select:none;">
+          <input type="checkbox" id="reg-terms" style="width:18px; height:18px; margin-top:2px; accent-color:var(--secondary); cursor:pointer; flex-shrink:0;">
+          <span><span id="agree-terms-prefix">I agree to BookIt's</span> <a href="/policy" target="_blank" id="agree-terms-link" style="color:var(--secondary); font-weight:700; text-decoration:underline;">Terms &amp; Policy</a></span>
+        </label>
         <button class="btn btn-primary btn-block" onclick="doRegister()">Create Account</button>
       </div>
     </div>
@@ -2297,6 +2301,9 @@
         paid: 'Paid', pending: 'Awaiting Payment', cancelled: 'Cancelled',
         payBtn: 'Pay', cancelledMsg: 'Cancelled',
         travelDate: 'Travel Date',
+        agreeTermsPrefix: "I agree to BookIt's",
+termsLink: 'Terms & Policy',
+acceptTermsError: 'Please accept the Terms & Policy to continue.',
       },
       rw: {
         tagline: 'Genda mu Rwanda neza',
@@ -2344,6 +2351,9 @@
         paid: 'Wishyuye', pending: 'Ntarashyurwa', cancelled: 'Ihagaritswe',
         payBtn: 'Ishyura', cancelledMsg: 'Ihagaritswe',
         travelDate: 'Itariki y\'urugendo',
+        agreeTermsPrefix: 'Nemeye',
+termsLink: 'Amategeko n\'Amabwiriza',
+acceptTermsError: 'Nyamuneka wemere Amategeko n\'Amabwiriza kugira ngo ukomeze.',
       }
     };
 
@@ -2357,6 +2367,8 @@
       window.currentLang = lang;
       localStorage.setItem('lang', lang);
       applyLang();
+      set('agree-terms-prefix', t('agreeTermsPrefix'));
+set('agree-terms-link', t('termsLink'));
     };
 
     const applyLang = () => {
@@ -2555,6 +2567,11 @@
     window.doRegister = async () => {
       const err = document.getElementById('auth-err');
       err.style.display = 'none';
+      if (!document.getElementById('reg-terms').checked) {
+  err.textContent = t('acceptTermsError');
+  err.style.display = 'block';
+  return;
+}
       try {
         await api.register({
           name: document.getElementById('reg-name').value.trim(),
