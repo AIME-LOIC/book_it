@@ -120,8 +120,13 @@ export const addStops = async (operator_id, route_id, stops) => {
 
   await RouteStop.bulkCreate(toCreate);
 
-  // route's own price is always the final cumulative total — not manually set
-  await route.update({ price: runningTotal });
+  // Keep the route's original base price until at least one real leg exists.
+  // This prevents an origin-only save from zeroing the route and breaking
+  // self-referential leg pricing for the destination stop.
+  const hasPricedLeg = toCreate.some(stop => stop.stop_order !== 1);
+  if (hasPricedLeg) {
+    await route.update({ price: runningTotal });
+  }
 
   const settings = await getSettings(operator_id);
   if (settings.auto_generate_reverse) {
