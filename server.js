@@ -35,7 +35,7 @@ sequelize.authenticate()
 .then(()=> {
   // Only apply schema `alter` automatically in local/dev environments.
   // Altering enums on Postgres (Supabase) can fail in-place; run migrations manually there.
-  return isLocal ? sequelize.sync({ alter: true }) : Promise.resolve();
+  return isLocal ? sequelize.sync() : Promise.resolve();
 })
 .then(async () => {
   // Only seed automatically in local/dev environments to avoid schema mismatch on managed DBs

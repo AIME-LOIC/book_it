@@ -910,18 +910,8 @@
 
   <script src="./api.js"></script>
   <script>
-    const { api, setToken, clearToken, getToken } = window.BookItApi;
+    const { api, clearToken } = window.BookItApi;
     window.api = api;
-
-    const parseJwt = (token) => {
-      try {
-        const part = token.split('.')[1];
-        if (!part) return null;
-        const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
-        return JSON.parse(atob(b64));
-      } catch { return null; }
-    };
-    const tokenRole = () => parseJwt(getToken() || '')?.role || null;
 
     const $ = (sel) => document.querySelector(sel);
 
@@ -987,7 +977,6 @@
 
       try {
         const data = await api.loginDriver({ phone, password });
-        setToken(data.token);
         driverState.name = data.driver?.name || 'Driver';
         driverState.bus = data.driver?.bus || null;
         driverState.bus_id = data.driver?.bus_id || data.driver?.bus?.id;
@@ -1024,9 +1013,9 @@
       }
     })();
 
-    window.logout = () => {
+    window.logout = async () => {
       if (driverState.watchId) navigator.geolocation.clearWatch(driverState.watchId);
-      clearToken();
+      await clearToken();
       localStorage.removeItem('driver');
       location.reload();
     };
@@ -1318,15 +1307,11 @@
       }, 3500);
     };
 
-    // If a token exists but it's for a different role (user/admin/operator), force login.
-    if (getToken() && tokenRole() !== 'driver') {
-      clearToken();
-      localStorage.removeItem('driver');
-    }
-
-    // Auto-login if token exists
-    if (getToken()) {
-      api.getPassengers(new Date().toISOString().split('T')[0]).then(() => {
+    (async () => {
+      try {
+        const me = await api.getMe();
+        if (me.role !== 'driver') throw new Error('Access only for drivers');
+        await api.getPassengers(new Date().toISOString().split('T')[0]);
         try {
           const saved = JSON.parse(localStorage.getItem('driver') || 'null');
           if (saved?.name) {
@@ -1337,11 +1322,11 @@
           }
         } catch { }
         hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').style.display = 'block'; init(); });
-      }).catch((e) => {
+      } catch (e) {
         const msg = (e && e.message) ? String(e.message) : '';
         const isAuthErr = msg.includes('401') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('access only') || msg.toLowerCase().includes('suspended') || msg.includes('403');
         if (isAuthErr) {
-          clearToken();
+          await clearToken();
           localStorage.removeItem('driver');
           hideDrLoader(() => {
             const err = document.getElementById('login-err');
@@ -1350,17 +1335,14 @@
             $('#login-screen').style.display = 'flex';
           });
         } else {
-          // server error — show dashboard anyway
           try {
             const saved = JSON.parse(localStorage.getItem('driver') || 'null');
             if (saved?.name) { driverState.name = saved.name; driverState.bus = saved.bus; $('#driver-name').textContent = saved.name; }
           } catch { }
           hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').style.display = 'block'; init(); });
         }
-      });
-    } else {
-      hideDrLoader(() => { $('#login-screen').style.display = 'flex'; });
-    }
+      }
+    })();
   </script>
 </body>
 

@@ -726,20 +726,20 @@
         if (contactSubmitBtn) contactSubmitBtn.addEventListener('click', (e) => { e.preventDefault(); window.location.href = '/book'; });
 
         // Authentication & Logout Handling
-        const token = localStorage.getItem('token');
         const logoutBtns = [
             document.getElementById('logout-btn-desktop'),
             document.getElementById('logout-btn-mobile'),
             document.getElementById('logout-btn-bottom')
         ];
 
-        if (token) {
-            logoutBtns.forEach(btn => btn && btn.classList.remove('hidden'));
-        }
+        fetch('/rw/v1/bk/auth/me', { credentials: 'include' })
+          .then(res => res.ok ? res.json() : null)
+          .then(user => { if (user) logoutBtns.forEach(btn => btn && btn.classList.remove('hidden')); })
+          .catch(() => {});
 
-        const handleLogout = (e) => {
+        const handleLogout = async (e) => {
             e.preventDefault();
-            localStorage.removeItem('token');
+            try { await fetch('/rw/v1/bk/auth/logout', { method: 'POST', credentials: 'include' }); } catch {}
             localStorage.removeItem('user');
             localStorage.removeItem('driver');
             localStorage.removeItem('operator');

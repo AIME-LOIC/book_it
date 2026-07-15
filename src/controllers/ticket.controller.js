@@ -10,9 +10,29 @@ export const book               = async (req, res) => {
   catch (err) { res.status(400).json({ message: err.message }); }
 };
 
+// FIX: was `svc.payTicket(req.user.id, req.params.id)` — dropped req.body,
+// so `network` / `phone_number` never reached the service.
 export const pay                = async (req, res) => {
-  try { res.status(200).json(await svc.payTicket(req.user.id, req.params.id)); }
+  try { res.status(200).json(await svc.payTicket(req.user.id, req.params.id, req.body)); }
   catch (err) { res.status(400).json({ message: err.message }); }
+};
+
+// Frontend polls this while an MTN/Airtel charge is pending approval.
+export const payStatus          = async (req, res) => {
+  try { res.status(200).json(await svc.checkPaymentStatus(req.user.id, req.params.id)); }
+  catch (err) { res.status(400).json({ message: err.message }); }
+};
+
+// Flutterwave calls this directly — no `authenticate` middleware, verified
+// instead via the verif-hash header inside the service.
+export const flutterwaveWebhook = async (req, res) => {
+  try {
+    const result = await svc.handleFlutterwaveWebhook(req.body, req.headers['verif-hash']);
+    res.sendStatus(result.ok ? 200 : 400);
+  } catch (err) {
+    console.error('Flutterwave webhook error:', err);
+    res.sendStatus(500);
+  }
 };
 
 export const cancel             = async (req, res) => {

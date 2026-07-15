@@ -19,6 +19,12 @@ const Ticket = sequelize.define('Ticket', {
   ticket_number:    { type: DataTypes.STRING(20),   allowNull: true, unique: true },
   qr_token:         { type: DataTypes.TEXT,          allowNull: true },
   is_used: { type: DataTypes.BOOLEAN, defaultValue: false },
+  payment_reference:     { type: DataTypes.STRING,  allowNull: true },
+  flw_customer_id:       { type: DataTypes.STRING,  allowNull: true },
+  flw_payment_method_id: { type: DataTypes.STRING,  allowNull: true },
+  flw_charge_id:         { type: DataTypes.STRING,  allowNull: true },
+  payment_network:       { type: DataTypes.STRING,  allowNull: true },
+
 }, {
   tableName:  'tickets',
   timestamps: true,

@@ -14,6 +14,13 @@ import {
   generateQRImage,
   verifyQRToken,
 } from '../utils/ticket.utils.js';
+import {
+  initiateMobileMoneyCharge,
+  getCharge,
+  verifyWebhookSignature,
+  FLW_SUCCESS_STATUSES,
+  FLW_FAILED_STATUSES,
+} from './flutter.service.js';
 
 const ticketIncludes = [
   {
@@ -293,12 +300,148 @@ export const bookTicket = async (user_id, { bus_id, seat_number, boarding_stop_i
   return full;
 };
 
-// ── PAY ───────────────────────────────────────────────
-export const payTicket = async (user_id, ticket_id) => {
+// ── PAY (STEP 1: INITIATE) ─────────────────────────────
+// Kicks off a real MTN / Airtel mobile money charge via Flutterwave.
+// This does NOT mark the ticket as paid — mobile money is asynchronous:
+// the customer gets a USSD/push prompt on their phone and has to approve
+// it. The ticket stays 'pending' with a payment reference attached until
+// either the webhook fires (preferred) or the frontend polls
+// checkPaymentStatus().
+//
+// REQUIRES a migration adding these columns to `tickets`:
+//   payment_reference   STRING
+//   flw_customer_id     STRING
+//   flw_payment_method_id STRING
+//   flw_charge_id       STRING
+//   payment_network     STRING   ('mtn' | 'airtel')
+export const payTicket = async (user_id, ticket_id, { network, phone_number } = {}) => {
+  if (!network || !phone_number) {
+    throw new Error('network ("mtn" or "airtel") and phone_number are required');
+  }
+
   const ticket = await Ticket.findOne({ where: { id: ticket_id, user_id } });
   if (!ticket) throw new Error('Ticket not found');
   if (ticket.status === 'paid') throw new Error('Ticket already paid');
   if (ticket.status === 'cancelled') throw new Error('Ticket is cancelled');
+
+  const user = await User.findByPk(user_id);
+  if (!user) throw new Error('User not found');
+
+  const shortId = String(ticket.id).replace(/-/g, '').slice(0, 12);
+  const reference = `bk-${shortId}-${Date.now()}`;
+
+  const { customer, paymentMethod, charge } = await initiateMobileMoneyCharge({
+    user,
+    network,
+    phone_number,
+    amount: Math.round(Number(ticket.price)),
+    reference,
+    meta: { ticket_id: ticket.id, user_id },
+    existing_customer_id: user.flw_customer_id || null,
+  });
+
+  // remember this customer on the user, not the ticket — one Flutterwave
+  // customer per person, reused across every future ticket they buy
+  if (!user.flw_customer_id) {
+    await user.update({ flw_customer_id: customer.id });
+  }
+
+  await ticket.update({
+    payment_reference: reference,
+    flw_customer_id: customer.id,
+    flw_payment_method_id: paymentMethod.id,
+    flw_charge_id: charge.id,
+    payment_network: network.toLowerCase(),
+  });
+
+  if (FLW_SUCCESS_STATUSES.includes(charge.status)) {
+    const finalized = await finalizeTicketPayment(ticket.id);
+    return { status: 'paid', ticket: finalized };
+  }
+
+  return {
+    status: charge.status,
+    reference,
+    charge_id: charge.id,
+    next_action: charge.next_action || null,
+    message: `Approve the payment prompt sent to your ${network.toUpperCase()} number to confirm.`,
+  };
+};
+
+// ── PAY (STEP 2: CHECK / CONFIRM) ──────────────────────
+// Frontend polls this (e.g. every 5-8s) after initiating payment, since
+// mobile money confirmation isn't instant. Safe to call repeatedly.
+export const checkPaymentStatus = async (user_id, ticket_id) => {
+  const ticket = await Ticket.findOne({ where: { id: ticket_id, user_id } });
+  if (!ticket) throw new Error('Ticket not found');
+
+  if (ticket.status === 'paid') {
+    return { status: 'paid', ticket: await getTicketById(user_id, ticket_id) };
+  }
+  if (ticket.status === 'cancelled') {
+    return { status: 'cancelled' };
+  }
+  if (!ticket.flw_charge_id) {
+    return { status: 'not_initiated' };
+  }
+
+  const charge = await getCharge(ticket.flw_charge_id);
+
+  if (FLW_SUCCESS_STATUSES.includes(charge.status)) {
+    const finalized = await finalizeTicketPayment(ticket.id);
+    return { status: 'paid', ticket: finalized };
+  }
+
+  if (FLW_FAILED_STATUSES.includes(charge.status)) {
+    return { status: 'failed', reason: charge.failure_reason || charge.status };
+  }
+
+  return { status: charge.status || 'pending' };
+};
+
+// ── PAY (WEBHOOK) ───────────────────────────────────────
+// Wire this into a route like: POST /webhooks/flutterwave
+// router.post('/webhooks/flutterwave', express.json(), async (req, res) => {
+//   const result = await handleFlutterwaveWebhook(req.body, req.headers['verif-hash']);
+//   res.sendStatus(result.ok ? 200 : 400);
+// });
+export const handleFlutterwaveWebhook = async (payload, signatureHeader) => {
+  if (!verifyWebhookSignature(signatureHeader)) {
+    return { ok: false, reason: 'Invalid signature' };
+  }
+
+  const chargeId = payload?.data?.id;
+  const status = payload?.data?.status;
+  if (!chargeId) return { ok: false, reason: 'Missing charge id in payload' };
+
+  const ticket = await Ticket.findOne({ where: { flw_charge_id: chargeId } });
+  if (!ticket) return { ok: false, reason: 'No matching ticket for charge' };
+
+  if (ticket.status === 'paid') return { ok: true, reason: 'Already paid' };
+
+  if (FLW_SUCCESS_STATUSES.includes(status)) {
+    await finalizeTicketPayment(ticket.id);
+    return { ok: true };
+  }
+
+  if (FLW_FAILED_STATUSES.includes(status)) {
+    // leave as 'pending' so the seat hold expires naturally (or set a
+    // 'failed' status on your Ticket model if you'd rather be explicit)
+    return { ok: true, reason: `Charge ${status}` };
+  }
+
+  return { ok: true, reason: `Ignored status: ${status}` };
+};
+
+// ── SHARED: FINALIZE A SUCCESSFUL PAYMENT ───────────────
+// Generates the ticket number/QR, flips status to 'paid', and fires all
+// the same notifications the old synchronous payTicket used to send.
+const finalizeTicketPayment = async (ticket_id) => {
+  const ticket = await Ticket.findByPk(ticket_id);
+  if (!ticket) throw new Error('Ticket not found');
+  if (ticket.status === 'paid') {
+    return Ticket.findByPk(ticket_id, { include: ticketIncludes });
+  }
 
   const bus = await Bus.findByPk(ticket.bus_id);
   const ticket_number = generateTicketNumber();
@@ -307,14 +450,13 @@ export const payTicket = async (user_id, ticket_id) => {
     bus.departure_time, ticket.travel_date,
     ticket.boarding_stop_id, ticket.dropoff_stop_id
   );
-  const qr_image = await generateQRImage(qr_token);
 
   await ticket.update({ status: 'paid', ticket_number, qr_token });
   const full = await Ticket.findByPk(ticket_id, { include: ticketIncludes });
 
   await createMany([
     {
-      recipient_id: user_id,
+      recipient_id: ticket.user_id,
       recipient_type: 'user',
       type: 'ticket_paid',
       message: `Payment confirmed! Ticket: ${ticket_number}. Seat ${full.seat_number} — board at ${full.boardingStop.location.name}, exit at ${full.dropoffStop.location.name}. Bus ${bus.plate_number} departs ${bus.departure_time}.`,
@@ -340,7 +482,7 @@ export const payTicket = async (user_id, ticket_id) => {
     }]);
   }
 
-  return { ...full.toJSON(), qr_image };
+  return full;
 };
 
 // ── CANCEL ────────────────────────────────────────────

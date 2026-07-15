@@ -303,8 +303,7 @@
     .stats { grid-template-columns: 1fr 1fr; }
     .stat-card .num { font-size: 24px; }
   }
-    .stat-card .num { font-size: 24px; }
-  }
+
 </style>
 </head>
 <body>
@@ -401,11 +400,13 @@
           <div class="alert alert-err" id="rt-err"></div>
           <div class="alert alert-ok"  id="rt-ok"></div>
           <div class="form-row">
-            <select id="rt-from"></select>
-            <select id="rt-to"></select>
-            <input  id="rt-price" type="number" placeholder="Base price (RWF)" />
+            <select id="rt-from" onchange="suggestRoutePrice()"></select>
+            <select id="rt-to" onchange="suggestRoutePrice()"></select>
+            <input id="rt-price" type="number" placeholder="Base price (RWF)" />
+            <button class="btn btn-ghost btn-sm" onclick="suggestRoutePrice()" type="button">Suggest</button>
             <button class="btn btn-primary" onclick="createRoute()">Create</button>
           </div>
+          <p id="rt-suggestion" style="font-size:12px;color:var(--muted);margin-top:8px;min-height:18px;"></p>
         </div>
         <div class="card">
           <h3>My Routes</h3>
@@ -592,11 +593,12 @@
         <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
           <p style="color:var(--muted); font-size:13px; font-weight:600; margin-bottom:12px;">Add new stop</p>
           <div class="form-row">
-            <select id="st-loc"></select>
-            <input id="st-order" type="number" placeholder="Order (1,2,3...)" style="max-width:120px;" />
-            <input id="st-price" type="number" placeholder="Price from origin" />
+            <select id="st-loc" onchange="updateLegRouteOptions()"></select>
+            <input id="st-order" type="number" placeholder="Order (1,2,3...)" style="max-width:120px;" oninput="updateLegRouteOptions()" />
+            <select id="st-leg-route" style="min-width:220px;"></select>
             <button class="btn btn-primary" onclick="addStop()">Add</button>
           </div>
+          <p id="st-leg-note" style="color:var(--muted); font-size:12px; margin-top:8px; min-height:18px;"></p>
         </div>
       </div>
     </div>
@@ -651,18 +653,8 @@
 
 <script src="./api.js"></script>
 <script>
-const { api, setToken, clearToken, getToken } = window.BookItApi;
+const { api, clearToken } = window.BookItApi;
 window.api = api;
-
-const parseJwt = (token) => {
-  try {
-    const part = token.split('.')[1];
-    if (!part) return null;
-    const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
-    return JSON.parse(atob(b64));
-  } catch { return null; }
-};
-const tokenRole = () => parseJwt(getToken() || '')?.role || null;
 
 // ── TOAST ─────────────────────────────────────────────
 const toastContainer = document.createElement('div');
@@ -700,13 +692,13 @@ let currentRouteId = null;
 let locations      = [];
 let myRoutes       = [];
 let myBuses        = [];
+let currentStops   = [];
 
 window.doLogin = async () => {
   const company_name = document.getElementById('company').value;
   const password     = document.getElementById('password').value;
   try {
     const data = await api.loginOperator({ company_name, password });
-    setToken(data.token);
     localStorage.setItem('operator', JSON.stringify({ company_name: data.operator.company_name }));
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('dashboard').style.display    = 'block';
@@ -733,7 +725,7 @@ window.toggleOpTheme = () => {
   }
 })();
 
-window.logout = () => { clearToken(); location.reload(); };
+window.logout = async () => { await clearToken(); localStorage.removeItem('operator'); location.reload(); };
 
 async function init() {
   locations = await api.getLocations();
@@ -803,13 +795,35 @@ window.createLocation = async () => {
 };
 
 function populateRouteSelects() {
-  const opts = locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  const opts = ['<option value="">Select location</option>', ...locations.map(l => `<option value="${l.id}">${l.name}</option>`)].join('');
   document.getElementById('rt-from').innerHTML = opts;
   document.getElementById('rt-to').innerHTML   = opts;
 }
 
+async function suggestRoutePrice() {
+  const from = document.getElementById('rt-from').value;
+  const to = document.getElementById('rt-to').value;
+  const priceInput = document.getElementById('rt-price');
+  const note = document.getElementById('rt-suggestion');
+  note.textContent = '';
+  if (!from || !to || from === to) return;
+  try {
+    const data = await api.getRouteSuggestion(from, to);
+    if (data?.suggested_price !== null && data?.suggested_price !== undefined) {
+      priceInput.value = data.suggested_price;
+      note.textContent = `Suggested price: ${Number(data.suggested_price).toLocaleString()} RWF`;
+    } else {
+      priceInput.value = '';
+      note.textContent = 'No tariff suggestion yet — enter a manual base price.';
+    }
+  } catch (e) {
+    note.textContent = e.message || 'Suggestion unavailable';
+  }
+}
+
 function populateStopSelect() {
   document.getElementById('st-loc').innerHTML = locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  updateLegRouteOptions();
 }
 
 function populateBusRouteSelect() {
@@ -819,6 +833,77 @@ function populateBusRouteSelect() {
 function populateDriverBusSelect() {
   document.getElementById('drv-bus').innerHTML = '<option value="">— Assign bus (optional) —</option>' +
     myBuses.map(b => `<option value="${b.id}">${b.plate_number}</option>`).join('');
+}
+
+function getCurrentRoute() {
+  return myRoutes.find(r => r.id === currentRouteId) || null;
+}
+
+function getChainEndLocationId(route, stops) {
+  if (!route) return null;
+  if (stops.length) return stops[stops.length - 1].location_id;
+  return route.from_location_id;
+}
+
+function updateLegRouteOptions() {
+  const select = document.getElementById('st-leg-route');
+  const note = document.getElementById('st-leg-note');
+  if (!select || !note) return;
+
+  const route = getCurrentRoute();
+  const locationId = document.getElementById('st-loc')?.value;
+  const stopOrder = parseInt(document.getElementById('st-order')?.value, 10);
+  const previousSelection = select.value;
+
+  select.innerHTML = '';
+  note.textContent = '';
+
+  if (!route || !locationId) {
+    select.innerHTML = '<option value="">Select a location first</option>';
+    return;
+  }
+
+  const stops = [...currentStops].sort((a, b) => a.stop_order - b.stop_order);
+  const chainEndLocationId = getChainEndLocationId(route, stops);
+
+  if (stopOrder === 1 && stops.length === 0) {
+    select.innerHTML = '<option value="">Origin stop — no leg route</option>';
+    note.textContent = 'Order 1 uses the route origin automatically. Price stays 0.';
+    return;
+  }
+
+  if (!chainEndLocationId) {
+    select.innerHTML = '<option value="">No chain end available</option>';
+    return;
+  }
+
+  const matches = myRoutes
+    .filter(r => r.from_location_id === chainEndLocationId && r.to_location_id === locationId)
+    .sort((a, b) => Number(a.price) - Number(b.price));
+
+  if (!matches.length) {
+    select.innerHTML = '<option value="">No matching base route</option>';
+    note.textContent = 'Create a base route from the previous stop to this location first.';
+    return;
+  }
+
+  select.innerHTML = [
+    '<option value="">Auto-detect matching route</option>',
+    ...matches.map(r => `<option value="${r.id}">${r.fromLocation.name} → ${r.toLocation.name} — ${Number(r.price).toLocaleString()} RWF</option>`),
+  ].join('');
+
+  if (matches.length === 1) {
+    select.value = matches[0].id;
+    note.textContent = `Derived price: ${Number(matches[0].price).toLocaleString()} RWF`;
+  } else if (matches.some(r => r.id === previousSelection)) {
+    select.value = previousSelection;
+    const chosen = matches.find(r => r.id === previousSelection);
+    note.textContent = chosen
+      ? `Derived price: ${Number(chosen.price).toLocaleString()} RWF`
+      : 'Multiple matching routes found. Your previous selection is still applied.';
+  } else {
+    note.textContent = 'Multiple matching routes found. Choose one or leave blank to let the backend infer if possible.';
+  }
 }
 
 // ── ROUTES ────────────────────────────────────────────
@@ -834,6 +919,7 @@ async function renderRoutes() {
       <td data-label="Type"><span class="badge ${r.is_reverse ? 'badge-yellow' : 'badge-blue'}">${r.is_reverse ? 'Reverse' : 'Main'}</span></td>
       <td data-label="Actions" style="display:flex;gap:6px;">
         <button class="btn btn-ghost btn-sm" onclick="openStops('${r.id}','${r.fromLocation.name} → ${r.toLocation.name}')">Stops</button>
+        <button class="btn btn-ghost btn-sm" onclick="editRoutePrice('${r.id}', ${Number(r.price)}, ${(r.stops||[]).length})">Edit Price</button>
         <button class="btn btn-danger btn-sm" onclick="deleteRoute('${r.id}')">Delete</button>
       </td>
     </tr>
@@ -848,11 +934,24 @@ window.createRoute = async () => {
   const err   = document.getElementById('rt-err');
   const ok    = document.getElementById('rt-ok');
   err.style.display = 'none'; ok.style.display = 'none';
+  if (!from || !to || from === to) {
+    err.textContent = 'Select two different locations first.';
+    err.style.display = 'block';
+    return;
+  }
+  const parsedPrice = Number.parseFloat(price);
+  if (!Number.isFinite(parsedPrice) || parsedPrice < 0) {
+    err.textContent = 'Enter a valid base price.';
+    err.style.display = 'block';
+    return;
+  }
   try {
-    const data = await api.createRoute({ from_location_id: from, to_location_id: to, price: parseFloat(price) });
+    const data = await api.createRoute({ from_location_id: from, to_location_id: to, price: parsedPrice });
     showToast(`Route created${data.reverse ? ' + reverse' : ''}`, 'success');
     ok.textContent = `Route created${data.reverse ? ' + reverse auto-generated' : ''}`;
     ok.style.display = 'block';
+    document.getElementById('rt-price').value = '';
+    document.getElementById('rt-suggestion').textContent = '';
     renderRoutes();
   } catch(e) { err.textContent = e.message; err.style.display = 'block'; }
 };
@@ -867,6 +966,27 @@ window.deleteRoute = async (id) => {
   } catch(e) { showToast(e.message, 'error'); }
 };
 
+window.editRoutePrice = async (id, currentPrice, stopCount) => {
+  if (stopCount > 0) {
+    showToast('Edit the stops to change this route price.', 'warning');
+    return;
+  }
+  const nextValue = window.prompt('Enter new route price (RWF):', String(currentPrice));
+  if (nextValue === null) return;
+  const price = Number.parseFloat(nextValue);
+  if (!Number.isFinite(price) || price < 0) {
+    showToast('Enter a valid price.', 'error');
+    return;
+  }
+  try {
+    await api.updateRoute(id, { price });
+    showToast('Route price updated', 'success');
+    renderRoutes();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+};
+
 // ── STOPS ─────────────────────────────────────────────
 window.openStops = async (route_id, name) => {
   currentRouteId = route_id;
@@ -879,6 +999,7 @@ window.openStops = async (route_id, name) => {
 async function renderStops() {
   const data  = await api.getRouteStops(currentRouteId);
   const stops = (data.stops || []).sort((a,b) => a.stop_order - b.stop_order);
+  currentStops = stops;
   document.getElementById('stops-list').innerHTML = stops.length
     ? stops.map(s => `
         <div class="stop-row">
@@ -889,17 +1010,19 @@ async function renderStops() {
         </div>
       `).join('')
     : '<p style="color:#64748b;font-size:13px;">No stops yet</p>';
+  updateLegRouteOptions();
 }
 
 window.addStop = async () => {
   const location_id       = document.getElementById('st-loc').value;
   const stop_order        = parseInt(document.getElementById('st-order').value);
-  const price_from_origin = parseFloat(document.getElementById('st-price').value);
+  const leg_route_id      = document.getElementById('st-leg-route').value || undefined;
   try {
-    await api.addStops(currentRouteId, { stops: [{ location_id, stop_order, price_from_origin }] });
+    await api.addStops(currentRouteId, { stops: [{ location_id, stop_order, leg_route_id }] });
     document.getElementById('st-order').value = '';
-    document.getElementById('st-price').value = '';
+    document.getElementById('st-leg-route').value = '';
     renderStops();
+    renderRoutes();
   } catch(e) {
     const el = document.getElementById('st-err');
     el.textContent = e.message; el.style.display = 'block';
@@ -909,6 +1032,7 @@ window.addStop = async () => {
 window.deleteStop = async (id) => {
   await api.deleteStop(id);
   renderStops();
+  renderRoutes();
 };
 
 // ── BUSES ─────────────────────────────────────────────
@@ -1350,24 +1474,20 @@ const hideOpLoader = (cb) => {
   }, 3500);
 };
 
-// If a token exists but it's for a different role (user/admin/driver), force login.
-if (getToken() && tokenRole() !== 'operator') {
-  clearToken();
-  localStorage.removeItem('operator');
-}
-
-if (getToken()) {
-  api.getMyRoutes().then(() => {
+(async () => {
+  try {
+    const me = await api.getMe();
+    if (me.role !== 'operator') throw new Error('Access only for operators');
     hideOpLoader(() => {
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
       init();
     });
-  }).catch((e) => {
+  } catch (e) {
     const msg = (e && e.message) ? String(e.message) : '';
     const isAuthErr = msg.includes('401') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('access only') || msg.includes('403');
     if (isAuthErr) {
-      clearToken();
+      await clearToken();
       localStorage.removeItem('operator');
       hideOpLoader(() => {
         const err = document.getElementById('login-err');
@@ -1376,19 +1496,13 @@ if (getToken()) {
         document.getElementById('login-screen').style.display = 'flex';
       });
     } else {
-      // server error — show dashboard anyway
       hideOpLoader(() => {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-        init();
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('dashboard').style.display = 'none';
       });
     }
-  });
-} else {
-  hideOpLoader(() => {
-    document.getElementById('login-screen').style.display = 'flex';
-  });
-}
+  }
+})();
 </script>
 </body>
 </html>

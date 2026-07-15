@@ -2,6 +2,14 @@ import * as svc from '../services/driver.service.js';
 import * as ticketSvc from '../services/ticket.service.js';
 import * as busSvc from '../services/bus.service.js';
 
+const authCookieOptions = {
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production',
+  path: '/',
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+};
+
 export const getMe = async (req, res) => {
   try { res.status(200).json(await svc.getDriverMe(req.user.id)); }
   catch (err) { res.status(404).json({ message: err.message }); }
@@ -13,7 +21,11 @@ export const create           = async (req, res) => {
 };
 
 export const login            = async (req, res) => {
-  try { res.status(200).json(await svc.loginDriver(req.body)); }
+  try {
+    const { token, driver } = await svc.loginDriver(req.body);
+    res.cookie('bookit_token', token, authCookieOptions);
+    res.status(200).json({ driver });
+  }
   catch (err) { res.status(401).json({ message: err.message }); }
 };
 
