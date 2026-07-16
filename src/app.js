@@ -34,7 +34,7 @@ for (const key of [...required, ...dbVars]) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
-
+app.set('trust proxy', 1);
 // ── SECURITY HEADERS ─────────────────────────────────────────────
 app.use(helmet({
   contentSecurityPolicy: false, // disabled so CDN scripts (Tailwind, FA) still load
