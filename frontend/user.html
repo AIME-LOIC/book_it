@@ -5,6 +5,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>BookIt — Travel Simplified</title>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9399153561254253"
+     crossorigin="anonymous"></script>
   <!-- Google Fonts -->
   <link
     href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono&display=swap"
@@ -1916,7 +1918,7 @@
           <input type="checkbox" id="reg-terms" style="width:18px; height:18px; margin-top:2px; accent-color:var(--secondary); cursor:pointer; flex-shrink:0;">
           <span><span id="agree-terms-prefix">I agree to BookIt's</span> <a href="/policy" target="_blank" id="agree-terms-link" style="color:var(--secondary); font-weight:700; text-decoration:underline;">Terms &amp; Policy</a></span>
         </label>
-        <button class="btn btn-primary btn-block" onclick="doRegister()">Create Account</button>
+        <button class="btn btn-primary btn-block" id="reg-submit-btn" onclick="doRegister()">Create Account</button>
       </div>
     </div>
   </div>
@@ -2184,58 +2186,22 @@
               style="color:white;"></i></button>
           <h3 id="pay-step2-title" style="font-size:18px; font-weight:900;"></h3>
         </div>
-        <p id="pay-step2-desc" style="color:var(--text-muted); font-size:13px; margin-bottom:16px; text-align:center;">
+        <p id="pay-step2-desc" style="color:var(--text-muted); font-size:13px; margin-bottom:8px; text-align:center;">
         </p>
-
-        <!-- MTN / Airtel: real Flutterwave mobile money charge needs the payer's phone number -->
-        <div id="pay-phone-form">
-          <input id="pay-phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="07XXXXXXXX"
-            style="margin-bottom:4px;height:48px;border-radius:12px;padding:0 16px;border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--text);transition:all 0.2s ease;">
-          <p style="color:var(--text-muted); font-size:12px; margin-bottom:12px;">
-            You'll get a payment prompt on this number — approve it there to finish.
-          </p>
+        <div class="pin-inputs">
+          <input class="pin-input" id="pin-0" maxlength="1" inputmode="numeric" type="password"
+            oninput="pinNext(this,0)">
+          <input class="pin-input" id="pin-1" maxlength="1" inputmode="numeric" type="password"
+            oninput="pinNext(this,1)">
+          <input class="pin-input" id="pin-2" maxlength="1" inputmode="numeric" type="password"
+            oninput="pinNext(this,2)">
+          <input class="pin-input" id="pin-3" maxlength="1" inputmode="numeric" type="password"
+            oninput="pinNext(this,3)">
         </div>
-
-        <!-- Promo code: unchanged local flow -->
-        <div id="pay-promo-form" style="display:none;">
-          <div class="pin-inputs">
-            <input class="pin-input" id="pin-0" maxlength="1" inputmode="numeric" type="password"
-              oninput="pinNext(this,0)">
-            <input class="pin-input" id="pin-1" maxlength="1" inputmode="numeric" type="password"
-              oninput="pinNext(this,1)">
-            <input class="pin-input" id="pin-2" maxlength="1" inputmode="numeric" type="password"
-              oninput="pinNext(this,2)">
-            <input class="pin-input" id="pin-3" maxlength="1" inputmode="numeric" type="password"
-              oninput="pinNext(this,3)">
-          </div>
-        </div>
-
         <div id="pay-err"
           style="color:#f87171; font-size:13px; font-weight:600; text-align:center; min-height:20px; margin-bottom:12px;">
         </div>
-        <button class="btn btn-primary btn-block" id="pay-step2-btn" onclick="confirmPayment()">Send Payment
-          Request</button>
-      </div>
-
-      <!-- Waiting for the customer to approve the MTN/Airtel prompt on their phone -->
-      <div class="pay-step" id="pay-step-pending" style="text-align:center; padding:16px 0;">
-        <div style="font-size:52px; margin-bottom:16px;"><i class="fa fa-spinner fa-spin"
-            style="color:var(--secondary);"></i></div>
-        <h3 style="font-size:18px; font-weight:900;">Approve on your phone</h3>
-        <p id="pay-pending-desc" style="color:var(--text-muted); margin-top:8px; font-size:13px;"></p>
-        <a id="pay-pending-redirect" href="#" target="_blank" rel="noopener"
-          class="btn btn-primary btn-block" style="margin-top:16px; display:none;">Open Test Approval Page</a>
-        <p id="pay-pending-timer" style="color:var(--text-muted); margin-top:16px; font-size:12px; font-weight:600;">
-        </p>
-        <button class="btn btn-ghost btn-block" style="margin-top:16px;" onclick="cancelPendingPayment()">Cancel</button>
-      </div>
-
-      <!-- Charge failed / expired / declined -->
-      <div class="pay-step" id="pay-step-failed" style="text-align:center; padding:16px 0;">
-        <div style="font-size:56px; margin-bottom:16px;">❌</div>
-        <h3 style="font-size:20px; font-weight:900; color:#f87171;">Payment Failed</h3>
-        <p id="pay-failed-reason" style="color:var(--text-muted); margin-top:8px; font-size:13px;"></p>
-        <button class="btn btn-primary btn-block" style="margin-top:24px;" onclick="showPayStep(1)">Try Again</button>
+        <button class="btn btn-primary btn-block" onclick="confirmPayment()">Confirm Payment</button>
       </div>
 
       <div class="pay-step" id="pay-step-3" style="text-align:center; padding:16px 0;">
@@ -2279,7 +2245,7 @@
 
   <script src="./api.js"></script>
   <script>
-    const { api, clearToken } = window.BookItApi;
+    const { api, setToken, clearToken, getToken } = window.BookItApi;
     window.api = api;
 
     let locations = [];
@@ -2338,8 +2304,8 @@
         payBtn: 'Pay', cancelledMsg: 'Cancelled',
         travelDate: 'Travel Date',
         agreeTermsPrefix: "I agree to BookIt's",
-termsLink: 'Terms & Policy',
-acceptTermsError: 'Please accept the Terms & Policy to continue.',
+        termsLink: 'Terms & Policy',
+        acceptTermsError: 'Please accept the Terms & Policy to continue.',
       },
       rw: {
         tagline: 'Genda mu Rwanda neza',
@@ -2388,8 +2354,8 @@ acceptTermsError: 'Please accept the Terms & Policy to continue.',
         payBtn: 'Ishyura', cancelledMsg: 'Ihagaritswe',
         travelDate: 'Itariki y\'urugendo',
         agreeTermsPrefix: 'Nemeye',
-termsLink: 'Amategeko n\'Amabwiriza',
-acceptTermsError: 'Nyamuneka wemere Amategeko n\'Amabwiriza kugira ngo ukomeze.',
+        termsLink: 'Amategeko n\'Amabwiriza',
+        acceptTermsError: 'Nyamuneka wemere Amategeko n\'Amabwiriza kugira ngo ukomeze.',
       }
     };
 
@@ -2403,8 +2369,6 @@ acceptTermsError: 'Nyamuneka wemere Amategeko n\'Amabwiriza kugira ngo ukomeze.'
       window.currentLang = lang;
       localStorage.setItem('lang', lang);
       applyLang();
-      set('agree-terms-prefix', t('agreeTermsPrefix'));
-set('agree-terms-link', t('termsLink'));
     };
 
     const applyLang = () => {
@@ -2433,6 +2397,8 @@ set('agree-terms-link', t('termsLink'));
       if (regLabels[3]) regLabels[3].textContent = t('password');
       const regBtn = document.querySelector('#tab-register .btn-primary');
       if (regBtn) regBtn.textContent = t('createAccount');
+      set('agree-terms-prefix', t('agreeTermsPrefix'));
+      set('agree-terms-link', t('termsLink'));
 
       // sidebar nav
       const navItems = document.querySelectorAll('.sidebar .nav-item');
@@ -2588,6 +2554,7 @@ set('agree-terms-link', t('termsLink'));
       err.style.display = 'none';
       try {
         const data = await api.loginUser({ email, password });
+        setToken(data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         document.getElementById('user-name').textContent = data.user.name;
         document.getElementById('user-initial').textContent = data.user.name.charAt(0);
@@ -2603,16 +2570,17 @@ set('agree-terms-link', t('termsLink'));
       const err = document.getElementById('auth-err');
       err.style.display = 'none';
       if (!document.getElementById('reg-terms').checked) {
-  err.textContent = t('acceptTermsError');
-  err.style.display = 'block';
-  return;
-}
+        err.textContent = t('acceptTermsError');
+        err.style.display = 'block';
+        return;
+      }
       try {
         await api.register({
           name: document.getElementById('reg-name').value.trim(),
           email: document.getElementById('reg-email').value.trim(),
           phone: document.getElementById('reg-phone').value.trim(),
           password: document.getElementById('reg-password').value,
+          terms_accepted: true,
         });
         showToast('Account created! Please login.', 'success');
         switchTab('login', document.querySelector('.tab'));
@@ -2642,7 +2610,7 @@ set('agree-terms-link', t('termsLink'));
       if (mbtn) mbtn.innerHTML = `<i class="fa ${icon}"></i>`;
     })();
 
-    window.logout = async () => { await clearToken(); localStorage.removeItem('user'); location.reload(); };
+    window.logout = () => { clearToken(); location.reload(); };
 
     // --- CORE ---
     async function init() {
@@ -3267,10 +3235,6 @@ set('agree-terms-link', t('termsLink'));
 
     let currentPayTicketId = null;
     let currentPayMethod = null;
-    let payPollInterval = null;
-    let payPollElapsed = 0;
-    const PAY_POLL_MS = 5000;
-    const PAY_POLL_MAX_SECONDS = 120;
 
     window.payTicket = (id, price) => {
       currentPayTicketId = id;
@@ -3280,48 +3244,25 @@ set('agree-terms-link', t('termsLink'));
     };
 
     window.closePayModal = () => {
-      stopPayPolling();
       document.getElementById('pay-modal').classList.remove('open');
       showPayStep(1);
-      document.getElementById('pay-phone').value = '';
       [0, 1, 2, 3].forEach(i => document.getElementById(`pin-${i}`).value = '');
       document.getElementById('pay-err').textContent = '';
-      document.getElementById('pay-pending-redirect').style.display = 'none';
       showSection('tickets', document.querySelector('.nav-item:nth-child(2)'));
     };
 
-    // step can be a number (1-3, matches #pay-step-N) or a full element id
-    // like 'pay-step-pending' / 'pay-step-failed'
     window.showPayStep = (step, method) => {
-      stopPayPolling();
       document.querySelectorAll('.pay-step').forEach(s => s.classList.remove('active'));
-      const targetId = typeof step === 'number' ? `pay-step-${step}` : step;
-      document.getElementById(targetId).classList.add('active');
-
+      document.getElementById(`pay-step-${step}`).classList.add('active');
       if (method) {
         currentPayMethod = method;
-        const titles = { momo: 'MTN Mobile Money', airtel: 'Airtel Money', promo: 'Promo Code' };
-        const descs = {
-          momo: 'Enter the phone number registered with MTN MoMo',
-          airtel: 'Enter the phone number registered with Airtel Money',
-          promo: 'Enter your 4-digit promo code',
-        };
+        const titles = { momo: 'MTN MoMo PIN', airtel: 'Airtel Money PIN', promo: 'Promo Code' };
+        const descs = { momo: 'Enter your 4-digit MTN MoMo PIN', airtel: 'Enter your 4-digit Airtel PIN', promo: 'Enter your 4-digit promo code' };
         document.getElementById('pay-step2-title').textContent = titles[method];
         document.getElementById('pay-step2-desc').textContent = descs[method];
         document.getElementById('pay-err').textContent = '';
-
-        const isPromo = method === 'promo';
-        document.getElementById('pay-phone-form').style.display = isPromo ? 'none' : 'block';
-        document.getElementById('pay-promo-form').style.display = isPromo ? 'block' : 'none';
-        document.getElementById('pay-step2-btn').textContent = isPromo ? 'Confirm Payment' : 'Send Payment Request';
-
-        if (isPromo) {
-          [0, 1, 2, 3].forEach(i => document.getElementById(`pin-${i}`).value = '');
-          document.getElementById('pin-0').focus();
-        } else {
-          document.getElementById('pay-phone').value = '';
-          setTimeout(() => document.getElementById('pay-phone').focus(), 50);
-        }
+        [0, 1, 2, 3].forEach(i => document.getElementById(`pin-${i}`).value = '');
+        document.getElementById('pin-0').focus();
       }
     };
 
@@ -3331,127 +3272,29 @@ set('agree-terms-link', t('termsLink'));
     };
 
     window.confirmPayment = async () => {
+      const pin = [0, 1, 2, 3].map(i => document.getElementById(`pin-${i}`).value).join('');
       const errEl = document.getElementById('pay-err');
       errEl.textContent = '';
-      const btn = event.target;
+      if (pin.length < 4) { errEl.textContent = 'Enter all 4 digits'; return; }
 
-      // Promo code stays a purely local/instant flow
       if (currentPayMethod === 'promo') {
-        const pin = [0, 1, 2, 3].map(i => document.getElementById(`pin-${i}`).value).join('');
-        if (pin.length < 4) { errEl.textContent = 'Enter all 4 digits'; return; }
         if (pin !== '0000') { errEl.textContent = 'Invalid promo code'; return; }
-
-        btn.disabled = true;
-        btn.textContent = 'Processing...';
-        try {
-          await api.payTicket(currentPayTicketId, { promo_code: pin });
-          showPayStep(3);
-          loadMyTickets();
-          loadNotifications();
-        } catch (e) {
-          errEl.textContent = e.message || 'Payment failed';
-        } finally {
-          btn.disabled = false;
-          btn.textContent = 'Confirm Payment';
-        }
-        return;
       }
 
-      // MTN / Airtel: real Flutterwave mobile money charge
-      const rawPhone = document.getElementById('pay-phone').value.trim().replace(/\s+/g, '');
-      if (!/^(?:250)?0?7[2389][0-9]{7}$/.test(rawPhone)) {
-        errEl.textContent = 'Enter a valid Rwandan phone number';
-        return;
-      }
-
+      const btn = event.target;
       btn.disabled = true;
-      btn.textContent = 'Sending request...';
+      btn.textContent = 'Processing...';
       try {
-        const res = await api.payTicket(currentPayTicketId, {
-          network: currentPayMethod, // 'momo' or 'airtel'
-          phone_number: rawPhone,
-        });
-
-        if (res.status === 'paid') {
-          showPayStep(3);
-          loadMyTickets();
-          loadNotifications();
-          return;
-        }
-
-        // charge is pending — customer needs to approve the prompt on their phone
-        document.getElementById('pay-pending-desc').textContent =
-          res.message || `We sent a payment request to ${rawPhone}. Approve it on your phone to confirm.`;
-
-        const redirectLink = document.getElementById('pay-pending-redirect');
-        const redirectUrl = res.next_action?.redirect_url?.url;
-        if (redirectUrl) {
-          redirectLink.href = redirectUrl;
-          redirectLink.style.display = 'block';
-          redirectLink.textContent = 'Open Test Approval Page';
-        } else {
-          redirectLink.style.display = 'none';
-        }
-
-        showPayStep('pay-step-pending');
-        startPayPolling();
+        await api.payTicket(currentPayTicketId);
+        showPayStep(3);
+        loadMyTickets();
+        loadNotifications();
       } catch (e) {
-        errEl.textContent = e.message || 'Could not start payment';
+        errEl.textContent = e.message || 'Payment failed';
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Send Payment Request';
+        btn.textContent = 'Confirm Payment';
       }
-    };
-
-    function startPayPolling() {
-      stopPayPolling();
-      payPollElapsed = 0;
-      document.getElementById('pay-pending-timer').textContent = '';
-
-      payPollInterval = setInterval(async () => {
-        payPollElapsed += PAY_POLL_MS / 1000;
-        document.getElementById('pay-pending-timer').textContent = `Waiting for approval… (${payPollElapsed}s)`;
-
-        try {
-          const res = await api.checkPaymentStatus(currentPayTicketId);
-
-          if (res.status === 'paid') {
-            stopPayPolling();
-            showPayStep(3);
-            loadMyTickets();
-            loadNotifications();
-            return;
-          }
-
-          if (res.status === 'failed' || res.status === 'cancelled') {
-            stopPayPolling();
-            document.getElementById('pay-failed-reason').textContent = res.reason || 'The payment was not approved.';
-            showPayStep('pay-step-failed');
-            return;
-          }
-        } catch (e) {
-          // transient network hiccup while polling — keep trying until timeout
-        }
-
-        if (payPollElapsed >= PAY_POLL_MAX_SECONDS) {
-          stopPayPolling();
-          document.getElementById('pay-failed-reason').textContent =
-            "We didn't receive approval in time. You can try again.";
-          showPayStep('pay-step-failed');
-        }
-      }, PAY_POLL_MS);
-    }
-
-    function stopPayPolling() {
-      if (payPollInterval) {
-        clearInterval(payPollInterval);
-        payPollInterval = null;
-      }
-    }
-
-    window.cancelPendingPayment = () => {
-      stopPayPolling();
-      showPayStep(1);
     };
 
     // --- NOTIFICATIONS ---
@@ -3497,17 +3340,21 @@ set('agree-terms-link', t('termsLink'));
     else document.addEventListener('DOMContentLoaded', applyLang);
 
     (async () => {
+      if (!getToken()) {
+        hideAppLoader(() => {
+          document.getElementById('dashboard').style.display = 'none';
+          document.getElementById('bottom-nav').style.display = 'none';
+          document.getElementById('auth-screen').style.display = 'flex';
+          document.body.classList.add('auth-mode');
+        });
+        return;
+      }
       try {
-        const me = await api.getMe();
-        if (me.role !== 'user') throw new Error('Access only for users');
         await api.getLocations();
         const u = JSON.parse(localStorage.getItem('user') || 'null');
         if (u?.name) {
           document.getElementById('user-name').textContent = u.name;
           document.getElementById('user-initial').textContent = u.name.charAt(0);
-        } else if (me.name) {
-          document.getElementById('user-name').textContent = me.name;
-          document.getElementById('user-initial').textContent = me.name.charAt(0);
         }
         hideAppLoader(() => {
           document.getElementById('auth-screen').style.display = 'none';
@@ -3517,9 +3364,10 @@ set('agree-terms-link', t('termsLink'));
           init();
         });
       } catch (e) {
-        const msg = e.message || '';
-        if (msg.includes('401') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('access only') || msg.includes('403')) {
-          await clearToken();
+        // only clear token on 401 (expired/invalid)
+        // network errors or server errors should NOT log the user out
+        if (e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token') || e.message.toLowerCase().includes('unauthorized'))) {
+          clearToken();
           localStorage.removeItem('user');
           hideAppLoader(() => {
             document.getElementById('dashboard').style.display = 'none';
@@ -3528,6 +3376,7 @@ set('agree-terms-link', t('termsLink'));
             document.body.classList.add('auth-mode');
           });
         } else {
+          // server error — still show dashboard with cached user data
           const u = JSON.parse(localStorage.getItem('user') || 'null');
           if (u?.name) {
             document.getElementById('user-name').textContent = u.name;
