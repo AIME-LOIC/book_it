@@ -3,6 +3,7 @@ import Operator from '../database/models/operator.js';
 import Route    from '../database/models/route.js';
 import Location from '../database/models/location.js';
 import { createMany } from './notification.service.js';
+import { generateDailyLoyaltyPromo } from './promo.service.js';
 
 // ── DEACTIVATE DEPARTED BUSES (runs every 60s) ────────────────
 export const checkDepartedBuses = async () => {
@@ -48,6 +49,7 @@ export const checkDepartedBuses = async () => {
 
 // ── REACTIVATE ALL BUSES AT MIDNIGHT (runs every 60s, triggers once) ─────────
 let lastReactivationDate = null;
+let lastPromoGenerationDate = null;
 
 export const checkMidnightReactivation = async () => {
   const now   = new Date();
@@ -70,5 +72,21 @@ export const checkMidnightReactivation = async () => {
 
   if (inactiveBuses.length > 0) {
     console.log(`[Scheduler] ${inactiveBuses.length} bus(es) reactivated for ${today}`);
+  }
+};
+
+export const checkPromoCodeGeneration = async () => {
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  if (lastPromoGenerationDate === today) return;
+  lastPromoGenerationDate = today;
+
+  try {
+    const result = await generateDailyLoyaltyPromo(now);
+    if (result) {
+      console.log(`[Scheduler] Promo code generated for ${result.user?.name || result.user?.email || 'top buyer'}: ${result.promoCode.code}`);
+    }
+  } catch (err) {
+    console.error('[Scheduler] Promo generation failed', err.message);
   }
 };

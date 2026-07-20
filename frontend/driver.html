@@ -982,8 +982,7 @@
         driverState.bus_id = data.driver?.bus_id || data.driver?.bus?.id;
         localStorage.setItem('driver', JSON.stringify({ name: driverState.name, bus: driverState.bus, bus_id: driverState.bus_id }));
         $('#driver-name').textContent = driverState.name;
-        $('#login-screen').style.display = 'none';
-        $('#dashboard').classList.remove('hidden');
+        showDashboardView();
         init();
       } catch (e) {
         err.textContent = e.message || 'Authentication failed';
@@ -1000,6 +999,30 @@
       const mbtn = document.getElementById('dr-m-theme-btn');
       if (btn) btn.innerHTML = `<i class="fa ${icon}"></i> ${label}`;
       if (mbtn) mbtn.innerHTML = `<i class="fa ${icon}"></i><span>Theme</span>`;
+    };
+
+    const showDashboardView = () => {
+      const dashboard = $('#dashboard');
+      const login = $('#login-screen');
+      dashboard.style.display = 'flex';
+      dashboard.classList.remove('hidden');
+      login.style.display = 'none';
+      login.classList.add('hidden');
+      showSection('home');
+    };
+
+    const showLoginView = (message = '') => {
+      const dashboard = $('#dashboard');
+      const login = $('#login-screen');
+      dashboard.style.display = 'none';
+      dashboard.classList.add('hidden');
+      login.style.display = 'flex';
+      login.classList.remove('hidden');
+      if (message) {
+        const err = document.getElementById('login-err');
+        err.textContent = message;
+        err.classList.remove('hidden');
+      }
     };
 
     // apply saved theme
@@ -1321,7 +1344,7 @@
             $('#driver-name').textContent = saved.name;
           }
         } catch { }
-        hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').style.display = 'block'; init(); });
+        hideDrLoader(() => { showDashboardView(); init(); });
       } catch (e) {
         const msg = (e && e.message) ? String(e.message) : '';
         const isAuthErr = msg.includes('401') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('access only') || msg.toLowerCase().includes('suspended') || msg.includes('403');
@@ -1329,17 +1352,14 @@
           await clearToken();
           localStorage.removeItem('driver');
           hideDrLoader(() => {
-            const err = document.getElementById('login-err');
-            err.textContent = msg || 'Please login';
-            err.classList.remove('hidden');
-            $('#login-screen').style.display = 'flex';
+            showLoginView(msg || 'Please login');
           });
         } else {
           try {
             const saved = JSON.parse(localStorage.getItem('driver') || 'null');
             if (saved?.name) { driverState.name = saved.name; driverState.bus = saved.bus; $('#driver-name').textContent = saved.name; }
           } catch { }
-          hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').style.display = 'block'; init(); });
+          hideDrLoader(() => { showDashboardView(); init(); });
         }
       }
     })();

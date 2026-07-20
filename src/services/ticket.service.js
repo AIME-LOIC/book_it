@@ -8,6 +8,7 @@ import Location from '../database/models/location.js';
 import User from '../database/models/user.js';
 import Driver from '../database/models/driver.js';
 import { createMany } from './notification.service.js';
+import { validateAndConsumePromoCode } from './promo.service.js';
 import {
   generateTicketNumber,
   generateQRToken,
@@ -314,15 +315,21 @@ export const bookTicket = async (user_id, { bus_id, seat_number, boarding_stop_i
 //   flw_payment_method_id STRING
 //   flw_charge_id       STRING
 //   payment_network     STRING   ('mtn' | 'airtel')
-export const payTicket = async (user_id, ticket_id, { network, phone_number } = {}) => {
-  if (!network || !phone_number) {
-    throw new Error('network ("mtn" or "airtel") and phone_number are required');
-  }
-
+export const payTicket = async (user_id, ticket_id, { network, phone_number, promo_code } = {}) => {
   const ticket = await Ticket.findOne({ where: { id: ticket_id, user_id } });
   if (!ticket) throw new Error('Ticket not found');
   if (ticket.status === 'paid') throw new Error('Ticket already paid');
   if (ticket.status === 'cancelled') throw new Error('Ticket is cancelled');
+
+  if (promo_code) {
+    await validateAndConsumePromoCode({ code: promo_code, recipient_id: user_id, ticket_id: ticket.id });
+    const finalized = await finalizeTicketPayment(ticket.id);
+    return { status: 'paid', ticket: finalized, message: 'Promo code applied successfully.' };
+  }
+
+  if (!network || !phone_number) {
+    throw new Error('network ("mtn" or "airtel") and phone_number are required');
+  }
 
   const user = await User.findByPk(user_id);
   if (!user) throw new Error('User not found');

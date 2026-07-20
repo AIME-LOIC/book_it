@@ -6,14 +6,7 @@ const Notification = sequelize.define('Notification', {
   recipient_id:   { type: DataTypes.UUID, allowNull: false },
   recipient_type: { type: DataTypes.ENUM('user', 'operator', 'admin', 'driver'), allowNull: false },
   type:           {
-    type: DataTypes.ENUM(
-      'ticket_booked',
-      'ticket_paid',
-      'ticket_cancelled',
-      'bus_arrived',
-      'bus_departed',
-      'new_booking'
-    ),
+    type: DataTypes.STRING(50),
     allowNull: false,
   },
   message:        { type: DataTypes.STRING(255), allowNull: false },

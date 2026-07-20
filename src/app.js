@@ -14,8 +14,9 @@ import busRoutes from './routes/bus.routes.js';
 import driverRoutes from './routes/driver.routes.js';
 import ticketRoutes from './routes/ticket.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
+import promoRoutes from './routes/promo.routes.js';
 import cors from 'cors';
-import { checkDepartedBuses, checkMidnightReactivation } from './services/scheduler.service.js';
+import { checkDepartedBuses, checkMidnightReactivation, checkPromoCodeGeneration } from './services/scheduler.service.js';
 
 
 dotenv.config();
@@ -127,6 +128,7 @@ app.use(`${P}/buses`, busRoutes);
 app.use(`${P}/drivers`, driverRoutes);
 app.use(`${P}/tickets`, ticketRoutes);
 app.use(`${P}/notifications`, notificationRoutes);
+app.use(`${P}/promos`, promoRoutes);
 
 // Catch unmatched routes in the actual API prefix
 app.use(`${P}/*any`, (req, res) => res.status(404).json({ message: 'API endpoint not found' }));
@@ -166,9 +168,11 @@ app.listen(PORT, HOST, () => {
   console.log(`   Network: http://${lanIP}:${PORT}`);
   checkDepartedBuses();
   checkMidnightReactivation();
+  checkPromoCodeGeneration();
   setInterval(() => {
     checkDepartedBuses();
     checkMidnightReactivation();
+    checkPromoCodeGeneration();
   }, 60 * 1000);
 });
 
