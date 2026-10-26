@@ -30,12 +30,17 @@ async function getOptions() {
     };
   }
 
-  // Local MySQL via env vars (or .env.local via DOTENV_CONFIG_PATH)
-  const host = process.env.db_host || 'localhost';
-  const user = process.env.db_user || 'root';
-  const password = process.env.db_password || '';
-  const database = process.env.db_name || 'bookit';
-  const port = parseInt(process.env.db_port || '3306', 10);
+  // Local MySQL via env vars (or .env.local via DOTENV_CONFIG_PATH).
+  // Accept both casings: earlier code read lowercase `db_*` while
+  // documentation/.env.example used uppercase `DB_*` — which meant the
+  // documented variables were silently ignored and the defaults (root,
+  // localhost, bookit) were used instead.
+  const env = (name) => process.env[name];
+  const host    = env('DB_HOST')    || env('db_host')    || 'localhost';
+  const user    = env('DB_USER')    || env('db_user')    || 'root';
+  const password = env('DB_PASSWORD') ?? env('db_password') ?? '';
+  const database = env('DB_NAME')    || env('db_name')    || 'bookit';
+  const port    = parseInt(env('DB_PORT') || env('db_port') || '3306', 10);
 
   const url = `mysql://${user}:${encodeURIComponent(password)}@${host}:${port}/${database}`;
   return {

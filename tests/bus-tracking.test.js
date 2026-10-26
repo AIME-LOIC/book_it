@@ -12,5 +12,10 @@ test('bus routes expose a dedicated location update endpoint for live tracking',
 });
 test('bus location updates require the driver middleware before permission checks', () => {
   assert.match(routesSource, /isDriver/);
-  assert.match(routesSource, /router\.patch\('\\/:id\\/location'.*authenticate.*isDriver/s);
+  const line = routesSource.split('\n').find(l => l.includes("router.patch('/:id/location'"));
+  assert.ok(line, 'location route exists');
+  const authPos = line.indexOf('authenticate');
+  const driverPos = line.indexOf('isDriver');
+  assert.ok(authPos !== -1, 'location route requires authenticate');
+  assert.ok(driverPos > authPos, 'location route requires isDriver after authenticate');
 });

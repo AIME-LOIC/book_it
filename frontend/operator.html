@@ -656,6 +656,16 @@
 const { api, clearToken } = window.BookItApi;
 window.api = api;
 
+// HTML-escape untrusted server data before interpolating into innerHTML or
+// inline event handlers (stored-XSS defense — location names, plate numbers,
+// driver/passenger names, notification messages are operator/user-controlled).
+const esc = (v) => String(v ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
 // ── TOAST ─────────────────────────────────────────────
 const toastContainer = document.createElement('div');
 toastContainer.style.cssText = 'position:fixed;top:24px;right:24px;z-index:9000;display:flex;flex-direction:column;gap:10px;pointer-events:none;';
@@ -666,7 +676,7 @@ const showToast = (msg, type = 'info') => {
   const colors = { success: '#10b981', error: '#ef4444', info: '#059669', warning: '#f59e0b' };
   const icons  = { success: 'fa-circle-check', error: 'fa-circle-xmark', info: 'fa-circle-info', warning: 'fa-triangle-exclamation' };
   t.style.cssText = `background:var(--card);border:1px solid var(--border);border-left:4px solid ${colors[type]||colors.info};padding:14px 18px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.3);display:flex;align-items:center;gap:12px;min-width:280px;max-width:360px;pointer-events:auto;transform:translateX(120%);transition:transform 0.35s cubic-bezier(0.175,0.885,0.32,1.275);`;
-  t.innerHTML = `<i class="fa ${icons[type]||icons.info}" style="color:${colors[type]||colors.info};font-size:18px;"></i><span style="font-size:14px;font-weight:600;color:var(--text);">${msg}</span>`;
+  t.innerHTML = `<i class="fa ${icons[type]||icons.info}" style="color:${colors[type]||colors.info};font-size:18px;"></i><span style="font-size:14px;font-weight:600;color:var(--text);">${esc(msg)}</span>`;
   toastContainer.appendChild(t);
   setTimeout(() => t.style.transform = 'translateX(0)', 10);
   setTimeout(() => { t.style.transform = 'translateX(120%)'; setTimeout(() => t.remove(), 350); }, 4000);
@@ -777,7 +787,7 @@ async function loadOverview() {
 // ── LOCATIONS ─────────────────────────────────────────
 async function loadLocations() {
   locations = await api.getLocations();
-  document.getElementById('oloc-table').innerHTML = locations.map(l => `<tr><td>${l.name}</td></tr>`).join('');
+  document.getElementById('oloc-table').innerHTML = locations.map(l => `<tr><td>${esc(l.name)}</td></tr>`).join('');
   populateRouteSelects();
   populateStopSelect();
 }
@@ -822,12 +832,12 @@ async function suggestRoutePrice() {
 }
 
 function populateStopSelect() {
-  document.getElementById('st-loc').innerHTML = locations.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+  document.getElementById('st-loc').innerHTML = locations.map(l => `<option value="${esc(l.id)}">${esc(l.name)}</option>`).join('');
   updateLegRouteOptions();
 }
 
 function populateBusRouteSelect() {
-  document.getElementById('bus-route').innerHTML = myRoutes.map(r => `<option value="${r.id}">${r.fromLocation.name} → ${r.toLocation.name}</option>`).join('');
+  document.getElementById('bus-route').innerHTML = myRoutes.map(r => `<option value="${esc(r.id)}">${esc(r.fromLocation.name)} → ${esc(r.toLocation.name)}</option>`).join('');
 }
 
 function populateDriverBusSelect() {
@@ -912,15 +922,15 @@ async function renderRoutes() {
   const tbody = document.getElementById('rt-table');
   tbody.innerHTML = myRoutes.map(r => `
     <tr>
-      <td data-label="From">${r.fromLocation.name}</td>
-      <td data-label="To">${r.toLocation.name}</td>
-      <td data-label="Price">${Number(r.price).toLocaleString()} RWF</td>
-      <td data-label="Stops">${(r.stops||[]).length} stops</td>
+      <td data-label="From">${esc(r.fromLocation.name)}</td>
+      <td data-label="To">${esc(r.toLocation.name)}</td>
+      <td data-label="Price">${esc(Number(r.price).toLocaleString())} RWF</td>
+      <td data-label="Stops">${esc((r.stops||[]).length)} stops</td>
       <td data-label="Type"><span class="badge ${r.is_reverse ? 'badge-yellow' : 'badge-blue'}">${r.is_reverse ? 'Reverse' : 'Main'}</span></td>
       <td data-label="Actions" style="display:flex;gap:6px;">
-        <button class="btn btn-ghost btn-sm" onclick="openStops('${r.id}','${r.fromLocation.name} → ${r.toLocation.name}')">Stops</button>
-        <button class="btn btn-ghost btn-sm" onclick="editRoutePrice('${r.id}', ${Number(r.price)}, ${(r.stops||[]).length})">Edit Price</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteRoute('${r.id}')">Delete</button>
+        <button class="btn btn-ghost btn-sm" onclick="openStops('${esc(r.id)}','${esc(r.fromLocation.name)} → ${esc(r.toLocation.name)}')">Stops</button>
+        <button class="btn btn-ghost btn-sm" onclick="editRoutePrice('${esc(r.id)}', ${Number(r.price)}, ${(r.stops||[]).length})">Edit Price</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteRoute('${esc(r.id)}')">Delete</button>
       </td>
     </tr>
   `).join('');
@@ -1003,10 +1013,10 @@ async function renderStops() {
   document.getElementById('stops-list').innerHTML = stops.length
     ? stops.map(s => `
         <div class="stop-row">
-          <div class="stop-order">${s.stop_order}</div>
-          <span style="flex:1">${s.location.name}</span>
-          <span style="color:#a78bfa">${Number(s.price_from_origin).toLocaleString()} RWF</span>
-          <button class="btn btn-danger btn-sm" onclick="deleteStop('${s.id}')">×</button>
+          <div class="stop-order">${esc(s.stop_order)}</div>
+          <span style="flex:1">${esc(s.location.name)}</span>
+          <span style="color:#a78bfa">${esc(Number(s.price_from_origin).toLocaleString())} RWF</span>
+          <button class="btn btn-danger btn-sm" onclick="deleteStop('${esc(s.id)}')">×</button>
         </div>
       `).join('')
     : '<p style="color:#64748b;font-size:13px;">No stops yet</p>';
@@ -1041,17 +1051,17 @@ async function renderBuses() {
   const tbody = document.getElementById('bus-table');
   tbody.innerHTML = myBuses.map(b => `
     <tr>
-      <td data-label="Plate">${b.plate_number}</td>
-      <td data-label="Route">${b.route?.fromLocation?.name||'?'} → ${b.route?.toLocation?.name||'?'}</td>
+      <td data-label="Plate">${esc(b.plate_number)}</td>
+      <td data-label="Route">${esc(b.route?.fromLocation?.name||'?')} → ${esc(b.route?.toLocation?.name||'?')}</td>
       <td data-label="Departure">
-        <input type="time" value="${String(b.departure_time).slice(0,5)}" onblur="updateDeparture('${b.id}', this.value)"
+        <input type="time" value="${esc(String(b.departure_time).slice(0,5))}" onblur="updateDeparture('${esc(b.id)}', this.value)"
           style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;font-size:13px;font-family:inherit;">
       </td>
-      <td data-label="Capacity">${b.capacity}</td>
+      <td data-label="Capacity">${esc(b.capacity)}</td>
       <td data-label="Status"><span class="badge ${b.is_active ? 'badge-green' : 'badge-red'}">${b.is_active ? 'Active' : 'Departed — reactivates at midnight'}</span></td>
       <td data-label="Actions" style="display:flex;gap:6px;flex-wrap:wrap;">
-        ${!b.is_active ? `<button class="btn btn-ghost btn-sm" onclick="reactivateBus('${b.id}')"><i class="fa fa-rotate-right"></i> Reactivate</button>` : ''}
-        <button class="btn btn-danger btn-sm" onclick="deleteBus('${b.id}')">Delete</button>
+        ${!b.is_active ? `<button class="btn btn-ghost btn-sm" onclick="reactivateBus('${esc(b.id)}')"><i class="fa fa-rotate-right"></i> Reactivate</button>` : ''}
+        <button class="btn btn-danger btn-sm" onclick="deleteBus('${esc(b.id)}')">Delete</button>
       </td>
     </tr>
   `).join('');
@@ -1104,13 +1114,13 @@ async function loadDrivers() {
   const tbody   = document.getElementById('drv-table');
   tbody.innerHTML = drivers.map(d => `
     <tr>
-      <td data-label="Name">${d.name}</td>
-      <td data-label="Phone">${d.phone}</td>
-      <td data-label="Bus">${d.bus?.plate_number || '—'}</td>
+      <td data-label="Name">${esc(d.name)}</td>
+      <td data-label="Phone">${esc(d.phone)}</td>
+      <td data-label="Bus">${esc(d.bus?.plate_number || '—')}</td>
       <td data-label="Status"><span class="badge ${d.is_active ? 'badge-green' : 'badge-red'}">${d.is_active ? 'Active' : 'Suspended'}</span></td>
       <td data-label="Actions" style="display:flex;gap:6px;">
-        <button class="btn btn-ghost btn-sm" onclick="toggleDrv('${d.id}')">${d.is_active ? 'Suspend' : 'Activate'}</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteDrv('${d.id}')">Delete</button>
+        <button class="btn btn-ghost btn-sm" onclick="toggleDrv('${esc(d.id)}')">${d.is_active ? 'Suspend' : 'Activate'}</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteDrv('${esc(d.id)}')">Delete</button>
       </td>
     </tr>
   `).join('');
@@ -1161,15 +1171,15 @@ async function loadTickets() {
   ticketsCache = {};
   tickets.forEach(t => ticketsCache[t.id] = t);
   document.getElementById('tkt-table').innerHTML = tickets.length ? tickets.map(t => `
-    <tr style="cursor:pointer;" onclick="openTicket('${t.id}')">
-      <td data-label="Ticket #">${t.ticket_number || '—'}</td>
-      <td data-label="Passenger">${t.user?.name || '—'}</td>
-      <td data-label="Bus">${t.bus?.plate_number || '—'}</td>
-      <td data-label="Boarding">${t.boardingStop?.location?.name || '—'}</td>
-      <td data-label="Dropoff">${t.dropoffStop?.location?.name  || '—'}</td>
-      <td data-label="Seat">${t.seat_number}</td>
-      <td data-label="Date">${t.travel_date}</td>
-      <td data-label="Price">${Number(t.price).toLocaleString()} RWF</td>
+    <tr style="cursor:pointer;" onclick="openTicket('${esc(t.id)}')">
+      <td data-label="Ticket #">${esc(t.ticket_number || '—')}</td>
+      <td data-label="Passenger">${esc(t.user?.name || '—')}</td>
+      <td data-label="Bus">${esc(t.bus?.plate_number || '—')}</td>
+      <td data-label="Boarding">${esc(t.boardingStop?.location?.name || '—')}</td>
+      <td data-label="Dropoff">${esc(t.dropoffStop?.location?.name  || '—')}</td>
+      <td data-label="Seat">${esc(t.seat_number)}</td>
+      <td data-label="Date">${esc(t.travel_date)}</td>
+      <td data-label="Price">${esc(Number(t.price).toLocaleString())} RWF</td>
       <td data-label="Status"><span class="badge ${statusColor[t.status]||''}">${t.status}</span></td>
     </tr>
   `).join('') : '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--muted);">No tickets yet</td></tr>';
@@ -1199,31 +1209,31 @@ window.openTicket = (id) => {
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">
       <div style="background:var(--bg); border-radius:12px; padding:12px;">
         <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">PASSENGER</div>
-        <div style="font-weight:700;">${t.user?.name || '—'}</div>
+        <div style="font-weight:700;">${esc(t.user?.name || '—')}</div>
       </div>
       <div style="background:var(--bg); border-radius:12px; padding:12px;">
         <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">BUS</div>
-        <div style="font-weight:700;">${t.bus?.plate_number || '—'}</div>
+        <div style="font-weight:700;">${esc(t.bus?.plate_number || '—')}</div>
       </div>
       <div style="background:var(--bg); border-radius:12px; padding:12px;">
         <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">DATE</div>
-        <div style="font-weight:700;">${t.travel_date}</div>
+        <div style="font-weight:700;">${esc(t.travel_date)}</div>
       </div>
       <div style="background:var(--bg); border-radius:12px; padding:12px; text-align:center;">
         <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">SEAT</div>
-        <div style="font-size:24px; font-weight:900; color:var(--primary);">${t.seat_number}</div>
+        <div style="font-size:24px; font-weight:900; color:var(--primary);">${esc(t.seat_number)}</div>
       </div>
       <div style="background:var(--bg); border-radius:12px; padding:12px;">
         <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">PRICE</div>
-        <div style="font-weight:700;">${Number(t.price).toLocaleString()} RWF</div>
+        <div style="font-weight:700;">${esc(Number(t.price).toLocaleString())} RWF</div>
       </div>
       <div style="background:var(--bg); border-radius:12px; padding:12px;">
         <div style="font-size:11px; color:var(--muted); margin-bottom:4px;">TICKET #</div>
-        <div style="font-weight:700; font-family:monospace; font-size:13px; color:var(--primary);">${t.ticket_number || 'PENDING'}</div>
+        <div style="font-weight:700; font-family:monospace; font-size:13px; color:var(--primary);">${esc(t.ticket_number || 'PENDING')}</div>
       </div>
     </div>
     ${qrUrl ? `<div style="text-align:center; padding-top:16px; border-top:1px solid var(--border);">
-      <img src="${qrUrl}" style="background:#fff; padding:12px; border-radius:12px;">
+      <img src="${esc(qrUrl)}" style="background:#fff; padding:12px; border-radius:12px;">
     </div>` : ''}
   `;
   document.getElementById('ticket-modal').classList.add('open');
@@ -1246,8 +1256,8 @@ window.calcRevenue = async () => {
   document.getElementById('rev-total').textContent = `${total.toLocaleString()} RWF`;
   document.getElementById('rev-breakdown').innerHTML = Object.entries(byBus).map(([plate, amount]) => `
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155;font-size:13px;">
-      <span style="color:#94a3b8;">Bus ${plate}</span>
-      <span style="color:#4ade80;font-weight:600;">${amount.toLocaleString()} RWF</span>
+      <span style="color:#94a3b8;">Bus ${esc(plate)}</span>
+      <span style="color:#4ade80;font-weight:600;">${esc(amount.toLocaleString())} RWF</span>
     </div>
   `).join('');
   document.getElementById('rev-box').style.display = 'block';
@@ -1256,17 +1266,17 @@ window.calcRevenue = async () => {
 // ── NOTIFICATIONS ─────────────────────────────────────
 async function loadNotifications() {
   const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
-  const count = unread.unread;
+  const count = Number(unread?.unread) || 0;
   const bell  = document.getElementById('bell-count');
   bell.textContent   = count;
   bell.style.display = count > 0 ? 'flex' : 'none';
   document.getElementById('notif-list').innerHTML = notifs.length
     ? notifs.map(n => `
-        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${n.id}',this)">
+        <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${esc(n.id)}',this)">
           <div class="notif-icon"><i class="fa fa-bell"></i></div>
           <div style="flex:1;">
-            <p style="font-size:13px; font-weight:600; color:var(--text);">${n.message}</p>
-            <small style="color:var(--muted); font-size:11px;">${new Date(n.createdAt).toLocaleTimeString()}</small>
+            <p style="font-size:13px; font-weight:600; color:var(--text);">${esc(n.message ?? '')}</p>
+            <small style="color:var(--muted); font-size:11px;">${n.createdAt && !Number.isNaN(new Date(n.createdAt).getTime()) ? new Date(n.createdAt).toLocaleTimeString() : ''}</small>
           </div>
         </div>
       `).join('')
@@ -1289,11 +1299,11 @@ async function loadProfile() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div style="background:var(--bg);border-radius:12px;padding:14px;">
           <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Company</div>
-          <div style="font-weight:700;">${me.company_name}</div>
+          <div style="font-weight:700;">${esc(me.company_name)}</div>
         </div>
         <div style="background:var(--bg);border-radius:12px;padding:14px;">
           <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Contact</div>
-          <div style="font-weight:700;">${me.contact || '—'}</div>
+          <div style="font-weight:700;">${esc(me.contact || '—')}</div>
         </div>
         <div style="background:var(--bg);border-radius:12px;padding:14px;">
           <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Status</div>
@@ -1409,7 +1419,7 @@ const renderLockerList = () => {
   el.innerHTML = _lockerData.map((d, i) => `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg);border-radius:12px;border:1px solid var(--border);margin-bottom:10px;">
       <div>
-        <div style="font-weight:700;font-size:14px;">${d.name}${d.plate ? ` <span style="color:var(--muted);font-weight:600;font-size:13px;">· ${d.plate}</span>` : ''}</div>
+        <div style="font-weight:700;font-size:14px;">${esc(d.name)}${d.plate ? ` <span style="color:var(--muted);font-weight:600;font-size:13px;">· ${esc(d.plate)}</span>` : ''}</div>
         <div style="font-size:12px;margin-top:3px;">
           ${d.default_password
             ? `<span style="color:var(--muted);">Password set</span>`
@@ -1430,14 +1440,14 @@ window.viewLockerEntry = (i) => {
     <div style="display:flex;flex-direction:column;gap:14px;">
       <div style="background:var(--bg);border-radius:12px;padding:16px;">
         <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Driver</div>
-        <div style="font-weight:700;font-size:16px;">${d.name}</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${d.phone}</div>
+        <div style="font-weight:700;font-size:16px;">${esc(d.name)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc(d.phone)}</div>
       </div>
       ${d.plate ? `<div style="background:var(--bg);border-radius:12px;padding:16px;">
         <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Bus Plate</div>
         <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-family:monospace;font-size:15px;font-weight:700;">${d.plate}</span>
-          <button class="btn btn-ghost btn-sm" onclick="copyText('${d.plate}')"><i class="fa fa-copy"></i> Copy</button>
+          <span style="font-family:monospace;font-size:15px;font-weight:700;">${esc(d.plate)}</span>
+          <button class="btn btn-ghost btn-sm" onclick="copyText('${esc(d.plate)}')"><i class="fa fa-copy"></i> Copy</button>
         </div>
       </div>` : ''}
       <div style="background:var(--bg);border-radius:12px;padding:16px;">

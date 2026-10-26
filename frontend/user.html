@@ -2279,6 +2279,18 @@
     const { api, clearToken } = window.BookItApi;
     window.api = api;
 
+    // HTML-escape untrusted server data before any interpolation into
+    // innerHTML or inline event handler attributes. Escapes &, <, >, " and '
+    // so server-supplied strings (names, plate numbers, notification
+    // messages, promo codes) can never break out of an attribute or inject
+    // markup (stored XSS defense).
+    const esc = (v) => String(v ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
     let locations = [];
     let allBuses = [];
     let selectedBus = null;
@@ -2695,11 +2707,17 @@ set('agree-terms-link', t('termsLink'));
       const fromOpts = document.getElementById('from-options');
       const toOpts = document.getElementById('to-options');
       fromOpts.innerHTML = locations.map(l =>
-        `<div class="custom-select-option" onclick="selectCustomOption('from','${l.id}','${l.name}')">${l.name}</div>`
+        `<div class="custom-select-option" data-which="from" data-id="${esc(l.id)}" data-name="${esc(l.name)}">${esc(l.name)}</div>`
       ).join('');
       toOpts.innerHTML = locations.map(l =>
-        `<div class="custom-select-option" onclick="selectCustomOption('to','${l.id}','${l.name}')">${l.name}</div>`
+        `<div class="custom-select-option" data-which="to" data-id="${esc(l.id)}" data-name="${esc(l.name)}">${esc(l.name)}</div>`
       ).join('');
+      // delegation replaces per-option inline onclick handlers — option names
+      // (operator-created) can contain quotes, which used to be attribute-injectable
+      fromOpts?.querySelectorAll('.custom-select-option').forEach(o =>
+        o.addEventListener('click', () => selectCustomOption('from', o.dataset.id, o.dataset.name)));
+      toOpts?.querySelectorAll('.custom-select-option').forEach(o =>
+        o.addEventListener('click', () => selectCustomOption('to', o.dataset.id, o.dataset.name)));
     }
 
     window.toggleCustomSelect = (which) => {
@@ -2835,19 +2853,19 @@ set('agree-terms-link', t('termsLink'));
       }
       res.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin-bottom:16px;">Click a bus to select seats and book. Availability is checked for the selected date.</p>` +
         buses.map((b, idx) => `
-    <div class="bus-card" data-idx="${idx}" onclick="openBrowseBus('${b.id}')">
+    <div class="bus-card" data-idx="${idx}" onclick="openBrowseBus('${esc(b.id)}')">
       <div class="bus-card-main">
         <div class="bus-info">
-          <div class="operator-name">${b.operator?.company_name || 'BookIt Express'}</div>
+          <div class="operator-name">${esc(b.operator?.company_name || 'BookIt Express')}</div>
           <div class="bus-meta">
-            <span><i class="fa fa-bus"></i> ${b.plate_number}</span>
-            <span><i class="fa fa-map-marker-alt"></i> ${b.route?.fromLocation?.name || '?'} &rarr; ${b.route?.toLocation?.name || '?'}</span>
-            <span><i class="fa fa-clock"></i> ${String(b.departure_time).slice(0, 5)}</span>
+            <span><i class="fa fa-bus"></i> ${esc(b.plate_number)}</span>
+            <span><i class="fa fa-map-marker-alt"></i> ${esc(b.route?.fromLocation?.name || '?')} &rarr; ${esc(b.route?.toLocation?.name || '?')}</span>
+            <span><i class="fa fa-clock"></i> ${esc(String(b.departure_time).slice(0, 5))}</span>
           </div>
         </div>
         <div class="time-price">
-          <div class="departure-time">${String(b.departure_time).slice(0, 5)}</div>
-          <div class="price">${Number(b.route?.price || 0).toLocaleString()} RWF</div>
+          <div class="departure-time">${esc(String(b.departure_time).slice(0, 5))}</div>
+          <div class="price">${esc(Number(b.route?.price || 0).toLocaleString())} RWF</div>
         </div>
       </div>
       <div class="occupancy-bar-container">
@@ -2903,22 +2921,23 @@ set('agree-terms-link', t('termsLink'));
         const percent = Math.round((b.taken_seats?.length / b.capacity) * 100);
         const amenityHtml = (b.amenities || []).map(a => {
           const icons = { wifi: 'fa-wifi', ac: 'fa-wind', charging: 'fa-plug' };
-          return `<span class="amenity-tag"><i class="fa ${icons[a] || 'fa-check'}"></i> ${a}</span>`;
+          const label = esc(a);
+          return `<span class="amenity-tag"><i class="fa ${icons[a] || 'fa-check'}"></i> ${label}</span>`;
         }).join(' ');
 
         return `
-            <div class="bus-card" onclick="openSeatModal('${b.bus_id}', '${b.boarding_stop_id}', '${b.dropoff_stop_id}', '${b.capacity}', '${JSON.stringify(b.taken_seats || [])}', '${b.operator?.company_name}', '${b.price}', '${date}')">
+            <div class="bus-card" onclick="openSeatModal('${esc(b.bus_id)}', '${esc(b.boarding_stop_id)}', '${esc(b.dropoff_stop_id)}', '${esc(b.capacity)}', '${esc(JSON.stringify(b.taken_seats || []))}', '${esc(b.operator?.company_name)}', '${esc(b.price)}', '${esc(date)}')">
                 <div class="bus-card-main">
                     <div class="bus-info">
-                        <div class="operator-name">${b.operator?.company_name}</div>
+                        <div class="operator-name">${esc(b.operator?.company_name)}</div>
                         <div class="bus-meta">
-                            <span><i class="fa fa-clock"></i> Departs ${String(b.departure_time).slice(0, 5)}</span>
-                            <span><i class="fa fa-chair"></i> ${b.available_seats.length} free</span>
+                            <span><i class="fa fa-clock"></i> Departs ${esc(String(b.departure_time).slice(0, 5))}</span>
+                            <span><i class="fa fa-chair"></i> ${esc(b.available_seats.length)} free</span>
                         </div>
                         <div style="margin-top:8px; display:flex; gap:6px;">${amenityHtml}</div>
                     </div>
                     <div class="time-price">
-                        <div class="departure-time">${Number(b.price).toLocaleString()}</div>
+                        <div class="departure-time">${esc(Number(b.price).toLocaleString())}</div>
                         <div class="price" style="font-size:12px; color:var(--text-muted)">RWF / Seat</div>
                     </div>
                 </div>
@@ -3136,7 +3155,10 @@ set('agree-terms-link', t('termsLink'));
         }
 
         list.innerHTML = html;
-      } catch (e) { list.innerHTML = `<p>${e.message}</p>`; }
+      } catch (e) {
+        // server error text must not be interpolated raw into HTML
+        list.textContent = e.message || 'Something went wrong. Please try again.';
+      }
     };
 
     function updateHistoryAndChips(tickets) {
@@ -3172,7 +3194,7 @@ set('agree-terms-link', t('termsLink'));
       if (chipsContainer) { // Always update, even if empty, to clear previous chips
         if (uniqueQuickSearchRoutes.length > 0) {
           chipsContainer.innerHTML = uniqueQuickSearchRoutes.slice(0, 5).map(r =>
-            `<span class="chip" onclick="quickSearch('${r.from}', '${r.to}')">${r.from} → ${r.to}</span>`
+            `<span class="chip" onclick="quickSearch('${esc(r.from)}', '${esc(r.to)}')">${esc(r.from)} → ${esc(r.to)}</span>`
           ).join('');
         } else {
           // Fallback to default chips if no history for quick search
@@ -3193,11 +3215,11 @@ set('agree-terms-link', t('termsLink'));
           historyList.innerHTML = `<div class="col-span-full text-center py-10 color-text-muted">No travel history found yet. Start booking to see your favorite routes here!</div>`;
         } else {
           historyList.innerHTML = uniqueHistoryRoutes.map(r => `
-            <div class="bus-card" onclick="quickSearch('${r.from}', '${r.to}')" style="opacity:1; transform:none; margin-bottom:0;">
+            <div class="bus-card" onclick="quickSearch('${esc(r.from)}', '${esc(r.to)}')" style="opacity:1; transform:none; margin-bottom:0;">
               <div class="flex justify-between items-center">
                 <div>
-                  <div class="font-bold text-lg">${r.from} → ${r.to} ${r.time ? `<span style="color:var(--secondary); font-size:14px;">(${r.time})</span>` : ''}</div>
-                  <div class="text-xs text-muted-foreground">${r.count} trip${r.count > 1 ? 's' : ''} taken</div>
+                  <div class="font-bold text-lg">${esc(r.from)} → ${esc(r.to)} ${r.time ? `<span style="color:var(--secondary); font-size:14px;">(${esc(r.time)})</span>` : ''}</div>
+                  <div class="text-xs text-muted-foreground">${esc(r.count)} trip${r.count > 1 ? 's' : ''} taken</div>
                 </div>
                 <i class="fa fa-chevron-right text-secondary"></i>
               </div>
@@ -3214,7 +3236,7 @@ set('agree-terms-link', t('termsLink'));
       const effectiveStatus = isPendingTicketExpired(t) ? 'cancelled' : t.status;
       const statusIcon = { paid: '<i class="fa fa-circle-check"></i>', pending: '<i class="fa fa-clock"></i>', cancelled: '<i class="fa fa-circle-xmark"></i>' }[effectiveStatus] || '<i class="fa fa-ticket"></i>';
       const amenities = normalizeAmenities(t.bus?.amenities);
-      const amenitiesHtml = amenities.map(a => `<span class="amenity-tag"><i class="fa ${getAmenityIcon(a)}"></i> ${a}</span>`).join(' ');
+      const amenitiesHtml = amenities.map(a => `<span class="amenity-tag"><i class="fa ${getAmenityIcon(a)}"></i> ${esc(a)}</span>`).join(' ');
       const statusLabel = { paid: 'Paid', pending: 'Pending', cancelled: 'Cancelled' }[effectiveStatus] || effectiveStatus;
       return `
             <div class="ticket-wrapper" style="${isHistory ? 'opacity: 0.7; filter: grayscale(0.5);' : ''}">
@@ -3222,47 +3244,47 @@ set('agree-terms-link', t('termsLink'));
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                   <img src="./download.png" alt="BookIt" class="logo-img" style="height:52px;width:auto;">
                   <div style="text-align:right;">
-                    ${t.ticket_number ? `<div style="font-family:monospace;font-size:13px;font-weight:800;color:var(--secondary);">${t.ticket_number}</div>` : '<div style="font-size:11px;color:var(--text-muted);">Awaiting payment</div>'}
+                    ${t.ticket_number ? `<div style="font-family:monospace;font-size:13px;font-weight:800;color:var(--secondary);">${esc(t.ticket_number)}</div>` : '<div style="font-size:11px;color:var(--text-muted);">Awaiting payment</div>'}
                     <span class="badge badge-${effectiveStatus}" style="margin-top:4px;">${statusIcon} ${statusLabel}</span>
                   </div>
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
                   <div style="text-align:center;flex:1;">
                     <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">FROM</div>
-                    <div style="font-size:18px;font-weight:900;">${t.boardingStop?.location?.name || '—'}</div>
+                    <div style="font-size:18px;font-weight:900;">${esc(t.boardingStop?.location?.name || '—')}</div>
                   </div>
                   <i class="fa fa-arrow-right" style="color:var(--secondary);"></i>
                   <div style="text-align:center;flex:1;">
                     <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">TO</div>
-                    <div style="font-size:18px;font-weight:900;">${t.dropoffStop?.location?.name || '—'}</div>
+                    <div style="font-size:18px;font-weight:900;">${esc(t.dropoffStop?.location?.name || '—')}</div>
                   </div>
                 </div>
                 <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:14px;">
-                  <div><div style="font-size:11px;color:var(--text-muted);">Date</div><strong>${t.travel_date}</strong></div>
+                  <div><div style="font-size:11px;color:var(--text-muted);">Date</div><strong>${esc(t.travel_date)}</strong></div>
                   <div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);">Seat</div><strong style="font-size:22px;color:var(--secondary);">${t.seat_number}</strong></div>
                   <div style="text-align:right;"><div style="font-size:11px;color:var(--text-muted);">Price</div><strong>${Number(t.price).toLocaleString()} RWF</strong></div>
                 </div>
               </div>
               ${t.bus?.last_lat && t.bus?.last_lng ? `
                 <div style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                  <button class="btn btn-ghost btn-sm" onclick="openMapModal('${t.id}')"><i class="fa fa-map-marker-alt"></i> Track Bus</button>
+                  <button class="btn btn-ghost btn-sm" onclick="openMapModal('${esc(t.id)}')"><i class="fa fa-map-marker-alt"></i> Track Bus</button>
                   <div style="display:flex; gap:8px;">${amenitiesHtml}</div>
                 </div>
               ` : ''}
 
               <div class="ticket-footer">
                 ${effectiveStatus === 'pending' ? `
-                  <button class="btn btn-primary btn-block" style="min-height:52px;" onclick="payTicket('${t.id}','${t.price}')">
+                  <button class="btn btn-primary btn-block" style="min-height:52px;" onclick="payTicket('${esc(t.id)}','${esc(t.price)}')">
                     <i class="fa fa-lock" style="color:white;"></i> Pay ${Number(t.price).toLocaleString()} RWF
                   </button>
-                  <button onclick="cancelTicket('${t.id}')" style="width:100%;margin-top:10px;padding:12px;border-radius:12px;border:1px solid #ef4444;background:transparent;color:#f87171;font-weight:700;font-size:14px;cursor:pointer;">
+                  <button onclick="cancelTicket('${esc(t.id)}')" style="width:100%;margin-top:10px;padding:12px;border-radius:12px;border:1px solid #ef4444;background:transparent;color:#f87171;font-weight:700;font-size:14px;cursor:pointer;">
                     <i class="fa fa-times-circle"></i> Cancel Ticket
                   </button>
                 ` : effectiveStatus === 'paid' ? `
                   <p style="font-weight:600;margin-bottom:12px;font-size:14px;"><i class="fa fa-qrcode"></i> Show to driver when boarding</p>
                   <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-                    <img src="${qrUrl}" alt="QR" style="background:#fff;padding:16px;border-radius:12px;cursor:zoom-in;" onclick="openLightbox('${qrUrl}')">
-                    <button onclick="downloadQR('${qrUrl}','${qrFilename}')" style="display:inline-flex;align-items:center;gap:8px;background:var(--secondary);color:white;padding:10px 24px;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;">
+                    <img src="${esc(qrUrl)}" alt="QR" style="background:#fff;padding:16px;border-radius:12px;cursor:zoom-in;" onclick="openLightbox('${esc(qrUrl)}')">
+                    <button onclick="downloadQR('${esc(qrUrl)}','${esc(qrFilename)}')" style="display:inline-flex;align-items:center;gap:8px;background:var(--secondary);color:white;padding:10px 24px;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;">
                       <i class="fa fa-download" style="color:white;"></i> Save to Phone
                     </button>
                   </div>
@@ -3450,18 +3472,19 @@ set('agree-terms-link', t('termsLink'));
         }
 
         // charge is pending — customer needs to approve the prompt on their phone
-        document.getElementById('pay-pending-desc').textContent =
-          res.message || `We sent a payment request to ${rawPhone}. Approve it on your phone to confirm.`;
+      const note = res.next_action?.payment_instruction?.note;
+const redirectUrl = res.next_action?.redirect_url?.url;
 
-        const redirectLink = document.getElementById('pay-pending-redirect');
-        const redirectUrl = res.next_action?.redirect_url?.url;
-        if (redirectUrl) {
-          redirectLink.href = redirectUrl;
-          redirectLink.style.display = 'block';
-          redirectLink.textContent = 'Open Test Approval Page';
-        } else {
-          redirectLink.style.display = 'none';
-        }
+document.getElementById('pay-pending-desc').textContent =
+  note || res.message || `We sent a payment request to ${rawPhone}. Approve it on your phone to confirm.`;
+  const redirectLink = document.getElementById('pay-pending-redirect');
+if (redirectUrl) {
+  redirectLink.href = redirectUrl;
+  redirectLink.style.display = 'block';
+  redirectLink.textContent = 'Open Test Approval Page';
+} else {
+  redirectLink.style.display = 'none';
+}
 
         showPayStep('pay-step-pending');
         startPayPolling();
@@ -3543,16 +3566,17 @@ set('agree-terms-link', t('termsLink'));
         document.getElementById('notif-list').innerHTML = notifs.length ? notifs.map(n => {
           const promoCode = n?.meta?.promo_code;
           const isPromoNotification = n?.type === 'promo_code_generated' || Boolean(promoCode);
+          const notifTime = n.createdAt ? new Date(n.createdAt) : null;
           return `
-            <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markRead('${n.id}')">
+            <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markRead('${esc(n.id)}')">
                 <div class="notif-icon"><i class="fa ${icons[n.type] || 'fa-bell'}"></i></div>
                 <div style="flex:1; min-width:0;">
-                    <p style="font-size:13px; font-weight:600;">${n.message}</p>
-                    <small style="color:var(--text-muted); font-size:11px;">${new Date(n.createdAt).toLocaleTimeString()}</small>
+                    <p style="font-size:13px; font-weight:600;">${esc(n.message ?? '')}</p>
+                    <small style="color:var(--text-muted); font-size:11px;">${notifTime && !Number.isNaN(notifTime.getTime()) ? notifTime.toLocaleTimeString() : ''}</small>
                     ${isPromoNotification && promoCode ? `
                       <div style="display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                        <code style="background:var(--surface-2); padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:0.04em;">${promoCode}</code>
-                        <button type="button" class="btn btn-ghost btn-sm" style="padding:6px 10px; font-size:12px;" onclick="event.stopPropagation(); copyPromoCode('${promoCode}')">Copy</button>
+                        <code style="background:var(--surface-2); padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:0.04em;">${esc(promoCode)}</code>
+                        <button type="button" class="btn btn-ghost btn-sm" style="padding:6px 10px; font-size:12px;" data-promo="${esc(promoCode)}" onclick="event.stopPropagation(); copyPromoCode(this.dataset.promo)">Copy</button>
                       </div>
                     ` : ''}
                 </div>

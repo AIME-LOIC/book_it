@@ -62,30 +62,37 @@ const isStillAvailable = (departure_time, travel_date) => {
 };
 
 // ── SEAT AVAILABILITY ─────────────────────────────────
-const isSeatFree = async (bus_id, travel_date, seat_number, boarding_order, dropoff_order) => {
-  const PENDING_TIMEOUT_MINUTES = 15;
-  const expirationCutoff = new Date(Date.now() - PENDING_TIMEOUT_MINUTES * 60000);
+const PENDING_TIMEOUT_MINUTES = 15;
+const PENDING_HOLD_CUTOFF = () => new Date(Date.now() - PENDING_TIMEOUT_MINUTES * 60000);
 
+// segments overlap if existing boarding < new dropoff AND existing dropoff > new boarding
+const segmentsOverlap = (existingBoarding, existingDropoff, newBoarding, newDropoff) => {
+  const eb = Number(existingBoarding);
+  const ed = Number(existingDropoff);
+  const nb = Number(newBoarding);
+  const nd = Number(newDropoff);
+  return eb < nd && ed > nb;
+};
+
+const isSeatFree = async (bus_id, travel_date, seat_number, boarding_order, dropoff_order, transaction = null, excludeTicketId = null) => {
   const conflicts = await Ticket.findAll({
     where: {
       bus_id, travel_date, seat_number,
+      ...(excludeTicketId ? { id: { [Op.ne]: excludeTicketId } } : {}),
       [Op.or]: [
         { status: 'paid' },
-        { status: 'pending', createdAt: { [Op.gt]: expirationCutoff } }
+        { status: 'pending', createdAt: { [Op.gt]: PENDING_HOLD_CUTOFF() } }
       ]
     },
     include: [
       { model: RouteStop, as: 'boardingStop', attributes: ['stop_order'] },
       { model: RouteStop, as: 'dropoffStop', attributes: ['stop_order'] },
     ],
+    ...(transaction ? { transaction, lock: transaction.LOCK.UPDATE } : {}),
   });
 
   for (const t of conflicts) {
-    const existBoarding = Number(t.boardingStop.stop_order);
-    const existDropoff = Number(t.dropoffStop.stop_order);
-    const nb = Number(boarding_order);
-    const nd = Number(dropoff_order);
-    if (existBoarding < nd && existDropoff > nb) {
+    if (segmentsOverlap(t.boardingStop.stop_order, t.dropoffStop.stop_order, boarding_order, dropoff_order)) {
       return false;
     }
   }
@@ -93,15 +100,12 @@ const isSeatFree = async (bus_id, travel_date, seat_number, boarding_order, drop
 };
 
 const getSegmentSeats = async (bus, travel_date, boarding_order, dropoff_order) => {
-  const PENDING_TIMEOUT_MINUTES = 15;
-  const expirationCutoff = new Date(Date.now() - PENDING_TIMEOUT_MINUTES * 60000);
-
   const conflicts = await Ticket.findAll({
     where: {
       bus_id: bus.id, travel_date,
       [Op.or]: [
         { status: 'paid' },
-        { status: 'pending', createdAt: { [Op.gt]: expirationCutoff } }
+        { status: 'pending', createdAt: { [Op.gt]: PENDING_HOLD_CUTOFF() } }
       ]
     },
     include: [
@@ -112,12 +116,9 @@ const getSegmentSeats = async (bus, travel_date, boarding_order, dropoff_order) 
 
   const takenSeats = new Set();
   for (const t of conflicts) {
-    const eb = Number(t.boardingStop.stop_order);
-    const ed = Number(t.dropoffStop.stop_order);
-    const nb = Number(boarding_order);
-    const nd = Number(dropoff_order);
-    // segments overlap if existing boarding < new dropoff AND existing dropoff > new boarding
-    if (eb < nd && ed > nb) takenSeats.add(t.seat_number);
+    if (segmentsOverlap(t.boardingStop.stop_order, t.dropoffStop.stop_order, boarding_order, dropoff_order)) {
+      takenSeats.add(t.seat_number);
+    }
   }
 
   const available = [];
@@ -241,31 +242,50 @@ export const bookTicket = async (user_id, { bus_id, seat_number, boarding_stop_i
   const dropoffStop = await RouteStop.findByPk(dropoff_stop_id);
   if (!boardingStop || !dropoffStop) throw new Error('Invalid stops');
   if (boardingStop.stop_order >= dropoffStop.stop_order) throw new Error('Invalid stop order');
+  // stops must belong to the route this bus travels — prevents cross-route
+  // price manipulation (e.g. mixing stops from a cheaper route)
+  if (boardingStop.route_id !== bus.route_id || dropoffStop.route_id !== bus.route_id) {
+    throw new Error('Stops do not belong to this bus route');
+  }
 
   if (seat_number < 1 || seat_number > bus.capacity) {
     throw new Error(`Seat must be between 1 and ${bus.capacity}`);
   }
 
-  const free = await isSeatFree(
-    bus_id, travel_date, seat_number,
-    boardingStop.stop_order, dropoffStop.stop_order
-  );
-  if (!free) throw new Error(`Seat ${seat_number} is taken for this segment`);
-
   const price = parseFloat(
     (parseFloat(dropoffStop.price_from_origin) - parseFloat(boardingStop.price_from_origin)).toFixed(2)
   );
+  if (!(price >= 0)) throw new Error('Invalid price for this segment');
 
-  const ticket = await Ticket.create({
-    user_id,
-    bus_id,
-    operator_id: bus.operator_id,
-    boarding_stop_id,
-    dropoff_stop_id,
-    seat_number,
-    travel_date,
-    price,
-    status: 'pending',
+  // ── CONCURRENCY-SAFE RESERVATION ──────────────────────
+  // Availability checks without this transaction are advisory only. Here we
+  // serialize every booking for this bus on a transaction holding a row lock
+  // on the bus (works on MySQL InnoDB and Postgres): a second conflicting
+  // booking waits for the first to commit, then its re-check sees the
+  // pending ticket and fails — so two overlapping reservations can never
+  // both succeed.
+  const sequelize = Ticket.sequelize;
+  const ticket = await sequelize.transaction(async (t) => {
+    const lockedBus = await Bus.findByPk(bus_id, { transaction: t, lock: t.LOCK.UPDATE });
+    if (!lockedBus) throw new Error('Bus not found');
+
+    const free = await isSeatFree(
+      bus_id, travel_date, seat_number,
+      boardingStop.stop_order, dropoffStop.stop_order, t
+    );
+    if (!free) throw new Error(`Seat ${seat_number} is taken for this segment`);
+
+    return await Ticket.create({
+      user_id,
+      bus_id,
+      operator_id: bus.operator_id,
+      boarding_stop_id,
+      dropoff_stop_id,
+      seat_number,
+      travel_date,
+      price,
+      status: 'pending',
+    }, { transaction: t });
   });
 
   const full = await Ticket.findByPk(ticket.id, { include: ticketIncludes });
@@ -449,16 +469,66 @@ const finalizeTicketPayment = async (ticket_id) => {
   if (ticket.status === 'paid') {
     return Ticket.findByPk(ticket_id, { include: ticketIncludes });
   }
+  if (ticket.status === 'cancelled') throw new Error('Ticket is cancelled');
 
   const bus = await Bus.findByPk(ticket.bus_id);
-  const ticket_number = generateTicketNumber();
-  const qr_token = generateQRToken(
-    ticket.id, ticket_number, bus.id,
-    bus.departure_time, ticket.travel_date,
-    ticket.boarding_stop_id, ticket.dropoff_stop_id
-  );
+  if (!bus) throw new Error('Bus not found');
+  const boardingStop = await RouteStop.findByPk(ticket.boarding_stop_id);
+  const dropoffStop = await RouteStop.findByPk(ticket.dropoff_stop_id);
+  if (!boardingStop || !dropoffStop) throw new Error('Invalid ticket stops');
 
-  await ticket.update({ status: 'paid', ticket_number, qr_token });
+  // ── ATOMIC CLAIM ─────────────────────────────────────
+  // Concurrent webhooks and polling calls can reach this at the same time.
+  // The claim only applies while the row is still 'pending', under a row
+  // lock on the bus (same lock bookTicket holds): whichever caller wins the
+  // bus lock finalizes first; a concurrent caller sees 0 affected rows and
+  // just returns the already-finalized ticket. The seat-integrity guard
+  // inside the same transaction prevents an expired pending hold whose seat
+  // was re-booked from being flipped to 'paid' on top of another booking.
+  const sequelize = Ticket.sequelize;
+  const claimed = await sequelize.transaction(async (t) => {
+    await Bus.findByPk(ticket.bus_id, { transaction: t, lock: t.LOCK.UPDATE });
+
+    const seatFree = await isSeatFree(
+      ticket.bus_id, ticket.travel_date, ticket.seat_number,
+      boardingStop.stop_order, dropoffStop.stop_order,
+      t,
+      ticket_id // exclude the ticket itself from the conflict scan
+    );
+    if (!seatFree) {
+      throw new Error('Seat no longer available — the pending hold expired and the seat was re-booked before payment confirmed.');
+    }
+
+    // retry on ticket-number uniqueness collisions (crypto-random, but the
+    // space is intentionally short/human-readable)
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const ticket_number = generateTicketNumber();
+      const qr_token = generateQRToken(
+        ticket.id, ticket_number, bus.id,
+        bus.departure_time, ticket.travel_date,
+        ticket.boarding_stop_id, ticket.dropoff_stop_id
+      );
+      try {
+        const [affectedRows] = await Ticket.update(
+          { status: 'paid', ticket_number, qr_token },
+          { where: { id: ticket_id, status: 'pending' }, transaction: t }
+        );
+        return { affectedRows, ticket_number };
+      } catch (err) {
+        if (err?.name === 'SequelizeUniqueConstraintError' && attempt < 4) continue;
+        throw err;
+      }
+    }
+    throw new Error('Could not generate a unique ticket number');
+  });
+
+  if (claimed.affectedRows === 0) {
+    // another concurrent call finalized the ticket first — nothing to do
+    return Ticket.findByPk(ticket_id, { include: ticketIncludes });
+  }
+
+  await ticket.reload();
+  const ticket_number = claimed.ticket_number;
   const full = await Ticket.findByPk(ticket_id, { include: ticketIncludes });
 
   await createMany([
@@ -597,68 +667,66 @@ export const notifyPassengerExit = async (driver_id, ticket_id) => {
 };
 
 // ── VALIDATE ──────────────────────────────────────────
+// Shared atomic redemption. The ticket row is locked (SELECT … FOR UPDATE)
+// and flipped with a conditional UPDATE, so two concurrent scans can never
+// both redeem the same ticket — the second sees is_used already true.
+const redeemTicket = async (findWhere, driver) => {
+  const TicketModel = Ticket.sequelize;
+  return await TicketModel.transaction(async (t) => {
+    const ticket = await Ticket.findOne({ where: findWhere, include: ticketIncludes, transaction: t, lock: t.LOCK.UPDATE });
+
+    if (!ticket) return { valid: false, reason: 'Ticket not found' };
+    if (ticket.status !== 'paid') return { valid: false, reason: `Ticket is ${ticket.status}` };
+    if (ticket.is_used) return { valid: false, reason: 'Ticket already used — boarding denied' };
+    if (driver?.bus_id && String(ticket.bus_id) !== String(driver.bus_id)) {
+      return { valid: false, reason: 'This ticket is not for your bus' };
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    if (String(ticket.travel_date) > today) {
+      return { valid: false, reason: `Ticket is for future date: ${ticket.travel_date}` };
+    }
+
+    const [affectedRows] = await Ticket.update(
+      { is_used: true },
+      { where: { id: ticket.id, is_used: false }, transaction: t }
+    );
+    if (affectedRows !== 1) {
+      return { valid: false, reason: 'Ticket already used — boarding denied' };
+    }
+
+    return {
+      valid: true,
+      ticket: {
+        id: ticket.id,
+        ticket_number: ticket.ticket_number,
+        seat_number: ticket.seat_number,
+        travel_date: ticket.travel_date,
+        departure_time: ticket.bus.departure_time,
+        plate_number: ticket.bus.plate_number,
+        passenger: ticket.user,
+        boarding: ticket.boardingStop.location.name,
+        dropoff: ticket.dropoffStop.location.name,
+        operator: ticket.operator,
+      },
+    };
+  });
+};
+
 export const validateByQR = async (token, driver) => {
+  // QR endpoint accepts ONLY signed QR JWTs — no fallback to raw ticket
+  // numbers. Ticket numbers must go through the /validate/number endpoint,
+  // so a tampered/unparseable payload can never be redeemed as a ticket.
   const decoded = verifyQRToken(token);
-  if (!decoded) {
-    // Fallback: check if it's a raw ticket number (some scanners might send raw text)
-    const ticket_number = token.trim();
-    var ticket = await Ticket.findOne({ where: { ticket_number }, include: ticketIncludes });
-  } else {
-    var ticket = await Ticket.findOne({ where: { id: decoded.ticket_id }, include: ticketIncludes });
+  if (!decoded || !decoded.ticket_id) {
+    return { valid: false, reason: 'Invalid QR code' };
   }
-
-  if (!ticket) return { valid: false, reason: 'Ticket not found' };
-  if (ticket.status !== 'paid') return { valid: false, reason: `Ticket is ${ticket.status}` };
-  if (ticket.is_used) return { valid: false, reason: '⚠️ Ticket already used — boarding denied' };
-  if (driver?.bus_id && ticket.bus_id !== driver.bus_id) return { valid: false, reason: 'This ticket is not for your bus' };
-
-  const today = new Date().toISOString().split('T')[0];
-  if (ticket.travel_date > today) return { valid: false, reason: `Ticket is for future date: ${ticket.travel_date}` };
-
-  await ticket.update({ is_used: true });
-
-  return {
-    valid: true,
-    ticket: {
-      id: ticket.id,
-      ticket_number: ticket.ticket_number,
-      seat_number: ticket.seat_number,
-      travel_date: ticket.travel_date,
-      departure_time: ticket.bus.departure_time,
-      plate_number: ticket.bus.plate_number,
-      passenger: ticket.user,
-      boarding: ticket.boardingStop.location.name,
-      dropoff: ticket.dropoffStop.location.name,
-      operator: ticket.operator,
-    },
-  };
+  return await redeemTicket({ id: decoded.ticket_id }, driver);
 };
 
 export const validateByNumber = async (ticket_number, driver) => {
-  const ticket = await Ticket.findOne({ where: { ticket_number }, include: ticketIncludes });
-  if (!ticket) return { valid: false, reason: 'Ticket not found' };
-  if (ticket.status !== 'paid') return { valid: false, reason: `Ticket is ${ticket.status}` };
-  if (ticket.is_used) return { valid: false, reason: '⚠️ Ticket already used — boarding denied' };
-  if (driver?.bus_id && ticket.bus_id !== driver.bus_id) return { valid: false, reason: 'This ticket is not for your bus' };
-
-  const today = new Date().toISOString().split('T')[0];
-  if (ticket.travel_date > today) return { valid: false, reason: `Ticket is for future date: ${ticket.travel_date}` };
-
-  await ticket.update({ is_used: true });
-
-  return {
-    valid: true,
-    ticket: {
-      id: ticket.id,
-      ticket_number: ticket.ticket_number,
-      seat_number: ticket.seat_number,
-      travel_date: ticket.travel_date,
-      departure_time: ticket.bus.departure_time,
-      plate_number: ticket.bus.plate_number,
-      passenger: ticket.user,
-      boarding: ticket.boardingStop.location.name,
-      dropoff: ticket.dropoffStop.location.name,
-      operator: ticket.operator,
-    },
-  };
+  if (typeof ticket_number !== 'string' || !ticket_number.trim()) {
+    return { valid: false, reason: 'Ticket number required' };
+  }
+  return await redeemTicket({ ticket_number: ticket_number.trim() }, driver);
 };

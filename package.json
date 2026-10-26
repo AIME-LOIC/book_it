@@ -8,10 +8,11 @@
     "node": ">=18.0.0"
   },
   "scripts": {
+    "test": "node --test tests/*.test.js",
     "start": "node --dns-result-order=ipv4first server.js",
     "dev": "npm run migrate:local-to-supabase && nodemon --exec 'node --dns-result-order=ipv4first' server.js",
     "dev:local": "DOTENV_CONFIG_PATH=.env.local nodemon --exec 'node --dns-result-order=ipv4first' server.js",
-    "start:local": "DOTENV_CONFIG_PATH=.env.local node --dns-result-order=ipv4first server.js",
+    "start:local": "DOTENV_CONFIG_PATH=.env.local nodemon --dns-result-order=ipv4first server.js",
     "migrate:local-to-supabase": "node --dns-result-order=ipv4first scripts/migrate-local-to-supabase.js",
     "build:api": "node scripts/build-api.js",
     "db:sync": "node --dns-result-order=ipv4first src/database/sync.js",

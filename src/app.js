@@ -58,27 +58,31 @@ app.get('/healthz', (req, res) => res.status(200).send('ok'));
 app.use(express.json());
 app.use(cors({
   origin: (origin, callback) => {
-    // allow requests with no origin (mobile apps, curl, Postman)
+    // allow requests with no origin (mobile apps, curl, server-to-server)
     if (!origin) return callback(null, true);
-    // production: check against ALLOWED_ORIGINS env var (strip trailing slashes)
+    // normalize: strip trailing slashes, lowercase scheme+host comparison key
+    const normalize = (o) => String(o).trim().replace(/\/+$/, '').toLowerCase();
     const envOrigins = (process.env.ALLOWED_ORIGINS || '')
       .split(',')
-      .map(o => o.trim().replace(/\/+$/, ''))
+      .map(normalize)
       .filter(Boolean);
-    const cleanOrigin = origin.replace(/\/+$/, '');
-    // if ALLOWED_ORIGINS isn't set, don't block browser clients (common deployment pitfall)
-    if (envOrigins.length === 0 && process.env.NODE_ENV === 'production') {
-      return callback(new Error('CORS: origin not allowed'));
+    const cleanOrigin = normalize(origin);
+    const isProd = process.env.NODE_ENV === 'production';
+    // production requires an allowlist — the startup check above makes this
+    // non-empty, but if the variable ends up empty, fail closed.
+    if (envOrigins.length === 0) {
+      if (isProd) return callback(null, false);
+      return callback(null, true); // dev convenience when no allowlist configured
     }
-    if (envOrigins.length === 0) return callback(null, true); // dev convenience only
-    // allow same render.com domain
-    if (origin.endsWith('.onrender.com')) return callback(null, true);
-    // development: allow localhost and LAN
-    const isLAN = /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$/.test(origin);
-    if (isLAN) return callback(null, true);
-    return callback(new Error('CORS: origin not allowed'));
+    if (envOrigins.includes(cleanOrigin)) return callback(null, true);
+    // development only: allow localhost / 127.0.0.1 / LAN HTTP origins
+    if (!isProd && /^http:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)(:\d+)?$/.test(cleanOrigin)) {
+      return callback(null, true);
+    }
+    // never trust arbitrary hosted origins (*.onrender.com etc.) — deny
+    return callback(null, false);
   },
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
 }));
@@ -100,12 +104,23 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Ticket redemption brute-force guard: ticket numbers follow BK-####-XX,
+// so without a limiter a client could enumerate the whole ~590k space.
+const ticketValidateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20, // 20 scans per minute per IP is far above manual throughput
+  message: { message: 'Too many validation attempts. Please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const P = '/rw/v1/bk'; // obscure API prefix
 
 app.use(`${P}/`, apiLimiter);
 app.use(`${P}/auth/login`, loginLimiter);
 app.use(`${P}/auth/operator/login`, loginLimiter);
 app.use(`${P}/drivers/login`, loginLimiter);
+app.use(`${P}/tickets/validate`, ticketValidateLimiter);
 
 // Serve frontend static files
 app.use(express.static(path.join(__dirname, '../frontend')));
