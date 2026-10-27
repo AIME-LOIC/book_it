@@ -147,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _displayFirstName() {
     final raw=(_profileData['name']??widget.userName).toString().trim();
     if(raw.isEmpty)return 'traveller';
-    return raw.split(RegExp(r'\\s+')).first;
+    return raw.split(RegExp(r'\s+')).first;
   }
 
   String _homeHeadline() {
