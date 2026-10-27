@@ -442,9 +442,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ]),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(_name(_fromId), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+                  Text(_name(_fromId), style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
                   const SizedBox(height: 22),
-                  Text(_name(_toId), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+                  Text(_name(_toId), style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
                 ])),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                   const Text('FROM', style: TextStyle(fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.w700)),
