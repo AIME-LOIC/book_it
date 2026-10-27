@@ -201,7 +201,15 @@ class _HomeScreenState extends State<HomeScreen> {
       _timer?.cancel();setState(() { _selectedBus=bus; _seat=n; _activeTicketId=r['id'].toString(); _seconds=300; });
       _timer=Timer.periodic(const Duration(seconds:1),(t){if(!mounted){t.cancel();return;}if(_seconds<=1){t.cancel();_expire();}else{setState(()=>_seconds--);}});
       _msg('Seat reserved. Complete payment within 5 minutes.');
-    }on ApiException catch(e){_msg(e.message);_search();}
+    }on ApiException catch(e){
+      if(!mounted)return;
+      _msg('Could not reserve seat $n: ${e.message}');
+      await _choose(bus);
+    }catch(e){
+      if(!mounted)return;
+      _msg('Could not reserve seat $n. Please try again.');
+      await _choose(bus);
+    }
   }
   Widget _seatButton(BuildContext dialogContext,int number,Set<int> available){
     if(number>40 && !available.contains(number))return const SizedBox(width:42);
