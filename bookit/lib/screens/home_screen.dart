@@ -39,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _choose(Map<String,dynamic> bus) async {
     final seats=(bus['available_seats'] as List? ?? const[]).map((x)=>int.tryParse(x.toString())).whereType<int>().toList();
     if(seats.isEmpty){_msg('No available seats.');return;}
-    final n=await showDialog<int>(context:context,builder:(c)=>AlertDialog(title:const Text('Choose a seat'),content:Wrap(spacing:8,runSpacing:8,children:seats.map((x)=>SizedBox(width:54,child:OutlinedButton(onPressed:()=>Navigator.pop(c,x),child:Text(x.toString())))).toList(),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel'))]));
+    final n=await showDialog<int>(context:context,builder:(c)=>AlertDialog(title:const Text('Choose a seat'),content:Wrap(spacing:8,runSpacing:8,children:seats.map((x)=>SizedBox(width:54,child:OutlinedButton(onPressed:()=>Navigator.pop(c,x),child:Text(x.toString())))).toList()),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel'))]));
     if(n==null)return;
     try{final r=await ApiClient.post('tickets',auth:true,body:{'bus_id':bus['bus_id'],'seat_number':n,'boarding_stop_id':bus['boarding_stop_id'],'dropoff_stop_id':bus['dropoff_stop_id'],'travel_date':_dateText(_date)});
       if(r is! Map||r['id']==null){_msg('The server did not return a reservation ID.');return;}
