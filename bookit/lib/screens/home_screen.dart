@@ -401,7 +401,7 @@ class _HomeScreenState extends State<HomeScreen> {
               for(var row=2;row<=8;row++)
                 Padding(padding:EdgeInsets.only(bottom:row==8?0:6),child:SizedBox(width:220,child:row==8
                   ?Row(mainAxisAlignment:MainAxisAlignment.start,children:[
-                    _seatButton(c,'8A',available),_seatButton(c,'8B',available),_seatButton(c,'8C',available),_seatButton(c,'8D',available),
+                    _seatButton(c,'8A',available),const SizedBox(width:6),_seatButton(c,'8B',available),const SizedBox(width:18),_seatButton(c,'8C',available),const SizedBox(width:8),_seatButton(c,'8D',available),
                   ])
                   :row==3
                   ?Row(mainAxisAlignment:MainAxisAlignment.start,children:[
