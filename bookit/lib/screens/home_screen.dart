@@ -11,12 +11,13 @@ class HomeScreen extends StatefulWidget {
   @override State<HomeScreen> createState()=>_HomeScreenState();
 }
 class _HomeScreenState extends State<HomeScreen> {
-  int _tab=0; bool _loadingLocations=true,_searching=false,_loadingTickets=false;
-  List<Map<String,dynamic>> _locations=[],_buses=[],_tickets=[];
+  int _tab=0; bool _loadingLocations=true,_searching=false,_loadingTickets=false,_loadingProfile=false,_loadingNotifications=false;
+  List<Map<String,dynamic>> _locations=[],_buses=[],_tickets=[],_notifications=[];
+  Map<String,dynamic> _profileData={};
   String? _fromId,_toId,_activeTicketId; DateTime _date=DateTime.now().add(const Duration(days:1));
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer;
   final _phone=TextEditingController(); String _network='mtn';
-  @override void initState(){super.initState();_loadLocations();_loadTickets();}
+  @override void initState(){super.initState();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();}
   @override void dispose(){_timer?.cancel();_phone.dispose();super.dispose();}
   void _msg(String s){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));}
   String _dateText(DateTime d)=>d.year.toString().padLeft(4,'0')+'-'+d.month.toString().padLeft(2,'0')+'-'+d.day.toString().padLeft(2,'0');
@@ -26,13 +27,83 @@ class _HomeScreenState extends State<HomeScreen> {
       if(mounted)setState((){_locations=xs;if(xs.isNotEmpty){_fromId??=xs.first['id']?.toString();_toId??=(xs.length>1?xs[1]['id']:xs.first['id'])?.toString();}_loadingLocations=false;});
     } on ApiException catch(e){if(mounted)setState(()=>_loadingLocations=false);_msg(e.message);}
   }
+  Future<void> _loadAvailableBuses() async {
+    try {
+      final r=await ApiClient.get('buses/available');
+      final rows=r is List?r:(r is Map&&r['buses'] is List?r['buses'] as List:<dynamic>[]);
+      if(mounted)setState(()=>_buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList());
+    } on ApiException catch(e) { if(mounted)_msg(e.message); }
+  }
+  Future<void> _loadProfile() async {
+    if(mounted)setState(()=>_loadingProfile=true);
+    try {
+      final r=await ApiClient.get('auth/me',auth:true);
+      if(mounted)setState(()=>_profileData=r is Map?Map<String,dynamic>.from(r):<String,dynamic>{});
+    } on ApiException catch(e) { if(mounted)_msg(e.message); }
+    finally { if(mounted)setState(()=>_loadingProfile=false); }
+  }
+  Future<void> _loadNotifications() async {
+    if(mounted)setState(()=>_loadingNotifications=true);
+    try {
+      final r=await ApiClient.get('notifications',auth:true);
+      final rows=r is List?r:(r is Map&&r['notifications'] is List?r['notifications'] as List:<dynamic>[]);
+      if(mounted)setState(()=>_notifications=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList());
+    } on ApiException catch(e) { if(mounted)_msg(e.message); }
+    finally { if(mounted)setState(()=>_loadingNotifications=false); }
+  }
+  Future<void> _openNotifications() async {
+    await _loadNotifications();
+    if(!mounted)return;
+    await showModalBottomSheet<void>(context:context,isScrollControlled:true,builder:(sheetContext)=>StatefulBuilder(builder:(context,setSheetState)=>SafeArea(
+      child:Padding(padding:const EdgeInsets.fromLTRB(18,18,18,24),child:SizedBox(
+        height:MediaQuery.of(context).size.height*.68,
+        child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Row(children:[const Expanded(child:Text('Notifications',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800))),TextButton(onPressed:()async{
+            try{await ApiClient.patch('notifications/read-all',auth:true);await _loadNotifications();setSheetState((){});}
+            on ApiException catch(e){_msg(e.message);}
+          },child:const Text('Mark all read'))]),
+          const Divider(),
+          if(_loadingNotifications)const Expanded(child:Center(child:CircularProgressIndicator()))
+          else if(_notifications.isEmpty)const Expanded(child Center(child:Text('No notifications yet. Booking and trip updates will appear here.',textAlign:TextAlign.center)))
+          else Expanded(child:ListView.builder(itemCount:_notifications.length,itemBuilder:(context,index){
+            final n=_notifications[index];final read=n['is_read']==true;
+            return ListTile(leading:Icon(read?Icons.notifications_none:Icons.notifications_active,color:read?AppColors.textMuted:AppColors.primary),
+              title:Text((n['type']??'Update').toString().replaceAll('_',' '),style:TextStyle(fontWeight:read?FontWeight.w500:FontWeight.w800)),
+              subtitle:Text((n['message']??'').toString()),
+              trailing:read?null:TextButton(onPressed:()async{
+                try{await ApiClient.patch('notifications/'+n['id'].toString()+'/read',auth:true);setState(()=>n['is_read']=true);setSheetState((){});}
+                on ApiException catch(e){_msg(e.message);}
+              },child:const Text('Read')),
+            );
+          })),
+        ]),
+      )),
+    )));
+  }
+  Future<void> _saveProfile({required String name,required String phone}) async {
+    try {
+      final r=await ApiClient.patch('auth/me',auth:true,body:{'name':name.trim(),'phone':phone.trim()});
+      if(mounted){setState(()=>_profileData=r is Map?Map<String,dynamic>.from(r):_profileData);_msg('Profile updated.');}
+    } on ApiException catch(e) { if(mounted)_msg(e.message); }
+  }
+  Future<void> _editProfile() async {
+    final name=TextEditingController(text:(_profileData['name']??widget.userName).toString());
+    final phone=TextEditingController(text:(_profileData['phone']??'').toString());
+    final formKey=GlobalKey<FormState>();
+    final save=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('Edit profile'),content:Form(key:formKey,child:Column(mainAxisSize:MainAxisSize.min,children:[
+      TextFormField(controller:name,decoration:const InputDecoration(labelText:'Full name'),validator:(v)=>(v?.trim().isEmpty??true)?'Enter your name':null),
+      const SizedBox(height:10),TextFormField(controller:phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'Phone number'),validator:(v)=>(v?.trim().length??0)<9?'Enter a valid phone number':null),
+    ])),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('Cancel')),FilledButton(onPressed:()=>Navigator.pop(c,formKey.currentState?.validate()??false),child:const Text('Save'))]));
+    if(save==true)await _saveProfile(name:name.text,phone:phone.text);
+    name.dispose();phone.dispose();
+  }
   Future<void> _loadTickets() async {
     if(mounted)setState(()=>_loadingTickets=true);
     try{final r=await ApiClient.get('tickets/my',auth:true);final rows=r is List?r:(r is Map&&r['tickets'] is List?r['tickets'] as List:<dynamic>[]);if(mounted)setState(()=>_tickets=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList());}
     on ApiException catch(e){if(mounted)_msg(e.message);}finally{if(mounted)setState(()=>_loadingTickets=false);}
   }
   Future<void> _search() async {
-    if(_fromId==null||_toId==null||_fromId==_toId){_msg('Choose two different locations.');return;}
+    if(_fromId==null||_toId==null||_fromId==_toId){_msg('Choose a departure and destination to search for a bookable trip.');return;}
     setState(()=>_searching=true);
     try{final r=await ApiClient.get('tickets/search',query:{'from_location_id':_fromId!,'to_location_id':_toId!,'travel_date':_dateText(_date)});
       final rows=r is List?r:(r is Map&&r['buses'] is List?r['buses'] as List:<dynamic>[]);if(mounted)setState(()=>_buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList());if(_buses.isEmpty)_msg('No buses found for this route and date.');
@@ -122,8 +193,8 @@ class _HomeScreenState extends State<HomeScreen> {
   ]));
   Widget _home()=>_selectedBus!=null?_paymentPanel():RefreshIndicator(onRefresh:()async{await _loadLocations();await _search();},child:ListView(padding:const EdgeInsets.all(18),children:[
     Container(padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.circular(26)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-      Row(children:[const Icon(Icons.directions_bus,color:AppColors.white,size:30),const SizedBox(width:10),const Expanded(child:Text('BookIt',style:TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800))),IconButton(onPressed:()=>_msg('Notifications are available for your account.'),icon:const Icon(Icons.notifications_none,color:AppColors.white))]),
-      const SizedBox(height:14),Text('Hello, '+widget.userName,style:const TextStyle(color:AppColors.white,fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:4),Text('Find your next trip in Rwanda.',style:TextStyle(color:AppColors.white.withValues(alpha:.85))),
+      Row(children:[const Icon(Icons.directions_bus,color:AppColors.white,size:30),const SizedBox(width:10),const Expanded(child:Text('BookIt',style:TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800))),IconButton(onPressed:_openNotifications,icon:const Icon(Icons.notifications_none,color:AppColors.white),tooltip:'Notifications')]),
+      const SizedBox(height:14),Text('Hello, '+((_profileData['name']??widget.userName).toString()),style:const TextStyle(color:AppColors.white,fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:4),Text('Find your next trip in Rwanda.',style:TextStyle(color:AppColors.white.withValues(alpha:.85))),
     ])),
     const SizedBox(height:20),const Text('Plan your trip',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:12),
     if(_loadingLocations)const Center(child:CircularProgressIndicator()) else ...[
@@ -133,7 +204,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const SizedBox(height:8),OutlinedButton.icon(onPressed:()async{final d=await showDatePicker(context:context,initialDate:_date,firstDate:DateTime.now(),lastDate:DateTime.now().add(const Duration(days:365)));if(d!=null)setState(()=>_date=d);},icon:const Icon(Icons.calendar_month),label:Text('Travel date: '+_dateText(_date))),
     const SizedBox(height:8),SizedBox(height:50,child:FilledButton.icon(onPressed:_searching?null:_search,icon:_searching?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.search),label:const Text('Search live buses'))),
     const SizedBox(height:20),const Text('Available buses',style:TextStyle(fontSize:19,fontWeight:FontWeight.w800,color:AppColors.textDark)),
-    if(_buses.isEmpty&&!_searching)const Padding(padding:EdgeInsets.symmetric(vertical:18),child:Text('Choose a route and search for current availability.',style:TextStyle(color:AppColors.textMuted))),
+    if(_buses.isEmpty&&!_searching)const Padding(padding:EdgeInsets.symmetric(vertical:18),child:Text('No active buses are available right now. Try refreshing or search a different trip.',style:TextStyle(color:AppColors.textMuted))),
     ..._buses.map(_busCard),
   ]));
   Widget _busCard(Map<String,dynamic> b){final r=b['route'] is Map?Map<String,dynamic>.from(b['route']):<String,dynamic>{};final op=b['operator'] is Map?Map<String,dynamic>.from(b['operator']):<String,dynamic>{};final seats=b['available_seats'] as List? ?? const[];
@@ -206,7 +277,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   Widget _detailLine(String label,String value)=>Padding(padding:const EdgeInsets.symmetric(vertical:6),child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[SizedBox(width:112,child:Text(label,style:const TextStyle(color:AppColors.textMuted))),Expanded(child:Text(value,style:const TextStyle(fontWeight:FontWeight.w700)))]));
   Widget _history()=>_historyTab();
-  Widget _profile()=>ListView(padding:const EdgeInsets.all(20),children:[const CircleAvatar(radius:36,child:Icon(Icons.person,size:36)),const SizedBox(height:12),Text(widget.userName,textAlign:TextAlign.center,style:const TextStyle(fontSize:22,fontWeight:FontWeight.w800)),const SizedBox(height:4),const Text('Passenger account',textAlign:TextAlign.center,style:TextStyle(color:AppColors.textMuted)),const SizedBox(height:20),OutlinedButton.icon(onPressed:()async{try{await ApiClient.post('auth/logout',auth:true);}catch(_){}ApiClient.setToken(null);if(mounted)_msg('Signed out. Close and reopen BookIt to sign in again.');},icon:const Icon(Icons.logout),label:const Text('Sign out'))]);
+  Widget _profile()=>RefreshIndicator(onRefresh:_loadProfile,child:ListView(padding:const EdgeInsets.all(20),children:[
+    const SizedBox(height:10),const CircleAvatar(radius:42,child:Icon(Icons.person,size:42)),const SizedBox(height:14),
+    Text((_profileData['name']??widget.userName).toString(),textAlign:TextAlign.center,style:const TextStyle(fontSize:22,fontWeight:FontWeight.w800)),
+    const SizedBox(height:5),Text((_profileData['role']??'passenger').toString().toUpperCase(),textAlign:TextAlign.center,style:const TextStyle(color:AppColors.textMuted)),
+    const SizedBox(height:24),
+    if(_loadingProfile)const Center(child:CircularProgressIndicator()),
+    Card(child:Column(children:[
+      ListTile(leading:const Icon(Icons.person_outline,color:AppColors.primary),title:const Text('Full name'),subtitle:Text((_profileData['name']??widget.userName).toString())),
+      const Divider(height:1),
+      ListTile(leading:const Icon(Icons.email_outlined,color:AppColors.primary),title:const Text('Email'),subtitle:Text((_profileData['email']??'Not provided').toString())),
+      const Divider(height:1),
+      ListTile(leading:const Icon(Icons.phone_outlined,color:AppColors.primary),title:const Text('Phone'),subtitle:Text((_profileData['phone']??'Not provided').toString())),
+      const Divider(height:1),
+      ListTile(leading:const Icon(Icons.calendar_today_outlined,color:AppColors.primary),title:const Text('Member since'),subtitle:Text((_profileData['createdAt']??'—').toString().split('T').first)),
+    ])),
+    const SizedBox(height:16),FilledButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit profile')),
+    const SizedBox(height:10),OutlinedButton.icon(onPressed:()async{try{await ApiClient.post('auth/logout',auth:true);}catch(_){}ApiClient.setToken(null);if(mounted)_msg('Signed out. Close and reopen BookIt to sign in again.');},icon:const Icon(Icons.logout),label:const Text('Sign out'))
+  ]));
 }
 
 
