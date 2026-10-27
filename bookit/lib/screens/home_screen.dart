@@ -1258,7 +1258,7 @@ class TicketDetailsScreen extends StatelessWidget {
           child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
             Container(
               padding:const EdgeInsets.all(20),
-              decoration:BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.circular(24)),
+              decoration:const BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24))),
               child:Column(children:[
                 const Icon(Icons.confirmation_num_rounded,color:Colors.white,size:34),
                 const SizedBox(height:10),
