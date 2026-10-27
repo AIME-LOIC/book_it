@@ -106,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if(_fromId==null||_toId==null||_fromId==_toId){_msg('Choose a departure and destination to search for a bookable trip.');return;}
     setState(()=>_searching=true);
     try{final r=await ApiClient.get('tickets/search',query:{'from_location_id':_fromId!,'to_location_id':_toId!,'travel_date':_dateText(_date)});
-      final rows=r is List?r:(r is Map&&r['buses'] is List?r['buses'] as List:<dynamic>[]);if(mounted)setState(()=>{_buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList(),_showingSearchResults=true});if(_buses.isEmpty)_msg('No buses found for this route and date.');
+      final rows=r is List?r:(r is Map&&r['buses'] is List?r['buses'] as List:<dynamic>[]);if(mounted)setState(() {_buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();_showingSearchResults=true;});if(_buses.isEmpty)_msg('No buses found for this route and date.');
     }on ApiException catch(e){_msg(e.message);}finally{if(mounted)setState(()=>_searching=false);}
   }
   Future<void> _choose(Map<String,dynamic> bus) async {
@@ -191,7 +191,7 @@ class _HomeScreenState extends State<HomeScreen> {
     NavigationDestination(icon:Icon(Icons.history),selectedIcon:Icon(Icons.history),label:'History'),
     NavigationDestination(icon:Icon(Icons.person_outline),selectedIcon:Icon(Icons.person),label:'Profile'),
   ]));
-  Widget _home()=>_selectedBus!=null?_paymentPanel():RefreshIndicator(onRefresh:()async{await _loadLocations();await _search();},child:ListView(padding:const EdgeInsets.all(18),children:[
+  Widget _home()=>_selectedBus!=null?_paymentPanel():RefreshIndicator(onRefresh:()async{await _loadLocations();if(_fromId!=null&&_toId!=null&&_fromId!=_toId){await _search();}else{await _loadAvailableBuses();}},child:ListView(padding:const EdgeInsets.all(18),children:[
     Container(padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.circular(26)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
       Row(children:[const Icon(Icons.directions_bus,color:AppColors.white,size:30),const SizedBox(width:10),const Expanded(child:Text('BookIt',style:TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800))),IconButton(onPressed:_openNotifications,icon:const Icon(Icons.notifications_none,color:AppColors.white),tooltip:'Notifications')]),
       const SizedBox(height:14),Text('Hello, '+((_profileData['name']??widget.userName).toString()),style:const TextStyle(color:AppColors.white,fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:4),Text('Find your next trip in Rwanda.',style:TextStyle(color:AppColors.white.withValues(alpha:.85))),
