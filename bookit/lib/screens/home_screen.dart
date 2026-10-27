@@ -64,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen> {
           },child:const Text('Mark all read'))]),
           const Divider(),
           if(_loadingNotifications)const Expanded(child:Center(child:CircularProgressIndicator()))
-          else if(_notifications.isEmpty)const Expanded(child Center(child:Text('No notifications yet. Booking and trip updates will appear here.',textAlign:TextAlign.center)))
+          else if(_notifications.isEmpty)const Expanded(child: Center(child: Text('No notifications yet. Booking and trip updates will appear here.',textAlign:TextAlign.center)))
           else Expanded(child:ListView.builder(itemCount:_notifications.length,itemBuilder:(context,index){
             final n=_notifications[index];final read=n['is_read']==true;
             return ListTile(leading:Icon(read?Icons.notifications_none:Icons.notifications_active,color:read?AppColors.textMuted:AppColors.primary),
@@ -106,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if(_fromId==null||_toId==null||_fromId==_toId){_msg('Choose a departure and destination to search for a bookable trip.');return;}
     setState(()=>_searching=true);
     try{final r=await ApiClient.get('tickets/search',query:{'from_location_id':_fromId!,'to_location_id':_toId!,'travel_date':_dateText(_date)});
-      final rows=r is List?r:(r is Map&&r['buses'] is List?r['buses'] as List:<dynamic>[]);if(mounted)setState(()=>_buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList());if(_buses.isEmpty)_msg('No buses found for this route and date.');
+      final rows=r is List?r:(r is Map&&r['buses'] is List?r['buses'] as List:<dynamic>[]);if(mounted)setState(()=>{_buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList(),_showingSearchResults=true});if(_buses.isEmpty)_msg('No buses found for this route and date.');
     }on ApiException catch(e){_msg(e.message);}finally{if(mounted)setState(()=>_searching=false);}
   }
   Future<void> _choose(Map<String,dynamic> bus) async {
@@ -207,12 +207,12 @@ class _HomeScreenState extends State<HomeScreen> {
     if(_buses.isEmpty&&!_searching)const Padding(padding:EdgeInsets.symmetric(vertical:18),child:Text('No active buses are available right now. Try refreshing or search a different trip.',style:TextStyle(color:AppColors.textMuted))),
     ..._buses.map(_busCard),
   ]));
-  Widget _busCard(Map<String,dynamic> b){final r=b['route'] is Map?Map<String,dynamic>.from(b['route']):<String,dynamic>{};final op=b['operator'] is Map?Map<String,dynamic>.from(b['operator']):<String,dynamic>{};final seats=b['available_seats'] as List? ?? const[];
+  Widget _busCard(Map<String,dynamic> b){final r=b['route'] is Map?Map<String,dynamic>.from(b['route']):<String,dynamic>{};final op=b['operator'] is Map?Map<String,dynamic>.from(b['operator']):<String,dynamic>{};final seats=b['available_seats'] as List? ?? const[];final routeFrom=r['fromLocation'] is Map?(r['fromLocation']['name']??'Origin').toString():'Route details';final routeTo=r['toLocation'] is Map?(r['toLocation']['name']??'Destination').toString():'Select locations to see route';
     return Card(margin:const EdgeInsets.only(top:12),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
       Row(children:[const Icon(Icons.directions_bus,color:AppColors.primary,size:28),const SizedBox(width:10),Expanded(child:Text((op['company_name']??b['plate_number']??'Bus operator').toString(),style:const TextStyle(fontWeight:FontWeight.w800,fontSize:16))),Text((b['price']??'—').toString()+' RWF',style:const TextStyle(color:AppColors.primary,fontWeight:FontWeight.w800))]),
-      const SizedBox(height:9),Text(_name(_fromId)+' → '+_name(_toId),style:const TextStyle(fontWeight:FontWeight.w700,fontSize:16)),const SizedBox(height:5),
-      Text('Departure '+(b['departure_time']??'TBA').toString()+' • '+seats.length.toString()+' seats left',style:const TextStyle(color:AppColors.textMuted)),
-      const SizedBox(height:10),SizedBox(width:double.infinity,child:FilledButton(onPressed:()=>_choose(b),child:const Text('Choose seat'))),
+      const SizedBox(height:9),Text(_showingSearchResults?_name(_fromId)+' → '+_name(_toId):routeFrom+' → '+routeTo,style:const TextStyle(fontWeight:FontWeight.w700,fontSize:16)),const SizedBox(height:5),
+      Text('Departure '+(b['departure_time']??'TBA').toString()+(_showingSearchResults?' • '+seats.length.toString()+' seats left':' • Active bus'),style:const TextStyle(color:AppColors.textMuted)),
+      const SizedBox(height:10),SizedBox(width:double.infinity,child:FilledButton(onPressed:_showingSearchResults?()=>_choose(b):(){_msg('Choose your departure, destination and travel date, then tap Search live buses to see bookable seats.');},child:Text(_showingSearchResults?'Choose seat':'Search route to book'))),
     ])));
   }
   Widget _paymentPanel(){final b=_selectedBus!;final op=b['operator'] is Map?Map<String,dynamic>.from(b['operator']):<String,dynamic>{};
