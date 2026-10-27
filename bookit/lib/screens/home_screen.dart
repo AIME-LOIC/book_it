@@ -413,7 +413,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.4)),
               const SizedBox(height: 14),
               SegmentedButton<String>(
-                expanded: true,
                 segments: const [
                   ButtonSegment(value: 'mtn', icon: Icon(Icons.account_balance_wallet_outlined), label: Text('MTN MoMo')),
                   ButtonSegment(value: 'airtel', icon: Icon(Icons.account_balance_wallet_outlined), label: Text('Airtel Money')),
