@@ -150,7 +150,7 @@ class _HomeTab extends StatelessWidget {
                     Row(
                       children: [
                         const Icon(
-                          Icons.local_activity_rounded,
+                          Icons.directions_bus_rounded,
                           color: AppColors.white,
                           size: 30,
                         ),
