@@ -73,9 +73,11 @@ class _HomeScreenState extends State<HomeScreen> {
       padding:const EdgeInsets.fromLTRB(18,4,18,24),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
         const Text('Appearance',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)),
         const SizedBox(height:5),const Text('Choose how BookIt looks on this device.'),const SizedBox(height:14),
-        _themeChoice(sheetContext,'white','White & blue',Icons.light_mode_outlined,Colors.white,AppColors.primary),
-        _themeChoice(sheetContext,'green','Light green',Icons.eco_outlined,const Color(0xFFF1F8E9),const Color(0xFF2E7D32)),
-        _themeChoice(sheetContext,'dark','Dark',Icons.dark_mode_outlined,const Color(0xFF151A20),const Color(0xFF90CAF9)),
+        _themeChoice(sheetContext,'white','Blue',Icons.light_mode_outlined,Colors.white,AppColors.primary),
+        _themeChoice(sheetContext,'green','Green',Icons.eco_outlined,const Color(0xFFF1F8E9),const Color(0xFF2E7D32)),
+        _themeChoice(sheetContext,'blue_dark','Blue + dark',Icons.dark_mode_outlined,const Color(0xFF151A20),const Color(0xFF64B5F6)),
+        _themeChoice(sheetContext,'green_dark','Green + dark',Icons.nightlight_round,const Color(0xFF18241C),const Color(0xFF81C784)),
+        _themeChoice(sheetContext,'device','Use device theme',Icons.settings_brightness_outlined,const Color(0xFF151A20),const Color(0xFF64B5F6)),
       ]),
     )));
     if(selected!=null)await ThemeController.setMode(selected);
@@ -174,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if(_fromId==null||_toId==null||_fromId==_toId){_msg('Choose a departure and destination to search for a bookable trip.');return;}
     setState(()=>_searching=true);
     try{final r=await ApiClient.get('tickets/search',query:{'from_location_id':_fromId!,'to_location_id':_toId!,'travel_date':_dateText(_date)});
-      final rows=r is List?r:(r is Map&&r['buses'] is List?r['buses'] as List:<dynamic>[]);if(mounted)setState(() {_buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();_showingSearchResults=true;});if(_buses.isEmpty)_msg('No buses found for this route and date.');
+      final rows=r is List?r:(r is Map&&r['buses'] is List?r['buses'] as List:<dynamic>[]);if(mounted)setState(() {_buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();_showingSearchResults=true;});
     }on ApiException catch(e){_msg(e.message);}finally{if(mounted)setState(()=>_searching=false);}
   }
   Future<void> _bookBusFromList(Map<String,dynamic> listedBus) async {
@@ -328,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const SizedBox(height:8),OutlinedButton.icon(onPressed:()async{final d=await showDatePicker(context:context,initialDate:_date,firstDate:DateTime.now(),lastDate:DateTime.now().add(const Duration(days:365)));if(d!=null)setState(()=>_date=d);},icon:const Icon(Icons.calendar_month),label:Text('Travel date: '+_dateText(_date))),
     const SizedBox(height:8),SizedBox(height:50,child:FilledButton.icon(onPressed:_searching?null:_search,icon:_searching?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.search),label:const Text('Search live buses'))),
     const SizedBox(height:20),Text('Available buses',style:TextStyle(fontSize:19,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),
-    if(_buses.isEmpty&&!_searching)const Padding(padding:EdgeInsets.symmetric(vertical:18),child:Text('No active buses are available right now. Try refreshing or search a different trip.',style:TextStyle(color:AppColors.textMuted))),
+    if(_buses.isEmpty&&!_searching)Padding(padding:const EdgeInsets.symmetric(vertical:28),child:Center(child:Column(children:[Icon(_showingSearchResults?Icons.search_off_rounded:Icons.directions_bus_outlined,size:42,color:Theme.of(context).colorScheme.onSurface.withValues(alpha:.45)),const SizedBox(height:10),Text(_showingSearchResults?'No buses found for this route and date.':'No active buses are available right now.',textAlign:TextAlign.center,style:TextStyle(fontWeight:FontWeight.w700,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:5),Text(_showingSearchResults?'Try another travel date or choose a different route.':'Try refreshing or search a different trip.',textAlign:TextAlign.center,style:TextStyle(color:Theme.of(context).colorScheme.onSurface.withValues(alpha:.65)))]))),
     ..._buses.map(_busCard),
     ])),
   ]));
@@ -604,16 +606,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final from=route['fromLocation'] is Map?(route['fromLocation']['name']??'From').toString():'From';
     final to=route['toLocation'] is Map?(route['toLocation']['name']??'To').toString():'To';
     final status=(t['status']??'pending').toString().trim().toLowerCase();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isCancelled = status == 'cancelled' || status == 'canceled';
     final Color statusColor = status == 'paid'
-        ? const Color(0xFF16803D)
-        : (status == 'cancelled' || status == 'canceled'
-            ? const Color(0xFFDC2626)
-            : const Color(0xFFB77900));
+        ? (isDark ? const Color(0xFF81D4A0) : const Color(0xFF16803D))
+        : (isCancelled
+            ? (isDark ? const Color(0xFFFF8A80) : const Color(0xFFDC2626))
+            : (isDark ? const Color(0xFFFFD180) : const Color(0xFFB77900)));
     final Color statusBackground = status == 'paid'
-        ? const Color(0xFFE4F6E9)
-        : (status == 'cancelled' || status == 'canceled'
-            ? const Color(0xFFFDE8E7)
-            : const Color(0xFFFFF4CC));
+        ? (isDark ? const Color(0xFF19382A) : const Color(0xFFE4F6E9))
+        : (isCancelled
+            ? (isDark ? const Color(0xFF3B2022) : const Color(0xFFFDE8E7))
+            : (isDark ? const Color(0xFF3A3020) : const Color(0xFFFFF4CC)));
     final label=status.isEmpty?'PENDING':status.toUpperCase();
     return Card(
       margin:const EdgeInsets.only(top:10),
