@@ -7,12 +7,12 @@ import RuraTariff    from '../database/models/rura_tariff.js';
 
 const includes = [
   { model: Operator, as: 'operator',     attributes: ['id', 'company_name'] },
-  { model: Location, as: 'fromLocation', attributes: ['id', 'name'] },
-  { model: Location, as: 'toLocation',   attributes: ['id', 'name'] },
+  { model: Location, as: 'fromLocation', attributes: ['id', 'name', 'latitude', 'longitude'] },
+  { model: Location, as: 'toLocation',   attributes: ['id', 'name', 'latitude', 'longitude'] },
 ];
 
 const stopIncludes = [
-  { model: Location, as: 'location', attributes: ['id', 'name'] },
+  { model: Location, as: 'location', attributes: ['id', 'name', 'latitude', 'longitude'] },
 ];
 
 // Checks both directions — a tariff between two towns applies either way.
