@@ -1031,6 +1031,196 @@ class _WeatherBackdropState extends State<_WeatherBackdrop> with SingleTickerPro
 }
 
 
+class BusDetailsScreen extends StatelessWidget {
+  const BusDetailsScreen({
+    super.key,
+    required this.bus,
+    required this.from,
+    required this.to,
+    required this.operatorName,
+    required this.travelDate,
+    required this.stops,
+    required this.onOpenMap,
+    required this.onBook,
+  });
+
+  final Map<String,dynamic> bus;
+  final String from,to,operatorName,travelDate;
+  final List<Map<String,dynamic>> stops;
+  final VoidCallback onOpenMap;
+  final Future<void> Function() onBook;
+
+  List<String> _amenities() {
+    final raw=bus['amenities']??bus['features']??bus['facilities'];
+    if(raw is List) {
+      return raw.map((e)=>e.toString().trim()).where((e)=>e.isNotEmpty).toList();
+    }
+    if(raw is String&&raw.trim().isNotEmpty) {
+      final decoded=raw.trim();
+      if(decoded.startsWith('[')||decoded.startsWith('{')) {
+        try {
+          final parsed=jsonDecode(decoded);
+          if(parsed is List)return parsed.map((e)=>e.toString().trim()).where((e)=>e.isNotEmpty).toList();
+          if(parsed is Map)return parsed.entries.where((e)=>e.value==true||e.value=='yes'||e.value==1).map((e)=>e.key.toString()).toList();
+        } catch (_) {}
+      }
+      return decoded.split(RegExp(r'[,;]')).map((e)=>e.trim()).where((e)=>e.isNotEmpty).toList();
+    }
+    if(raw is Map) {
+      return raw.entries.where((e)=>e.value==true||e.value=='yes'||e.value==1).map((e)=>e.key.toString()).toList();
+    }
+    return const [];
+  }
+
+  IconData _amenityIcon(String amenity) {
+    final value=amenity.toLowerCase();
+    if(value.contains('wifi')||value.contains('wi-fi')||value.contains('internet'))return Icons.wifi_rounded;
+    if(value.contains('charg')||value.contains('usb')||value.contains('power'))return Icons.battery_charging_full_rounded;
+    if(value.contains('air')||value.contains('condition'))return Icons.ac_unit_rounded;
+    if(value.contains('toilet')||value.contains('restroom'))return Icons.wc_rounded;
+    if(value.contains('luggage')||value.contains('bag'))return Icons.luggage_rounded;
+    if(value.contains('reclin')||value.contains('comfort'))return Icons.event_seat_rounded;
+    if(value.contains('tv')||value.contains('entertain'))return Icons.tv_rounded;
+    if(value.contains('water')||value.contains('drink'))return Icons.local_drink_rounded;
+    return Icons.check_circle_outline_rounded;
+  }
+
+  Widget _infoRow(BuildContext context,IconData icon,String label,String value) {
+    return Padding(
+      padding:const EdgeInsets.symmetric(vertical:10),
+      child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Icon(icon,size:20,color:Theme.of(context).colorScheme.primary),
+        const SizedBox(width:12),
+        Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Text(label,style:TextStyle(fontSize:12,color:Theme.of(context).colorScheme.onSurfaceVariant)),
+          const SizedBox(height:3),
+          Text(value,style:const TextStyle(fontSize:14,fontWeight:FontWeight.w700)),
+        ])),
+      ]),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme=Theme.of(context);
+    final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};
+    final price=bus['price']??route['price'];
+    final amenities=_amenities();
+    final capacity=bus['capacity']?.toString();
+    final seats=bus['available_seats'] is List?(bus['available_seats'] as List).length:null;
+    final plate=(bus['plate_number']??'Not provided').toString();
+    final driver=(bus['driver_name']??'Not provided').toString();
+    final departure=(bus['departure_time']??'To be confirmed').toString();
+    final featuresKnown=amenities.isNotEmpty;
+    return Scaffold(
+      appBar:AppBar(
+        title:const Text('Bus details',style:TextStyle(fontWeight:FontWeight.w800)),
+        leading:IconButton(tooltip:'Back to available buses',onPressed:()=>Navigator.of(context).maybePop(),icon:const Icon(Icons.arrow_back_rounded)),
+      ),
+      body:SafeArea(
+        child:ListView(
+          padding:const EdgeInsets.fromLTRB(18,8,18,28),
+          children:[
+            Container(
+              padding:const EdgeInsets.all(20),
+              decoration:BoxDecoration(
+                gradient:AppColors.heroGradient,
+                borderRadius:BorderRadius.circular(24),
+              ),
+              child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                Row(children:[
+                  Container(width:54,height:54,decoration:BoxDecoration(color:Colors.white.withValues(alpha:.16),borderRadius:BorderRadius.circular(17)),child:const Icon(Icons.directions_bus_rounded,color:Colors.white,size:31)),
+                  const SizedBox(width:13),
+                  Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                    Text(operatorName,style:const TextStyle(color:Colors.white,fontSize:19,fontWeight:FontWeight.w900)),
+                    const SizedBox(height:4),
+                    Text('Bus $plate',style:const TextStyle(color:Colors.white70,fontWeight:FontWeight.w600)),
+                  ])),
+                ]),
+                const SizedBox(height:20),
+                Text('$from → $to',style:const TextStyle(color:Colors.white,fontSize:18,fontWeight:FontWeight.w800)),
+                const SizedBox(height:7),
+                Row(children:[
+                  const Icon(Icons.schedule_rounded,color:Colors.white70,size:17),
+                  const SizedBox(width:6),
+                  Expanded(child:Text('Departure $departure',style:const TextStyle(color:Colors.white70))),
+                ]),
+                const SizedBox(height:17),
+                Row(crossAxisAlignment:CrossAxisAlignment.end,children:[
+                  Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                    const Text('TICKET PRICE',style:TextStyle(color:Colors.white70,fontSize:10,fontWeight:FontWeight.w800,letterSpacing:1)),
+                    const SizedBox(height:4),
+                    Text(price==null?'Price unavailable':'$price RWF',style:const TextStyle(color:Colors.white,fontSize:29,fontWeight:FontWeight.w900)),
+                  ])),
+                  if(seats!=null)Container(padding:const EdgeInsets.symmetric(horizontal:11,vertical:7),decoration:BoxDecoration(color:Colors.white.withValues(alpha:.16),borderRadius:BorderRadius.circular(30)),child:Text('$seats seats available',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700,fontSize:12))),
+                ]),
+              ]),
+            ),
+            const SizedBox(height:18),
+            Text('Bus information',style:theme.textTheme.titleLarge?.copyWith(fontWeight:FontWeight.w800)),
+            const SizedBox(height:8),
+            Card(child:Padding(padding:const EdgeInsets.symmetric(horizontal:16,vertical:5),child:Column(children:[
+              _infoRow(context,Icons.route_rounded,'Route','$from → $to'),
+              const Divider(height:1),
+              _infoRow(context,Icons.calendar_month_outlined,'Travel date',travelDate),
+              const Divider(height:1),
+              _infoRow(context,Icons.schedule_rounded,'Departure time',departure),
+              const Divider(height:1),
+              _infoRow(context,Icons.confirmation_number_outlined,'Vehicle plate',plate),
+              const Divider(height:1),
+              _infoRow(context,Icons.event_seat_outlined,'Passenger capacity',capacity==null?'Not provided':capacity),
+              const Divider(height:1),
+              _infoRow(context,Icons.person_outline_rounded,'Driver',driver),
+            ]))),
+            const SizedBox(height:18),
+            Text('On-board amenities',style:theme.textTheme.titleLarge?.copyWith(fontWeight:FontWeight.w800)),
+            const SizedBox(height:6),
+            Text('Amenities are shown only when the operator has supplied them.',style:theme.textTheme.bodySmall?.copyWith(color:theme.colorScheme.onSurfaceVariant)),
+            const SizedBox(height:10),
+            if(featuresKnown)
+              Wrap(spacing:8,runSpacing:8,children:amenities.map((amenity)=>Container(
+                padding:const EdgeInsets.symmetric(horizontal:12,vertical:10),
+                decoration:BoxDecoration(color:theme.colorScheme.primary.withValues(alpha:.08),borderRadius:BorderRadius.circular(13),border:Border.all(color:theme.colorScheme.primary.withValues(alpha:.18))),
+                child:Row(mainAxisSize:MainAxisSize.min,children:[
+                  Icon(_amenityIcon(amenity),size:18,color:theme.colorScheme.primary),
+                  const SizedBox(width:7),
+                  Text(amenity,style:const TextStyle(fontWeight:FontWeight.w700,fontSize:13)),
+                ]),
+              )).toList())
+            else
+              Container(padding:const EdgeInsets.all(15),decoration:BoxDecoration(color:theme.colorScheme.surfaceContainerHighest.withValues(alpha:.55),borderRadius:BorderRadius.circular(16)),child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                Icon(Icons.info_outline_rounded,color:theme.colorScheme.onSurfaceVariant),
+                const SizedBox(width:10),
+                Expanded(child:Text('No special amenities have been listed for this bus. Wi-Fi, charging ports and other facilities are unconfirmed, not guaranteed to be unavailable.',style:TextStyle(color:theme.colorScheme.onSurfaceVariant,height:1.45))),
+              ])),
+            const SizedBox(height:18),
+            Text('Route map',style:theme.textTheme.titleLarge?.copyWith(fontWeight:FontWeight.w800)),
+            const SizedBox(height:6),
+            Text('Open the satellite route map to review the journey and available stops.',style:theme.textTheme.bodySmall?.copyWith(color:theme.colorScheme.onSurfaceVariant)),
+            const SizedBox(height:10),
+            OutlinedButton.icon(
+              onPressed:onOpenMap,
+              icon:const Icon(Icons.satellite_alt_rounded),
+              label:const Text('View route on satellite map'),
+              style:OutlinedButton.styleFrom(minimumSize:const Size.fromHeight(50)),
+            ),
+            const SizedBox(height:20),
+            FilledButton.icon(
+              onPressed:()=>onBook(),
+              icon:const Icon(Icons.event_seat_rounded),
+              label:const Text('Choose seat & book this bus'),
+              style:FilledButton.styleFrom(minimumSize:const Size.fromHeight(54)),
+            ),
+            const SizedBox(height:8),
+            Center(child:Text('Review the route, amenities and fare before booking.',style:theme.textTheme.bodySmall?.copyWith(color:theme.colorScheme.onSurfaceVariant),textAlign:TextAlign.center)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
 class TicketDetailsScreen extends StatelessWidget {
   const TicketDetailsScreen({
     super.key,
