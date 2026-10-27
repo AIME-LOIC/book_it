@@ -31,6 +31,35 @@ export const getAll  = async (req, res) => {
   catch (err) { res.status(500).json({ message: clientMessage(err) }); }
 };
 
+export const getDirections = async (req, res) => {
+  const { origin, destination, waypoints } = req.query;
+  if (!origin || !destination) {
+    return res.status(400).json({ message: 'origin and destination are required' });
+  }
+  const key = process.env.GOOGLE_MAPS_SERVER_API_KEY;
+  if (!key) {
+    return res.status(503).json({ message: 'Google Maps Directions is not configured on the server.' });
+  }
+  try {
+    const url = new URL('https://maps.googleapis.com/maps/api/directions/json');
+    url.searchParams.set('origin', String(origin));
+    url.searchParams.set('destination', String(destination));
+    url.searchParams.set('mode', 'driving');
+    url.searchParams.set('key', key);
+    if (waypoints) url.searchParams.set('waypoints', 'optimize:false|' + String(waypoints));
+    const response = await fetch(url);
+    const data = await response.json();
+    if (!response.ok || data.status !== 'OK') {
+      console.error('[MAPS] Directions request failed:', data.status, data.error_message || '');
+      return res.status(502).json({ message: 'Google Maps could not calculate this route.', status: data.status });
+    }
+    return res.status(200).json(data);
+  } catch (err) {
+    console.error('[MAPS] Directions request error:', err?.stack || err);
+    return res.status(502).json({ message: 'Could not retrieve directions from Google Maps.' });
+  }
+};
+
 export const getById = async (req, res) => {
   try {
     res.status(200).json(await svc.getRouteById(req.params.id));
