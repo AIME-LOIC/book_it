@@ -290,32 +290,43 @@ export const bookTicket = async (user_id, { bus_id, seat_number, boarding_stop_i
 
   const full = await Ticket.findByPk(ticket.id, { include: ticketIncludes });
 
-  await createMany([
-    {
-      recipient_id: user_id,
-      recipient_type: 'user',
-      type: 'ticket_booked',
-      message: `Ticket booked! Seat ${seat_number} from ${full.boardingStop.location.name} → ${full.dropoffStop.location.name} on ${travel_date}. Price: ${price} RWF. Please pay to confirm.`,
-      meta: { ticket_id: ticket.id, bus_id, travel_date, seat_number, price },
-    },
-    {
-      recipient_id: bus.operator_id,
-      recipient_type: 'operator',
-      type: 'new_booking',
-      message: `New booking on bus ${bus.plate_number} — seat ${seat_number} boarding at ${full.boardingStop.location.name} for ${travel_date}.`,
-      meta: { ticket_id: ticket.id, bus_id, travel_date, seat_number },
-    },
-  ]);
+  // A reservation is already committed at this point. Notification failures
+  // must never turn a successful booking into an HTTP 400 response, which
+  // would make the mobile client believe the seat was not reserved.
+  try {
+    await createMany([
+      {
+        recipient_id: user_id,
+        recipient_type: 'user',
+        type: 'ticket_booked',
+        message: `Ticket booked! Seat ${seat_number} from ${full.boardingStop.location.name} → ${full.dropoffStop.location.name} on ${travel_date}. Price: ${price} RWF. Please pay to confirm.`,
+        meta: { ticket_id: ticket.id, bus_id, travel_date, seat_number, price },
+      },
+      {
+        recipient_id: bus.operator_id,
+        recipient_type: 'operator',
+        type: 'new_booking',
+        message: `New booking on bus ${bus.plate_number} — seat ${seat_number} boarding at ${full.boardingStop.location.name} for ${travel_date}.`,
+        meta: { ticket_id: ticket.id, bus_id, travel_date, seat_number },
+      },
+    ]);
+  } catch (err) {
+    console.error('[BOOKING] Ticket created but user/operator notifications failed:', err?.stack || err);
+  }
 
-  const driver = await Driver.findOne({ where: { bus_id } });
-  if (driver) {
-    await createMany([{
-      recipient_id: driver.id,
-      recipient_type: 'driver',
-      type: 'new_booking',
-      message: `Seat ${seat_number} reserved — passenger boards at ${full.boardingStop.location.name}, exits at ${full.dropoffStop.location.name}.`,
-      meta: { ticket_id: ticket.id, seat_number, boarding: full.boardingStop.location.name, dropoff: full.dropoffStop.location.name },
-    }]);
+  try {
+    const driver = await Driver.findOne({ where: { bus_id } });
+    if (driver) {
+      await createMany([{
+        recipient_id: driver.id,
+        recipient_type: 'driver',
+        type: 'new_booking',
+        message: `Seat ${seat_number} reserved — passenger boards at ${full.boardingStop.location.name}, exits at ${full.dropoffStop.location.name}.`,
+        meta: { ticket_id: ticket.id, seat_number, boarding: full.boardingStop.location.name, dropoff: full.dropoffStop.location.name },
+      }]);
+    }
+  } catch (err) {
+    console.error('[BOOKING] Ticket created but driver notification failed:', err?.stack || err);
   }
 
   return full;
