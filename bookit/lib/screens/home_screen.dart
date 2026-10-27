@@ -176,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height:10),
               for(var row=2;row<=8;row++)
                 Padding(padding:const EdgeInsets.only(bottom:8),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-                  _seatButton(c,'\${row}A',available),const SizedBox(width:6),_seatButton(c,'\${row}B',available),const SizedBox(width:18),_seatButton(c,'\${row}C',available),const SizedBox(width:6),_seatButton(c,'\${row}D',available),
+                  _seatButton(c,'${row}A',available),const SizedBox(width:6),_seatButton(c,'${row}B',available),const SizedBox(width:18),_seatButton(c,'${row}C',available),const SizedBox(width:6),_seatButton(c,'${row}D',available),
                 ])),
             ]),
           ))),
@@ -196,10 +196,10 @@ class _HomeScreenState extends State<HomeScreen> {
       _msg('Seat $selected reserved. Complete payment within 5 minutes.');
     }on ApiException catch(e){
       if(!mounted)return;
-      await showDialog<void>(context:context,builder:(c)=>AlertDialog(title:const Text('Seat reservation failed'),content:Text('Seat $selected could not be reserved.\n\n\${e.message}'),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Close'))]));
+      await showDialog<void>(context:context,builder:(c)=>AlertDialog(title:const Text('Seat reservation failed'),content:Text('Seat $selected could not be reserved.\n\n${e.message}'),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Close'))]));
     }catch(e){
       if(!mounted)return;
-      await showDialog<void>(context:context,builder:(c)=>AlertDialog(title:const Text('Seat reservation failed'),content:Text('Seat $selected could not be reserved. Please try again.\n\n\$e'),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Close'))]));
+      await showDialog<void>(context:context,builder:(c)=>AlertDialog(title:const Text('Seat reservation failed'),content:Text('Seat $selected could not be reserved. Please try again.\n\n$e'),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Close'))]));
     }
   }
 
