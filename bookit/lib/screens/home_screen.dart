@@ -382,7 +382,7 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.arrow_back_rounded),
           ),
           const SizedBox(width: 4),
-          const Expanded(child: Text('Secure checkout',
+          Expanded(child: Text('Secure checkout',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface))),
         ]),
         const Padding(
@@ -541,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.success.withValues(alpha: .22)),
           ),
-          child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Icon(Icons.verified_user_outlined, color: AppColors.success, size: 20),
             SizedBox(width: 10),
             Expanded(child: Text(
