@@ -39,20 +39,20 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _choose(Map<String,dynamic> bus) async {
     final seats=(bus['available_seats'] as List? ?? const[]).map((x)=>int.tryParse(x.toString())).whereType<int>().toList();
     if(seats.isEmpty){_msg('No available seats.');return;}
-    final n=await showDialog<int>(context:context,builder:(c)=>AlertDialog(title:const Text('Choose a seat'),content:Wrap(spacing:8,runSpacing:8,children:seats.map((x)=>SizedBox(width:54,child:OutlinedButton(onPressed:()=>Navigator.pop(c,x),child:Text(x.toString()))).toList()),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel'))]));
+    final n=await showDialog<int>(context:context,builder:(c)=>AlertDialog(title:const Text('Choose a seat'),content:Wrap(spacing:8,runSpacing:8,children:seats.map((x)=>SizedBox(width:54,child:OutlinedButton(onPressed:()=>Navigator.pop(c,x),child:Text(x.toString())))).toList(),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel'))]));
     if(n==null)return;
     try{final r=await ApiClient.post('tickets',auth:true,body:{'bus_id':bus['bus_id'],'seat_number':n,'boarding_stop_id':bus['boarding_stop_id'],'dropoff_stop_id':bus['dropoff_stop_id'],'travel_date':_dateText(_date)});
       if(r is! Map||r['id']==null){_msg('The server did not return a reservation ID.');return;}
-      _timer?.cancel();setState(()=>{_selectedBus=bus,_seat=n,_activeTicketId=r['id'].toString(),_seconds=300});
+      _timer?.cancel();setState(() { _selectedBus=bus; _seat=n; _activeTicketId=r['id'].toString(); _seconds=300; });
       _timer=Timer.periodic(const Duration(seconds:1),(t){if(!mounted){t.cancel();return;}if(_seconds<=1){t.cancel();_expire();}else{setState(()=>_seconds--);}});
       _msg('Seat reserved. Complete payment within 5 minutes.');
     }on ApiException catch(e){_msg(e.message);_search();}
   }
-  Future<void> _expire() async {final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}catch(_){}}if(!mounted)return;setState(()=>{_selectedBus=null,_seat=null,_activeTicketId=null,_seconds=0});_msg('The 5-minute hold expired. Any unpaid reservation was cancelled.');_search();}
-  Future<void> _cancel() async { _timer?.cancel();final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}on ApiException catch(e){_msg(e.message);}}if(mounted)setState(()=>{_selectedBus=null,_seat=null,_activeTicketId=null});_search();}
+  Future<void> _expire() async {final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}catch(_){}}if(!mounted)return;setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _seconds=0; });_msg('The 5-minute hold expired. Any unpaid reservation was cancelled.');_search();}
+  Future<void> _cancel() async { _timer?.cancel();final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}on ApiException catch(e){_msg(e.message);}}if(mounted)setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; });_search();}
   Future<void> _pay() async {final id=_activeTicketId;if(id==null){_msg('Reservation ID missing. Please book again.');return;}if(_phone.text.trim().length<9){_msg('Enter a valid mobile money number.');return;}
     try{final r=await ApiClient.patch('tickets/'+id+'/pay',auth:true,body:{'network':_network,'phone_number':_phone.text.trim()});final message=r is Map?(r['message']??'Payment request sent. Approve the mobile money prompt.'): 'Payment request sent.';_msg(message.toString());await _loadTickets();
-      if(r is Map&&r['status']?.toString().toLowerCase()=='paid'){_timer?.cancel();setState(()=>{_selectedBus=null,_seat=null,_activeTicketId=null,_tab=1});}
+      if(r is Map&&r['status']?.toString().toLowerCase()=='paid'){_timer?.cancel();setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _tab=1; });}
     }on ApiException catch(e){_msg(e.message);}
   }
   @override Widget build(BuildContext context)=>Scaffold(body:SafeArea(child:IndexedStack(index:_tab,children:[_home(),_ticketTab(),_historyTab(),_profile()])),bottomNavigationBar:NavigationBar(selectedIndex:_tab,onDestinationSelected:(i)=>setState(()=>_tab=i),destinations:const[
