@@ -88,7 +88,12 @@ const isSeatFree = async (bus_id, travel_date, seat_number, boarding_order, drop
       { model: RouteStop, as: 'boardingStop', attributes: ['stop_order'] },
       { model: RouteStop, as: 'dropoffStop', attributes: ['stop_order'] },
     ],
-    ...(transaction ? { transaction, lock: transaction.LOCK.UPDATE } : {}),
+    ...(transaction ? {
+      transaction,
+      // Lock only the tickets table. The RouteStop includes are LEFT OUTER
+      // JOINs; PostgreSQL rejects FOR UPDATE across their nullable side.
+      lock: { level: transaction.LOCK.UPDATE, of: Ticket },
+    } : {}),
   });
 
   for (const t of conflicts) {
