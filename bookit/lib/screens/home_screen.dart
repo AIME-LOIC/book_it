@@ -320,14 +320,14 @@ class _HomeScreenState extends State<HomeScreen> {
       ]),
     ])),
     Padding(padding:const EdgeInsets.fromLTRB(18,20,18,18),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-    const Text('Plan your trip',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:12),
+    Text('Plan your trip',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:12),
     if(_loadingLocations)const Center(child:CircularProgressIndicator()) else ...[
       DropdownButtonFormField<String>(value:_locations.any((e)=>e['id']?.toString()==_fromId)?_fromId:null,decoration:const InputDecoration(labelText:'From',prefixIcon:Icon(Icons.trip_origin)),items:_locations.map((e)=>DropdownMenuItem(value:e['id']?.toString(),child:Text((e['name']??'Location').toString()))).toList(),onChanged:(v)=>setState(()=>_fromId=v)),
       const SizedBox(height:10),DropdownButtonFormField<String>(value:_locations.any((e)=>e['id']?.toString()==_toId)?_toId:null,decoration:const InputDecoration(labelText:'To',prefixIcon:Icon(Icons.place_outlined)),items:_locations.map((e)=>DropdownMenuItem(value:e['id']?.toString(),child:Text((e['name']??'Location').toString()))).toList(),onChanged:(v)=>setState(()=>_toId=v)),
     ],
     const SizedBox(height:8),OutlinedButton.icon(onPressed:()async{final d=await showDatePicker(context:context,initialDate:_date,firstDate:DateTime.now(),lastDate:DateTime.now().add(const Duration(days:365)));if(d!=null)setState(()=>_date=d);},icon:const Icon(Icons.calendar_month),label:Text('Travel date: '+_dateText(_date))),
     const SizedBox(height:8),SizedBox(height:50,child:FilledButton.icon(onPressed:_searching?null:_search,icon:_searching?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.search),label:const Text('Search live buses'))),
-    const SizedBox(height:20),const Text('Available buses',style:TextStyle(fontSize:19,fontWeight:FontWeight.w800,color:AppColors.textDark)),
+    const SizedBox(height:20),Text('Available buses',style:TextStyle(fontSize:19,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),
     if(_buses.isEmpty&&!_searching)const Padding(padding:EdgeInsets.symmetric(vertical:18),child:Text('No active buses are available right now. Try refreshing or search a different trip.',style:TextStyle(color:AppColors.textMuted))),
     ..._buses.map(_busCard),
     ])),
@@ -383,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(width: 4),
           const Expanded(child: Text('Secure checkout',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.textDark))),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface))),
         ]),
         const Padding(
           padding: EdgeInsets.only(left: 4, top: 2, bottom: 18),
@@ -546,7 +546,7 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(width: 10),
             Expanded(child: Text(
               'Payment status is verified by BookIt’s server. Submit the request, then approve the prompt on your phone. Your ticket is confirmed only after the server reports successful payment.',
-              style: TextStyle(fontSize: 12, color: AppColors.textDark, height: 1.45),
+              style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface, height: 1.45),
             )),
           ]),
         ),
@@ -778,7 +778,7 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
     ])),
     Padding(padding:const EdgeInsets.fromLTRB(18,20,18,28),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     if(_loadingProfile)const Padding(padding:EdgeInsets.all(18),child:Center(child:CircularProgressIndicator())),
-    const SizedBox(height:20),const Text('Personal information',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:9),
+    const SizedBox(height:20),Text('Personal information',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
     Card(child:Column(children:[
       _profileRow(Icons.person_outline,'Full name',(_profileData['name']??widget.userName).toString()),const Divider(height:1,indent:56),
       _profileRow(Icons.email_outlined,'Email',(_profileData['email']??'Not provided').toString()),const Divider(height:1,indent:56),
@@ -786,9 +786,9 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
       _profileRow(Icons.calendar_today_outlined,'Member since',(_profileData['createdAt']??'—').toString().split('T').first),
     ])),
     const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit profile'))),
-    const SizedBox(height:22),const Text('Preferences',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:9),
+    const SizedBox(height:22),Text('Preferences',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
     Card(child:ListTile(leading:const Icon(Icons.palette_outlined,color:AppColors.primary),title:const Text('Appearance'),subtitle:Text(ThemeController.mode.value=='dark'?'Dark':ThemeController.mode.value=='green'?'Light green':'White & blue'),trailing:const Icon(Icons.chevron_right),onTap:_chooseTheme)),
-    const SizedBox(height:22),const Text('Help & legal',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:9),
+    const SizedBox(height:22),Text('Help & legal',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
     Card(child:Column(children:[
       ListTile(leading:const Icon(Icons.support_agent_outlined,color:AppColors.primary),title:const Text('Support'),subtitle:const Text('Booking and account help'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Support','For help with BookIt, contact 1% Digital Solutions through your existing support channel. Keep your booking reference, route, travel date and payment reference ready when requesting help.')),
       const Divider(height:1,indent:56),
@@ -799,7 +799,7 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
     const SizedBox(height:20),OutlinedButton.icon(onPressed:()async{try{await ApiClient.post('auth/logout',auth:true);}catch(_){}ApiClient.setToken(null);if(mounted)_msg('Signed out. Close and reopen BookIt to sign in again.');},icon:const Icon(Icons.logout),label:const Text('Sign out')),
     ])),
   ]));
-  Widget _profileRow(IconData icon,String label,String value)=>ListTile(leading:Icon(icon,color:AppColors.primary),title:Text(label,style:const TextStyle(fontSize:12,color:AppColors.textMuted)),subtitle:Text(value,style:const TextStyle(fontWeight:FontWeight.w600)),dense:true);
+  Widget _profileRow(IconData icon,String label,String value)=>ListTile(leading:Icon(icon,color:AppColors.primary),title:Text(label,style:TextStyle(fontSize:12,color:Theme.of(context).colorScheme.onSurfaceVariant)),subtitle:Text(value,style:const TextStyle(fontWeight:FontWeight.w600)),dense:true);
 
 }
 
