@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../theme/theme_controller.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_client.dart';
 import 'route_map_screen.dart';
 import 'login_screen.dart';
@@ -17,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 }
 class _HomeScreenState extends State<HomeScreen> {
   int _tab=0; bool _loadingLocations=true,_searching=false,_loadingTickets=false,_loadingProfile=false,_loadingNotifications=false,_showingSearchResults=false;
-  List<Map<String,dynamic>> _locations=[],_buses=[],_tickets=[],_notifications=[];
+  List<Map<String,dynamic>> _locations=[],_buses=[],_tickets=[],_notifications=[],_tripReminders=[];
   Map<String,dynamic> _profileData={};
   int? _weatherCode;
   double? _temperature;
@@ -26,8 +27,112 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _fromId,_toId,_activeTicketId,_selectedHistoryRoute; DateTime _date=DateTime.now().add(const Duration(days:1));
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer;
   final _phone=TextEditingController(); String _network='mtn'; bool _phoneManuallyEdited=false; String? _detectedNetwork;
-  @override void initState(){super.initState();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadWeather();_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
+  @override void initState(){super.initState();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
   @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_phone.dispose();super.dispose();}
+
+
+  Future<void> _loadTripReminders() async {
+    try {
+      final prefs=await SharedPreferences.getInstance();
+      final raw=prefs.getString('bookit_trip_reminders');
+      if(raw==null||raw.isEmpty)return;
+      final decoded=jsonDecode(raw);
+      if(decoded is List&&mounted)setState(()=>_tripReminders=decoded.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList());
+    } catch (_) {}
+  }
+
+  Future<void> _persistTripReminders() async {
+    final prefs=await SharedPreferences.getInstance();
+    await prefs.setString('bookit_trip_reminders',jsonEncode(_tripReminders));
+  }
+
+  Future<void> _scheduleTripReminder() async {
+    if(_locations.length<2){_msg('Trip locations are still loading. Please try again.');return;}
+    String? fromId=_fromId??_locations.first['id']?.toString();
+    String? toId=_locations.length>1?_locations[1]['id']?.toString():null;
+    if(toId==fromId)toId=_locations.firstWhere((x)=>x['id']?.toString()!=fromId)['id']?.toString();
+    DateTime travelDate=DateTime.now().add(const Duration(days:1));
+    final result=await showDialog<Map<String,dynamic>>(context:context,builder:(dialogContext)=>StatefulBuilder(builder:(dialogContext,setDialogState)=>AlertDialog(
+      title:const Text('Schedule a trip reminder'),
+      content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[
+        const Align(alignment:Alignment.centerLeft,child:Text('Save a reminder only. This will not reserve a seat or create a ticket.')),
+        const SizedBox(height:14),
+        DropdownButtonFormField<String>(
+          value:_locations.any((x)=>x['id']?.toString()==fromId)?fromId:null,
+          isExpanded:true,
+          decoration:const InputDecoration(labelText:'Departure'),
+          items:_locations.map((x)=>DropdownMenuItem<String>(value:x['id']?.toString(),child:Text((x['name']??'Location').toString(),overflow:TextOverflow.ellipsis))).toList(),
+          onChanged:(value)=>setDialogState(()=>fromId=value),
+        ),
+        const SizedBox(height:10),
+        DropdownButtonFormField<String>(
+          value:_locations.any((x)=>x['id']?.toString()==toId)?toId:null,
+          isExpanded:true,
+          decoration:const InputDecoration(labelText:'Destination'),
+          items:_locations.where((x)=>x['id']?.toString()!=fromId).map((x)=>DropdownMenuItem<String>(value:x['id']?.toString(),child:Text((x['name']??'Location').toString(),overflow:TextOverflow.ellipsis))).toList(),
+          onChanged:(value)=>setDialogState(()=>toId=value),
+        ),
+        const SizedBox(height:12),
+        SizedBox(width:double.infinity,child:OutlinedButton.icon(
+          onPressed:()async{final picked=await showDatePicker(context:dialogContext,initialDate:travelDate.isBefore(DateTime.now())?DateTime.now():travelDate,firstDate:DateTime.now(),lastDate:DateTime.now().add(const Duration(days:365)));if(picked!=null)setDialogState(()=>travelDate=picked);},
+          icon:const Icon(Icons.calendar_month_outlined),label:Text('Travel date: ${_dateText(travelDate)}'),
+        )),
+      ])),
+      actions:[
+        TextButton(onPressed:()=>Navigator.pop(dialogContext),child:const Text('Cancel')),
+        FilledButton.icon(onPressed:fromId==null||toId==null||fromId==toId?null:()=>Navigator.pop(dialogContext,{'from_id':fromId,'to_id':toId,'from_name':_name(fromId),'to_name':_name(toId),'date':_dateText(travelDate)}),icon:const Icon(Icons.alarm_add_outlined),label:const Text('Save reminder')),
+      ],
+    )));
+    if(result==null||!mounted)return;
+    setState(()=>_tripReminders=[..._tripReminders, {...result,'id':DateTime.now().microsecondsSinceEpoch.toString()}]);
+    await _persistTripReminders();
+    if(mounted)_msg('Trip reminder saved. No seat was booked and no payment was made.');
+  }
+
+  Future<void> _openTripReminders() async {
+    await _loadTripReminders();
+    if(!mounted)return;
+    await showModalBottomSheet<void>(context:context,isScrollControlled:true,showDragHandle:true,builder:(sheetContext)=>StatefulBuilder(builder:(sheetContext,setSheetState)=>SafeArea(
+      child:Padding(padding:const EdgeInsets.fromLTRB(18,4,18,24),child:SizedBox(
+        height:MediaQuery.of(sheetContext).size.height*.68,
+        child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Row(children:[
+            const Expanded(child:Text('Trip reminders',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800))),
+            IconButton(onPressed:()async{await _scheduleTripReminder();if(mounted)setSheetState((){});},tooltip:'Schedule a trip',icon:const Icon(Icons.add_circle_outline)),
+          ]),
+          const Text('Saved on this device only. Reminders do not book seats or charge you.'),
+          const SizedBox(height:12),
+          const Divider(),
+          if(_tripReminders.isEmpty)const Expanded(child:Center(child:Column(mainAxisSize:MainAxisSize.min,children:[
+            Icon(Icons.event_note_outlined,size:46,color:AppColors.textMuted),SizedBox(height:10),
+            Text('No trip reminders yet',style:TextStyle(fontWeight:FontWeight.w800)),
+            SizedBox(height:4),Text('Add a route and travel date to remember it.',textAlign:TextAlign.center),
+          ])))
+          else Expanded(child:ListView.separated(
+            itemCount:_tripReminders.length,
+            separatorBuilder:(_,__)=>const Divider(height:1),
+            itemBuilder:(context,index){
+              final reminder=_tripReminders[index];
+              return ListTile(
+                contentPadding:EdgeInsets.zero,
+                leading:Container(width:42,height:42,decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),child:const Icon(Icons.calendar_month_outlined,color:AppColors.primary)),
+                title:Text('${reminder['from_name']??'From'} → ${reminder['to_name']??'To'}',style:const TextStyle(fontWeight:FontWeight.w800)),
+                subtitle:Text('Travel date: ${reminder['date']??'—'}\nReminder only • No booking or payment'),
+                isThreeLine:true,
+                trailing:IconButton(tooltip:'Delete reminder',icon:const Icon(Icons.delete_outline,color:AppColors.danger),onPressed:()async{
+                  setState(()=>_tripReminders.removeWhere((x)=>x['id']==reminder['id']));
+                  await _persistTripReminders();
+                  if(mounted)setSheetState((){});
+                }),
+              );
+            },
+          )),
+          const SizedBox(height:8),
+          SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:()async{await _scheduleTripReminder();if(mounted)setSheetState((){});},icon:const Icon(Icons.calendar_month),label:const Text('Schedule a trip'))),
+        ]),
+      )),
+    )));
+  }
 
   Future<void> _loadWeather() async {
     try {
@@ -790,6 +895,7 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
         Text((_profileData['name']??widget.userName).toString(),maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800)),
         const SizedBox(height:3),Container(margin:const EdgeInsets.only(top:5),padding:const EdgeInsets.symmetric(horizontal:10,vertical:5),decoration:BoxDecoration(color:Colors.white.withValues(alpha:.17),borderRadius:BorderRadius.circular(30),border:Border.all(color:Colors.white.withValues(alpha:.28))),child:Row(mainAxisSize:MainAxisSize.min,children:[const Icon(Icons.verified_user_outlined,color:Colors.white,size:13),const SizedBox(width:5),Text((_profileData['role']??'passenger').toString().toUpperCase(),style:const TextStyle(color:Colors.white,fontSize:10,letterSpacing:.8,fontWeight:FontWeight.w800))])),
       ])),
+      IconButton(onPressed:_openTripReminders,tooltip:'Trip reminders',icon:const Icon(Icons.calendar_month_rounded,color:Colors.white,size:28)),
     ])),
     Padding(padding:const EdgeInsets.fromLTRB(18,20,18,28),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     if(_loadingProfile)const Padding(padding:EdgeInsets.all(18),child:Center(child:CircularProgressIndicator())),
