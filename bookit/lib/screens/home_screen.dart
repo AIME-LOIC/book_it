@@ -233,11 +233,11 @@ class _HomeScreenState extends State<HomeScreen> {
     NavigationDestination(icon:Icon(Icons.history),selectedIcon:Icon(Icons.history),label:'History'),
     NavigationDestination(icon:Icon(Icons.person_outline),selectedIcon:Icon(Icons.person),label:'Profile'),
   ]));
-  Widget _home()=>_selectedBus!=null?_paymentPanel():RefreshIndicator(onRefresh:()async{await _loadLocations();if(_fromId!=null&&_toId!=null&&_fromId!=_toId){await _search();}else{await _loadAvailableBuses();}},child:ListView(padding:const EdgeInsets.fromLTRB(18,0,18,18),children:[
-    OverflowBox(alignment:Alignment.topCenter,minWidth:0,maxWidth:double.infinity,child:SizedBox(width:MediaQuery.sizeOf(context).width,child:Container(padding:const EdgeInsets.fromLTRB(22,22,22,22),decoration:const BoxDecoration(gradient:AppColors.heroGradient),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+  Widget _home()=>_selectedBus!=null?_paymentPanel():RefreshIndicator(onRefresh:()async{await _loadLocations();if(_fromId!=null&&_toId!=null&&_fromId!=_toId){await _search();}else{await _loadAvailableBuses();}},child:ListView(padding:const EdgeInsets.all(18),children:[
+    Container(padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.circular(26)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
       Row(children:[const Icon(Icons.directions_bus,color:AppColors.white,size:30),const SizedBox(width:10),const Expanded(child:Text('BookIt',style:TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800))),IconButton(onPressed:_openNotifications,icon:const Icon(Icons.notifications_none,color:AppColors.white),tooltip:'Notifications')]),
       const SizedBox(height:14),Text('Hello, '+((_profileData['name']??widget.userName).toString()),style:const TextStyle(color:AppColors.white,fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:4),Text('Find your next trip in Rwanda.',style:TextStyle(color:AppColors.white.withValues(alpha:.85))),
-    ])))),
+    ])),
     const SizedBox(height:20),const Text('Plan your trip',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:12),
     if(_loadingLocations)const Center(child:CircularProgressIndicator()) else ...[
       DropdownButtonFormField<String>(value:_locations.any((e)=>e['id']?.toString()==_fromId)?_fromId:null,decoration:const InputDecoration(labelText:'From',prefixIcon:Icon(Icons.trip_origin)),items:_locations.map((e)=>DropdownMenuItem(value:e['id']?.toString(),child:Text((e['name']??'Location').toString()))).toList(),onChanged:(v)=>setState(()=>_fromId=v)),
@@ -684,15 +684,15 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
   }
   Widget _detailLine(String label,String value)=>Padding(padding:const EdgeInsets.symmetric(vertical:6),child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[SizedBox(width:112,child:Text(label,style:const TextStyle(color:AppColors.textMuted))),Expanded(child:Text(value,style:const TextStyle(fontWeight:FontWeight.w700)))]));
   Widget _history()=>_historyTab();
-  Widget _profile()=>RefreshIndicator(onRefresh:_loadProfile,child:ListView(padding:const EdgeInsets.fromLTRB(18,0,18,28),children:[
-    OverflowBox(alignment:Alignment.topCenter,minWidth:0,maxWidth:double.infinity,child:SizedBox(width:MediaQuery.sizeOf(context).width,child:Container(padding:const EdgeInsets.fromLTRB(22,22,22,22),decoration:const BoxDecoration(gradient:AppColors.heroGradient),child:Row(children:[
+  Widget _profile()=>RefreshIndicator(onRefresh:_loadProfile,child:ListView(padding:const EdgeInsets.fromLTRB(18,18,18,28),children:[
+    Container(padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.circular(24)),child:Row(children:[
       CircleAvatar(radius:31,backgroundColor:AppColors.white.withValues(alpha:.18),child:const Icon(Icons.person_rounded,color:AppColors.white,size:34)),const SizedBox(width:14),
       Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         const Text('My profile',style:TextStyle(color:AppColors.white,fontSize:13)),const SizedBox(height:4),
         Text((_profileData['name']??widget.userName).toString(),maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800)),
         const SizedBox(height:3),Text((_profileData['role']??'passenger').toString().toUpperCase(),style:TextStyle(color:AppColors.white.withValues(alpha:.85),fontSize:11,fontWeight:FontWeight.w700)),
       ])),
-    ])))),
+    ])),
     if(_loadingProfile)const Padding(padding:EdgeInsets.all(18),child:Center(child:CircularProgressIndicator())),
     const SizedBox(height:20),const Text('Personal information',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:9),
     Card(child:Column(children:[
