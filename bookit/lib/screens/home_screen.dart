@@ -25,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _weatherTimer;
   String? _fromId,_toId,_activeTicketId,_selectedHistoryRoute; DateTime _date=DateTime.now().add(const Duration(days:1));
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer;
-  final _phone=TextEditingController(); String _network='mtn';
+  final _phone=TextEditingController(); String _network='mtn'; bool _phoneManuallyEdited=false; String? _detectedNetwork;
   @override void initState(){super.initState();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadWeather();_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
   @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_phone.dispose();super.dispose();}
 
@@ -109,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if(mounted)setState(()=>_loadingProfile=true);
     try {
       final r=await ApiClient.get('auth/me',auth:true);
-      if(mounted)setState(()=>_profileData=r is Map?Map<String,dynamic>.from(r):<String,dynamic>{});
+      if(mounted){final raw=r is Map&&r['user'] is Map?r['user']:r;final profile=raw is Map?Map<String,dynamic>.from(raw):<String,dynamic>{};final registeredPhone=(profile['phone']??profile['phone_number']??profile['mobile']??'').toString().trim();setState(()=>_profileData=profile);if(!_phoneManuallyEdited&&registeredPhone.isNotEmpty){_phone.value=TextEditingValue(text:registeredPhone,selection:TextSelection.collapsed(offset:registeredPhone.length));_detectPaymentNetwork(registeredPhone);}}
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
     finally { if(mounted)setState(()=>_loadingProfile=false); }
   }
@@ -292,8 +292,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   Future<void> _expire() async {final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}catch(_){}}if(!mounted)return;setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _seconds=0; });_msg('The 5-minute hold expired. Any unpaid reservation was cancelled.');_search();}
   Future<void> _cancel() async { _timer?.cancel();final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}on ApiException catch(e){_msg(e.message);}}if(mounted)setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; });_search();}
-  Future<void> _pay() async {final id=_activeTicketId;if(id==null){_msg('Reservation ID missing. Please book again.');return;}if(_phone.text.trim().length<9){_msg('Enter a valid mobile money number.');return;}
-    try{final r=await ApiClient.patch('tickets/'+id+'/pay',auth:true,body:{'network':_network,'phone_number':_phone.text.trim()});final message=r is Map?(r['message']??'Payment request sent. Approve the mobile money prompt.'): 'Payment request sent.';_msg(message.toString());await _loadTickets();
+  void _detectPaymentNetwork(String value) {
+    final digits=value.replaceAll(RegExp(r'\D'), '');
+    final local=digits.startsWith('250')?digits.substring(3):digits;
+    String? detected;
+    if(local.startsWith('78')||local.startsWith('79')||local.startsWith('078')||local.startsWith('079')) detected='mtn';
+    else if(local.startsWith('72')||local.startsWith('73')||local.startsWith('072')||local.startsWith('073')) detected='airtel';
+    if(detected!=null&&detected!=_network){setState(()=>_network=detected!);}
+    if(mounted&&_detectedNetwork!=detected)setState(()=>_detectedNetwork=detected);
+  }
+  String _normalizedPhone(String value) {
+    final digits=value.replaceAll(RegExp(r'\D'), '');
+    if(digits.startsWith('250')) return digits;
+    if(digits.startsWith('0')) return '25'+digits;
+    return digits;
+  }
+  Future<void> _pay() async {final id=_activeTicketId;if(id==null){_msg('Reservation ID missing. Please book again.');return;}final digits=_phone.text.replaceAll(RegExp(r'\D'), '');if(!(digits.length==10&&digits.startsWith('0'))&&!(digits.length==12&&digits.startsWith('250'))){_msg('Enter a valid Rwanda mobile number, for example 0781234567.');return;}
+    try{final r=await ApiClient.patch('tickets/'+id+'/pay',auth:true,body:{'network':_network,'phone_number':_normalizedPhone(_phone.text)});final message=r is Map?(r['message']??'Payment request sent. Approve the mobile money prompt.'): 'Payment request sent.';_msg(message.toString());await _loadTickets();
       if(r is Map&&r['status']?.toString().toLowerCase()=='paid'){_timer?.cancel();setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _tab=1; });}
     }on ApiException catch(e){_msg(e.message);}
   }
@@ -495,7 +510,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(child: Text('Mobile money', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800))),
               ]),
               const SizedBox(height: 5),
-              const Text('Choose your provider and enter the number that will receive the payment prompt.',
+              const Text('Your registered phone number is filled in automatically. You can edit it before requesting payment.',
                   style: TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.4)),
               const SizedBox(height: 14),
               SegmentedButton<String>(
@@ -511,11 +526,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 controller: _phone,
                 keyboardType: TextInputType.phone,
                 textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
+                onChanged: (value) { _phoneManuallyEdited = true; _detectPaymentNetwork(value); },
+                decoration: InputDecoration(
                   labelText: 'Mobile money number',
-                  hintText: 'e.g. 078… or 073…',
+                  hintText: '0781234567 or +250781234567',
                   prefixIcon: Icon(Icons.phone_iphone_rounded),
-                  helperText: 'Use the number registered with your selected provider.',
+                  helperText: _detectedNetwork == null ? 'Enter a Rwanda number to detect the mobile money provider.' : 'Detected ${_detectedNetwork == 'mtn' ? 'MTN MoMo' : 'Airtel Money'} from the number.',
                 ),
               ),
               const SizedBox(height: 18),
@@ -778,7 +794,7 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
       Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         const Text('My profile',style:TextStyle(color:AppColors.white,fontSize:13)),const SizedBox(height:4),
         Text((_profileData['name']??widget.userName).toString(),maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800)),
-        const SizedBox(height:3),Text((_profileData['role']??'passenger').toString().toUpperCase(),style:TextStyle(color:AppColors.white.withValues(alpha:.85),fontSize:11,fontWeight:FontWeight.w700)),
+        const SizedBox(height:3),Container(margin:const EdgeInsets.only(top:5),padding:const EdgeInsets.symmetric(horizontal:10,vertical:5),decoration:BoxDecoration(color:Colors.white.withValues(alpha:.17),borderRadius:BorderRadius.circular(30),border:Border.all(color:Colors.white.withValues(alpha:.28))),child:Row(mainAxisSize:MainAxisSize.min,children:[const Icon(Icons.verified_user_outlined,color:Colors.white,size:13),const SizedBox(width:5),Text((_profileData['role']??'passenger').toString().toUpperCase(),style:const TextStyle(color:Colors.white,fontSize:10,letterSpacing:.8,fontWeight:FontWeight.w800))])),
       ])),
     ])),
     Padding(padding:const EdgeInsets.fromLTRB(18,20,18,28),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
