@@ -301,14 +301,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if(detected!=null&&detected!=_network){setState(()=>_network=detected!);}
     if(mounted&&_detectedNetwork!=detected)setState(()=>_detectedNetwork=detected);
   }
-  String _normalizedPhone(String value) {
-    final digits=value.replaceAll(RegExp(r'\D'), '');
-    if(digits.startsWith('250')) return digits;
-    if(digits.startsWith('0')) return '25'+digits;
-    return digits;
-  }
   Future<void> _pay() async {final id=_activeTicketId;if(id==null){_msg('Reservation ID missing. Please book again.');return;}final digits=_phone.text.replaceAll(RegExp(r'\D'), '');if(!(digits.length==10&&digits.startsWith('0'))&&!(digits.length==12&&digits.startsWith('250'))){_msg('Enter a valid Rwanda mobile number, for example 0781234567.');return;}
-    try{final r=await ApiClient.patch('tickets/'+id+'/pay',auth:true,body:{'network':_network,'phone_number':_normalizedPhone(_phone.text)});final message=r is Map?(r['message']??'Payment request sent. Approve the mobile money prompt.'): 'Payment request sent.';_msg(message.toString());await _loadTickets();
+    try{final r=await ApiClient.patch('tickets/'+id+'/pay',auth:true,body:{'network':_network,'phone_number':_phone.text.trim()});final message=r is Map?(r['message']??'Payment request sent. Approve the mobile money prompt.'): 'Payment request sent.';_msg(message.toString());await _loadTickets();
       if(r is Map&&r['status']?.toString().toLowerCase()=='paid'){_timer?.cancel();setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _tab=1; });}
     }on ApiException catch(e){_msg(e.message);}
   }
