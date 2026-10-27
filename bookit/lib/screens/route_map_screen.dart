@@ -108,7 +108,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
           if (end is Map) coords.add(LatLng((end['lat'] as num).toDouble(), (end['lng'] as num).toDouble()));
         }
         for (var i = 0; i < stops.length; i++) {
-          final pos = i < coords.length ? coords[i] : (line.isNotEmpty ? line[(line.length * i / (stops.length - 1).clamp(1, 999)).round().clamp(0, line.length - 1)] : _fallback);
+          final pos = i < coords.length ? coords[i] : (line.isNotEmpty ? line[(line.length * i / (stops.length - 1).clamp(1, 999)).round().clamp(0, line.length - 1).toInt()] : _fallback);
           markers.add(Marker(
             markerId: MarkerId('stop-$i'),
             position: pos,
