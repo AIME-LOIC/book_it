@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_client.dart';
 import 'route_map_screen.dart';
+import 'weather_forecast_screen.dart';
 import 'login_screen.dart';
 import '../theme/app_theme.dart';
 
@@ -22,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String,dynamic> _profileData={};
   int? _weatherCode;
   double? _temperature;
+  List<Map<String,dynamic>> _dailyForecast=[];
   String _weatherLabel='Checking Kigali weather…';
   Timer? _weatherTimer;
   String? _fromId,_toId,_activeTicketId,_selectedHistoryRoute; DateTime _date=DateTime.now().add(const Duration(days:1));
@@ -136,7 +138,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadWeather() async {
     try {
-      final uri=Uri.https('api.open-meteo.com','/v1/forecast',{'latitude':'-1.9441','longitude':'30.0619','current':'temperature_2m,weather_code,is_day','timezone':'Africa/Kigali'});
+      final uri=Uri.https('api.open-meteo.com','/v1/forecast',{'latitude':'-1.9441','longitude':'30.0619','current':'temperature_2m,weather_code,is_day','daily':'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset','forecast_days':'7','timezone':'Africa/Kigali'});
       final response=await http.get(uri).timeout(const Duration(seconds:8));
       if(response.statusCode!=200)return;
       final data=jsonDecode(response.body) as Map<String,dynamic>;
@@ -144,8 +146,20 @@ class _HomeScreenState extends State<HomeScreen> {
       if(current==null)return;
       final code=(current['weather_code'] as num?)?.toInt();
       final temp=(current['temperature_2m'] as num?)?.toDouble();
+      final daily=data['daily'] as Map<String,dynamic>?;
+      final dates=(daily?['time'] as List?)??const [];
+      final codes=(daily?['weather_code'] as List?)??const [];
+      final highs=(daily?['temperature_2m_max'] as List?)??const [];
+      final lows=(daily?['temperature_2m_min'] as List?)??const [];
+      final rain=(daily?['precipitation_probability_max'] as List?)??const [];
+      final sunrise=(daily?['sunrise'] as List?)??const [];
+      final sunset=(daily?['sunset'] as List?)??const [];
+      final forecast=<Map<String,dynamic>>[];
+      for(var i=0;i<dates.length;i++){
+        forecast.add({'date':dates[i],'weather_code':i<codes.length?codes[i]:null,'high':i<highs.length?highs[i]:null,'low':i<lows.length?lows[i]:null,'rain_probability':i<rain.length?rain[i]:null,'sunrise':i<sunrise.length?sunrise[i]:null,'sunset':i<sunset.length?sunset[i]:null});
+      }
       if(!mounted)return;
-      setState((){_weatherCode=code;_temperature=temp;_weatherLabel=_weatherDescription(code);});
+      setState((){_weatherCode=code;_temperature=temp;_weatherLabel=_weatherDescription(code);_dailyForecast=forecast;});
     } catch (_) { if(mounted&&_weatherCode==null)setState(()=>_weatherLabel='Kigali weather unavailable'); }
   }
 
@@ -172,6 +186,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if((code>=51&&code<=67)||(code>=80&&code<=82)||code>=95)return Icons.thunderstorm_rounded;
     if(code>=71&&code<=86)return Icons.ac_unit_rounded;
     return Icons.cloud_rounded;
+  }
+
+  Future<void> _openWeatherForecast() async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>WeatherForecastScreen(forecast:_dailyForecast,location:'Kigali, Rwanda',onRefresh:_loadWeather)));
   }
 
   Future<void> _chooseTheme() async {
@@ -431,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
       Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Row(children:[const Icon(Icons.directions_bus,color:AppColors.white,size:30),const SizedBox(width:10),const Expanded(child:Text('BookIt',style:TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800))),IconButton(onPressed:_openNotifications,icon:const Icon(Icons.notifications_none,color:AppColors.white),tooltip:'Notifications')]),
         const SizedBox(height:14),Text('Hello, '+((_profileData['name']??widget.userName).toString()),style:const TextStyle(color:AppColors.white,fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:4),Text('Find your next trip in Rwanda.',style:TextStyle(color:AppColors.white.withValues(alpha:.9))),
-        const SizedBox(height:14),Row(children:[Icon(_weatherIcon,color:Colors.white,size:22),const SizedBox(width:8),Expanded(child:Text(_weatherLabel,style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700))),if(_temperature!=null)Text('${_temperature!.round()}°C',style:const TextStyle(color:Colors.white,fontSize:18,fontWeight:FontWeight.w800))]),
+        const SizedBox(height:14),Material(color:Colors.transparent,child:InkWell(borderRadius:BorderRadius.circular(12),onTap:_openWeatherForecast,child:Padding(padding:const EdgeInsets.symmetric(vertical:4),child:Row(children:[Icon(_weatherIcon,color:Colors.white,size:22),const SizedBox(width:8),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(_weatherLabel,style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700)),const SizedBox(height:2),Text('Tap for 7-day forecast',style:TextStyle(color:Colors.white.withValues(alpha:.82),fontSize:12))])),if(_temperature!=null)Text('${_temperature!.round()}°C',style:const TextStyle(color:Colors.white,fontSize:18,fontWeight:FontWeight.w800)),const SizedBox(width:4),const Icon(Icons.chevron_right,color:Colors.white)])))),
       ]),
     ])),
     Padding(padding:const EdgeInsets.fromLTRB(18,20,18,18),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
