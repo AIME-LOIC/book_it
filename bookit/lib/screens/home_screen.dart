@@ -109,9 +109,36 @@ class _HomeScreenState extends State<HomeScreen> {
       final rows=r is List?r:(r is Map&&r['buses'] is List?r['buses'] as List:<dynamic>[]);if(mounted)setState(() {_buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();_showingSearchResults=true;});if(_buses.isEmpty)_msg('No buses found for this route and date.');
     }on ApiException catch(e){_msg(e.message);}finally{if(mounted)setState(()=>_searching=false);}
   }
+  Future<void> _bookBusFromList(Map<String,dynamic> listedBus) async {
+    final route=listedBus['route'] is Map?Map<String,dynamic>.from(listedBus['route']):<String,dynamic>{};
+    final from=route['fromLocation'] is Map?Map<String,dynamic>.from(route['fromLocation']):<String,dynamic>{};
+    final to=route['toLocation'] is Map?Map<String,dynamic>.from(route['toLocation']):<String,dynamic>{};
+    final fromId=(from['id']??listedBus['from_location_id']??_fromId)?.toString();
+    final toId=(to['id']??listedBus['to_location_id']??_toId)?.toString();
+    if(fromId==null||toId==null||fromId==toId){_msg('This bus does not have a complete route yet. Choose a departure and destination, then try again.');return;}
+    setState(()=>_searching=true);
+    try{
+      final r=await ApiClient.get('tickets/search',query:{'from_location_id':fromId,'to_location_id':toId,'travel_date':_dateText(_date)});
+      final rows=r is List?r:(r is Map&&r['buses'] is List?r['buses'] as List:<dynamic>[]);
+      final candidates=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();
+      final wanted=(listedBus['bus_id']??listedBus['id'])?.toString();
+      Map<String,dynamic>? bookable;
+      for(final candidate in candidates){if(wanted!=null&&(candidate['bus_id']??candidate['id'])?.toString()==wanted){bookable=candidate;break;}}
+      bookable??=candidates.isNotEmpty?candidates.first:null;
+      if(bookable==null){_msg('This bus has no bookable seats for ${_dateText(_date)}. Try another bus or date.');return;}
+      bookable['bus_id']??=bookable['id']??listedBus['bus_id']??listedBus['id'];
+      if(mounted)setState(()=>_fromId=fromId);
+      if(mounted)setState(()=>_toId=toId);
+      await _choose(bookable);
+    }on ApiException catch(e){_msg(e.message);}
+    finally{if(mounted)setState(()=>_searching=false);}
+  }
   Future<void> _choose(Map<String,dynamic> bus) async {
-    final available=(bus['available_seats'] as List? ?? const[])
-        .map((x)=>int.tryParse(x.toString())).whereType<int>().toSet();
+    final rawSeats=bus['available_seats'] is List?bus['available_seats'] as List:const[];
+    final available=rawSeats.map((x){
+      if(x is Map)return int.tryParse((x['seat_number']??x['number']??x['seat'])?.toString()??'');
+      return int.tryParse(x.toString());
+    }).whereType<int>().toSet();
     if(available.isEmpty){_msg('No available seats.');return;}
     final reportedCapacity=int.tryParse((bus['total_seats'] ?? bus['seat_capacity'] ?? '').toString());
     final capacity=(reportedCapacity != null && reportedCapacity > 0)
@@ -138,19 +165,27 @@ class _HomeScreenState extends State<HomeScreen> {
               ]),
               const SizedBox(height:12),
               Flexible(child:SingleChildScrollView(child:Column(children:[
-                for(var start=1;start<=capacity;start+=4)
-                  Padding(padding:const EdgeInsets.only(bottom:8),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-                    _seatButton(c,start,available),
-                    const SizedBox(width:7),
-                    _seatButton(c,start+1,available),
-                    const SizedBox(width:22),
-                    if(start+2<=capacity)_seatButton(c,start+2,available),
-                    const SizedBox(width:7),
-                    if(start+3<=capacity)_seatButton(c,start+3,available),
-                  ]))
+                if(capacity>=9 && (capacity-5)%4==0)...[
+                  for(var start=1;start<=capacity-5;start+=4)
+                    Padding(padding:const EdgeInsets.only(bottom:8),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+                      _seatButton(c,start,available),const SizedBox(width:7),_seatButton(c,start+1,available),
+                      const SizedBox(width:22),_seatButton(c,start+2,available),const SizedBox(width:7),_seatButton(c,start+3,available),
+                    ])),
+                  const SizedBox(height:5),const Text('REAR ROW',style:TextStyle(fontSize:10,fontWeight:FontWeight.w700,color:AppColors.textMuted)),const SizedBox(height:6),
+                  Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+                    _seatButton(c,capacity-4,available),const SizedBox(width:7),_seatButton(c,capacity-3,available),
+                    const SizedBox(width:14),_seatButton(c,capacity-2,available),const SizedBox(width:7),_seatButton(c,capacity-1,available),const SizedBox(width:7),_seatButton(c,capacity,available),
+                  ]),
+                ] else ...[
+                  for(var start=1;start<=capacity;start+=4)
+                    Padding(padding:const EdgeInsets.only(bottom:8),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+                      _seatButton(c,start,available),const SizedBox(width:7),if(start+1<=capacity)_seatButton(c,start+1,available),
+                      const SizedBox(width:22),if(start+2<=capacity)_seatButton(c,start+2,available),const SizedBox(width:7),if(start+3<=capacity)_seatButton(c,start+3,available),
+                    ])),
+                ]
               ]))),
               const SizedBox(height:8),
-              Text('Seat layout shown as 2 + aisle + 2. Availability is supplied by the operator.',style:TextStyle(fontSize:11,color:AppColors.textMuted),textAlign:TextAlign.center),
+              const Text('Front of bus: driver on the left. Standard rows have 2 seats on each side of the aisle; the rear row has 5 seats with a wider gap in the middle.',style:TextStyle(fontSize:11,color:AppColors.textMuted),textAlign:TextAlign.center),
               TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel'))
             ]),
           ),
@@ -212,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
       Row(children:[const Icon(Icons.directions_bus,color:AppColors.primary,size:28),const SizedBox(width:10),Expanded(child:Text((op['company_name']??b['plate_number']??'Bus operator').toString(),style:const TextStyle(fontWeight:FontWeight.w800,fontSize:16))),Text((b['price']??'—').toString()+' RWF',style:const TextStyle(color:AppColors.primary,fontWeight:FontWeight.w800))]),
       const SizedBox(height:9),Text(_showingSearchResults?_name(_fromId)+' → '+_name(_toId):routeFrom+' → '+routeTo,style:const TextStyle(fontWeight:FontWeight.w700,fontSize:16)),const SizedBox(height:5),
       Text('Departure '+(b['departure_time']??'TBA').toString()+(_showingSearchResults?' • '+seats.length.toString()+' seats left':' • Active bus'),style:const TextStyle(color:AppColors.textMuted)),
-      const SizedBox(height:10),SizedBox(width:double.infinity,child:FilledButton(onPressed:_showingSearchResults?()=>_choose(b):(){_msg('Choose your departure, destination and travel date, then tap Search live buses to see bookable seats.');},child:Text(_showingSearchResults?'Choose seat':'Search route to book'))),
+      const SizedBox(height:10),SizedBox(width:double.infinity,child:FilledButton(onPressed:_searching?null:()=>_bookBusFromList(b),child:Text(_searching?'Checking seats…':'Choose seat & book'))),
     ])));
   }
   Widget _paymentPanel(){final b=_selectedBus!;final op=b['operator'] is Map?Map<String,dynamic>.from(b['operator']):<String,dynamic>{};
@@ -314,6 +349,12 @@ class _HomeScreenState extends State<HomeScreen> {
       ]))),
     ));
   }
+  Future<void> _showInfo(String title,String body) async {
+    await showDialog<void>(context:context,builder:(c)=>AlertDialog(
+      title:Text(title),content:SingleChildScrollView(child:Text(body)),
+      actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Close'))],
+    ));
+  }
   Widget _detailLine(String label,String value)=>Padding(padding:const EdgeInsets.symmetric(vertical:6),child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[SizedBox(width:112,child:Text(label,style:const TextStyle(color:AppColors.textMuted))),Expanded(child:Text(value,style:const TextStyle(fontWeight:FontWeight.w700)))]));
   Widget _history()=>_historyTab();
   Widget _profile()=>RefreshIndicator(onRefresh:_loadProfile,child:ListView(padding:const EdgeInsets.all(20),children:[
@@ -332,7 +373,14 @@ class _HomeScreenState extends State<HomeScreen> {
       ListTile(leading:const Icon(Icons.calendar_today_outlined,color:AppColors.primary),title:const Text('Member since'),subtitle:Text((_profileData['createdAt']??'—').toString().split('T').first)),
     ])),
     const SizedBox(height:16),FilledButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit profile')),
-    const SizedBox(height:10),OutlinedButton.icon(onPressed:()async{try{await ApiClient.post('auth/logout',auth:true);}catch(_){}ApiClient.setToken(null);if(mounted)_msg('Signed out. Close and reopen BookIt to sign in again.');},icon:const Icon(Icons.logout),label:const Text('Sign out'))
+    const SizedBox(height:10),     const SizedBox(height:16),Card(child:Column(children:[
+       ListTile(leading:const Icon(Icons.support_agent,color:AppColors.primary),title:const Text('Support'),subtitle:const Text('Help with bookings and payments'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('BookIt Support','For help with a reservation or payment, keep your ticket code, travel date, route and payment reference ready. If a payment is pending, do not submit repeated payment requests. Contact the bus operator for departure or route changes.')),
+       const Divider(height:1),
+       ListTile(leading:const Icon(Icons.description_outlined,color:AppColors.primary),title:const Text('Terms and conditions'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Terms and conditions','Bookings are subject to seat availability and operator schedules. A seat is held temporarily after reservation; complete payment before the countdown expires. A booking is confirmed only when BookIt reports successful payment. Check route, travel date, passenger details and fare before paying. Refunds, cancellations and schedule changes may be subject to operator rules and applicable law. Do not share ticket QR codes or booking references publicly.')),
+       const Divider(height:1),
+       ListTile(leading:const Icon(Icons.privacy_tip_outlined,color:AppColors.primary),title:const Text('Privacy policy'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Privacy policy','BookIt uses account details to provide sign-in, reservations, ticket history and customer support. Booking and payment details are processed to manage your trip and confirm transactions. Keep your account credentials and ticket QR code private. Only provide accurate contact information, and contact support if you believe your account or booking has been accessed without permission.')),
+     ])),
+OutlinedButton.icon(onPressed:()async{try{await ApiClient.post('auth/logout',auth:true);}catch(_){}ApiClient.setToken(null);if(mounted)_msg('Signed out. Close and reopen BookIt to sign in again.');},icon:const Icon(Icons.logout),label:const Text('Sign out'))
   ]));
 }
 
