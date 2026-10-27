@@ -137,6 +137,25 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
   }
   static String _stopName(Map<String, dynamic> stop) => (stop['name'] ?? _locationName(stop) ?? 'Stop').toString();
 
+  void _onMapCreated(GoogleMapController controller) {
+    _mapController = controller;
+    if (_polyline.length < 2) return;
+    var minLat = _polyline.first.latitude, maxLat = minLat;
+    var minLng = _polyline.first.longitude, maxLng = minLng;
+    for (final point in _polyline) {
+      if (point.latitude < minLat) minLat = point.latitude;
+      if (point.latitude > maxLat) maxLat = point.latitude;
+      if (point.longitude < minLng) minLng = point.longitude;
+      if (point.longitude > maxLng) maxLng = point.longitude;
+    }
+    if ((maxLat - minLat).abs() < 0.0005) { minLat -= 0.001; maxLat += 0.001; }
+    if ((maxLng - minLng).abs() < 0.0005) { minLng -= 0.001; maxLng += 0.001; }
+    controller.animateCamera(CameraUpdate.newLatLngBounds(
+      LatLngBounds(southwest: LatLng(minLat, minLng), northeast: LatLng(maxLat, maxLng)),
+      42,
+    ));
+  }
+
   List<LatLng> _decodePolyline(String encoded) {
     final points = <LatLng>[];
     var index = 0, lat = 0, lng = 0;
@@ -207,7 +226,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                     height: 330,
                     child: GoogleMap(
                       initialCameraPosition: CameraPosition(target: initial, zoom: 9),
-                      onMapCreated: (controller) => _mapController = controller,
+                      onMapCreated: _onMapCreated,
                       markers: _markers,
                       polylines: {
                         if (_polyline.isNotEmpty) Polyline(
