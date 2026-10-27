@@ -393,19 +393,23 @@ class _HomeScreenState extends State<HomeScreen> {
             padding:const EdgeInsets.symmetric(horizontal:12,vertical:14),
             decoration:BoxDecoration(color:const Color(0xFF071321),border:Border.all(color:const Color(0xFF1687E8).withValues(alpha:.8),width:1.6),borderRadius:BorderRadius.circular(34)),
             child:Column(children:[
-              SizedBox(width:270,child:Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,crossAxisAlignment:CrossAxisAlignment.center,children:[
+              SizedBox(width:220,child:Row(mainAxisAlignment:MainAxisAlignment.start,crossAxisAlignment:CrossAxisAlignment.center,children:[
                 const SizedBox(width:42,height:42,child:Center(child:Icon(Icons.directions_car_filled_outlined,color:Color(0xFF64748B),size:25))),
-                _seatButton(c,'1C',available),const SizedBox(width:8),_seatButton(c,'1D',available),
+                const SizedBox(width:6),_seatButton(c,'1C',available),const SizedBox(width:6),_seatButton(c,'1D',available),
               ])),
               const SizedBox(height:10),
               for(var row=2;row<=8;row++)
-                Padding(padding:const EdgeInsets.only(bottom:8),child:SizedBox(width:270,child:row==3
+                Padding(padding:const EdgeInsets.only(bottom:row==8?0:6),child:SizedBox(width:220,child:row==8
+                  ?Row(mainAxisAlignment:MainAxisAlignment.start,children:[
+                    _seatButton(c,'8A',available),_seatButton(c,'8B',available),_seatButton(c,'8C',available),_seatButton(c,'8D',available),
+                  ])
+                  :row==3
                   ?Row(mainAxisAlignment:MainAxisAlignment.start,children:[
                     _seatButton(c,'3A',available),const SizedBox(width:6),_seatButton(c,'3B',available),const SizedBox(width:18),_seatButton(c,'3C',available),
                     const Spacer(),Container(width:25,height:40,decoration:const BoxDecoration(border:Border(left:BorderSide(color:Color(0xFF0288D1),width:1.5),top:BorderSide(color:Color(0xFF0288D1),width:1.5),bottom:BorderSide(color:Color(0xFF0288D1),width:1.5))),child:const Icon(Icons.door_sliding_outlined,size:15,color:Color(0xFF0288D1))),
                   ])
                   :Row(mainAxisAlignment:MainAxisAlignment.start,children:[
-                    _seatButton(c,'${row}A',available),const SizedBox(width:6),_seatButton(c,'${row}B',available),const SizedBox(width:18),_seatButton(c,'${row}C',available),const SizedBox(width:10),_seatButton(c,'${row}D',available),
+                    _seatButton(c,'${row}A',available),const SizedBox(width:6),_seatButton(c,'${row}B',available),const SizedBox(width:18),_seatButton(c,'${row}C',available),const SizedBox(width:8),_seatButton(c,'${row}D',available),
                   ]))),
 
             ]),
