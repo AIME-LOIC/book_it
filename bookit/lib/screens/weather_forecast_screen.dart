@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class WeatherForecastScreen extends StatelessWidget {
   const WeatherForecastScreen({
@@ -223,8 +224,17 @@ class WeatherForecastScreen extends StatelessWidget {
                 );
               }),
             const SizedBox(height: 8),
-            Text('Forecast provided by Open-Meteo. Use it as a planning guide, not a guarantee of road conditions.',
+            Text('Weather data: Open-Meteo best-match forecast model for central Kigali. Current conditions and forecasts can differ from Google Weather or station observations because providers use different models, locations and update times.',
                 style: theme.textTheme.bodySmall?.copyWith(color: muted)),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () async {
+                final uri = Uri.parse('https://www.meteorwanda.gov.rw/home');
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              },
+              icon: const Icon(Icons.open_in_new_rounded),
+              label: const Text('Check official Meteo Rwanda forecast'),
+            ),
           ],
         ),
       ),
