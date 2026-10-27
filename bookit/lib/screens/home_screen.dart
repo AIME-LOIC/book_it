@@ -383,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const Text('Choose your seat',style:TextStyle(fontSize:21,fontWeight:FontWeight.w800)),
           const SizedBox(height:4),const Text('FRONT OF BUS',style:TextStyle(color:AppColors.textMuted,fontSize:11,fontWeight:FontWeight.w800)),
           const SizedBox(height:10),
-          Container(width:250,padding:const EdgeInsets.all(10),decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),child:const Row(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(Icons.directions_bus,color:AppColors.primary),SizedBox(width:8),Text('DRIVER')])),
+          Container(width:250,padding:const EdgeInsets.all(10),decoration:BoxDecoration(color:const Color(0xFF10243A),border:Border.all(color:const Color(0xFF1687E8).withValues(alpha:.55)),borderRadius:BorderRadius.circular(12)),child:const Row(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(Icons.directions_bus,color:Color(0xFF38A5FF)),SizedBox(width:8),Text('DRIVER',style:TextStyle(color:Color(0xFFEAF4FF),fontWeight:FontWeight.w800))])),
           const SizedBox(height:14),
           const Wrap(alignment:WrapAlignment.center,spacing:12,runSpacing:8,children:[
             _SeatLegend(color:AppColors.success,label:'Available'),_SeatLegend(color:AppColors.primary,label:'Your selection'),_SeatLegend(color:Color(0xFFE0E4EA),label:'Unavailable'),
@@ -391,7 +391,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height:14),
           Flexible(child:SingleChildScrollView(child:Container(
             padding:const EdgeInsets.symmetric(horizontal:12,vertical:14),
-            decoration:BoxDecoration(color:const Color(0xFF0D1B2A),border:Border.all(color:AppColors.success.withValues(alpha:.45),width:1.5),borderRadius:BorderRadius.circular(34)),
+            decoration:BoxDecoration(color:const Color(0xFF071321),border:Border.all(color:const Color(0xFF1687E8).withValues(alpha:.8),width:1.6),borderRadius:BorderRadius.circular(34)),
             child:Column(children:[
               SizedBox(width:270,child:Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,crossAxisAlignment:CrossAxisAlignment.center,children:[
                 const SizedBox(width:42,height:42,child:Center(child:Icon(Icons.directions_car_filled_outlined,color:Color(0xFF64748B),size:25))),
@@ -405,7 +405,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const Spacer(),Container(width:25,height:40,decoration:const BoxDecoration(border:Border(left:BorderSide(color:Color(0xFF0288D1),width:1.5),top:BorderSide(color:Color(0xFF0288D1),width:1.5),bottom:BorderSide(color:Color(0xFF0288D1),width:1.5))),child:const Icon(Icons.door_sliding_outlined,size:15,color:Color(0xFF0288D1))),
                   ])
                   :Row(mainAxisAlignment:MainAxisAlignment.start,children:[
-                    _seatButton(c,'${row}A',available),const SizedBox(width:6),_seatButton(c,'${row}B',available),const SizedBox(width:18),_seatButton(c,'${row}C',available),const SizedBox(width:6),_seatButton(c,'${row}D',available),
+                    _seatButton(c,'${row}A',available),const SizedBox(width:6),_seatButton(c,'${row}B',available),const SizedBox(width:18),_seatButton(c,'${row}C',available),const SizedBox(width:10),_seatButton(c,'${row}D',available),
                   ]))),
 
             ]),
@@ -435,10 +435,24 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _seatButton(BuildContext dialogContext,String label,Set<String> available){
     final free=available.contains(label);
-    return SizedBox(width:42,height:42,child:Material(color:free?AppColors.success.withValues(alpha:.12):const Color(0xFFE0E4EA),borderRadius:BorderRadius.circular(9),child:InkWell(
-      borderRadius:BorderRadius.circular(9),onTap:free?()=>Navigator.pop(dialogContext,label):null,
-      child:Center(child:Text(label,style:TextStyle(fontSize:11,fontWeight:FontWeight.w800,color:free?AppColors.success:AppColors.textMuted))),
-    )));
+    const blue=Color(0xFF1687E8);
+    const tile=Color(0xFF172638);
+    return SizedBox(width:42,height:42,child:Material(
+      color:free?tile:const Color(0xFF101B29),
+      borderRadius:BorderRadius.circular(9),
+      child:InkWell(
+        borderRadius:BorderRadius.circular(9),
+        onTap:free?()=>Navigator.pop(dialogContext,label):null,
+        child:Container(
+          decoration:BoxDecoration(
+            borderRadius:BorderRadius.circular(9),
+            border:Border.all(color:free?blue.withValues(alpha:.62):const Color(0xFF344255),width:1.2),
+            boxShadow:free?[BoxShadow(color:blue.withValues(alpha:.07),blurRadius:5)]:null,
+          ),
+          child:Center(child:Text(label,style:TextStyle(fontSize:11,fontWeight:FontWeight.w800,color:free?const Color(0xFFB8E1FF):const Color(0xFF718096)))),
+        ),
+      ),
+    ));
   }
   Future<void> _expire() async {final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}catch(_){}}if(!mounted)return;setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _seconds=0; });_msg('The 5-minute hold expired. Any unpaid reservation was cancelled.');_search();}
   Future<void> _cancel() async { _timer?.cancel();final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}on ApiException catch(e){_msg(e.message);}}if(mounted)setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; });_search();}
