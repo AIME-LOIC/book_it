@@ -65,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Container(padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.circular(26)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
       Row(children:[const Icon(Icons.directions_bus,color:AppColors.white,size:30),const SizedBox(width:10),const Expanded(child:Text('BookIt',style:TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800))),IconButton(onPressed:()=>_msg('Notifications are available for your account.'),icon:const Icon(Icons.notifications_none,color:AppColors.white))]),
       const SizedBox(height:14),Text('Hello, '+widget.userName,style:const TextStyle(color:AppColors.white,fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:4),Text('Find your next trip in Rwanda.',style:TextStyle(color:AppColors.white.withValues(alpha:.85))),
-    ]),
+    ])),
     const SizedBox(height:20),const Text('Plan your trip',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:12),
     if(_loadingLocations)const Center(child:CircularProgressIndicator()) else ...[
       DropdownButtonFormField<String>(value:_locations.any((e)=>e['id']?.toString()==_fromId)?_fromId:null,decoration:const InputDecoration(labelText:'From',prefixIcon:Icon(Icons.trip_origin)),items:_locations.map((e)=>DropdownMenuItem(value:e['id']?.toString(),child:Text((e['name']??'Location').toString()))).toList(),onChanged:(v)=>setState(()=>_fromId=v)),
