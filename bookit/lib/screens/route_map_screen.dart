@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../services/api_client.dart';
 import '../theme/app_theme.dart';
 
 /// BookIt route map built with flutter_map + OpenStreetMap + OSRM.
@@ -51,6 +52,17 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
 
   Future<void> _loadRoute() async {
     var stops = List<Map<String, dynamic>>.from(widget.stops);
+    if (stops.isEmpty && widget.routeId != null && widget.routeId!.isNotEmpty) {
+      try {
+        final response = await ApiClient.get('routes/${widget.routeId}');
+        final raw = response is Map ? response['stops'] : null;
+        if (raw is List) {
+          stops = raw.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+        }
+      } catch (_) {
+        // Fall back to the supplied origin and destination names.
+      }
+    }
     if (stops.isEmpty) {
       stops = [
         {'name': widget.fromName, 'stop_order': 1},
