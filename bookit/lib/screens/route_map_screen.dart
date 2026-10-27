@@ -1,10 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../services/api_client.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:http/http.dart' as http;
+import 'package:latlong2/latlong.dart';
+
 import '../theme/app_theme.dart';
 
-/// BookIt branded route view. Google Directions supplies the road geometry;
-/// the backend remains the source of truth for the ordered route stops.
+/// BookIt route map built with flutter_map + OpenStreetMap + OSRM.
+/// No Google Maps API key or billing account is required.
 class RouteMapScreen extends StatefulWidget {
   const RouteMapScreen({
     super.key,
@@ -30,11 +34,11 @@ class RouteMapScreen extends StatefulWidget {
 }
 
 class _RouteMapScreenState extends State<RouteMapScreen> {
-  static const _fallback = LatLng(-1.9441, 30.0619);
-  GoogleMapController? _mapController;
+  static const LatLng _kigali = LatLng(-1.9441, 30.0619);
+  final MapController _mapController = MapController();
   List<Map<String, dynamic>> _stops = [];
-  Set<Marker> _markers = {};
-  List<LatLng> _polyline = [];
+  List<LatLng> _points = [];
+  List<LatLng> _routeLine = [];
   String? _mapMessage;
   bool _loading = true;
 
@@ -44,145 +48,129 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
     _loadRoute();
   }
 
-  @override
-  void dispose() {
-    _mapController?.dispose();
-    super.dispose();
-  }
-
   Future<void> _loadRoute() async {
-    var stops = widget.stops;
-    if (stops.isEmpty && widget.routeId != null && widget.routeId!.isNotEmpty) {
-      try {
-        final response = await ApiClient.get('routes/${widget.routeId}');
-        final raw = response is Map ? response['stops'] : null;
-        if (raw is List) {
-          stops = raw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
-        }
-      } catch (_) {
-        // Keep the origin/destination visible even when route-stop lookup fails.
-      }
-    }
-
-    stops = stops.where((s) => (s['name'] ?? _locationName(s)).toString().trim().isNotEmpty).toList()
-      ..sort((a, b) => _order(a).compareTo(_order(b)));
+    var stops = List<Map<String, dynamic>>.from(widget.stops);
     if (stops.isEmpty) {
       stops = [
         {'name': widget.fromName, 'stop_order': 1},
         {'name': widget.toName, 'stop_order': 2},
       ];
     } else {
+      stops.sort((a, b) => _order(a).compareTo(_order(b)));
       final from = stops.indexWhere((s) => _stopName(s).toLowerCase() == widget.fromName.toLowerCase());
       final to = stops.indexWhere((s) => _stopName(s).toLowerCase() == widget.toName.toLowerCase());
-      if (from >= 0 && to >= from) stops = stops.sublist(from, to + 1);
+      if (from >= 0 && to >= from) {
+        stops = stops.sublist(from, to + 1);
+      } else {
+        if (_stopName(stops.first).toLowerCase() != widget.fromName.toLowerCase()) {
+          stops.insert(0, {'name': widget.fromName, 'stop_order': 0});
+        }
+        if (_stopName(stops.last).toLowerCase() != widget.toName.toLowerCase()) {
+          stops.add({'name': widget.toName, 'stop_order': stops.length + 1});
+        }
+      }
     }
 
-    var markers = <Marker>{};
-    var line = <LatLng>[];
-    String? message;
     try {
-        final query = <String, String>{
-          'origin': widget.fromName,
-          'destination': widget.toName,
-          if (stops.length > 2) 'waypoints': stops.sublist(1, stops.length - 1).map(_stopName).join('|'),
-        };
-        final data = await ApiClient.get('routes/directions', query: query);
-        if (data is! Map || data['status'] != 'OK') {
-          throw Exception(data is Map ? (data['message'] ?? data['status'] ?? 'Directions unavailable') : 'Invalid directions response');
-        }
-        final routes = data['routes'] as List;
-        final route = routes.first as Map;
-        final overview = route['overview_polyline'] as Map;
-        line = _decodePolyline((overview['points'] ?? '').toString());
-        final legs = (route['legs'] as List?) ?? [];
-        final coords = <LatLng>[];
-        for (var legIndex = 0; legIndex < legs.length; legIndex++) {
-          final leg = legs[legIndex];
-          if (leg is! Map) continue;
-          final start = leg['start_location'];
-          final end = leg['end_location'];
-          if (legIndex == 0 && start is Map) {
-            coords.add(LatLng((start['lat'] as num).toDouble(), (start['lng'] as num).toDouble()));
-          }
-          if (end is Map) coords.add(LatLng((end['lat'] as num).toDouble(), (end['lng'] as num).toDouble()));
-        }
-        for (var i = 0; i < stops.length; i++) {
-          final pos = i < coords.length ? coords[i] : (line.isNotEmpty ? line[(line.length * i / (stops.length - 1).clamp(1, 999)).round().clamp(0, line.length - 1).toInt()] : _fallback);
-          markers.add(Marker(
-            markerId: MarkerId('stop-$i'),
-            position: pos,
-            infoWindow: InfoWindow(title: _stopName(stops[i]), snippet: i == 0 ? 'Departure' : (i == stops.length - 1 ? 'Destination' : 'Stop $i')),
-            icon: BitmapDescriptor.defaultMarkerWithHue(i == 0 ? BitmapDescriptor.hueGreen : (i == stops.length - 1 ? BitmapDescriptor.hueAzure : BitmapDescriptor.hueOrange)),
-          ));
-        }
-    } catch (e) {
-      message = 'The road route could not be loaded. Check that Google Maps SDK is configured in the app and GOOGLE_MAPS_SERVER_API_KEY is set on the BookIt backend.';
-    }
+      final coordinates = <LatLng>[];
+      for (final stop in stops) {
+        final name = _stopName(stop).trim();
+        final point = _coordinatesFrom(stop) ?? await _geocode(name);
+        if (point != null) coordinates.add(point);
+      }
+      if (coordinates.length < 2) {
+        throw Exception('Could not locate both route endpoints');
+      }
 
-    if (!mounted) return;
-    setState(() {
-      _stops = stops;
-      _markers = markers;
-      _polyline = line;
-      _mapMessage = message;
-      _loading = false;
-    });
+      final coordinateString = coordinates.map((p) => '${p.longitude},${p.latitude}').join(';');
+      final uri = Uri.https(
+        'router.project-osrm.org',
+        '/route/v1/driving/$coordinateString',
+        {'overview': 'full', 'geometries': 'geojson', 'steps': 'false'},
+      );
+      final response = await http.get(uri, headers: {'Accept': 'application/json'}).timeout(const Duration(seconds: 20));
+      if (response.statusCode != 200) throw Exception('Routing service returned ${response.statusCode}');
+      final payload = jsonDecode(response.body);
+      if (payload is! Map || payload['code'] != 'Ok' || (payload['routes'] as List? ?? []).isEmpty) {
+        throw Exception('No driving route found');
+      }
+      final route = (payload['routes'] as List).first as Map;
+      final geometry = route['geometry'] as Map;
+      final coords = geometry['coordinates'] as List;
+      final line = coords.whereType<List>().where((c) => c.length >= 2)
+          .map((c) => LatLng((c[1] as num).toDouble(), (c[0] as num).toDouble())).toList();
+
+      if (!mounted) return;
+      setState(() {
+        _stops = stops;
+        _points = coordinates;
+        _routeLine = line;
+        _mapMessage = null;
+        _loading = false;
+      });
+      if (line.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || line.isEmpty) return;
+          final bounds = LatLngBounds.fromPoints(line);
+          _mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(38)));
+        });
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _stops = stops;
+        _points = [];
+        _routeLine = [];
+        _mapMessage = 'We could not draw the road route. Check the stop names and internet connection, then refresh.';
+        _loading = false;
+      });
+    }
   }
 
-  static int _order(Map<String, dynamic> stop) => int.tryParse((stop['stop_order'] ?? stop['stopOrder'] ?? '').toString()) ?? 0;
+  Future<LatLng?> _geocode(String place) async {
+    if (place.isEmpty) return null;
+    // Nominatim requires an identifying User-Agent and respectful request rates.
+    final uri = Uri.https('nominatim.openstreetmap.org', '/search', {
+      'q': '$place, Rwanda',
+      'format': 'jsonv2',
+      'limit': '1',
+    });
+    final response = await http.get(uri, headers: {
+      'Accept': 'application/json',
+      'User-Agent': 'BookIt/1.0 (route map; contact: support@1percent.rw)',
+    }).timeout(const Duration(seconds: 15));
+    if (response.statusCode != 200) return null;
+    final result = jsonDecode(response.body);
+    if (result is! List || result.isEmpty || result.first is! Map) return null;
+    final item = result.first as Map;
+    final lat = double.tryParse((item['lat'] ?? '').toString());
+    final lon = double.tryParse((item['lon'] ?? '').toString());
+    if (lat == null || lon == null) return null;
+    return LatLng(lat, lon);
+  }
+
+  LatLng? _coordinatesFrom(Map<String, dynamic> stop) {
+    final location = stop['location'] is Map ? Map<String, dynamic>.from(stop['location']) : stop;
+    final lat = double.tryParse((location['latitude'] ?? location['lat'] ?? '').toString());
+    final lng = double.tryParse((location['longitude'] ?? location['lng'] ?? location['lon'] ?? '').toString());
+    if (lat == null || lng == null || lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    return LatLng(lat, lng);
+  }
+
+  static int _order(Map<String, dynamic> stop) =>
+      int.tryParse((stop['stop_order'] ?? stop['stopOrder'] ?? '').toString()) ?? 0;
+
   static String _locationName(Map<String, dynamic> stop) {
     final location = stop['location'];
     if (location is Map) return (location['name'] ?? '').toString();
     return '';
   }
-  static String _stopName(Map<String, dynamic> stop) => (stop['name'] ?? _locationName(stop) ?? 'Stop').toString();
 
-  void _onMapCreated(GoogleMapController controller) {
-    _mapController = controller;
-    if (_polyline.length < 2) return;
-    var minLat = _polyline.first.latitude, maxLat = minLat;
-    var minLng = _polyline.first.longitude, maxLng = minLng;
-    for (final point in _polyline) {
-      if (point.latitude < minLat) minLat = point.latitude;
-      if (point.latitude > maxLat) maxLat = point.latitude;
-      if (point.longitude < minLng) minLng = point.longitude;
-      if (point.longitude > maxLng) maxLng = point.longitude;
-    }
-    if ((maxLat - minLat).abs() < 0.0005) { minLat -= 0.001; maxLat += 0.001; }
-    if ((maxLng - minLng).abs() < 0.0005) { minLng -= 0.001; maxLng += 0.001; }
-    controller.animateCamera(CameraUpdate.newLatLngBounds(
-      LatLngBounds(southwest: LatLng(minLat, minLng), northeast: LatLng(maxLat, maxLng)),
-      42,
-    ));
-  }
-
-  List<LatLng> _decodePolyline(String encoded) {
-    final points = <LatLng>[];
-    var index = 0, lat = 0, lng = 0;
-    while (index < encoded.length) {
-      var shift = 0, result = 0, byte = 0;
-      do {
-        byte = encoded.codeUnitAt(index++) - 63;
-        result |= (byte & 0x1f) << shift;
-        shift += 5;
-      } while (byte >= 0x20 && index < encoded.length);
-      lat += (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
-      shift = 0; result = 0;
-      do {
-        byte = encoded.codeUnitAt(index++) - 63;
-        result |= (byte & 0x1f) << shift;
-        shift += 5;
-      } while (byte >= 0x20 && index < encoded.length);
-      lng += (result & 1) != 0 ? ~(result >> 1) : (result >> 1);
-      points.add(LatLng(lat / 1e5, lng / 1e5));
-    }
-    return points;
-  }
+  static String _stopName(Map<String, dynamic> stop) =>
+      (stop['name'] ?? _locationName(stop) ?? 'Stop').toString();
 
   @override
   Widget build(BuildContext context) {
-    final supportsNativeMap = defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
-    final initial = _polyline.isNotEmpty ? _polyline.first : _fallback;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -190,7 +178,10 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
         actions: [
           IconButton(
             tooltip: 'Refresh route',
-            onPressed: () { setState(() => _loading = true); _loadRoute(); },
+            onPressed: () {
+              setState(() => _loading = true);
+              _loadRoute();
+            },
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -202,10 +193,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    gradient: AppColors.heroGradient,
-                    borderRadius: BorderRadius.circular(22),
-                  ),
+                  decoration: BoxDecoration(gradient: AppColors.heroGradient, borderRadius: BorderRadius.circular(22)),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     const Text('BOOKIT JOURNEY', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.2)),
                     const SizedBox(height: 10),
@@ -225,71 +213,74 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                   borderRadius: BorderRadius.circular(22),
                   child: SizedBox(
                     height: 330,
-                    child: supportsNativeMap
-                        ? GoogleMap(
-                            initialCameraPosition: CameraPosition(target: initial, zoom: 9),
-                            onMapCreated: _onMapCreated,
-                            markers: _markers,
-                            polylines: {
-                              if (_polyline.isNotEmpty) Polyline(
-                                polylineId: const PolylineId('bookit-full-route'),
-                                points: _polyline,
-                                color: AppColors.primary,
-                                width: 6,
-                                geodesic: true,
+                    child: FlutterMap(
+                      mapController: _mapController,
+                      options: MapOptions(initialCenter: _points.isNotEmpty ? _points.first : _kigali, initialZoom: 8),
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          userAgentPackageName: 'rw.onepercent.bookit',
+                        ),
+                        if (_routeLine.length >= 2)
+                          PolylineLayer(polylines: [
+                            Polyline(points: _routeLine, strokeWidth: 5, color: AppColors.primary),
+                          ]),
+                        MarkerLayer(markers: [
+                          for (var i = 0; i < _points.length; i++)
+                            Marker(
+                              point: _points[i],
+                              width: 44,
+                              height: 44,
+                              child: Tooltip(
+                                message: i == 0 ? 'Departure' : (i == _points.length - 1 ? 'Destination' : 'Stop ${i + 1}'),
+                                child: Icon(
+                                  i == 0 ? Icons.trip_origin : (i == _points.length - 1 ? Icons.location_on : Icons.location_on_outlined),
+                                  size: i == 0 || i == _points.length - 1 ? 36 : 30,
+                                  color: i == 0 ? AppColors.success : (i == _points.length - 1 ? AppColors.danger : AppColors.primary),
+                                ),
                               ),
-                            },
-                            myLocationButtonEnabled: false,
-                            zoomControlsEnabled: true,
-                            mapToolbarEnabled: false,
-                          )
-                        : _mapUnavailable(),
+                            ),
+                        ]),
+                        RichAttributionWidget(
+                          attributions: [
+                            TextSourceAttribution(
+                              'OpenStreetMap contributors',
+                              onTap: () {},
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                if (_mapMessage != null) Padding(
-                  padding: const EdgeInsets.only(top: 10),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: const Color(0xFFFFF4D8), borderRadius: BorderRadius.circular(12)),
-                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Icon(Icons.info_outline, color: Color(0xFF956400)),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(_mapMessage!, style: const TextStyle(color: Color(0xFF795500)))),
-                    ]),
+                if (_mapMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: const Color(0xFFFFF4D8), borderRadius: BorderRadius.circular(12)),
+                      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        const Icon(Icons.info_outline, color: Color(0xFF956400)),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(_mapMessage!, style: const TextStyle(color: Color(0xFF795500)))),
+                      ]),
+                    ),
                   ),
-                ),
                 const SizedBox(height: 20),
                 const Text('Stops along your route', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.textDark)),
                 const SizedBox(height: 10),
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
-                    child: Column(children: [
-                      for (var i = 0; i < _stops.length; i++)
-                        _stopTile(i, _stops.length),
-                    ]),
+                    child: Column(children: [for (var i = 0; i < _stops.length; i++) _stopTile(i, _stops.length)]),
                   ),
                 ),
                 const SizedBox(height: 10),
-                const Text('The map shows the Google Maps driving route. Actual arrival times can vary with traffic and operator conditions.', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                const Text('Road geometry is provided by OpenStreetMap-based routing. Arrival times can vary with traffic and operator conditions.', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
               ],
             ),
     );
   }
-
-  Widget _mapUnavailable() => Container(
-    color: const Color(0xFFEAF3F8),
-    child: Center(child: Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(mainAxisSize: MainAxisSize.min, children: const [
-        Icon(Icons.map_outlined, size: 48, color: AppColors.primary),
-        SizedBox(height: 10),
-        Text('Map preview unavailable on this platform', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textDark)),
-        SizedBox(height: 6),
-        Text('The full route and stop timeline are available here. Open BookIt on Android or iOS to view the embedded Google Map.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted)),
-      ]),
-    )),
-  );
 
   Widget _infoChip(IconData icon, String label) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
@@ -304,7 +295,6 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
   Widget _stopTile(int index, int total) {
     final stop = _stops[index];
     final isFirst = index == 0, isLast = index == total - 1;
-    final name = _stopName(stop);
     final order = stop['stop_order'] ?? stop['stopOrder'] ?? index + 1;
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       SizedBox(width: 28, child: Column(children: [
@@ -323,7 +313,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
       Expanded(child: Padding(
         padding: const EdgeInsets.only(bottom: 14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(name, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textDark)),
+          Text(_stopName(stop), style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textDark)),
           Text(isFirst ? 'Boarding point' : (isLast ? 'Destination' : 'Stop $order'), style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
         ]),
       )),
