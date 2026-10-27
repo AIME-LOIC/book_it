@@ -26,7 +26,10 @@ class ApiClient {
       try { data=res.body.isEmpty?<String,dynamic>{}:jsonDecode(res.body); } catch (_) { data={'message':res.body}; }
       if(res.statusCode<200||res.statusCode>=300) {
         final msg=data is Map?(data['message']??data['error']):null;
-        throw ApiException(msg?.toString()??'Request failed (HTTP ${res.statusCode}).');
+        final detail=data is Map?(data['details']??data['detail']??data['errors']??data['code']):null;
+        final message=msg?.toString()??'Request failed';
+        final diagnostic=detail==null?'':' Details: ${detail is String?detail:jsonEncode(detail)}';
+        throw ApiException('$message (HTTP ${res.statusCode}).$diagnostic');
       }
       return data;
     } on ApiException { rethrow; }
