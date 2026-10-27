@@ -89,23 +89,10 @@ class BrandLogo extends StatelessWidget {
           ),
         ],
       ),
-      child: Padding(
-        padding: EdgeInsets.all(size * 0.09),
-        child: ColorFiltered(
-          colorFilter: ColorFilter.mode(
-            onLight ? AppColors.white : AppColors.primary,
-            BlendMode.srcIn,
-          ),
-          child: Image.asset(
-            'assets/bookit_logo.png',
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => Icon(
-              Icons.directions_bus_rounded,
-              color: onLight ? AppColors.white : AppColors.primary,
-              size: size * 0.52,
-            ),
-          ),
-        ),
+      child: Icon(
+        Icons.directions_bus_rounded,
+        color: onLight ? AppColors.white : AppColors.primary,
+        size: size * 0.52,
       ),
     );
   }

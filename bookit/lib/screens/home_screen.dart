@@ -744,7 +744,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
-  Widget _ticketTab(){final xs=_tickets.where((t)=>(t['status']??'').toString().toLowerCase()=='paid').toList();if(_loadingTickets)return const Center(child:CircularProgressIndicator());return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:const EdgeInsets.all(18),children:[const Text('My tickets',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)),if(xs.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:25),child:Text('Confirmed tickets appear here after payment succeeds.')),...xs.map(_ticketCard)]));}
+  Widget _ticketTab(){final xs=_tickets.where((t)=>(t['status']??'').toString().toLowerCase()=='paid').toList();return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:EdgeInsets.zero,children:[Container(padding:const EdgeInsets.fromLTRB(22,24,22,24),decoration:const BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('My tickets',style:TextStyle(color:Colors.white,fontSize:25,fontWeight:FontWeight.w800)),const SizedBox(height:5),Text('Your confirmed journeys in one place.',style:TextStyle(color:Colors.white.withValues(alpha:.86),fontSize:14)),const SizedBox(height:12),Row(children:[const Icon(Icons.confirmation_number_outlined,color:Colors.white,size:20),const SizedBox(width:8),Text('${xs.length} ${xs.length==1?'ticket':'tickets'}',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700))])]),),Padding(padding:const EdgeInsets.all(18),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[if(_loadingTickets)const Padding(padding:EdgeInsets.all(24),child:Center(child:CircularProgressIndicator())),if(!_loadingTickets&&xs.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:25),child:Text('Confirmed tickets appear here after payment succeeds.')),...xs.map(_ticketCard)]))]));}
   String _ticketRoute(Map<String,dynamic> t){
     final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};
     final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};
@@ -761,33 +761,23 @@ class _HomeScreenState extends State<HomeScreen> {
     for(final ticket in _tickets){groups.putIfAbsent(_ticketRoute(ticket),()=>[]).add(ticket);}
     final selected=_selectedHistoryRoute;
     final selectedTickets=selected==null? <Map<String,dynamic>>[] : (groups[selected]??<Map<String,dynamic>>[]);
-    final children=<Widget>[];
-    if(selected==null){
-      children.add(const Text('Booking history',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)));
-      children.add(const SizedBox(height:6));
-      children.add(const Text('Choose a route to view its bookings.',style:TextStyle(color:AppColors.textMuted)));
-      if(_loadingTickets)children.add(const Padding(padding:EdgeInsets.all(20),child:Center(child:CircularProgressIndicator())));
-      if(!_loadingTickets&&groups.isEmpty)children.add(const Padding(padding:EdgeInsets.symmetric(vertical:24),child:Text('No bookings found.')));
-      final entries=groups.entries.toList()..sort((a,b)=>a.key.compareTo(b.key));
-      for(final entry in entries){
-        children.add(Card(margin:const EdgeInsets.only(top:10),child:ListTile(
-          leading:Container(width:46,height:46,decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),child:const Icon(Icons.route_rounded,color:AppColors.primary)),
-          title:Text(entry.key,style:const TextStyle(fontWeight:FontWeight.w800)),
-          subtitle:Text('${entry.value.length} ${entry.value.length==1?'ticket':'tickets'}'),
-          trailing:const Icon(Icons.chevron_right),
-          onTap:()=>setState(()=>_selectedHistoryRoute=entry.key),
-        )));
-      }
-    }else{
-      children.add(Row(children:[
-        IconButton(onPressed:()=>setState(()=>_selectedHistoryRoute=null),icon:const Icon(Icons.arrow_back)),
-        Expanded(child:Text(selected,style:const TextStyle(fontSize:20,fontWeight:FontWeight.w800))),
-      ]));
-      children.add(Text('${selectedTickets.length} ${selectedTickets.length==1?'ticket':'tickets'}',style:const TextStyle(color:AppColors.textMuted)));
-      if(selectedTickets.isEmpty)children.add(const Padding(padding:EdgeInsets.symmetric(vertical:24),child:Text('No bookings found for this route.')));
-      children.addAll(selectedTickets.map(_ticketCard));
-    }
-    return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:const EdgeInsets.all(18),children:children));
+    final entries=groups.entries.toList()..sort((a,b)=>a.key.compareTo(b.key));
+    return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:EdgeInsets.zero,children:[
+      Container(padding:const EdgeInsets.fromLTRB(22,24,22,24),decoration:const BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        if(selected!=null)Row(children:[IconButton(onPressed:()=>setState(()=>_selectedHistoryRoute=null),icon:const Icon(Icons.arrow_back,color:Colors.white),tooltip:'All routes'),const SizedBox(width:4),Expanded(child:Text(selected,style:const TextStyle(color:Colors.white,fontSize:21,fontWeight:FontWeight.w800),maxLines:2,overflow:TextOverflow.ellipsis))]) else const Text('Booking history',style:TextStyle(color:Colors.white,fontSize:25,fontWeight:FontWeight.w800)),
+        const SizedBox(height:5),
+        Text(selected==null?'Review bookings grouped by route.':'Bookings for this route.',style:TextStyle(color:Colors.white.withValues(alpha:.86),fontSize:14)),
+        const SizedBox(height:12),
+        Row(children:[const Icon(Icons.route_rounded,color:Colors.white,size:20),const SizedBox(width:8),Text('${selected==null?groups.length:selectedTickets.length} ${selected==null?(groups.length==1?'routes':'routes'):(selectedTickets.length==1?'ticket':'tickets')}',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700))])
+      ])),
+      Padding(padding:const EdgeInsets.all(18),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        if(_loadingTickets)const Padding(padding:EdgeInsets.all(20),child:Center(child:CircularProgressIndicator())),
+        if(selected==null&&!_loadingTickets&&groups.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:24),child:Text('No bookings found.')),
+        if(selected!=null&&!_loadingTickets&&selectedTickets.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:24),child:Text('No bookings found for this route.')),
+        if(selected==null)for(final entry in entries)Card(margin:const EdgeInsets.only(top:10),child:ListTile(leading:Container(width:46,height:46,decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),child:const Icon(Icons.route_rounded,color:AppColors.primary)),title:Text(entry.key,style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text('${entry.value.length} ${entry.value.length==1?'ticket':'tickets'}'),trailing:const Icon(Icons.chevron_right),onTap:()=>setState(()=>_selectedHistoryRoute=entry.key))),
+        if(selected!=null)...selectedTickets.map(_ticketCard)
+      ]))
+    ]));
   }
   Widget _ticketCard(Map<String,dynamic> t){
     final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};
