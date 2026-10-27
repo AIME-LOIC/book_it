@@ -102,11 +102,11 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
-          borderSide: const BorderSide(color: isDark ? const Color(0xFF34404D) : (isGreen ? const Color(0xFFC5E1A5) : const Color(0xFFDCEEFB))),
+          borderSide: BorderSide(color: isDark ? const Color(0xFF34404D) : (isGreen ? const Color(0xFFC5E1A5) : const Color(0xFFDCEEFB))),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
-          borderSide: const BorderSide(
+          borderSide: BorderSide(
             color: primary,
             width: 1.6,
           ),
@@ -151,11 +151,11 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      chipTheme: const ChipThemeData(
+      chipTheme: ChipThemeData(
         backgroundColor: surface,
         selectedColor: primary,
         secondaryLabelStyle: TextStyle(color: AppColors.white),
-        labelStyle: TextStyle(color: AppColors.textDark),
+        labelStyle: TextStyle(color: foreground),
         side: BorderSide(color: Color(0xFFE1F5FE)),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(
@@ -164,7 +164,7 @@ class AppTheme {
         ),
         elevation: 0,
       ),
-      snackBarTheme: const SnackBarThemeData(
+      snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: isDark ? const Color(0xFF263238) : AppColors.textDark,
         contentTextStyle: TextStyle(color: AppColors.white),
@@ -179,14 +179,14 @@ class AppTheme {
         indicatorColor: isDark ? const Color(0xFF263238) : (isGreen ? const Color(0xFFC8E6C9) : AppColors.primarySoft),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        labelTextStyle: const WidgetStatePropertyAll(
+        labelTextStyle: WidgetStatePropertyAll(
           TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: primary,
           ),
         ),
-        iconTheme: const WidgetStatePropertyAll(
+        iconTheme: WidgetStatePropertyAll(
           IconThemeData(color: primary),
         ),
       ),
