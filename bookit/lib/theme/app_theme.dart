@@ -43,34 +43,46 @@ abstract final class AppSpacing {
 class AppTheme {
   const AppTheme._();
 
-  static ThemeData get theme {
+  static ThemeData get theme => themeFor('white');
+
+  static ThemeData themeFor(String mode) {
+    final isDark = mode == 'dark';
+    final isGreen = mode == 'green';
+    final primary = isGreen ? const Color(0xFF2E7D32) : AppColors.primary;
+    final primaryLight = isGreen ? const Color(0xFF81C784) : AppColors.primaryLight;
+    final surface = isDark ? const Color(0xFF151A20) : AppColors.white;
+    final background = isDark ? const Color(0xFF0D1117) : (isGreen ? const Color(0xFFF1F8E9) : AppColors.background);
+    final foreground = isDark ? const Color(0xFFF1F5F9) : AppColors.textDark;
+    final muted = isDark ? const Color(0xFFB0BEC5) : AppColors.textMuted;
     final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
+      seedColor: primary,
+      brightness: isDark ? Brightness.dark : Brightness.light,
+      surface: surface,
     );
 
     final base = ThemeData(
       useMaterial3: true,
       colorScheme: scheme.copyWith(
-        primary: AppColors.primary,
-        secondary: AppColors.primaryLight,
-        surface: AppColors.white,
+        primary: primary,
+        secondary: primaryLight,
+        surface: surface,
       ),
-      scaffoldBackgroundColor: AppColors.background,
-      appBarTheme: const AppBarTheme(
+      scaffoldBackgroundColor: background,
+      appBarTheme: AppBarTheme(
         elevation: 0,
         centerTitle: false,
-        backgroundColor: AppColors.white,
-        foregroundColor: AppColors.textDark,
+        backgroundColor: surface,
+        foregroundColor: foreground,
         surfaceTintColor: Colors.transparent,
         systemOverlayStyle: SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
-          statusBarIconBrightness: Brightness.dark,
-          statusBarBrightness: Brightness.light,
+          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
         ),
       ),
       textTheme: _textTheme,
       cardTheme: CardThemeData(
-        color: AppColors.white,
+        color: surface,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
@@ -79,7 +91,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.primaryFaint,
+        fillColor: background,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 16,
@@ -90,12 +102,12 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
-          borderSide: const BorderSide(color: Color(0xFFDCEEFB)),
+          borderSide: const BorderSide(color: isDark ? const Color(0xFF34404D) : (isGreen ? const Color(0xFFC5E1A5) : const Color(0xFFDCEEFB))),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
           borderSide: const BorderSide(
-            color: AppColors.primary,
+            color: primary,
             width: 1.6,
           ),
         ),
@@ -103,12 +115,12 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
           borderSide: const BorderSide(color: AppColors.danger),
         ),
-        labelStyle: const TextStyle(color: AppColors.textMuted),
+        labelStyle: TextStyle(color: muted),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.white,
+          backgroundColor: primary,
+          foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(54),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
@@ -121,9 +133,9 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primary,
+          foregroundColor: primary,
           minimumSize: const Size.fromHeight(54),
-          side: const BorderSide(color: AppColors.primaryLight, width: 1.4),
+          side: BorderSide(color: primaryLight, width: 1.4),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
           ),
@@ -135,13 +147,13 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.primary,
+          foregroundColor: primary,
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
       chipTheme: const ChipThemeData(
-        backgroundColor: AppColors.white,
-        selectedColor: AppColors.primary,
+        backgroundColor: surface,
+        selectedColor: primary,
         secondaryLabelStyle: TextStyle(color: AppColors.white),
         labelStyle: TextStyle(color: AppColors.textDark),
         side: BorderSide(color: Color(0xFFE1F5FE)),
@@ -154,7 +166,7 @@ class AppTheme {
       ),
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.textDark,
+        backgroundColor: isDark ? const Color(0xFF263238) : AppColors.textDark,
         contentTextStyle: TextStyle(color: AppColors.white),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(
@@ -163,24 +175,31 @@ class AppTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: AppColors.white,
-        indicatorColor: AppColors.primarySoft,
+        backgroundColor: surface,
+        indicatorColor: isDark ? const Color(0xFF263238) : (isGreen ? const Color(0xFFC8E6C9) : AppColors.primarySoft),
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         labelTextStyle: const WidgetStatePropertyAll(
           TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: AppColors.primaryDark,
+            color: primary,
           ),
         ),
         iconTheme: const WidgetStatePropertyAll(
-          IconThemeData(color: AppColors.primary),
+          IconThemeData(color: primary),
         ),
       ),
     );
 
-    return base.copyWith(colorScheme: scheme);
+    return base.copyWith(
+      colorScheme: scheme,
+      scaffoldBackgroundColor: background,
+      textTheme: base.textTheme.apply(bodyColor: foreground, displayColor: foreground),
+      dividerColor: isDark ? const Color(0xFF303943) : null,
+      cardTheme: base.cardTheme.copyWith(color: surface),
+      appBarTheme: base.appBarTheme.copyWith(backgroundColor: surface, foregroundColor: foreground),
+    );
   }
 
   static const TextTheme _textTheme = TextTheme(
