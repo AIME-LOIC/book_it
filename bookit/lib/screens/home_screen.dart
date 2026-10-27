@@ -394,7 +394,7 @@ class _HomeScreenState extends State<HomeScreen> {
             child:Column(children:[
               SizedBox(width:200,child:Row(mainAxisAlignment:MainAxisAlignment.start,crossAxisAlignment:CrossAxisAlignment.center,children:[
                 const SizedBox(width:42,height:42,child:Center(child:Icon(Icons.directions_car_filled_outlined,color:Color(0xFF64748B),size:25))),
-                const SizedBox(width:6),_seatButton(c,'1C',available),const SizedBox(width:68),_seatButton(c,'1D',available),
+                const SizedBox(width:66),_seatButton(c,'1C',available),const SizedBox(width:8),_seatButton(c,'1D',available),
               ])),
               const SizedBox(height:10),              for(var row=2;row<=8;row++)
                 Padding(padding:EdgeInsets.only(bottom:row==8?0:6),child:SizedBox(width:200,child:row==8
