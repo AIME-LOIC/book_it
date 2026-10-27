@@ -197,8 +197,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if(code==0)return 'Clear sky';
     if(code<=3)return code==1?'Mostly clear':code==2?'Partly cloudy':'Overcast';
     if(code==45||code==48)return 'Foggy';
-    if(code>=51&&code<=57)return 'Drizzle';
-    if(code>=61&&code<=67)return 'Rain';
+    if(code>=51&&code<=57)return 'Drizzle';    if(code>=61&&code<=67)return 'Rain';
     if(code>=71&&code<=77)return 'Snow';
     if(code>=80&&code<=82)return 'Rain showers';
     if(code>=85&&code<=86)return 'Snow showers';
@@ -395,13 +394,12 @@ class _HomeScreenState extends State<HomeScreen> {
             child:Column(children:[
               SizedBox(width:220,child:Row(mainAxisAlignment:MainAxisAlignment.start,crossAxisAlignment:CrossAxisAlignment.center,children:[
                 const SizedBox(width:42,height:42,child:Center(child:Icon(Icons.directions_car_filled_outlined,color:Color(0xFF64748B),size:25))),
-                const SizedBox(width:6),_seatButton(c,'1C',available),const SizedBox(width:6),_seatButton(c,'1D',available),
+                const SizedBox(width:6),_seatButton(c,'1C',available),const SizedBox(width:68),_seatButton(c,'1D',available),
               ])),
-              const SizedBox(height:10),
-              for(var row=2;row<=8;row++)
+              const SizedBox(height:10),              for(var row=2;row<=8;row++)
                 Padding(padding:EdgeInsets.only(bottom:row==8?0:6),child:SizedBox(width:220,child:row==8
                   ?Row(mainAxisAlignment:MainAxisAlignment.start,children:[
-                    _seatButton(c,'8A',available),const SizedBox(width:6),_seatButton(c,'8B',available),const SizedBox(width:18),_seatButton(c,'8C',available),const SizedBox(width:8),_seatButton(c,'8D',available),
+                    _seatButton(c,'8A',available),const SizedBox(width:6),_seatButton(c,'8B',available),const SizedBox(width:6),_seatButton(c,'8C',available),const SizedBox(width:6),_seatButton(c,'8D',available),
                   ])
                   :row==3
                   ?Row(mainAxisAlignment:MainAxisAlignment.start,children:[
@@ -597,8 +595,7 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.only(left: 4, top: 2, bottom: 18),
           child: Text('Review your booking and pay with mobile money.',
               style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
-        ),
-        Container(
+        ),        Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             gradient: AppColors.heroGradient,
@@ -797,8 +794,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ]))
     ]));
   }
-  Widget _ticketCard(Map<String,dynamic> t){
-    final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};
+  Widget _ticketCard(Map<String,dynamic> t){    final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};
     final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};
     final from=route['fromLocation'] is Map?(route['fromLocation']['name']??'From').toString():'From';
     final to=route['toLocation'] is Map?(route['toLocation']['name']??'To').toString():'To';
@@ -998,7 +994,6 @@ class _SeatLegend extends StatelessWidget {
   const _SeatLegend({required this.color, required this.label});
   final Color color;
   final String label;
-
   @override
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
@@ -1197,8 +1192,7 @@ class BusDetailsScreen extends StatelessWidget {
               )).toList())
             else
               Container(padding:const EdgeInsets.all(15),decoration:BoxDecoration(color:theme.colorScheme.surfaceContainerHighest.withValues(alpha:.55),borderRadius:BorderRadius.circular(16)),child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
-                Icon(Icons.info_outline_rounded,color:theme.colorScheme.onSurfaceVariant),
-                const SizedBox(width:10),
+                Icon(Icons.info_outline_rounded,color:theme.colorScheme.onSurfaceVariant),                const SizedBox(width:10),
                 Expanded(child:Text('No special amenities have been listed for this bus. Wi-Fi, charging ports and other facilities are unconfirmed, not guaranteed to be unavailable.',style:TextStyle(color:theme.colorScheme.onSurfaceVariant,height:1.45))),
               ])),
             const SizedBox(height:18),
