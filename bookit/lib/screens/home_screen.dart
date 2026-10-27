@@ -208,3 +208,24 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _history()=>_historyTab();
   Widget _profile()=>ListView(padding:const EdgeInsets.all(20),children:[const CircleAvatar(radius:36,child:Icon(Icons.person,size:36)),const SizedBox(height:12),Text(widget.userName,textAlign:TextAlign.center,style:const TextStyle(fontSize:22,fontWeight:FontWeight.w800)),const SizedBox(height:4),const Text('Passenger account',textAlign:TextAlign.center,style:TextStyle(color:AppColors.textMuted)),const SizedBox(height:20),OutlinedButton.icon(onPressed:()async{try{await ApiClient.post('auth/logout',auth:true);}catch(_){}ApiClient.setToken(null);if(mounted)_msg('Signed out. Close and reopen BookIt to sign in again.');},icon:const Icon(Icons.logout),label:const Text('Sign out'))]);
 }
+
+
+class _SeatLegend extends StatelessWidget {
+  const _SeatLegend({required this.color, required this.label});
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
+      ),
+      const SizedBox(width: 4),
+      Text(label, style: const TextStyle(fontSize: 10)),
+    ],
+  );
+}
