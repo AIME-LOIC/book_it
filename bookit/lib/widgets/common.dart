@@ -90,7 +90,7 @@ class BrandLogo extends StatelessWidget {
         ],
       ),
       child: Icon(
-        Icons.local_activity_rounded,
+        Icons.directions_bus_rounded,
         color: onLight ? AppColors.white : AppColors.primary,
         size: size * 0.52,
       ),
