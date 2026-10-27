@@ -85,19 +85,22 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
     }
 
     try {
+      // Resolve coordinates from the persisted locations table. Do not geocode
+      // town names: that can place a passenger at a town centre instead of the
+      // actual bus terminal.
+      final locationRows = await _fetchLocations();
       final coordinates = <LatLng>[];
-      for (var i = 0; i < stops.length; i++) {
-        final name = _stopName(stops[i]).trim();
-        final knownPoint = _coordinatesFrom(stops[i]);
-        final point = knownPoint ?? await _geocode(name);
-        if (point != null) coordinates.add(point);
-        // Nominatim's public endpoint has a strict request-rate policy.
-        if (knownPoint == null && i < stops.length - 1) {
-          await Future<void>.delayed(const Duration(seconds: 1));
+      final missingStops = <String>[];
+      for (final stop in stops) {
+        final point = _coordinatesFrom(stop) ?? _coordinatesFromLocationRows(stop, locationRows);
+        if (point == null) {
+          missingStops.add(_stopName(stop).trim().isEmpty ? 'Unnamed stop' : _stopName(stop).trim());
+        } else {
+          coordinates.add(point);
         }
       }
-      if (coordinates.length < 2) {
-        throw Exception('Could not locate both route endpoints');
+      if (missingStops.isNotEmpty || coordinates.length != stops.length || coordinates.length < 2) {
+        throw Exception('Missing saved terminal coordinates for: ${missingStops.join(', ')}. Run the BookIt terminal-coordinate migration in Supabase and redeploy the API.');
       }
 
       final coordinateString = coordinates.map((p) => '${p.longitude},${p.latitude}').join(';');
@@ -139,32 +142,40 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
         _stops = stops;
         _points = [];
         _routeLine = [];
-        _mapMessage = 'We could not draw the road route. Check the stop names and internet connection, then refresh.';
+        _mapMessage = 'We could not draw the road route. Confirm that every stop has saved terminal coordinates in Supabase and that the device has an internet connection, then refresh.';
         _loading = false;
       });
     }
   }
 
-  Future<LatLng?> _geocode(String place) async {
-    if (place.isEmpty) return null;
-    // Nominatim requires an identifying User-Agent and respectful request rates.
-    final uri = Uri.https('nominatim.openstreetmap.org', '/search', {
-      'q': '$place, Rwanda',
-      'format': 'jsonv2',
-      'limit': '1',
-    });
-    final response = await http.get(uri, headers: {
-      'Accept': 'application/json',
-      'User-Agent': 'BookIt/1.0 (route map; contact: support@1percent.rw)',
-    }).timeout(const Duration(seconds: 15));
-    if (response.statusCode != 200) return null;
-    final result = jsonDecode(response.body);
-    if (result is! List || result.isEmpty || result.first is! Map) return null;
-    final item = result.first as Map;
-    final lat = double.tryParse((item['lat'] ?? '').toString());
-    final lon = double.tryParse((item['lon'] ?? '').toString());
-    if (lat == null || lon == null) return null;
-    return LatLng(lat, lon);
+  Future<List<Map<String, dynamic>>> _fetchLocations() async {
+    final response = await ApiClient.get('locations');
+    final rows = response is List
+        ? response
+        : (response is Map && response['locations'] is List
+            ? response['locations'] as List
+            : const <dynamic>[]);
+    return rows.whereType<Map>()
+        .map((row) => Map<String, dynamic>.from(row))
+        .toList();
+  }
+
+  LatLng? _coordinatesFromLocationRows(
+    Map<String, dynamic> stop,
+    List<Map<String, dynamic>> locations,
+  ) {
+    final nested = stop['location'] is Map
+        ? Map<String, dynamic>.from(stop['location'])
+        : <String, dynamic>{};
+    final locationId = (nested['id'] ?? stop['location_id'] ?? stop['locationId'])?.toString();
+    final name = _stopName(stop).trim().toLowerCase();
+    for (final location in locations) {
+      final sameId = locationId != null && location['id']?.toString() == locationId;
+      final sameName = name.isNotEmpty &&
+          (location['name'] ?? '').toString().trim().toLowerCase() == name;
+      if (sameId || sameName) return _coordinatesFrom(location);
+    }
+    return null;
   }
 
   LatLng? _coordinatesFrom(Map<String, dynamic> stop) {
@@ -184,8 +195,12 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
     return '';
   }
 
-  static String _stopName(Map<String, dynamic> stop) =>
-      (stop['name'] ?? _locationName(stop) ?? 'Stop').toString();
+  static String _stopName(Map<String, dynamic> stop) {
+    final direct = (stop['name'] ?? '').toString().trim();
+    if (direct.isNotEmpty) return direct;
+    final nested = _locationName(stop).trim();
+    return nested.isNotEmpty ? nested : 'Stop';
+  }
 
   @override
   Widget build(BuildContext context) {
