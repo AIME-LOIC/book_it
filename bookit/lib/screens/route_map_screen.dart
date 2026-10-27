@@ -136,13 +136,16 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
           _mapController.fitCamera(CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(38)));
         });
       }
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
       setState(() {
         _stops = stops;
         _points = [];
         _routeLine = [];
-        _mapMessage = 'We could not draw the road route. Confirm that every stop has saved terminal coordinates in Supabase and that the device has an internet connection, then refresh.';
+        final detail = error.toString().replaceFirst('Exception: ', '');
+        _mapMessage = detail.contains('Missing saved terminal coordinates')
+            ? detail
+            : 'We could not draw the road route. Confirm the saved terminal coordinates in Supabase and check the internet connection. Details: $detail';
         _loading = false;
       });
     }
