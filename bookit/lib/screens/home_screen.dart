@@ -136,9 +136,38 @@ class _HomeScreenState extends State<HomeScreen> {
     )));
   }
 
+  String _timeGreeting() {
+    final hour=DateTime.now().hour;
+    if(hour>=5&&hour<12)return 'Good morning';
+    if(hour>=12&&hour<17)return 'Good afternoon';
+    if(hour>=17&&hour<21)return 'Good evening';
+    return 'Good night';
+  }
+
+  String _displayFirstName() {
+    final raw=(_profileData['name']??widget.userName).toString().trim();
+    if(raw.isEmpty)return 'traveller';
+    return raw.split(RegExp(r'\\s+')).first;
+  }
+
+  String _homeHeadline() {
+    final hour=DateTime.now().hour;
+    if(hour>=5&&hour<12)return 'Where will you go today?';
+    if(hour>=12&&hour<17)return 'Your next trip starts here.';
+    if(hour>=17&&hour<21)return 'Planning your next journey?';
+    return 'Ready to plan tomorrow’s trip?';
+  }
+
+  String _todayDateLabel() {
+    final now=DateTime.now();
+    const days=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+    const months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    return '${days[now.weekday-1]}, ${months[now.month-1]} ${now.day}';
+  }
+
   Future<void> _loadWeather() async {
     try {
-      final uri=Uri.https('api.open-meteo.com','/v1/forecast',{'latitude':'-1.9441','longitude':'30.0619','current':'temperature_2m,weather_code,is_day','daily':'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset','forecast_days':'7','timezone':'Africa/Kigali'});
+      final uri=Uri.https('api.open-meteo.com','/v1/forecast',{'latitude':'-1.9441','longitude':'30.0619','current':'temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,weather_code,cloud_cover,wind_speed_10m,is_day','daily':'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset','forecast_days':'7','timezone':'Africa/Kigali','models':'best_match','temperature_unit':'celsius','wind_speed_unit':'kmh','precipitation_unit':'mm'});
       final response=await http.get(uri).timeout(const Duration(seconds:8));
       if(response.statusCode!=200)return;
       final data=jsonDecode(response.body) as Map<String,dynamic>;
@@ -448,7 +477,7 @@ class _HomeScreenState extends State<HomeScreen> {
       Positioned(right:-12,top:-16,bottom:-16,width:155,child:_WeatherBackdrop(code:_weatherCode)),
       Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Row(children:[const Icon(Icons.directions_bus,color:AppColors.white,size:30),const SizedBox(width:10),const Expanded(child:Text('BookIt',style:TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800))),IconButton(onPressed:_openNotifications,icon:const Icon(Icons.notifications_none,color:AppColors.white),tooltip:'Notifications')]),
-        const SizedBox(height:14),Text('Hello, '+((_profileData['name']??widget.userName).toString()),style:const TextStyle(color:AppColors.white,fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:4),Text('Find your next trip in Rwanda.',style:TextStyle(color:AppColors.white.withValues(alpha:.9))),
+        const SizedBox(height:14),Text('${_timeGreeting()}, ${_displayFirstName()}',style:const TextStyle(color:AppColors.white,fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:4),Text(_homeHeadline(),style:TextStyle(color:AppColors.white.withValues(alpha:.95),fontSize:16,fontWeight:FontWeight.w600)),const SizedBox(height:3),Text(_todayDateLabel(),style:TextStyle(color:AppColors.white.withValues(alpha:.78),fontSize:12)),
         const SizedBox(height:14),Material(color:Colors.transparent,child:InkWell(borderRadius:BorderRadius.circular(12),onTap:_openWeatherForecast,child:Padding(padding:const EdgeInsets.symmetric(vertical:4),child:Row(children:[Icon(_weatherIcon,color:Colors.white,size:22),const SizedBox(width:8),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(_weatherLabel,style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700)),const SizedBox(height:2),Text('Tap for 7-day forecast',style:TextStyle(color:Colors.white.withValues(alpha:.82),fontSize:12))])),if(_temperature!=null)Text('${_temperature!.round()}°C',style:const TextStyle(color:Colors.white,fontSize:18,fontWeight:FontWeight.w800)),const SizedBox(width:4),const Icon(Icons.chevron_right,color:Colors.white)])))),
       ]),
     ])),
