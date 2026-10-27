@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:http/http.dart' as http;
 import '../services/api_client.dart';
 import '../theme/app_theme.dart';
 
@@ -32,7 +30,6 @@ class RouteMapScreen extends StatefulWidget {
 }
 
 class _RouteMapScreenState extends State<RouteMapScreen> {
-  static const _directionsKey = String.fromEnvironment('GOOGLE_MAPS_API_KEY');
   static const _fallback = LatLng(-1.9441, 30.0619);
   GoogleMapController? _mapController;
   List<Map<String, dynamic>> _stops = [];
@@ -83,21 +80,15 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
     var markers = <Marker>{};
     var line = <LatLng>[];
     String? message;
-    if (_directionsKey.isEmpty) {
-      message = 'Add a Google Maps API key to enable the live road map. The route stop list is still available below.';
-    } else {
-      try {
-        final waypoints = stops.length > 2
-            ? '&waypoints=optimize:false|${stops.sublist(1, stops.length - 1).map((s) => Uri.encodeComponent(_stopName(s))).join('|')}'
-            : '';
-        final url = Uri.parse(
-          'https://maps.googleapis.com/maps/api/directions/json?origin=${Uri.encodeComponent(widget.fromName)}'
-          '&destination=${Uri.encodeComponent(widget.toName)}$waypoints&mode=driving&key=$_directionsKey',
-        );
-        final response = await http.get(url).timeout(const Duration(seconds: 18));
-        final data = jsonDecode(response.body);
-        if (response.statusCode != 200 || data is! Map || data['status'] != 'OK') {
-          throw Exception(data is Map ? (data['error_message'] ?? data['status'] ?? 'Directions unavailable') : 'Invalid directions response');
+    try {
+        final query = <String, String>{
+          'origin': widget.fromName,
+          'destination': widget.toName,
+          if (stops.length > 2) 'waypoints': stops.sublist(1, stops.length - 1).map(_stopName).join('|'),
+        };
+        final data = await ApiClient.get('routes/directions', query: query);
+        if (data is! Map || data['status'] != 'OK') {
+          throw Exception(data is Map ? (data['message'] ?? data['status'] ?? 'Directions unavailable') : 'Invalid directions response');
         }
         final routes = data['routes'] as List;
         final route = routes.first as Map;
@@ -124,9 +115,8 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
             icon: BitmapDescriptor.defaultMarkerWithHue(i == 0 ? BitmapDescriptor.hueGreen : (i == stops.length - 1 ? BitmapDescriptor.hueAzure : BitmapDescriptor.hueOrange)),
           ));
         }
-      } catch (e) {
-        message = 'Google Maps could not load the road route. Check the Maps and Directions API key and billing settings.';
-      }
+    } catch (e) {
+      message = 'The road route could not be loaded. Check that Google Maps SDK is configured in the app and GOOGLE_MAPS_SERVER_API_KEY is set on the BookIt backend.';
     }
 
     if (!mounted) return;
@@ -215,25 +205,23 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                   borderRadius: BorderRadius.circular(22),
                   child: SizedBox(
                     height: 330,
-                    child: _directionsKey.isEmpty
-                        ? _mapUnavailable()
-                        : GoogleMap(
-                            initialCameraPosition: CameraPosition(target: initial, zoom: 9),
-                            onMapCreated: (controller) => _mapController = controller,
-                            markers: _markers,
-                            polylines: {
-                              if (_polyline.isNotEmpty) Polyline(
-                                polylineId: const PolylineId('bookit-full-route'),
-                                points: _polyline,
-                                color: AppColors.primary,
-                                width: 6,
-                                geodesic: true,
-                              ),
-                            },
-                            myLocationButtonEnabled: false,
-                            zoomControlsEnabled: true,
-                            mapToolbarEnabled: false,
-                          ),
+                    child: GoogleMap(
+                      initialCameraPosition: CameraPosition(target: initial, zoom: 9),
+                      onMapCreated: (controller) => _mapController = controller,
+                      markers: _markers,
+                      polylines: {
+                        if (_polyline.isNotEmpty) Polyline(
+                          polylineId: const PolylineId('bookit-full-route'),
+                          points: _polyline,
+                          color: AppColors.primary,
+                          width: 6,
+                          geodesic: true,
+                        ),
+                      },
+                      myLocationButtonEnabled: false,
+                      zoomControlsEnabled: true,
+                      mapToolbarEnabled: false,
+                    ),
                   ),
                 ),
                 if (_mapMessage != null) Padding(
