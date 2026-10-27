@@ -180,9 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
         const Text('Appearance',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)),
         const SizedBox(height:5),const Text('Choose how BookIt looks on this device.'),const SizedBox(height:14),
         _themeChoice(sheetContext,'white','Blue',Icons.light_mode_outlined,Colors.white,AppColors.primary),
-        _themeChoice(sheetContext,'green','Green',Icons.eco_outlined,const Color(0xFFF1F8E9),const Color(0xFF2E7D32)),
         _themeChoice(sheetContext,'blue_dark','Blue + dark',Icons.dark_mode_outlined,const Color(0xFF151A20),const Color(0xFF64B5F6)),
-        _themeChoice(sheetContext,'green_dark','Green + dark',Icons.nightlight_round,const Color(0xFF18241C),const Color(0xFF81C784)),
         _themeChoice(sheetContext,'device','Use device theme',Icons.settings_brightness_outlined,const Color(0xFF151A20),const Color(0xFF64B5F6)),
       ]),
     )));
@@ -725,12 +723,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCancelled = status == 'cancelled' || status == 'canceled';
     final Color statusColor = status == 'paid'
-        ? (isDark ? const Color(0xFF81D4A0) : const Color(0xFF16803D))
+        ? (isDark ? const Color(0xFF64B5F6) : const Color(0xFF16803D))
         : (isCancelled
             ? (isDark ? const Color(0xFFFF8A80) : const Color(0xFFDC2626))
             : (isDark ? const Color(0xFFFFD180) : const Color(0xFFB77900)));
     final Color statusBackground = status == 'paid'
-        ? (isDark ? const Color(0xFF19382A) : const Color(0xFFE4F6E9))
+        ? (isDark ? const Color(0xFF102A43) : const Color(0xFFE4F6E9))
         : (isCancelled
             ? (isDark ? const Color(0xFF3B2022) : const Color(0xFFFDE8E7))
             : (isDark ? const Color(0xFF3A3020) : const Color(0xFFFFF4CC)));
@@ -908,7 +906,7 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
     ])),
     const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit profile'))),
     const SizedBox(height:22),Text('Preferences',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
-    Card(child:ListTile(leading:const Icon(Icons.palette_outlined,color:AppColors.primary),title:const Text('Appearance'),subtitle:Text(ThemeController.mode.value=='device'?'Use device theme':ThemeController.mode.value=='green_dark'?'Green + dark':ThemeController.mode.value=='blue_dark'?'Blue + dark':ThemeController.mode.value=='dark'?'Blue + dark':ThemeController.mode.value=='green'?'Green':'Blue'),trailing:const Icon(Icons.chevron_right),onTap:_chooseTheme)),
+    Card(child:ListTile(leading:const Icon(Icons.palette_outlined,color:AppColors.primary),title:const Text('Appearance'),subtitle:Text(ThemeController.mode.value=='device'?'Use device theme':ThemeController.mode.value=='blue_dark'||ThemeController.mode.value=='dark'?'Blue + dark':'Blue'),trailing:const Icon(Icons.chevron_right),onTap:_chooseTheme)),
     const SizedBox(height:22),Text('Help & legal',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
     Card(child:Column(children:[
       ListTile(leading:const Icon(Icons.support_agent_outlined,color:AppColors.primary),title:const Text('Support'),subtitle:const Text('Booking and account help'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Support','For help with BookIt, contact 1% Digital Solutions through your existing support channel. Keep your booking reference, route, travel date and payment reference ready when requesting help.')),
