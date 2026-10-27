@@ -8,6 +8,8 @@ class ApiConfig {
     defaultValue: 'https://bookit.1percent.rw/rw/v1/bk',
   );
 
+  static bool get isConfigured => _baseUrl.isNotEmpty;
+
   static String endpoint(String path) =>
       '${_baseUrl.replaceFirst(RegExp(r'/+$'), '')}/${path.replaceFirst(RegExp(r'^/+'), '')}';
 }
