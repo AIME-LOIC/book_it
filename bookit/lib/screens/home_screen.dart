@@ -133,96 +133,82 @@ class _HomeScreenState extends State<HomeScreen> {
     }on ApiException catch(e){_msg(e.message);}
     finally{if(mounted)setState(()=>_searching=false);}
   }
+  static const List<String> _seatLabels = [
+    '1C','1D','2A','2B','2C','2D','3A','3B','3C','3D','4A','4B','4C','4D',
+    '5A','5B','5C','5D','6A','6B','6C','6D','7A','7B','7C','7D','8A','8B','8C','8D',
+  ];
+
   Future<void> _choose(Map<String,dynamic> bus) async {
     final dynamic rawSeatData=bus['available_seats']??bus['availableSeats']??bus['available_seat_numbers']??bus['availableSeatNumbers']??bus['seats'];
     final rawSeats=rawSeatData is List?rawSeatData:const<dynamic>[];
-    final available=<int>{};
+    final available=<String>{};
     for(final item in rawSeats){
+      dynamic raw; var free=true;
       if(item is Map){
+        raw=item['seat_label']??item['seatLabel']??item['seat_number']??item['seatNumber']??item['number']??item['seat']??item['label'];
         final status=(item['status']??item['state']??'available').toString().toLowerCase();
-        final isFree=item['available']==true||item['is_available']==true||item['isAvailable']==true||const['available','free','open'].contains(status);
-        final number=int.tryParse((item['seat_number']??item['seatNumber']??item['number']??item['seat']??item['label'])?.toString()??'');
-        if(number!=null&&isFree)available.add(number);
-      }else{final number=int.tryParse(item.toString());if(number!=null)available.add(number);}
+        free=item['available']==true||item['is_available']==true||item['isAvailable']==true||const['available','free','open'].contains(status);
+      }else{raw=item;}
+      if(!free||raw==null)continue;
+      final value=raw.toString().trim().toUpperCase();
+      if(_seatLabels.contains(value)){available.add(value);continue;}
+      final index=int.tryParse(value);
+      if(index!=null&&index>=1&&index<=_seatLabels.length)available.add(_seatLabels[index-1]);
     }
-    if(available.isEmpty){_msg('The server did not return available seat numbers for this bus. Refresh the bus list or try another trip.');return;}
-    final reportedCapacity=int.tryParse((bus['total_seats']??bus['seat_capacity']??bus['seatCapacity']??bus['capacity']??'').toString());
-    final highest=available.reduce((a,b)=>a>b?a:b);
-    final capacity=(reportedCapacity!=null&&reportedCapacity>0)?reportedCapacity:(highest>40?highest:40);
-    final n=await showDialog<int>(
-      context:context,
-      builder:(c)=>Dialog(
-        child:ConstrainedBox(
-          constraints:const BoxConstraints(maxWidth:390,maxHeight:620),
-          child:Padding(
-            padding:const EdgeInsets.all(18),
-            child:Column(mainAxisSize:MainAxisSize.min,children:[
-              const Text('Choose your seat',style:TextStyle(fontSize:21,fontWeight:FontWeight.w800)),
-              const SizedBox(height:4),
-              const Text('Front of bus',style:TextStyle(color:AppColors.textMuted)),
-              const SizedBox(height:8),
-              Container(width:170,padding:const EdgeInsets.all(10),decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),child:const Row(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(Icons.directions_bus,color:AppColors.primary),SizedBox(width:8),Text('DRIVER') ])),
-              const SizedBox(height:14),
-              const Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-                _SeatLegend(color:AppColors.success,label:'Available'),
-                SizedBox(width:12),_SeatLegend(color:AppColors.primary,label:'Selected'),
-                SizedBox(width:12),_SeatLegend(color:Color(0xFFE0E4EA),label:'Taken')
-              ]),
-              const SizedBox(height:12),
-              Flexible(child:SingleChildScrollView(child:Column(children:[
-                 Row(crossAxisAlignment:CrossAxisAlignment.center,children:[
-                   Container(width:88,height:56,decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.12),borderRadius:BorderRadius.circular(12),border:Border.all(color:AppColors.primary.withValues(alpha:.3))),child:const Column(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(Icons.directions_bus,color:AppColors.primary),Text('DRIVER',style:TextStyle(fontSize:9,fontWeight:FontWeight.w800))])),
-                   const SizedBox(width:12),Expanded(child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[_seatButton(c,1,available),const SizedBox(width:8),_seatButton(c,2,available)])),
-                 ]),
-                 const SizedBox(height:12),const Align(alignment:Alignment.centerLeft,child:Text('PASSENGER SEATS',style:TextStyle(fontSize:10,fontWeight:FontWeight.w800,color:AppColors.textMuted))),const SizedBox(height:8),
-                 for(var start=3;start<=capacity-5;start+=3)
-                   Padding(padding:const EdgeInsets.only(bottom:8),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-                     _seatButton(c,start,available),const SizedBox(width:7),
-                     if(start+1<=capacity-5)_seatButton(c,start+1,available) else const SizedBox(width:42),
-                     const SizedBox(width:22),if(start+2<=capacity-5)_seatButton(c,start+2,available),
-                   ])),
-                 const SizedBox(height:6),const Center(child:Text('REAR ROW',style:TextStyle(fontSize:10,fontWeight:FontWeight.w800,color:AppColors.textMuted))),const SizedBox(height:7),
-                 Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-                   _seatButton(c,capacity-4,available),const SizedBox(width:7),_seatButton(c,capacity-3,available),const SizedBox(width:22),
-                   _seatButton(c,capacity-2,available),const SizedBox(width:7),_seatButton(c,capacity-1,available),const SizedBox(width:7),_seatButton(c,capacity,available),
-                 ]),
-               ]))),
-               const SizedBox(height:8),
-               const Text('Front row: 2 seats beside the driver. Regular rows: 2 seats on the left and 1 window seat on the right (2 + aisle + 1). Rear row: 5 seats with a wider centre gap.',style:TextStyle(fontSize:11,color:AppColors.textMuted),textAlign:TextAlign.center),
-               TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel'))
+    if(available.isEmpty){_msg('The server did not return recognizable available seat labels for this bus. Refresh the bus list or try another trip.');return;}
+    final selected=await showDialog<String>(context:context,builder:(c)=>Dialog(
+      child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:390,maxHeight:680),child:Padding(
+        padding:const EdgeInsets.all(18),child:Column(mainAxisSize:MainAxisSize.min,children:[
+          const Text('Choose your seat',style:TextStyle(fontSize:21,fontWeight:FontWeight.w800)),
+          const SizedBox(height:4),const Text('FRONT OF BUS',style:TextStyle(color:AppColors.textMuted,fontSize:11,fontWeight:FontWeight.w800)),
+          const SizedBox(height:10),
+          Container(width:250,padding:const EdgeInsets.all(10),decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),child:const Row(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(Icons.directions_bus,color:AppColors.primary),SizedBox(width:8),Text('DRIVER')])),
+          const SizedBox(height:14),
+          const Wrap(alignment:WrapAlignment.center,spacing:12,runSpacing:8,children:[
+            _SeatLegend(color:AppColors.success,label:'Available'),_SeatLegend(color:AppColors.primary,label:'Your selection'),_SeatLegend(color:Color(0xFFE0E4EA),label:'Unavailable'),
+          ]),
+          const SizedBox(height:14),
+          Flexible(child:SingleChildScrollView(child:Container(
+            padding:const EdgeInsets.symmetric(horizontal:12,vertical:14),
+            decoration:BoxDecoration(color:const Color(0xFF0C1511),border:Border.all(color:AppColors.success.withValues(alpha:.45),width:1.5),borderRadius:BorderRadius.circular(34)),
+            child:Column(children:[
+              Row(mainAxisAlignment:MainAxisAlignment.end,children:[_seatButton(c,'1C',available),const SizedBox(width:8),_seatButton(c,'1D',available)]),
+              const SizedBox(height:10),
+              for(var row=2;row<=8;row++)
+                Padding(padding:const EdgeInsets.only(bottom:8),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+                  _seatButton(c,'\${row}A',available),const SizedBox(width:6),_seatButton(c,'\${row}B',available),const SizedBox(width:18),_seatButton(c,'\${row}C',available),const SizedBox(width:6),_seatButton(c,'\${row}D',available),
+                ])),
             ]),
-          ),
-        ),
-      ),
-    );
-    if(n==null)return;
-    try{final r=await ApiClient.post('tickets',auth:true,body:{'bus_id':bus['bus_id'],'seat_number':n,'boarding_stop_id':bus['boarding_stop_id'],'dropoff_stop_id':bus['dropoff_stop_id'],'travel_date':_dateText(_date)});
-      if(r is! Map||r['id']==null){_msg('The server did not return a reservation ID.');return;}
-      _timer?.cancel();setState(() { _selectedBus=bus; _seat=n; _activeTicketId=r['id'].toString(); _seconds=300; });
+          ))),
+          const SizedBox(height:8),const Text('Seat labels match the bus layout: 1C–1D at the front, rows 2–8 with seats A–D.',style:TextStyle(fontSize:11,color:AppColors.textMuted),textAlign:TextAlign.center),
+          TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel'))
+        ]),
+      )),
+    ));
+    if(selected==null)return;
+    final seatIndex=_seatLabels.indexOf(selected)+1;
+    try{
+      final body=<String,dynamic>{'bus_id':bus['bus_id']??bus['id'],'seat_number':seatIndex,'seat_label':selected,'boarding_stop_id':bus['boarding_stop_id'],'dropoff_stop_id':bus['dropoff_stop_id'],'travel_date':_dateText(_date)}..removeWhere((key,value)=>value==null);
+      final r=await ApiClient.post('tickets',auth:true,body:body);
+      if(r is! Map||(r['id']==null&&r['ticket_id']==null)){_msg('Reservation was not confirmed: the server returned no ticket ID.');return;}
+      _timer?.cancel();setState((){_selectedBus=bus;_seat=seatIndex;_activeTicketId=(r['id']??r['ticket_id']).toString();_seconds=300;});
       _timer=Timer.periodic(const Duration(seconds:1),(t){if(!mounted){t.cancel();return;}if(_seconds<=1){t.cancel();_expire();}else{setState(()=>_seconds--);}});
-      _msg('Seat reserved. Complete payment within 5 minutes.');
+      _msg('Seat $selected reserved. Complete payment within 5 minutes.');
     }on ApiException catch(e){
       if(!mounted)return;
-      _msg('Could not reserve seat $n: ${e.message}');
-      await _choose(bus);
+      await showDialog<void>(context:context,builder:(c)=>AlertDialog(title:const Text('Seat reservation failed'),content:Text('Seat $selected could not be reserved.\n\n\${e.message}'),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Close'))]));
     }catch(e){
       if(!mounted)return;
-      _msg('Could not reserve seat $n. Please try again.');
-      await _choose(bus);
+      await showDialog<void>(context:context,builder:(c)=>AlertDialog(title:const Text('Seat reservation failed'),content:Text('Seat $selected could not be reserved. Please try again.\n\n\$e'),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Close'))]));
     }
   }
-  Widget _seatButton(BuildContext dialogContext,int number,Set<int> available){
-    if(number>40 && !available.contains(number))return const SizedBox(width:42);
-    final free=available.contains(number);
-    return SizedBox(width:42,height:42,child:Material(
-      color:free?AppColors.success.withValues(alpha:.12):const Color(0xFFE0E4EA),
-      borderRadius:BorderRadius.circular(9),
-      child:InkWell(
-        borderRadius:BorderRadius.circular(9),
-        onTap:free?()=>Navigator.pop(dialogContext,number):null,
-        child:Center(child:Text(number.toString(),style:TextStyle(fontWeight:FontWeight.w800,color:free?AppColors.success:AppColors.textMuted))),
-      ),
-    ));
+
+  Widget _seatButton(BuildContext dialogContext,String label,Set<String> available){
+    final free=available.contains(label);
+    return SizedBox(width:42,height:42,child:Material(color:free?AppColors.success.withValues(alpha:.12):const Color(0xFFE0E4EA),borderRadius:BorderRadius.circular(9),child:InkWell(
+      borderRadius:BorderRadius.circular(9),onTap:free?()=>Navigator.pop(dialogContext,label):null,
+      child:Center(child:Text(label,style:TextStyle(fontSize:11,fontWeight:FontWeight.w800,color:free?AppColors.success:AppColors.textMuted))),
+    )));
   }
   Future<void> _expire() async {final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}catch(_){}}if(!mounted)return;setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _seconds=0; });_msg('The 5-minute hold expired. Any unpaid reservation was cancelled.');_search();}
   Future<void> _cancel() async { _timer?.cancel();final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}on ApiException catch(e){_msg(e.message);}}if(mounted)setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; });_search();}
