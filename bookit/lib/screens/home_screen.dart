@@ -124,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final wanted=(listedBus['bus_id']??listedBus['id'])?.toString();
       Map<String,dynamic>? bookable;
       for(final candidate in candidates){if(wanted!=null&&(candidate['bus_id']??candidate['id'])?.toString()==wanted){bookable=candidate;break;}}
-      bookable??=candidates.isNotEmpty?candidates.first:null;
+      if(bookable==null&&wanted==null&&candidates.length==1)bookable=candidates.first;
       if(bookable==null){_msg('This bus has no bookable seats for ${_dateText(_date)}. Try another bus or date.');return;}
       bookable['bus_id']??=bookable['id']??listedBus['bus_id']??listedBus['id'];
       if(mounted)setState(()=>_fromId=fromId);
