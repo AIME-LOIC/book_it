@@ -38,11 +38,12 @@ export async function seedDatabase() {
   // not town-centre coordinates. Keep unverified terminals nullable rather than
   // silently routing passengers to a guessed location.
   const terminalCoordinates = {
-    // Nyabugogo Taxi Park, Kigali (approximate terminal pin; verify against operator)
-    Kigali: { latitude: -1.94091, longitude: 30.04475 },
-    Kayonza: { latitude: -1.90098, longitude: 30.50820 },
-    Muhanga: { latitude: -2.08314, longitude: 29.75163 },
-    Huye: { latitude: -2.59061, longitude: 29.74352 },
+    // Coordinates from the Google Maps place pins supplied for these terminals
+    Kigali: { latitude: -1.9418697, longitude: 30.0439804 },
+    Kayonza: { latitude: -1.9008982, longitude: 30.5077285 },
+    Muhanga: { latitude: -2.0832867, longitude: 29.7514289 },
+    Huye: { latitude: -2.5951809, longitude: 29.7423325 },
+    Rwamagana: { latitude: -1.9518545, longitude: 30.4332740 },
   };
 
   const locMap = {};
