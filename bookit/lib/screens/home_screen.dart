@@ -1254,7 +1254,7 @@ class TicketDetailsScreen extends StatelessWidget {
       ),
       body:SafeArea(
         child:SingleChildScrollView(
-          padding:const EdgeInsets.fromLTRB(18,8,18,28),
+          padding:const EdgeInsets.only(bottom:28),
           child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
             Container(
               padding:const EdgeInsets.all(20),
@@ -1273,6 +1273,7 @@ class TicketDetailsScreen extends StatelessWidget {
                 ),
               ]),
             ),
+            Padding(padding:const EdgeInsets.symmetric(horizontal:18),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
             const SizedBox(height:16),
             Card(child:Padding(
               padding:const EdgeInsets.all(18),
@@ -1320,7 +1321,7 @@ class TicketDetailsScreen extends StatelessWidget {
             const SizedBox(height:8),
             FilledButton.icon(onPressed:onTrackBus,icon:const Icon(Icons.my_location),label:const Text('Track bus location')),
             if(onTrackBus==null)const Padding(padding:EdgeInsets.only(top:8),child:Text('Live tracking is unavailable because the operator has not supplied current GPS coordinates.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:AppColors.textMuted))),
-          ]),
+          ])),
         ),
       ),
     );
