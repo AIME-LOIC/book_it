@@ -772,44 +772,32 @@ class _HomeScreenState extends State<HomeScreen> {
     final from=route['fromLocation'] is Map?(route['fromLocation']['name']??'From').toString():'From';
     final to=route['toLocation'] is Map?(route['toLocation']['name']??'To').toString():'To';
     final plate=(bus['plate_number']??bus['registration_number']??bus['plate']??'Not provided by operator').toString();
-    final code=(t['ticket_code']??t['code']??t['reference']??t['id']??'BOOKIT-TICKET').toString();
-    final qrData=(t['qr_code']??t['qr_data']??code).toString();
+    final code=(t['ticket_code']??t['ticket_number']??t['code']??t['reference']??t['id']??'BOOKIT-TICKET').toString();
+    final qrData=(t['qr_code']??t['qr_data']??t['qr_token']??code).toString();
     final lat=double.tryParse((bus['latitude']??bus['current_latitude']??'').toString());
     final lng=double.tryParse((bus['longitude']??bus['current_longitude']??'').toString());
-    await showDialog<void>(context:context,builder:(c)=>Dialog(
-      child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:420,maxHeight:720),child:SingleChildScrollView(padding:const EdgeInsets.all(22),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-        Row(children:[const Icon(Icons.directions_bus_rounded,color:AppColors.primary,size:30),const SizedBox(width:10),const Expanded(child:Text('Your bus ticket',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800))),IconButton(onPressed:()=>Navigator.pop(c),icon:const Icon(Icons.close))]),
-        Text(from+' → '+to,textAlign:TextAlign.center,style:const TextStyle(fontSize:18,fontWeight:FontWeight.w800)),
-        const SizedBox(height:4),Text((op['company_name']??bus['company_name']??'Bus operator').toString(),textAlign:TextAlign.center,style:const TextStyle(color:AppColors.textMuted)),
-        const SizedBox(height:16),
-        Center(child:Container(padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(14),border:Border.all(color:const Color(0xFFE2E8F0))),child:QrImageView(data:qrData,version:QrVersions.auto,size:190,backgroundColor:Colors.white,semanticsLabel:'Ticket QR code for ticket $code'))),
-        const SizedBox(height:10),Center(child:Text('Ticket code: $code',style:const TextStyle(fontWeight:FontWeight.w800))),
-        const Divider(height:28),
-        _detailLine('Travel date',(t['travel_date']??'Not provided').toString()),
-        _detailLine('Departure',(bus['departure_time']??t['departure_time']??'Not provided').toString()),
-        _detailLine('Seat number',(t['seat_number']??'—').toString()),
-        _detailLine('Bus plate',plate),
-        _detailLine('Fare',(t['price']??bus['price']??'—').toString()+' RWF'),
-        _detailLine('Status',(t['status']??'unknown').toString().toUpperCase()),
-        const SizedBox(height:14),
-        OutlinedButton.icon(
-          onPressed:()=>_openRouteMap(
-            from:from,to:to,routeId:route['id']?.toString(),
-            busName:(op['company_name']??plate).toString(),
-            travelDate:(t['travel_date']??'').toString(),
-            seatLabel:(t['seat_number']??'').toString(),
-          ),
-          icon:const Icon(Icons.map_outlined),label:const Text('View full route map'),
-        ),
-        const SizedBox(height:8),
-        FilledButton.icon(onPressed:lat!=null&&lng!=null?()async{
-          final uri=Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
-          final ok=await launchUrl(uri,mode:LaunchMode.externalApplication);
-          if(!ok&&mounted)_msg('Could not open the map on this device.');
-        }:null,icon:const Icon(Icons.my_location),label:const Text('Track bus location')),
-        if(lat==null||lng==null)const Padding(padding:EdgeInsets.only(top:8),child:Text('Live tracking is not available yet: the operator has not supplied current GPS coordinates for this bus.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:AppColors.textMuted))),
-      ]))),
-    ));
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>TicketDetailsScreen(
+      ticket:t,
+      from:from,
+      to:to,
+      operatorName:(op['company_name']??bus['company_name']??'Bus operator').toString(),
+      plate:plate,
+      code:code,
+      qrData:qrData,
+      latitude:lat,
+      longitude:lng,
+      onOpenMap:()=>_openRouteMap(
+        from:from,to:to,routeId:route['id']?.toString(),
+        busName:(op['company_name']??plate).toString(),
+        travelDate:(t['travel_date']??'').toString(),
+        seatLabel:(t['seat_number']??'').toString(),
+      ),
+      onTrackBus:lat!=null&&lng!=null?()async{
+        final uri=Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+        final ok=await launchUrl(uri,mode:LaunchMode.externalApplication);
+        if(!ok&&mounted)_msg('Could not open the map on this device.');
+      }:null,
+    )));
   }
   static const String _termsText = '''1. Acceptance of Terms
 By accessing or using the services provided by 1% Digital Solutions ("the Company"), including our website, training programmes, and software development services, you agree to be bound by these Terms of Service. If you do not agree, do not use our services.
@@ -964,5 +952,122 @@ class _WeatherBackdropState extends State<_WeatherBackdrop> with SingleTickerPro
       if(rainy)...List.generate(9,(i){final x=8.0+(i*17.0)%135;final progress=(_animation.value+(i*.13))%1;return Positioned(left:x,top:82+progress*80,child:Transform.rotate(angle:.22,child:Container(width:2,height:14,decoration:BoxDecoration(color:Colors.white.withValues(alpha:.15+(.25*(1-progress))),borderRadius:BorderRadius.circular(2)))));}),
       if(foggy)...List.generate(3,(i)=>Positioned(right:8+i*5.0,top:95+i*17.0,child:Container(width:95-i*12.0,height:3,decoration:BoxDecoration(color:Colors.white.withValues(alpha:.25),borderRadius:BorderRadius.circular(8))))),
     ])));
+  }
+}
+
+
+class TicketDetailsScreen extends StatelessWidget {
+  const TicketDetailsScreen({
+    super.key,
+    required this.ticket,
+    required this.from,
+    required this.to,
+    required this.operatorName,
+    required this.plate,
+    required this.code,
+    required this.qrData,
+    required this.latitude,
+    required this.longitude,
+    required this.onOpenMap,
+    required this.onTrackBus,
+  });
+
+  final Map<String,dynamic> ticket;
+  final String from,to,operatorName,plate,code,qrData;
+  final double? latitude,longitude;
+  final VoidCallback onOpenMap;
+  final VoidCallback? onTrackBus;
+
+  Widget _detailLine(String label,String value)=>Padding(
+    padding:const EdgeInsets.symmetric(vertical:9),
+    child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      SizedBox(width:112,child:Text(label,style:const TextStyle(color:AppColors.textMuted))),
+      Expanded(child:Text(value,style:const TextStyle(fontWeight:FontWeight.w700))),
+    ]),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final status=(ticket['status']??'unknown').toString().toLowerCase();
+    final isDark=Theme.of(context).brightness==Brightness.dark;
+    final departed=ticket['departed_at']!=null||ticket['departure_status']?.toString().toLowerCase()=='departed';
+    final Color accent=departed?AppColors.primary:(status=='paid'?(isDark?const Color(0xFF64B5F6):const Color(0xFF16803D)):AppColors.textMuted);
+    return Scaffold(
+      appBar:AppBar(
+        title:const Text('Ticket details',style:TextStyle(fontWeight:FontWeight.w800)),
+        leading:IconButton(tooltip:'Back to tickets',onPressed:()=>Navigator.of(context).pop(),icon:const Icon(Icons.arrow_back_rounded)),
+      ),
+      body:SafeArea(
+        child:SingleChildScrollView(
+          padding:const EdgeInsets.fromLTRB(18,8,18,28),
+          child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+            Container(
+              padding:const EdgeInsets.all(20),
+              decoration:BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.circular(24)),
+              child:Column(children:[
+                const Icon(Icons.confirmation_num_rounded,color:Colors.white,size:34),
+                const SizedBox(height:10),
+                Text('$from → $to',textAlign:TextAlign.center,style:const TextStyle(color:Colors.white,fontSize:20,fontWeight:FontWeight.w900)),
+                const SizedBox(height:5),
+                Text(operatorName,style:const TextStyle(color:Colors.white70,fontWeight:FontWeight.w600)),
+                const SizedBox(height:14),
+                Container(
+                  padding:const EdgeInsets.symmetric(horizontal:12,vertical:7),
+                  decoration:BoxDecoration(color:Colors.white.withValues(alpha:.16),borderRadius:BorderRadius.circular(24)),
+                  child:Text(departed?'DEPARTED':status.toUpperCase(),style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w800,letterSpacing:.8)),
+                ),
+              ]),
+            ),
+            const SizedBox(height:16),
+            Card(child:Padding(
+              padding:const EdgeInsets.all(18),
+              child:Column(children:[
+                Container(
+                  padding:const EdgeInsets.all(12),
+                  decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(18),border:Border.all(color:const Color(0xFFE2E8F0))),
+                  child:QrImageView(data:qrData,version:QrVersions.auto,size:210,backgroundColor:Colors.white,semanticsLabel:'Ticket QR code for ticket $code'),
+                ),
+                const SizedBox(height:12),
+                SelectableText(code,textAlign:TextAlign.center,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:15)),
+                const SizedBox(height:5),
+                const Text('Keep this ticket available when boarding.',textAlign:TextAlign.center,style:TextStyle(color:AppColors.textMuted,fontSize:12)),
+              ]),
+            )),
+            const SizedBox(height:14),
+            Card(child:Padding(
+              padding:const EdgeInsets.symmetric(horizontal:16,vertical:8),
+              child:Column(children:[
+                _detailLine('Travel date',(ticket['travel_date']??'Not provided').toString()),
+                _detailLine('Departure',(ticket['departure_time']??(ticket['bus'] is Map?ticket['bus']['departure_time']:null)??'Not provided').toString()),
+                _detailLine('Seat number',(ticket['seat_number']??'—').toString()),
+                _detailLine('Bus plate',plate),
+                _detailLine('Fare',(ticket['price']??(ticket['bus'] is Map?ticket['bus']['price']:null)??'—').toString()+' RWF'),
+                _detailLine('Ticket status',status.toUpperCase()),
+                if(departed)_detailLine('Departure status','Marked as departed'),
+              ]),
+            )),
+            const SizedBox(height:14),
+            Container(
+              padding:const EdgeInsets.all(15),
+              decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.08),borderRadius:BorderRadius.circular(16),border:Border.all(color:AppColors.primary.withValues(alpha:.2))),
+              child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                Icon(departed?Icons.directions_bus_filled_rounded:Icons.contactless_rounded,color:accent,size:23),
+                const SizedBox(width:11),
+                const Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                  Text('Boarding and departure',style:TextStyle(fontWeight:FontWeight.w800)),
+                  SizedBox(height:5),
+                  Text('Departure tap-in is a separate event from ticket validation. NFC device tap-in and automatic departure notifications require the boarding device and server workflow to be configured.',style:TextStyle(fontSize:12,height:1.45,color:AppColors.textMuted)),
+                ])),
+              ]),
+            ),
+            const SizedBox(height:14),
+            OutlinedButton.icon(onPressed:onOpenMap,icon:const Icon(Icons.map_outlined),label:const Text('View full route map')),
+            const SizedBox(height:8),
+            FilledButton.icon(onPressed:onTrackBus,icon:const Icon(Icons.my_location),label:const Text('Track bus location')),
+            if(onTrackBus==null)const Padding(padding:EdgeInsets.only(top:8),child:Text('Live tracking is unavailable because the operator has not supplied current GPS coordinates.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:AppColors.textMuted))),
+          ]),
+        ),
+      ),
+    );
   }
 }
