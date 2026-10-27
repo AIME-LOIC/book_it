@@ -1,52 +1,26 @@
-import '../config/api_config.dart';
-
-/// Minimal auth service for the demo.
-///
-/// It attaches keys from [ApiConfig] to every call so that swapping the
-/// placeholder `config/bookit_keys.env` for a real one automatically wires the
-/// app to a live backend. Until real keys exist it accepts any valid
-/// credentials offline so the UI is fully usable.
+import 'api_client.dart';
 class AuthService {
-  const AuthService._();
-
-  /// Signs in with [email] and [password].
-  ///
-  /// Returns the display name extracted from the email on success.
-  static Future<String> login({
-    required String email,
-    required String password,
-  }) async {
-    // Simulated network round-trip. When a real backend is configured,
-    // replace with e.g.:
-    //   final res = await http.post(
-    //     Uri.parse(ApiConfig.endpoint('auth/login')),
-    //     headers: ApiConfig.headers(),
-    //     body: jsonEncode({'email': email, 'password': password}),
-    //   );
-    // ignore: unused_local_variable
-    final requestHeaders = ApiConfig.headers();
-
-    await Future<void>.delayed(const Duration(milliseconds: 1400));
-
-    if (email.trim().isEmpty || password.length < 6) {
-      throw const AuthException('Please enter a valid email and password.');
-    }
-
-    final name = email.split('@').first;
-    final pretty = name
-        .split(RegExp(r'[._\-\s]+'))
-        .where((part) => part.isNotEmpty)
-        .map((part) => part[0].toUpperCase() + part.substring(1))
-        .join(' ');
-    return pretty.isEmpty ? 'Explorer' : pretty;
+  AuthService._();
+  static Future<String> login({required String email,required String password}) async {
+    try {
+      final res=await ApiClient.post('auth/login',body:{'email':email.trim(),'password':password});
+      if(res is! Map||res['user'] is! Map||res['token']==null) {
+        throw const AuthException('The deployed API did not return a mobile access token. Redeploy the backend update and try again.');
+      }
+      ApiClient.setToken(res['token'].toString());
+      final user=Map<String,dynamic>.from(res['user'] as Map);
+      return (user['name']??email.split('@').first).toString();
+    } on ApiException catch(e) { throw AuthException(e.message); }
+  }
+  static Future<String> register({required String name,required String email,required String phone,required String password}) async {
+    try {
+      await ApiClient.post('auth/register',body:{'name':name.trim(),'email':email.trim(),'phone':phone.trim(),'password':password});
+      return login(email:email,password:password);
+    } on ApiException catch(e) { throw AuthException(e.message); }
   }
 }
-
 class AuthException implements Exception {
   const AuthException(this.message);
-
   final String message;
-
-  @override
-  String toString() => message;
+  @override String toString()=>message;
 }
