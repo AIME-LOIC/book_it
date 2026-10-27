@@ -15,7 +15,7 @@ class AuthService {
   static Future<String> register({required String name,required String email,required String phone,required String password}) async {
     try {
       await ApiClient.post('auth/register',body:{'name':name.trim(),'email':email.trim(),'phone':phone.trim(),'password':password});
-      return login(email:email,password:password);
+      return await login(email:email,password:password);
     } on ApiException catch(e) { throw AuthException(e.message); }
   }
 }
