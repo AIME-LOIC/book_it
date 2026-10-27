@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../config/api_config.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import '../services/auth_service.dart';
+import 'home_screen.dart';
 import 'login_screen.dart';
 
 /// Animated splash / loading screen.
@@ -63,14 +65,18 @@ class _LoadingScreenState extends State<LoadingScreen>
     _master.addStatusListener(_onDone);
   }
 
-  void _onDone(AnimationStatus status) {
+  Future<void> _onDone(AnimationStatus status) async {
     if (status != AnimationStatus.completed) return;
     _master.removeStatusListener(_onDone);
+    final restoredName = await AuthService.restoreSession();
     if (!mounted) return;
+    final Widget destination = restoredName == null
+        ? const LoginScreen()
+        : HomeScreen(userName: restoredName);
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 450),
-        pageBuilder: (_, _, _) => const LoginScreen(),
+        pageBuilder: (_, _, _) => destination,
         transitionsBuilder: (_, animation, _, child) => FadeTransition(
           opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
           child: child,
