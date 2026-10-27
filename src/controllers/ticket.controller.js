@@ -7,10 +7,24 @@ export const search             = async (req, res) => {
 };
 
 export const book               = async (req, res) => {
-  try { res.status(201).json(await svc.bookTicket(req.user.id, req.body)); }
-  catch (err) {
-    // Keep infrastructure details in server logs, never in the client response.
-    console.error('[BOOKING] Ticket reservation failed:', err?.stack || err);
+  try {
+    res.status(201).json(await svc.bookTicket(req.user.id, req.body));
+  } catch (err) {
+    // Log safe request context plus Sequelize's original driver diagnostics.
+    // Never return SQL/database details to the passenger.
+    console.error('[BOOKING] Ticket reservation failed', {
+      user_id: req.user?.id,
+      bus_id: req.body?.bus_id,
+      seat_number: req.body?.seat_number,
+      boarding_stop_id: req.body?.boarding_stop_id,
+      dropoff_stop_id: req.body?.dropoff_stop_id,
+      travel_date: req.body?.travel_date,
+      error_name: err?.name,
+      error_message: err?.message,
+      error_code: err?.original?.code || err?.parent?.code || err?.code,
+      database_detail: err?.original?.detail || err?.parent?.detail,
+      stack: err?.stack,
+    });
     res.status(400).json({ message: clientMessage(err) });
   }
 };
