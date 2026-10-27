@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../theme/app_theme.dart';
 
@@ -73,10 +74,15 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
 
     try {
       final coordinates = <LatLng>[];
-      for (final stop in stops) {
-        final name = _stopName(stop).trim();
-        final point = _coordinatesFrom(stop) ?? await _geocode(name);
+      for (var i = 0; i < stops.length; i++) {
+        final name = _stopName(stops[i]).trim();
+        final knownPoint = _coordinatesFrom(stops[i]);
+        final point = knownPoint ?? await _geocode(name);
         if (point != null) coordinates.add(point);
+        // Nominatim's public endpoint has a strict request-rate policy.
+        if (knownPoint == null && i < stops.length - 1) {
+          await Future<void>.delayed(const Duration(seconds: 1));
+        }
       }
       if (coordinates.length < 2) {
         throw Exception('Could not locate both route endpoints');
@@ -245,7 +251,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                           attributions: [
                             TextSourceAttribution(
                               'OpenStreetMap contributors',
-                              onTap: () {},
+                              onTap: () => launchUrl(Uri.parse('https://www.openstreetmap.org/copyright'), mode: LaunchMode.externalApplication),
                             ),
                           ],
                         ),
