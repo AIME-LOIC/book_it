@@ -7,7 +7,7 @@ import Operator      from '../database/models/operator.js';
 import OperatorSettings from '../database/models/operator_settings.js';
 
 const stopIncludes = [
-  { model: Location, as: 'location', attributes: ['id', 'name'] },
+  { model: Location, as: 'location', attributes: ['id', 'name', 'latitude', 'longitude'] },
 ];
 
 const getSettings = async (operator_id) => {
@@ -178,8 +178,8 @@ const syncReverseStops = async (operator_id, route) => {
 export const getRouteWithStops = async (route_id) => {
   const route = await Route.findByPk(route_id, {
     include: [
-      { model: Location, as: 'fromLocation', attributes: ['id', 'name'] },
-      { model: Location, as: 'toLocation',   attributes: ['id', 'name'] },
+      { model: Location, as: 'fromLocation', attributes: ['id', 'name', 'latitude', 'longitude'] },
+      { model: Location, as: 'toLocation',   attributes: ['id', 'name', 'latitude', 'longitude'] },
       { model: Operator, as: 'operator',     attributes: ['id', 'company_name'] },
     ],
   });
