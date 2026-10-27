@@ -1,406 +1,108 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
-
+import '../services/api_client.dart';
 import '../theme/app_theme.dart';
-import '../widgets/common.dart';
-
-class _BusOption {
-  const _BusOption({
-    required this.id, required this.operator, required this.plate,
-    required this.from, required this.to, required this.departure,
-    required this.arrival, required this.price, required this.capacity,
-    required this.taken,
-  });
-  final String id, operator, plate, from, to, departure, arrival;
-  final int price, capacity;
-  final Set<int> taken;
-}
-
-const _demoBuses = <_BusOption>[
-  _BusOption(id: 'BK-01', operator: 'Volcano Express', plate: 'RAC 482 A', from: 'Kigali', to: 'Musanze', departure: '08:00', arrival: '10:30', price: 3500, capacity: 32, taken: {2,4,5,9,10,14,17,21,26}),
-  _BusOption(id: 'BK-02', operator: 'Ritco', plate: 'RAB 190 B', from: 'Kigali', to: 'Musanze', departure: '09:30', arrival: '12:00', price: 4000, capacity: 28, taken: {1,3,7,8,12,18,22}),
-  _BusOption(id: 'BK-03', operator: 'Horizon Coaches', plate: 'RAD 763 C', from: 'Kigali', to: 'Huye', departure: '07:15', arrival: '09:45', price: 2800, capacity: 30, taken: {2,6,11,12,19,23}),
-  _BusOption(id: 'BK-04', operator: 'Volcano Express', plate: 'RAC 840 D', from: 'Kigali', to: 'Rubavu', departure: '10:00', arrival: '13:30', price: 5000, capacity: 36, taken: {1,2,3,8,15,16,24,30}),
-];
-
-class _PassengerTicket {
-  const _PassengerTicket({required this.number, required this.bus, required this.seat, required this.date, required this.status, required this.price});
-  final String number, status;
-  final _BusOption bus;
-  final int seat, price;
-  final DateTime date;
-}
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key, required this.userName});
+  const HomeScreen({super.key,required this.userName});
   final String userName;
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  @override State<HomeScreen> createState()=>_HomeScreenState();
 }
-
 class _HomeScreenState extends State<HomeScreen> {
-  int _nav = 0;
-  String _from = 'Kigali', _to = 'Musanze', _query = '';
-  DateTime _travelDate = DateTime.now().add(const Duration(days: 1));
-  final List<_PassengerTicket> _tickets = [];
-  final _phoneController = TextEditingController();
-  final _searchController = TextEditingController();
-  _BusOption? _selectedBus;
-  int? _selectedSeat;
-  Timer? _holdTimer;
-  int _secondsLeft = 300;
-  bool _holdActive = false, _paying = false;
-  String _paymentNetwork = 'MTN MoMo';
-  static const _locations = ['Kigali','Musanze','Rubavu','Huye','Rusizi','Karongi','Nyagatare','Rwamagana','Kayonza','Muhanga','Nyanza'];
-
-  @override
-  void dispose() {
-    _holdTimer?.cancel();
-    _phoneController.dispose();
-    _searchController.dispose();
-    super.dispose();
+  int _tab=0; bool _loadingLocations=true,_searching=false,_loadingTickets=false;
+  List<Map<String,dynamic>> _locations=[],_buses=[],_tickets=[];
+  String? _fromId,_toId,_activeTicketId; DateTime _date=DateTime.now().add(const Duration(days:1));
+  Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer;
+  final _phone=TextEditingController(); String _network='mtn';
+  @override void initState(){super.initState();_loadLocations();_loadTickets();}
+  @override void dispose(){_timer?.cancel();_phone.dispose();super.dispose();}
+  void _msg(String s){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));}
+  String _dateText(DateTime d)=>d.year.toString().padLeft(4,'0')+'-'+d.month.toString().padLeft(2,'0')+'-'+d.day.toString().padLeft(2,'0');
+  String _name(String? id){for(final x in _locations){if(x['id']?.toString()==id)return (x['name']??'Location').toString();}return 'Location';}
+  Future<void> _loadLocations() async {
+    try {final r=await ApiClient.get('locations');final rows=r is List?r:(r is Map&&r['locations'] is List?r['locations'] as List:<dynamic>[]);final xs=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();
+      if(mounted)setState((){_locations=xs;if(xs.isNotEmpty){_fromId??=xs.first['id']?.toString();_toId??=(xs.length>1?xs[1]['id']:xs.first['id'])?.toString();}_loadingLocations=false;});
+    } on ApiException catch(e){if(mounted)setState(()=>_loadingLocations=false);_msg(e.message);}
   }
-
-  List<_BusOption> get _matchingBuses => _demoBuses.where((bus) {
-    final text = '${bus.operator} ${bus.plate} ${bus.from} ${bus.to}'.toLowerCase();
-    return bus.from == _from && bus.to == _to && text.contains(_query.toLowerCase());
-  }).toList();
-
-  void _startBooking(_BusOption bus, int seat) {
-    _holdTimer?.cancel();
-    setState(() { _selectedBus = bus; _selectedSeat = seat; _secondsLeft = 300; _holdActive = true; _paying = false; _nav = 0; });
-    _holdTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) { timer.cancel(); return; }
-      if (_secondsLeft <= 1) {
-        timer.cancel();
-        setState(() { _secondsLeft = 0; _holdActive = false; _selectedBus = null; _selectedSeat = null; _paying = false; });
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Seat hold expired. Please select a seat again.')));
-      } else {
-        setState(() => _secondsLeft--);
-      }
-    });
+  Future<void> _loadTickets() async {
+    if(mounted)setState(()=>_loadingTickets=true);
+    try{final r=await ApiClient.get('tickets/my',auth:true);final rows=r is List?r:(r is Map&&r['tickets'] is List?r['tickets'] as List:<dynamic>[]);if(mounted)setState(()=>_tickets=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList());}
+    on ApiException catch(e){if(mounted)_msg(e.message);}finally{if(mounted)setState(()=>_loadingTickets=false);}
   }
-
-  void _cancelHold() {
-    _holdTimer?.cancel();
-    setState(() { _holdActive = false; _selectedBus = null; _selectedSeat = null; _paying = false; });
+  Future<void> _search() async {
+    if(_fromId==null||_toId==null||_fromId==_toId){_msg('Choose two different locations.');return;}
+    setState(()=>_searching=true);
+    try{final r=await ApiClient.get('tickets/search',query:{'from_location_id':_fromId!,'to_location_id':_toId!,'travel_date':_dateText(_date)});
+      final rows=r is List?r:(r is Map&&r['buses'] is List?r['buses'] as List:<dynamic>[]);if(mounted)setState(()=>_buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList());if(_buses.isEmpty)_msg('No buses found for this route and date.');
+    }on ApiException catch(e){_msg(e.message);}finally{if(mounted)setState(()=>_searching=false);}
   }
-
-  void _completePayment() {
-    if (!_holdActive || _selectedBus == null || _selectedSeat == null) return;
-    if (_phoneController.text.trim().length < 9) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a valid mobile money phone number.')));
-      return;
-    }
-    final bus = _selectedBus!;
-    final seat = _selectedSeat!;
-    _holdTimer?.cancel();
-    setState(() {
-      _tickets.insert(0, _PassengerTicket(
-        number: 'BK-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}',
-        bus: bus, seat: seat, date: _travelDate, status: 'Paid', price: bus.price,
-      ));
-      _holdActive = false; _selectedBus = null; _selectedSeat = null; _paying = false; _nav = 1;
-    });
-    _phoneController.clear();
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Demo payment completed. Your ticket is ready.')));
+  Future<void> _choose(Map<String,dynamic> bus) async {
+    final seats=(bus['available_seats'] as List? ?? const[]).map((x)=>int.tryParse(x.toString())).whereType<int>().toList();
+    if(seats.isEmpty){_msg('No available seats.');return;}
+    final n=await showDialog<int>(context:context,builder:(c)=>AlertDialog(title:const Text('Choose a seat'),content:Wrap(spacing:8,runSpacing:8,children:seats.map((x)=>SizedBox(width:54,child:OutlinedButton(onPressed:()=>Navigator.pop(c,x),child:Text(x.toString()))).toList()),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel'))]));
+    if(n==null)return;
+    try{final r=await ApiClient.post('tickets',auth:true,body:{'bus_id':bus['bus_id'],'seat_number':n,'boarding_stop_id':bus['boarding_stop_id'],'dropoff_stop_id':bus['dropoff_stop_id'],'travel_date':_dateText(_date)});
+      if(r is! Map||r['id']==null){_msg('The server did not return a reservation ID.');return;}
+      _timer?.cancel();setState(()=>{_selectedBus=bus,_seat=n,_activeTicketId=r['id'].toString(),_seconds=300});
+      _timer=Timer.periodic(const Duration(seconds:1),(t){if(!mounted){t.cancel();return;}if(_seconds<=1){t.cancel();_expire();}else{setState(()=>_seconds--);}});
+      _msg('Seat reserved. Complete payment within 5 minutes.');
+    }on ApiException catch(e){_msg(e.message);_search();}
   }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    body: SafeArea(bottom: false, child: IndexedStack(index: _nav, children: [_homeTab(), _ticketsTab(), _historyTab(), _profileTab()])),
-    bottomNavigationBar: NavigationBar(
-      selectedIndex: _nav,
-      onDestinationSelected: (index) => setState(() => _nav = index),
-      destinations: const [
-        NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home_rounded), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.confirmation_num_outlined), selectedIcon: Icon(Icons.confirmation_num_rounded), label: 'Ticket'),
-        NavigationDestination(icon: Icon(Icons.history_rounded), selectedIcon: Icon(Icons.history_rounded), label: 'History'),
-        NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Profile'),
-      ],
-    ),
-  );
-
-  Widget _homeTab() {
-    if (_selectedBus != null && _selectedSeat != null) return _paying ? _paymentView() : _seatView(_selectedBus!);
-    return CustomScrollView(slivers: [
-      SliverToBoxAdapter(child: GradientBanner(
-        height: 270,
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 12, 22, 24),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              const Icon(Icons.directions_bus_rounded, color: AppColors.white, size: 30),
-              const SizedBox(width: 9),
-              const Text('BookIt', style: TextStyle(color: AppColors.white, fontWeight: FontWeight.w800, fontSize: 19)),
-              const Spacer(),
-              IconButton(tooltip: 'Notifications', onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You are all caught up.'))), style: IconButton.styleFrom(backgroundColor: AppColors.white.withValues(alpha: .18)), icon: const Icon(Icons.notifications_none_rounded, color: AppColors.white)),
-            ]),
-            const SizedBox(height: 12),
-            Text('Hello, ${widget.userName}', style: const TextStyle(color: AppColors.white, fontSize: 24, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 4),
-            Text('Where would you like to go?', style: TextStyle(color: AppColors.white.withValues(alpha: .85))),
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(18)),
-              child: Row(children: [
-                const Icon(Icons.search_rounded, color: AppColors.primary), const SizedBox(width: 8),
-                Expanded(child: TextField(controller: _searchController, onChanged: (v) => setState(() => _query = v), decoration: const InputDecoration(hintText: 'Search buses or operators', isDense: true, border: InputBorder.none, filled: false, contentPadding: EdgeInsets.symmetric(vertical: 8)))),
-              ]),
-            ),
-          ]),
-        ),
-      )),
-      SliverToBoxAdapter(child: Padding(
-        padding: const EdgeInsets.fromLTRB(20,20,20,8),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Plan your trip', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.textDark)),
-          const SizedBox(height: 12),
-          Row(children: [
-            Expanded(child: _locationPicker('From', _from, (v) => setState(() { _from = v; if (_to == v) _to = _locations.firstWhere((x) => x != v); }))),
-            const SizedBox(width: 6),
-            IconButton.filledTonal(onPressed: () => setState(() { final temp = _from; _from = _to; _to = temp; }), icon: const Icon(Icons.swap_horiz_rounded)),
-            const SizedBox(width: 6),
-            Expanded(child: _locationPicker('To', _to, (v) => setState(() { _to = v; if (_from == v) _from = _locations.firstWhere((x) => x != v); }))),
-          ]),
-          const SizedBox(height: 10),
-          InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: () async {
-              final date = await showDatePicker(context: context, initialDate: _travelDate.isBefore(DateTime.now()) ? DateTime.now() : _travelDate, firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)));
-              if (date != null) setState(() => _travelDate = date);
-            },
-            child: Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFDCEEFB))), child: Row(children: [
-              const Icon(Icons.calendar_month_rounded, color: AppColors.primary), const SizedBox(width: 10),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Travel date', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                Text('${_travelDate.day.toString().padLeft(2, '0')}/${_travelDate.month.toString().padLeft(2, '0')}/${_travelDate.year}', style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textDark)),
-              ])),
-              const Icon(Icons.chevron_right_rounded, color: AppColors.textMuted),
-            ])),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () {
-            if (_from == _to) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Choose two different locations.'))); return; }
-            FocusScope.of(context).unfocus();
-          }, icon: const Icon(Icons.search_rounded), label: const Text('Search buses'))),
-          const SizedBox(height: 22),
-          Row(children: [const Expanded(child: Text('Available buses', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.textDark))), Text('${_matchingBuses.length} found', style: const TextStyle(color: AppColors.textMuted, fontSize: 12))]),
-          const SizedBox(height: 12),
-        ]),
-      )),
-      if (_matchingBuses.isEmpty)
-        const SliverToBoxAdapter(child: Padding(padding: EdgeInsets.all(28), child: Center(child: Text('No buses for this route. Try another destination.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted)))))
-      else
-        SliverPadding(padding: const EdgeInsets.symmetric(horizontal: 20), sliver: SliverList.separated(itemCount: _matchingBuses.length, separatorBuilder: (_, _) => const SizedBox(height: 12), itemBuilder: (context, i) => _busCard(_matchingBuses[i]))),
-      const SliverToBoxAdapter(child: SizedBox(height: 24)),
-    ]);
+  Future<void> _expire() async {final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}catch(_){}}if(!mounted)return;setState(()=>{_selectedBus=null,_seat=null,_activeTicketId=null,_seconds=0});_msg('The 5-minute hold expired. Any unpaid reservation was cancelled.');_search();}
+  Future<void> _cancel() async { _timer?.cancel();final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}on ApiException catch(e){_msg(e.message);}}if(mounted)setState(()=>{_selectedBus=null,_seat=null,_activeTicketId=null});_search();}
+  Future<void> _pay() async {final id=_activeTicketId;if(id==null){_msg('Reservation ID missing. Please book again.');return;}if(_phone.text.trim().length<9){_msg('Enter a valid mobile money number.');return;}
+    try{final r=await ApiClient.patch('tickets/'+id+'/pay',auth:true,body:{'network':_network,'phone_number':_phone.text.trim()});final message=r is Map?(r['message']??'Payment request sent. Approve the mobile money prompt.'): 'Payment request sent.';_msg(message.toString());await _loadTickets();
+      if(r is Map&&r['status']?.toString().toLowerCase()=='paid'){_timer?.cancel();setState(()=>{_selectedBus=null,_seat=null,_activeTicketId=null,_tab=1});}
+    }on ApiException catch(e){_msg(e.message);}
   }
-
-  Widget _locationPicker(String label, String value, ValueChanged<String> onChanged) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-    decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: const Color(0xFFDCEEFB))),
-    child: DropdownButtonHideUnderline(child: DropdownButton<String>(
-      value: value, isExpanded: true, borderRadius: BorderRadius.circular(14), icon: const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
-      items: _locations.map((v) => DropdownMenuItem(value: v, child: Text(v, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)))).toList(),
-      onChanged: (v) { if (v != null) onChanged(v); },
-      selectedItemBuilder: (context) => _locations.map((v) => Align(alignment: Alignment.centerLeft, child: Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)), Text(v, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textDark, fontSize: 13))])).toList(),
-    )),
-  );
-
-  Widget _busCard(_BusOption bus) {
-    final paidSeats = _tickets.where((t) => t.bus.id == bus.id && t.status == 'Paid').map((t) => t.seat).toSet();
-    final available = bus.capacity - {...bus.taken, ...paidSeats}.length;
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: .07), blurRadius: 18, offset: const Offset(0,7))]),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(width: 48, height: 48, decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(15)), child: const Icon(Icons.directions_bus_rounded, color: AppColors.primary, size: 27)),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(bus.operator, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.textDark)), const SizedBox(height: 3), Text(bus.plate, style: const TextStyle(color: AppColors.textMuted, fontSize: 12))])),
-          Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text('${bus.price} RWF', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.primary)), Text('$available seats left', style: const TextStyle(fontSize: 11, color: AppColors.textMuted))]),
-        ]),
-        const Padding(padding: EdgeInsets.symmetric(vertical: 13), child: Divider(height: 1, color: Color(0xFFEAF3F9))),
-        Row(children: [Expanded(child: _timePoint(bus.departure, bus.from, true)), const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Icon(Icons.arrow_forward_rounded, color: AppColors.primary, size: 18)), Expanded(child: _timePoint(bus.arrival, bus.to, false))]),
-        const SizedBox(height: 14),
-        SizedBox(width: double.infinity, child: FilledButton(onPressed: available <= 0 ? null : () => _showSeatPicker(bus), child: const Text('Choose seat'))),
-      ]),
-    );
-  }
-
-  Widget _timePoint(String time, String city, bool start) => Column(crossAxisAlignment: start ? CrossAxisAlignment.start : CrossAxisAlignment.end, children: [
-    Text(time, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textDark)),
-    Text(city, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-  ]);
-
-  Future<void> _showSeatPicker(_BusOption bus) async {
-    int? candidate;
-    await showModalBottomSheet<void>(
-      context: context, isScrollControlled: true, backgroundColor: AppColors.background,
-      builder: (sheetContext) => StatefulBuilder(builder: (context, refreshSheet) {
-        final reserved = <int>{...bus.taken, ..._tickets.where((t) => t.bus.id == bus.id && t.status == 'Paid').map((t) => t.seat)};
-        return SafeArea(child: Padding(padding: const EdgeInsets.fromLTRB(20,16,20,24), child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 44, height: 4, decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10))),
-          const SizedBox(height: 16),
-          Row(children: [const Expanded(child: Text('Choose your seat', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: AppColors.textDark))), Text('${bus.price} RWF', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800))]),
-          const SizedBox(height: 6),
-          Text('${bus.operator} · ${bus.from} to ${bus.to}', style: const TextStyle(color: AppColors.textMuted)),
-          const SizedBox(height: 16),
-          Container(width: double.infinity, padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16)), child: Column(children: [
-            const Row(children: [Icon(Icons.directions_bus_rounded, color: AppColors.primary), SizedBox(width: 8), Text('FRONT / DRIVER', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.textMuted)), Spacer(), Icon(Icons.steering_rounded, color: AppColors.textMuted)]),
-            const SizedBox(height: 12),
-            Wrap(alignment: WrapAlignment.center, spacing: 9, runSpacing: 9, children: List.generate(bus.capacity, (index) {
-              final seat = index + 1, taken = reserved.contains(index + 1), selected = candidate == index + 1;
-              return InkWell(onTap: taken ? null : () => refreshSheet(() => candidate = seat), borderRadius: BorderRadius.circular(9), child: Container(width: 42, height: 40, alignment: Alignment.center, decoration: BoxDecoration(color: taken ? const Color(0xFFE5EAF0) : selected ? AppColors.primary : AppColors.primarySoft, borderRadius: BorderRadius.circular(9), border: Border.all(color: selected ? AppColors.primaryDark : Colors.transparent)), child: Text('$seat', style: TextStyle(color: taken ? AppColors.textMuted : selected ? AppColors.white : AppColors.primaryDark, fontWeight: FontWeight.w800, fontSize: 12))));
-            })),
-            const SizedBox(height: 12),
-            Wrap(spacing: 12, runSpacing: 8, children: [_seatLegend(AppColors.primarySoft, 'Available'), _seatLegend(AppColors.primary, 'Selected'), _seatLegend(const Color(0xFFE5EAF0), 'Booked')]),
-          ])),
-          const SizedBox(height: 14),
-          SizedBox(width: double.infinity, child: FilledButton(onPressed: candidate == null ? null : () { Navigator.pop(sheetContext); _startBooking(bus, candidate!); }, child: const Text('Reserve seat for 5 minutes'))),
-        ])));
-      }),
-    );
-  }
-
-  Widget _seatLegend(Color color, String label) => Row(mainAxisSize: MainAxisSize.min, children: [Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))), const SizedBox(width: 5), Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted))]);
-
-  Widget _seatView(_BusOption bus) {
-    final seat = _selectedSeat!;
-    return ListView(padding: const EdgeInsets.all(20), children: [
-      Row(children: [IconButton(onPressed: _cancelHold, icon: const Icon(Icons.arrow_back_rounded)), const Expanded(child: Text('Seat reserved', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textDark)))]),
-      const SizedBox(height: 8),
-      Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(gradient: AppColors.heroGradient, borderRadius: BorderRadius.circular(22)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Icon(Icons.lock_clock_rounded, color: AppColors.white, size: 30), const SizedBox(height: 12),
-        const Text('Your seat is held for', style: TextStyle(color: AppColors.white)),
-        Text(_formattedTime, style: const TextStyle(color: AppColors.white, fontSize: 34, fontWeight: FontWeight.w900)),
-        Text('Complete payment before the timer expires.', style: TextStyle(color: AppColors.white.withValues(alpha: .86))),
-      ])),
-      const SizedBox(height: 18), _tripSummary(bus, seat), const SizedBox(height: 18),
-      SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: () => setState(() => _paying = true), icon: const Icon(Icons.payment_rounded), label: const Text('Continue to payment'))),
-      const SizedBox(height: 8), TextButton(onPressed: _cancelHold, child: const Text('Cancel reservation')),
-    ]);
-  }
-
-  String get _formattedTime => '${(_secondsLeft ~/ 60).toString().padLeft(2, '0')}:${(_secondsLeft % 60).toString().padLeft(2, '0')}';
-
-  Widget _tripSummary(_BusOption bus, int seat) => Container(
-    padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(18)),
-    child: Column(children: [
-      Row(children: [const Icon(Icons.directions_bus_rounded, color: AppColors.primary), const SizedBox(width: 10), Expanded(child: Text(bus.operator, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textDark))), Text('Seat $seat', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w800))]),
-      const Divider(height: 24),
-      Row(children: [Expanded(child: _timePoint(bus.departure, bus.from, true)), const Icon(Icons.arrow_forward_rounded, color: AppColors.primary), Expanded(child: _timePoint(bus.arrival, bus.to, false))]),
-      const Divider(height: 24),
-      Row(children: [const Expanded(child: Text('Total fare', style: TextStyle(color: AppColors.textMuted))), Text('${bus.price} RWF', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.primary))]),
-    ]),
-  );
-
-  Widget _paymentView() {
-    final bus = _selectedBus!, seat = _selectedSeat!;
-    return ListView(padding: const EdgeInsets.all(20), children: [
-      Row(children: [IconButton(onPressed: () => setState(() => _paying = false), icon: const Icon(Icons.arrow_back_rounded)), const Expanded(child: Text('Payment', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textDark)))]),
-      const SizedBox(height: 8), _tripSummary(bus, seat), const SizedBox(height: 20),
-      const Text('Choose payment method', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textDark)),
-      const SizedBox(height: 12),
-      ...['MTN MoMo','Airtel Money'].map((network) => Padding(padding: const EdgeInsets.only(bottom: 10), child: RadioListTile<String>(
-        value: network, groupValue: _paymentNetwork, onChanged: (v) => setState(() => _paymentNetwork = v!), activeColor: AppColors.primary, tileColor: AppColors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: Text(network, style: const TextStyle(fontWeight: FontWeight.w700)),
-        secondary: Icon(network == 'MTN MoMo' ? Icons.account_balance_wallet_rounded : Icons.phone_android_rounded, color: AppColors.primary),
-      ))),
-      const SizedBox(height: 6),
-      TextField(controller: _phoneController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: 'Mobile money phone number', hintText: '07X XXX XXXX', prefixIcon: Icon(Icons.phone_rounded))),
-      const SizedBox(height: 18),
-      SizedBox(width: double.infinity, child: FilledButton.icon(onPressed: _holdActive ? _completePayment : null, icon: Icon(_holdActive ? Icons.lock_rounded : Icons.timer_off_rounded), label: Text(_holdActive ? 'Pay ${bus.price} RWF · $_formattedTime left' : 'Reservation expired'))),
-      const SizedBox(height: 8),
-      const Text('Demo checkout only: this screen does not charge a real mobile money account.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-      TextButton(onPressed: _cancelHold, child: const Text('Cancel and release seat')),
-    ]);
-  }
-
-  Widget _ticketsTab() {
-    final tickets = _tickets.where((t) => t.status == 'Paid').toList();
-    return CustomScrollView(slivers: [
-      const SliverAppBar(pinned: true, title: Text('My tickets')),
-      if (tickets.isEmpty)
-        const SliverFillRemaining(hasScrollBody: false, child: Center(child: Padding(padding: EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.confirmation_num_outlined, size: 58, color: AppColors.primaryLight), SizedBox(height: 14), Text('No tickets yet', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.textDark)), SizedBox(height: 6), Text('Your paid bus tickets will appear here.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted))]))))
-      else
-        SliverPadding(padding: const EdgeInsets.all(18), sliver: SliverList.separated(itemCount: tickets.length, separatorBuilder: (_, _) => const SizedBox(height: 14), itemBuilder: (context, i) => _ticketCard(tickets[i]))),
-    ]);
-  }
-
-  Widget _ticketCard(_PassengerTicket ticket) => InkWell(
-    onTap: () => showModalBottomSheet<void>(context: context, isScrollControlled: true, builder: (_) => SafeArea(child: Padding(padding: const EdgeInsets.all(22), child: _ticketDetail(ticket)))),
-    borderRadius: BorderRadius.circular(20),
-    child: Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(20), boxShadow: [BoxShadow(color: AppColors.primary.withValues(alpha: .07), blurRadius: 16, offset: const Offset(0,6))]), child: Row(children: [
-      Container(width: 54, height: 54, decoration: BoxDecoration(gradient: AppColors.heroGradient, borderRadius: BorderRadius.circular(16)), child: const Icon(Icons.confirmation_num_rounded, color: AppColors.white, size: 27)),
-      const SizedBox(width: 12),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('${ticket.bus.from} → ${ticket.bus.to}', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textDark)),
-        const SizedBox(height: 4), Text('${ticket.bus.departure} · Seat ${ticket.seat}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
-        Text(ticket.number, style: const TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.w700)),
-      ])),
-      const Icon(Icons.qr_code_2_rounded, color: AppColors.primary, size: 30),
-    ])),
-  );
-
-  Widget _ticketDetail(_PassengerTicket ticket) => SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-    const Icon(Icons.verified_rounded, color: AppColors.success, size: 42), const SizedBox(height: 8),
-    const Text('Your bus ticket', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.textDark)), const SizedBox(height: 18),
-    Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.primarySoft)), child: Column(children: [
-      const Icon(Icons.directions_bus_rounded, size: 38, color: AppColors.primary), const SizedBox(height: 8),
-      Text('${ticket.bus.from} → ${ticket.bus.to}', style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: AppColors.textDark)),
-      Text(ticket.bus.operator, style: const TextStyle(color: AppColors.textMuted)), const SizedBox(height: 16),
-      Container(width: 176, height: 176, decoration: BoxDecoration(color: AppColors.white, border: Border.all(color: AppColors.primarySoft, width: 2), borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.qr_code_2_rounded, size: 150, color: AppColors.textDark)),
-      const SizedBox(height: 10), Text(ticket.number, style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1, color: AppColors.textDark)),
-      const Divider(height: 24),
-      _detailRow('Travel date', '${ticket.date.day.toString().padLeft(2, '0')}/${ticket.date.month.toString().padLeft(2, '0')}/${ticket.date.year}'),
-      _detailRow('Departure', ticket.bus.departure), _detailRow('Seat', '${ticket.seat}'), _detailRow('Bus plate', ticket.bus.plate), _detailRow('Payment', ticket.status), _detailRow('Fare', '${ticket.price} RWF'),
-    ])),
-    const SizedBox(height: 18),
+  @override Widget build(BuildContext context)=>Scaffold(body:SafeArea(child:IndexedStack(index:_tab,children:[_home(),_ticketTab(),_historyTab(),_profile()])),bottomNavigationBar:NavigationBar(selectedIndex:_tab,onDestinationSelected:(i)=>setState(()=>_tab=i),destinations:const[
+    NavigationDestination(icon:Icon(Icons.home_outlined),selectedIcon:Icon(Icons.home),label:'Home'),
+    NavigationDestination(icon:Icon(Icons.confirmation_num_outlined),selectedIcon:Icon(Icons.confirmation_num),label:'Ticket'),
+    NavigationDestination(icon:Icon(Icons.history),selectedIcon:Icon(Icons.history),label:'History'),
+    NavigationDestination(icon:Icon(Icons.person_outline),selectedIcon:Icon(Icons.person),label:'Profile'),
   ]));
-
-  Widget _detailRow(String label, String value) => Padding(padding: const EdgeInsets.symmetric(vertical: 5), child: Row(children: [Expanded(child: Text(label, style: const TextStyle(color: AppColors.textMuted))), Text(value, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textDark))]));
-
-  Widget _historyTab() {
-    final history = _tickets;
-    return CustomScrollView(slivers: [
-      const SliverAppBar(pinned: true, title: Text('Booking history')),
-      if (history.isEmpty)
-        const SliverFillRemaining(hasScrollBody: false, child: Center(child: Padding(padding: EdgeInsets.all(28), child: Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.history_rounded, size: 56, color: AppColors.primaryLight), SizedBox(height: 12), Text('Nothing in your history yet', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textDark)), SizedBox(height: 6), Text('Completed bookings will show up here.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted))]))))
-      else
-        SliverPadding(padding: const EdgeInsets.all(18), sliver: SliverList.separated(itemCount: history.length, separatorBuilder: (_, _) => const SizedBox(height: 10), itemBuilder: (context, i) {
-          final ticket = history[i];
-          return Container(padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: AppColors.white, borderRadius: BorderRadius.circular(16)), child: Row(children: [
-            const Icon(Icons.directions_bus_rounded, color: AppColors.primary, size: 28), const SizedBox(width: 12),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${ticket.bus.from} → ${ticket.bus.to}', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textDark)), Text('${ticket.number} · Seat ${ticket.seat}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted))])),
-            Text(ticket.status, style: TextStyle(color: ticket.status == 'Paid' ? AppColors.success : AppColors.danger, fontWeight: FontWeight.w800, fontSize: 12)),
-          ]));
-        })),
+  Widget _home()=>_selectedBus!=null?_paymentPanel():RefreshIndicator(onRefresh:()async{await _loadLocations();await _search();},child:ListView(padding:const EdgeInsets.all(18),children:[
+    Container(padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.circular(26)),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Row(children:[const Icon(Icons.directions_bus,color:AppColors.white,size:30),const SizedBox(width:10),const Expanded(child:Text('BookIt',style:TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800))),IconButton(onPressed:()=>_msg('Notifications are available for your account.'),icon:const Icon(Icons.notifications_none,color:AppColors.white))]),
+      const SizedBox(height:14),Text('Hello, '+widget.userName,style:const TextStyle(color:AppColors.white,fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:4),Text('Find your next trip in Rwanda.',style:TextStyle(color:AppColors.white.withValues(alpha:.85))),
+    ]),
+    const SizedBox(height:20),const Text('Plan your trip',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:12),
+    if(_loadingLocations)const Center(child:CircularProgressIndicator()) else ...[
+      DropdownButtonFormField<String>(value:_locations.any((e)=>e['id']?.toString()==_fromId)?_fromId:null,decoration:const InputDecoration(labelText:'From',prefixIcon:Icon(Icons.trip_origin)),items:_locations.map((e)=>DropdownMenuItem(value:e['id']?.toString(),child:Text((e['name']??'Location').toString()))).toList(),onChanged:(v)=>setState(()=>_fromId=v)),
+      const SizedBox(height:10),DropdownButtonFormField<String>(value:_locations.any((e)=>e['id']?.toString()==_toId)?_toId:null,decoration:const InputDecoration(labelText:'To',prefixIcon:Icon(Icons.place_outlined)),items:_locations.map((e)=>DropdownMenuItem(value:e['id']?.toString(),child:Text((e['name']??'Location').toString()))).toList(),onChanged:(v)=>setState(()=>_toId=v)),
+    ],
+    const SizedBox(height:8),OutlinedButton.icon(onPressed:()async{final d=await showDatePicker(context:context,initialDate:_date,firstDate:DateTime.now(),lastDate:DateTime.now().add(const Duration(days:365)));if(d!=null)setState(()=>_date=d);},icon:const Icon(Icons.calendar_month),label:Text('Travel date: '+_dateText(_date))),
+    const SizedBox(height:8),SizedBox(height:50,child:FilledButton.icon(onPressed:_searching?null:_search,icon:_searching?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.search),label:const Text('Search live buses'))),
+    const SizedBox(height:20),const Text('Available buses',style:TextStyle(fontSize:19,fontWeight:FontWeight.w800,color:AppColors.textDark)),
+    if(_buses.isEmpty&&!_searching)const Padding(padding:EdgeInsets.symmetric(vertical:18),child:Text('Choose a route and search for current availability.',style:TextStyle(color:AppColors.textMuted))),
+    ..._buses.map(_busCard),
+  ]));
+  Widget _busCard(Map<String,dynamic> b){final r=b['route'] is Map?Map<String,dynamic>.from(b['route']):<String,dynamic>{};final op=b['operator'] is Map?Map<String,dynamic>.from(b['operator']):<String,dynamic>{};final seats=b['available_seats'] as List? ?? const[];
+    return Card(margin:const EdgeInsets.only(top:12),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Row(children:[const Icon(Icons.directions_bus,color:AppColors.primary,size:28),const SizedBox(width:10),Expanded(child:Text((op['company_name']??b['plate_number']??'Bus operator').toString(),style:const TextStyle(fontWeight:FontWeight.w800,fontSize:16))),Text((b['price']??'—').toString()+' RWF',style:const TextStyle(color:AppColors.primary,fontWeight:FontWeight.w800))]),
+      const SizedBox(height:9),Text(_name(_fromId)+' → '+_name(_toId),style:const TextStyle(fontWeight:FontWeight.w700,fontSize:16)),const SizedBox(height:5),
+      Text('Departure '+(b['departure_time']??'TBA').toString()+' • '+seats.length.toString()+' seats left',style:const TextStyle(color:AppColors.textMuted)),
+      const SizedBox(height:10),SizedBox(width:double.infinity,child:FilledButton(onPressed:()=>_choose(b),child:const Text('Choose seat'))),
+    ])));
+  }
+  Widget _paymentPanel(){final b=_selectedBus!;final op=b['operator'] is Map?Map<String,dynamic>.from(b['operator']):<String,dynamic>{};
+    return ListView(padding:const EdgeInsets.all(20),children:[
+      Text('Confirm your seat',style:Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight:FontWeight.w800)),
+      Card(child:ListTile(leading:const Icon(Icons.event_seat,color:AppColors.primary),title:Text('Seat '+(_seat?.toString()??'—')),subtitle:Text((op['company_name']??b['plate_number']??'Bus').toString()+' • '+_dateText(_date)),trailing:Text(_seconds.toString()+'s',style:const TextStyle(color:AppColors.primary,fontWeight:FontWeight.w800)))),
+      Text('Route: '+_name(_fromId)+' → '+_name(_toId)),Text('Amount: '+(b['price']??'—').toString()+' RWF'),const SizedBox(height:18),
+      const Text('Pay with mobile money',style:TextStyle(fontSize:18,fontWeight:FontWeight.w800)),const SizedBox(height:10),
+      SegmentedButton<String>(segments:const[ButtonSegment(value:'mtn',label:Text('MTN MoMo')),ButtonSegment(value:'airtel',label:Text('Airtel Money'))],selected:{_network},onSelectionChanged:(v)=>setState(()=>_network=v.first)),
+      const SizedBox(height:12),TextField(controller:_phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'Mobile money phone number',prefixIcon:Icon(Icons.phone_android))),
+      const SizedBox(height:16),SizedBox(height:50,child:FilledButton(onPressed:_pay,child:const Text('Request payment'))),
+      TextButton(onPressed:_cancel,child:const Text('Cancel reservation')),
+      const Text('Payment is confirmed only by the server. Approve the prompt on your phone; the app will not mark a ticket as paid by itself.',style:TextStyle(color:AppColors.textMuted)),
     ]);
   }
-
-  Widget _profileTab() => ListView(padding: const EdgeInsets.all(22), children: [
-    const SizedBox(height: 12), const Center(child: BrandLogo(size: 82)), const SizedBox(height: 16),
-    Center(child: Text(widget.userName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.textDark))),
-    const Center(child: Text('BookIt passenger', style: TextStyle(color: AppColors.textMuted))), const SizedBox(height: 24),
-    _profileOption(Icons.confirmation_num_outlined, 'My tickets', 'View your travel QR tickets', () => setState(() => _nav = 1)),
-    _profileOption(Icons.history_rounded, 'Booking history', 'Review your previous bookings', () => setState(() => _nav = 2)),
-    _profileOption(Icons.help_outline_rounded, 'Help & support', 'Get assistance with a booking', () => showAboutDialog(context: context, applicationName: 'BookIt', applicationVersion: '1.0.0', children: const [Text('Contact support for assistance with your bus trip.')])),
-    _profileOption(Icons.info_outline_rounded, 'About BookIt', 'Bus travel made simpler', () => showAboutDialog(context: context, applicationName: 'BookIt', applicationVersion: '1.0.0')),
-  ]);
-
-  Widget _profileOption(IconData icon, String title, String subtitle, VoidCallback onTap) => Card(
-    margin: const EdgeInsets.only(bottom: 10),
-    child: ListTile(
-      leading: Container(width: 42, height: 42, decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: AppColors.primary)),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textDark)),
-      subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
-      trailing: const Icon(Icons.chevron_right_rounded), onTap: onTap,
-    ),
-  );
+  Widget _ticketTab(){final xs=_tickets.where((t)=>(t['status']??'').toString().toLowerCase()=='paid').toList();if(_loadingTickets)return const Center(child:CircularProgressIndicator());return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:const EdgeInsets.all(18),children:[const Text('My tickets',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)),if(xs.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:25),child:Text('Confirmed tickets appear here after payment succeeds.')),...xs.map(_ticketCard)]));}
+  Widget _historyTab()=>RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:const EdgeInsets.all(18),children:[const Text('Booking history',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)),if(_loadingTickets)const Center(child:CircularProgressIndicator()),if(!_loadingTickets&&_tickets.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:24),child:Text('No bookings found.')),..._tickets.map(_ticketCard)]));
+  Widget _ticketCard(Map<String,dynamic> t){final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};final from=route['fromLocation'] is Map?(route['fromLocation']['name']??'From').toString():'From';final to=route['toLocation'] is Map?(route['toLocation']['name']??'To').toString():'To';
+    return Card(margin:const EdgeInsets.only(top:10),child:ListTile(leading:Icon((t['status']??'').toString()=='paid'?Icons.confirmation_num:Icons.pending_actions,color:AppColors.primary),title:Text(from+' → '+to,style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text('Seat '+(t['seat_number']??'—').toString()+' • '+(t['travel_date']??'Date pending').toString()+'\nStatus: '+(t['status']??'unknown').toString()),isThreeLine:true,trailing:Text((t['price']??'—').toString()+' RWF')));
+  }
+  Widget _history()=>_historyTab();
+  Widget _profile()=>ListView(padding:const EdgeInsets.all(20),children:[const CircleAvatar(radius:36,child:Icon(Icons.person,size:36)),const SizedBox(height:12),Text(widget.userName,textAlign:TextAlign.center,style:const TextStyle(fontSize:22,fontWeight:FontWeight.w800)),const SizedBox(height:4),const Text('Passenger account',textAlign:TextAlign.center,style:TextStyle(color:AppColors.textMuted)),const SizedBox(height:20),OutlinedButton.icon(onPressed:()async{try{await ApiClient.post('auth/logout',auth:true);}catch(_){}ApiClient.setToken(null);if(mounted)_msg('Signed out. Close and reopen BookIt to sign in again.');},icon:const Icon(Icons.logout),label:const Text('Sign out'))]);
 }
