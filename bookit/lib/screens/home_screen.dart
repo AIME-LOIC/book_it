@@ -279,29 +279,197 @@ class _HomeScreenState extends State<HomeScreen> {
       const SizedBox(height:10),SizedBox(width:double.infinity,child:FilledButton(onPressed:_searching?null:()=>_bookBusFromList(b),child:Text(_searching?'Checking seats…':'Choose seat & book'))),
     ])));
   }
-  Widget _paymentPanel(){final b=_selectedBus!;final op=b['operator'] is Map?Map<String,dynamic>.from(b['operator']):<String,dynamic>{};
-    return ListView(padding:const EdgeInsets.all(20),children:[
-      Text('Confirm your seat',style:Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight:FontWeight.w800)),
-      Card(child:ListTile(leading:const Icon(Icons.event_seat,color:AppColors.primary),title:Text('Seat '+(_seat?.toString()??'—')),subtitle:Text((op['company_name']??b['plate_number']??'Bus').toString()+' • '+_dateText(_date)),trailing:Text(_seconds.toString()+'s',style:const TextStyle(color:AppColors.primary,fontWeight:FontWeight.w800)))),
-      Text('Route: '+_name(_fromId)+' → '+_name(_toId)),Text('Amount: '+(b['price']??'—').toString()+' RWF'),const SizedBox(height:10),
-      OutlinedButton.icon(
-        onPressed:()=>_openRouteMap(
-          from:_name(_fromId),to:_name(_toId),
-          stops:(b['route_stops'] is List?(b['route_stops'] as List).whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList():<Map<String,dynamic>>[]),
-          routeId:(b['route'] is Map?b['route']['id']:null)?.toString(),
-          busName:(op['company_name']??b['plate_number']??'BookIt bus').toString(),
-          travelDate:_dateText(_date),seatLabel:(_seat?.toString()??''),
+  Widget _paymentPanel() {
+    final b = _selectedBus!;
+    final op = b['operator'] is Map
+        ? Map<String, dynamic>.from(b['operator'])
+        : <String, dynamic>{};
+    final amount = (b['price'] ?? '—').toString();
+    final operatorName = (op['company_name'] ?? b['plate_number'] ?? 'BookIt bus').toString();
+    final remaining = Duration(seconds: _seconds);
+    final countdown = '${remaining.inMinutes.toString().padLeft(2, '0')}:${(remaining.inSeconds % 60).toString().padLeft(2, '0')}';
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(18, 12, 18, 28),
+      children: [
+        Row(children: [
+          IconButton(
+            tooltip: 'Back to trip search',
+            onPressed: _cancel,
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+          const SizedBox(width: 4),
+          const Expanded(child: Text('Secure checkout',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.textDark))),
+        ]),
+        const Padding(
+          padding: EdgeInsets.only(left: 4, top: 2, bottom: 18),
+          child: Text('Review your booking and pay with mobile money.',
+              style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
         ),
-        icon:const Icon(Icons.map_outlined),label:const Text('View full route map'),
-      ),
-      const SizedBox(height:18),
-      const Text('Pay with mobile money',style:TextStyle(fontSize:18,fontWeight:FontWeight.w800)),const SizedBox(height:10),
-      SegmentedButton<String>(segments:const[ButtonSegment(value:'mtn',label:Text('MTN MoMo')),ButtonSegment(value:'airtel',label:Text('Airtel Money'))],selected:{_network},onSelectionChanged:(v)=>setState(()=>_network=v.first)),
-      const SizedBox(height:12),TextField(controller:_phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'Mobile money phone number',prefixIcon:Icon(Icons.phone_android))),
-      const SizedBox(height:16),SizedBox(height:50,child:FilledButton(onPressed:_pay,child:const Text('Request payment'))),
-      TextButton(onPressed:_cancel,child:const Text('Cancel reservation')),
-      const Text('Payment is confirmed only by the server. Approve the prompt on your phone; the app will not mark a ticket as paid by itself.',style:TextStyle(color:AppColors.textMuted)),
-    ]);
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: AppColors.heroGradient,
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: .16), borderRadius: BorderRadius.circular(14)),
+                child: const Icon(Icons.confirmation_num_rounded, color: Colors.white, size: 25),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('TOTAL TO PAY', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 1.1)),
+                SizedBox(height: 3),
+              ])),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(color: Colors.white.withValues(alpha: .15), borderRadius: BorderRadius.circular(20)),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  const Icon(Icons.timer_outlined, size: 14, color: Colors.white),
+                  const SizedBox(width: 5),
+                  Text(countdown, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                ]),
+              ),
+            ]),
+            const SizedBox(height: 8),
+            Text('$amount RWF', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900, letterSpacing: -.5)),
+            const SizedBox(height: 6),
+            Text('Seat ${_seat?.toString() ?? '—'}  •  $operatorName',
+                maxLines: 2, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
+          ]),
+        ),
+        const SizedBox(height: 18),
+        const Text('TRIP SUMMARY', style: TextStyle(fontSize: 11, letterSpacing: 1.1, fontWeight: FontWeight.w800, color: AppColors.textMuted)),
+        const SizedBox(height: 9),
+        Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(children: [
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Column(children: [
+                  Container(width: 12, height: 12, decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle)),
+                  Container(width: 2, height: 34, color: AppColors.primaryLight),
+                  Container(width: 12, height: 12, decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle)),
+                ]),
+                const SizedBox(width: 12),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(_name(_fromId), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+                  const SizedBox(height: 22),
+                  Text(_name(_toId), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+                ])),
+                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  const Text('FROM', style: TextStyle(fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 23),
+                  const Text('TO', style: TextStyle(fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+                ]),
+              ]),
+              const Divider(height: 26),
+              Row(children: [
+                const Icon(Icons.calendar_month_outlined, size: 18, color: AppColors.primary),
+                const SizedBox(width: 8),
+                Expanded(child: Text(_dateText(_date), style: const TextStyle(fontWeight: FontWeight.w700))),
+                const Icon(Icons.directions_bus_outlined, size: 18, color: AppColors.primary),
+                const SizedBox(width: 6),
+                Flexible(child: Text(operatorName, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+              ]),
+              const SizedBox(height: 8),
+              Align(alignment: Alignment.centerLeft, child: TextButton.icon(
+                onPressed: () => _openRouteMap(
+                  from: _name(_fromId), to: _name(_toId),
+                  stops: (b['route_stops'] is List
+                      ? (b['route_stops'] as List).whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList()
+                      : <Map<String, dynamic>>[]),
+                  routeId: (b['route'] is Map ? b['route']['id'] : null)?.toString(),
+                  busName: operatorName, travelDate: _dateText(_date),
+                  seatLabel: (_seat?.toString() ?? ''),
+                ),
+                icon: const Icon(Icons.satellite_alt_outlined),
+                label: const Text('View route on satellite map'),
+              )),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 22),
+        const Text('PAYMENT METHOD', style: TextStyle(fontSize: 11, letterSpacing: 1.1, fontWeight: FontWeight.w800, color: AppColors.textMuted)),
+        const SizedBox(height: 9),
+        Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Row(children: [
+                Icon(Icons.phone_android_rounded, color: AppColors.primary, size: 22),
+                SizedBox(width: 9),
+                Expanded(child: Text('Mobile money', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800))),
+              ]),
+              const SizedBox(height: 5),
+              const Text('Choose your provider and enter the number that will receive the payment prompt.',
+                  style: TextStyle(fontSize: 12, color: AppColors.textMuted, height: 1.4)),
+              const SizedBox(height: 14),
+              SegmentedButton<String>(
+                expanded: true,
+                segments: const [
+                  ButtonSegment(value: 'mtn', icon: Icon(Icons.account_balance_wallet_outlined), label: Text('MTN MoMo')),
+                  ButtonSegment(value: 'airtel', icon: Icon(Icons.account_balance_wallet_outlined), label: Text('Airtel Money')),
+                ],
+                selected: {_network},
+                onSelectionChanged: (v) => setState(() => _network = v.first),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _phone,
+                keyboardType: TextInputType.phone,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(
+                  labelText: 'Mobile money number',
+                  hintText: 'e.g. 078… or 073…',
+                  prefixIcon: Icon(Icons.phone_iphone_rounded),
+                  helperText: 'Use the number registered with your selected provider.',
+                ),
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity, height: 54,
+                child: FilledButton.icon(
+                  onPressed: _pay,
+                  icon: const Icon(Icons.lock_outline_rounded),
+                  label: const Text('Request secure payment', style: TextStyle(fontWeight: FontWeight.w800)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Center(child: TextButton.icon(
+                onPressed: _cancel,
+                icon: const Icon(Icons.close_rounded, size: 17),
+                label: const Text('Cancel reservation'),
+              )),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: AppColors.success.withValues(alpha: .08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.success.withValues(alpha: .22)),
+          ),
+          child: const Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(Icons.verified_user_outlined, color: AppColors.success, size: 20),
+            SizedBox(width: 10),
+            Expanded(child: Text(
+              'Payment status is verified by BookIt’s server. Submit the request, then approve the prompt on your phone. Your ticket is confirmed only after the server reports successful payment.',
+              style: TextStyle(fontSize: 12, color: AppColors.textDark, height: 1.45),
+            )),
+          ]),
+        ),
+      ],
+    );
   }
   Widget _ticketTab(){final xs=_tickets.where((t)=>(t['status']??'').toString().toLowerCase()=='paid').toList();if(_loadingTickets)return const Center(child:CircularProgressIndicator());return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:const EdgeInsets.all(18),children:[const Text('My tickets',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)),if(xs.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:25),child:Text('Confirmed tickets appear here after payment succeeds.')),...xs.map(_ticketCard)]));}
   String _ticketRoute(Map<String,dynamic> t){
