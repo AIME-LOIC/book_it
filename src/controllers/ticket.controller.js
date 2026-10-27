@@ -8,7 +8,11 @@ export const search             = async (req, res) => {
 
 export const book               = async (req, res) => {
   try { res.status(201).json(await svc.bookTicket(req.user.id, req.body)); }
-  catch (err) { res.status(400).json({ message: clientMessage(err) }); }
+  catch (err) {
+    // Keep infrastructure details in server logs, never in the client response.
+    console.error('[BOOKING] Ticket reservation failed:', err?.stack || err);
+    res.status(400).json({ message: clientMessage(err) });
+  }
 };
 
 // FIX: was `svc.payTicket(req.user.id, req.params.id)` — dropped req.body,
