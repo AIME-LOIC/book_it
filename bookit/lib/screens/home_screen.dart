@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/api_client.dart';
 import '../theme/app_theme.dart';
 
@@ -37,9 +39,53 @@ class _HomeScreenState extends State<HomeScreen> {
     }on ApiException catch(e){_msg(e.message);}finally{if(mounted)setState(()=>_searching=false);}
   }
   Future<void> _choose(Map<String,dynamic> bus) async {
-    final seats=(bus['available_seats'] as List? ?? const[]).map((x)=>int.tryParse(x.toString())).whereType<int>().toList();
-    if(seats.isEmpty){_msg('No available seats.');return;}
-    final n=await showDialog<int>(context:context,builder:(c)=>AlertDialog(title:const Text('Choose a seat'),content:Wrap(spacing:8,runSpacing:8,children:seats.map((x)=>SizedBox(width:54,child:OutlinedButton(onPressed:()=>Navigator.pop(c,x),child:Text(x.toString())))).toList()),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel'))]));
+    final available=(bus['available_seats'] as List? ?? const[])
+        .map((x)=>int.tryParse(x.toString())).whereType<int>().toSet();
+    if(available.isEmpty){_msg('No available seats.');return;}
+    final reportedCapacity=int.tryParse((bus['total_seats'] ?? bus['seat_capacity'] ?? '').toString());
+    final capacity=(reportedCapacity != null && reportedCapacity > 0)
+        ? reportedCapacity
+        : (available.reduce((a,b)=>a>b?a:b) < 40 ? 40 : available.reduce((a,b)=>a>b?a:b));
+    final n=await showDialog<int>(
+      context:context,
+      builder:(c)=>Dialog(
+        child:ConstrainedBox(
+          constraints:const BoxConstraints(maxWidth:390,maxHeight:620),
+          child:Padding(
+            padding:const EdgeInsets.all(18),
+            child:Column(mainAxisSize:MainAxisSize.min,children:[
+              const Text('Choose your seat',style:TextStyle(fontSize:21,fontWeight:FontWeight.w800)),
+              const SizedBox(height:4),
+              const Text('Front of bus',style:TextStyle(color:AppColors.textMuted)),
+              const SizedBox(height:8),
+              Container(width:170,padding:const EdgeInsets.all(10),decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),child:const Row(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(Icons.directions_bus,color:AppColors.primary),SizedBox(width:8),Text('DRIVER') ])),
+              const SizedBox(height:14),
+              const Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+                _SeatLegend(color:AppColors.success,label:'Available'),
+                SizedBox(width:12),_SeatLegend(color:AppColors.primary,label:'Selected'),
+                SizedBox(width:12),_SeatLegend(color:Color(0xFFE0E4EA),label:'Taken')
+              ]),
+              const SizedBox(height:12),
+              Flexible(child:SingleChildScrollView(child:Column(children:[
+                for(var start=1;start<=capacity;start+=4)
+                  Padding(padding:const EdgeInsets.only(bottom:8),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+                    _seatButton(c,start,available),
+                    const SizedBox(width:7),
+                    _seatButton(c,start+1,available),
+                    const SizedBox(width:22),
+                    if(start+2<=capacity)_seatButton(c,start+2,available),
+                    const SizedBox(width:7),
+                    if(start+3<=capacity)_seatButton(c,start+3,available),
+                  ]))
+              ]))),
+              const SizedBox(height:8),
+              Text('Seat layout shown as 2 + aisle + 2. Availability is supplied by the operator.',style:TextStyle(fontSize:11,color:AppColors.textMuted),textAlign:TextAlign.center),
+              TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel'))
+            ]),
+          ),
+        ),
+      ),
+    );
     if(n==null)return;
     try{final r=await ApiClient.post('tickets',auth:true,body:{'bus_id':bus['bus_id'],'seat_number':n,'boarding_stop_id':bus['boarding_stop_id'],'dropoff_stop_id':bus['dropoff_stop_id'],'travel_date':_dateText(_date)});
       if(r is! Map||r['id']==null){_msg('The server did not return a reservation ID.');return;}
@@ -47,6 +93,19 @@ class _HomeScreenState extends State<HomeScreen> {
       _timer=Timer.periodic(const Duration(seconds:1),(t){if(!mounted){t.cancel();return;}if(_seconds<=1){t.cancel();_expire();}else{setState(()=>_seconds--);}});
       _msg('Seat reserved. Complete payment within 5 minutes.');
     }on ApiException catch(e){_msg(e.message);_search();}
+  }
+  Widget _seatButton(BuildContext dialogContext,int number,Set<int> available){
+    if(number>40 && !available.contains(number))return const SizedBox(width:42);
+    final free=available.contains(number);
+    return SizedBox(width:42,height:42,child:Material(
+      color:free?AppColors.success.withValues(alpha:.12):const Color(0xFFE0E4EA),
+      borderRadius:BorderRadius.circular(9),
+      child:InkWell(
+        borderRadius:BorderRadius.circular(9),
+        onTap:free?()=>Navigator.pop(dialogContext,number):null,
+        child:Center(child:Text(number.toString(),style:TextStyle(fontWeight:FontWeight.w800,color:free?AppColors.success:AppColors.textMuted))),
+      ),
+    ));
   }
   Future<void> _expire() async {final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}catch(_){}}if(!mounted)return;setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _seconds=0; });_msg('The 5-minute hold expired. Any unpaid reservation was cancelled.');_search();}
   Future<void> _cancel() async { _timer?.cancel();final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}on ApiException catch(e){_msg(e.message);}}if(mounted)setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; });_search();}
@@ -101,8 +160,51 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _ticketTab(){final xs=_tickets.where((t)=>(t['status']??'').toString().toLowerCase()=='paid').toList();if(_loadingTickets)return const Center(child:CircularProgressIndicator());return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:const EdgeInsets.all(18),children:[const Text('My tickets',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)),if(xs.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:25),child:Text('Confirmed tickets appear here after payment succeeds.')),...xs.map(_ticketCard)]));}
   Widget _historyTab()=>RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:const EdgeInsets.all(18),children:[const Text('Booking history',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)),if(_loadingTickets)const Center(child:CircularProgressIndicator()),if(!_loadingTickets&&_tickets.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:24),child:Text('No bookings found.')),..._tickets.map(_ticketCard)]));
   Widget _ticketCard(Map<String,dynamic> t){final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};final from=route['fromLocation'] is Map?(route['fromLocation']['name']??'From').toString():'From';final to=route['toLocation'] is Map?(route['toLocation']['name']??'To').toString():'To';
-    return Card(margin:const EdgeInsets.only(top:10),child:ListTile(leading:Icon((t['status']??'').toString()=='paid'?Icons.confirmation_num:Icons.pending_actions,color:AppColors.primary),title:Text(from+' → '+to,style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text('Seat '+(t['seat_number']??'—').toString()+' • '+(t['travel_date']??'Date pending').toString()+'\nStatus: '+(t['status']??'unknown').toString()),isThreeLine:true,trailing:Text((t['price']??'—').toString()+' RWF')));
+    return Card(margin:const EdgeInsets.only(top:10),child:ListTile(
+      leading:Container(width:48,height:48,decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),child:const Icon(Icons.directions_bus_rounded,color:AppColors.primary)),
+      title:Text(from+' → '+to,style:const TextStyle(fontWeight:FontWeight.w800)),
+      subtitle:Text('Seat '+(t['seat_number']??'—').toString()+' • '+(t['travel_date']??'Date pending').toString()+'\nStatus: '+(t['status']??'unknown').toString()),
+      isThreeLine:true,trailing:const Icon(Icons.chevron_right),
+      onTap:()=>_showTicketDetails(t),
+    ));
   }
+  Future<void> _showTicketDetails(Map<String,dynamic> t) async {
+    final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};
+    final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};
+    final op=bus['operator'] is Map?Map<String,dynamic>.from(bus['operator']):<String,dynamic>{};
+    final from=route['fromLocation'] is Map?(route['fromLocation']['name']??'From').toString():'From';
+    final to=route['toLocation'] is Map?(route['toLocation']['name']??'To').toString():'To';
+    final plate=(bus['plate_number']??bus['registration_number']??bus['plate']??'Not provided by operator').toString();
+    final code=(t['ticket_code']??t['code']??t['reference']??t['id']??'BOOKIT-TICKET').toString();
+    final qrData=(t['qr_code']??t['qr_data']??code).toString();
+    final lat=double.tryParse((bus['latitude']??bus['current_latitude']??'').toString());
+    final lng=double.tryParse((bus['longitude']??bus['current_longitude']??'').toString());
+    await showDialog<void>(context:context,builder:(c)=>Dialog(
+      child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:420,maxHeight:720),child:SingleChildScrollView(padding:const EdgeInsets.all(22),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        Row(children:[const Icon(Icons.directions_bus_rounded,color:AppColors.primary,size:30),const SizedBox(width:10),const Expanded(child:Text('Your bus ticket',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800))),IconButton(onPressed:()=>Navigator.pop(c),icon:const Icon(Icons.close))]),
+        Text(from+' → '+to,textAlign:TextAlign.center,style:const TextStyle(fontSize:18,fontWeight:FontWeight.w800)),
+        const SizedBox(height:4),Text((op['company_name']??bus['company_name']??'Bus operator').toString(),textAlign:TextAlign.center,style:const TextStyle(color:AppColors.textMuted)),
+        const SizedBox(height:16),
+        Center(child:Container(padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(14),border:Border.all(color:const Color(0xFFE2E8F0))),child:QrImageView(data:qrData,version:QrVersions.auto,size:190,backgroundColor:Colors.white,semanticsLabel:'Ticket QR code for ticket $code'))),
+        const SizedBox(height:10),Center(child:Text('Ticket code: $code',style:const TextStyle(fontWeight:FontWeight.w800))),
+        const Divider(height:28),
+        _detailLine('Travel date',(t['travel_date']??'Not provided').toString()),
+        _detailLine('Departure',(bus['departure_time']??t['departure_time']??'Not provided').toString()),
+        _detailLine('Seat number',(t['seat_number']??'—').toString()),
+        _detailLine('Bus plate',plate),
+        _detailLine('Fare',(t['price']??bus['price']??'—').toString()+' RWF'),
+        _detailLine('Status',(t['status']??'unknown').toString().toUpperCase()),
+        const SizedBox(height:14),
+        FilledButton.icon(onPressed:lat!=null&&lng!=null?()async{
+          final uri=Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+          final ok=await launchUrl(uri,mode:LaunchMode.externalApplication);
+          if(!ok&&mounted)_msg('Could not open the map on this device.');
+        }:null,icon:const Icon(Icons.my_location),label:const Text('Track bus location')),
+        if(lat==null||lng==null)const Padding(padding:EdgeInsets.only(top:8),child:Text('Live tracking is not available yet: the operator has not supplied current GPS coordinates for this bus.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:AppColors.textMuted))),
+      ]))),
+    ));
+  }
+  Widget _detailLine(String label,String value)=>Padding(padding:const EdgeInsets.symmetric(vertical:6),child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[SizedBox(width:112,child:Text(label,style:const TextStyle(color:AppColors.textMuted))),Expanded(child:Text(value,style:const TextStyle(fontWeight:FontWeight.w700)))]));
   Widget _history()=>_historyTab();
   Widget _profile()=>ListView(padding:const EdgeInsets.all(20),children:[const CircleAvatar(radius:36,child:Icon(Icons.person,size:36)),const SizedBox(height:12),Text(widget.userName,textAlign:TextAlign.center,style:const TextStyle(fontSize:22,fontWeight:FontWeight.w800)),const SizedBox(height:4),const Text('Passenger account',textAlign:TextAlign.center,style:TextStyle(color:AppColors.textMuted)),const SizedBox(height:20),OutlinedButton.icon(onPressed:()async{try{await ApiClient.post('auth/logout',auth:true);}catch(_){}ApiClient.setToken(null);if(mounted)_msg('Signed out. Close and reopen BookIt to sign in again.');},icon:const Icon(Icons.logout),label:const Text('Sign out'))]);
 }
