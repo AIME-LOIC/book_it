@@ -742,6 +742,68 @@ const redeemTicket = async (findWhere, driver) => {
   });
 };
 
+// Record a passenger's departure separately from ticket redemption.
+// This does not set is_used and does not change payment status.
+export const markTicketDeparted = async (ticket_id, driver) => {
+  if (!driver?.id || !driver?.bus_id) throw new Error('Active driver and assigned bus are required');
+
+  const ticket = await Ticket.findByPk(ticket_id, {
+    include: [
+      { model: Bus, as: 'bus', attributes: ['id', 'plate_number', 'departure_time'] },
+      { model: User, as: 'user', attributes: ['id', 'name'] },
+      {
+        model: RouteStop, as: 'boardingStop', attributes: ['id'],
+        include: [{ model: Location, as: 'location', attributes: ['name'] }],
+      },
+      {
+        model: RouteStop, as: 'dropoffStop', attributes: ['id'],
+        include: [{ model: Location, as: 'location', attributes: ['name'] }],
+      },
+    ],
+  });
+  if (!ticket) throw new Error('Ticket not found');
+  if (ticket.bus_id !== driver.bus_id) throw new Error('This ticket is not assigned to your bus');
+  if (ticket.status !== 'paid') throw new Error('Only paid tickets can be marked as departed');
+  if (ticket.departed_at) {
+    return { departed: true, already_departed: true, departed_at: ticket.departed_at, ticket_id: ticket.id };
+  }
+
+  const now = new Date();
+  const [updated] = await Ticket.update(
+    { departed_at: now },
+    { where: { id: ticket.id, bus_id: driver.bus_id, status: 'paid', departed_at: null } },
+  );
+  if (updated !== 1) {
+    const latest = await Ticket.findByPk(ticket.id);
+    if (latest?.departed_at) {
+      return { departed: true, already_departed: true, departed_at: latest.departed_at, ticket_id: ticket.id };
+    }
+    throw new Error('Could not record passenger departure');
+  }
+
+  try {
+    await createMany([{
+      recipient_id: ticket.user_id,
+      recipient_type: 'user',
+      type: 'passenger_departed',
+      message: `Your trip on bus ${ticket.bus?.plate_number || ''} has been marked as departed. Safe travels!`.trim(),
+      meta: {
+        ticket_id: ticket.id,
+        bus_id: ticket.bus_id,
+        travel_date: ticket.travel_date,
+        seat_number: ticket.seat_number,
+        departed_at: now.toISOString(),
+        boarding: ticket.boardingStop?.location?.name || null,
+        dropoff: ticket.dropoffStop?.location?.name || null,
+      },
+    }]);
+  } catch (err) {
+    console.error('[DEPARTURE] Departure saved but passenger notification failed:', err?.stack || err);
+  }
+
+  return { departed: true, already_departed: false, departed_at: now, ticket_id: ticket.id, message: 'Passenger departure recorded. Ticket payment and validation status were not changed.' };
+};
+
 export const validateByQR = async (token, driver) => {
   // QR endpoint accepts ONLY signed QR JWTs — no fallback to raw ticket
   // numbers. Ticket numbers must go through the /validate/number endpoint,
