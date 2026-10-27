@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../theme/theme_controller.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/api_client.dart';
@@ -15,11 +18,75 @@ class _HomeScreenState extends State<HomeScreen> {
   int _tab=0; bool _loadingLocations=true,_searching=false,_loadingTickets=false,_loadingProfile=false,_loadingNotifications=false,_showingSearchResults=false;
   List<Map<String,dynamic>> _locations=[],_buses=[],_tickets=[],_notifications=[];
   Map<String,dynamic> _profileData={};
+  int? _weatherCode;
+  double? _temperature;
+  String _weatherLabel='Checking Kigali weather…';
+  Timer? _weatherTimer;
   String? _fromId,_toId,_activeTicketId,_selectedHistoryRoute; DateTime _date=DateTime.now().add(const Duration(days:1));
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer;
   final _phone=TextEditingController(); String _network='mtn';
-  @override void initState(){super.initState();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();}
-  @override void dispose(){_timer?.cancel();_phone.dispose();super.dispose();}
+  @override void initState(){super.initState();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadWeather();_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
+  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_phone.dispose();super.dispose();}
+
+  Future<void> _loadWeather() async {
+    try {
+      final uri=Uri.https('api.open-meteo.com','/v1/forecast',{'latitude':'-1.9441','longitude':'30.0619','current':'temperature_2m,weather_code,is_day','timezone':'Africa/Kigali'});
+      final response=await http.get(uri).timeout(const Duration(seconds:8));
+      if(response.statusCode!=200)return;
+      final data=jsonDecode(response.body) as Map<String,dynamic>;
+      final current=data['current'] as Map<String,dynamic>?;
+      if(current==null)return;
+      final code=(current['weather_code'] as num?)?.toInt();
+      final temp=(current['temperature_2m'] as num?)?.toDouble();
+      if(!mounted)return;
+      setState((){_weatherCode=code;_temperature=temp;_weatherLabel=_weatherDescription(code);});
+    } catch (_) { if(mounted&&_weatherCode==null)setState(()=>_weatherLabel='Kigali weather unavailable'); }
+  }
+
+  String _weatherDescription(int? code) {
+    if(code==null)return 'Weather conditions unavailable';
+    if(code==0)return 'Clear sky';
+    if(code<=3)return code==1?'Mostly clear':code==2?'Partly cloudy':'Overcast';
+    if(code==45||code==48)return 'Foggy';
+    if(code>=51&&code<=57)return 'Drizzle';
+    if(code>=61&&code<=67)return 'Rain';
+    if(code>=71&&code<=77)return 'Snow';
+    if(code>=80&&code<=82)return 'Rain showers';
+    if(code>=85&&code<=86)return 'Snow showers';
+    if(code>=95)return 'Thunderstorm';
+    return 'Current conditions';
+  }
+
+  IconData get _weatherIcon {
+    final code=_weatherCode;
+    if(code==null)return Icons.cloud_outlined;
+    if(code==0)return Icons.wb_sunny_rounded;
+    if(code<=3)return Icons.cloud_rounded;
+    if(code==45||code==48)return Icons.cloud_queue_rounded;
+    if((code>=51&&code<=67)||(code>=80&&code<=82)||code>=95)return Icons.thunderstorm_rounded;
+    if(code>=71&&code<=86)return Icons.ac_unit_rounded;
+    return Icons.cloud_rounded;
+  }
+
+  Future<void> _chooseTheme() async {
+    final selected=await showModalBottomSheet<String>(context:context,showDragHandle:true,builder:(sheetContext)=>SafeArea(child:Padding(
+      padding:const EdgeInsets.fromLTRB(18,4,18,24),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.start,children:[
+        const Text('Appearance',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)),
+        const SizedBox(height:5),const Text('Choose how BookIt looks on this device.'),const SizedBox(height:14),
+        _themeChoice(sheetContext,'white','White & blue',Icons.light_mode_outlined,Colors.white,AppColors.primary),
+        _themeChoice(sheetContext,'green','Light green',Icons.eco_outlined,const Color(0xFFF1F8E9),const Color(0xFF2E7D32)),
+        _themeChoice(sheetContext,'dark','Dark',Icons.dark_mode_outlined,const Color(0xFF151A20),const Color(0xFF90CAF9)),
+      ]),
+    )));
+    if(selected!=null)await ThemeController.setMode(selected);
+  }
+
+  Widget _themeChoice(BuildContext context,String mode,String label,IconData icon,Color swatch,Color accent)=>ListTile(
+    leading:Container(width:42,height:42,decoration:BoxDecoration(color:swatch,borderRadius:BorderRadius.circular(12),border:Border.all(color:Theme.of(context).dividerColor)),child:Icon(icon,color:accent)),
+    title:Text(label,style:const TextStyle(fontWeight:FontWeight.w700)),
+    trailing:ThemeController.mode.value==mode?const Icon(Icons.check_circle_rounded,color:AppColors.success):const Icon(Icons.radio_button_unchecked),
+    onTap:()=>Navigator.pop(context,mode),
+  );
   void _msg(String s){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(s)));}
   String _dateText(DateTime d)=>d.year.toString().padLeft(4,'0')+'-'+d.month.toString().padLeft(2,'0')+'-'+d.day.toString().padLeft(2,'0');
   String _name(String? id){for(final x in _locations){if(x['id']?.toString()==id)return (x['name']??'Location').toString();}return 'Location';}
@@ -233,10 +300,24 @@ class _HomeScreenState extends State<HomeScreen> {
     NavigationDestination(icon:Icon(Icons.history),selectedIcon:Icon(Icons.history),label:'History'),
     NavigationDestination(icon:Icon(Icons.person_outline),selectedIcon:Icon(Icons.person),label:'Profile'),
   ]));
+  LinearGradient get _weatherGradient {
+    final code=_weatherCode;
+    if(code==null)return AppColors.heroGradient;
+    if(code==0)return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF075985),Color(0xFF0288D1),Color(0xFF38BDF8)]);
+    if(code<=3)return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF334155),Color(0xFF64748B),Color(0xFF94A3B8)]);
+    if((code>=51&&code<=67)||(code>=80&&code<=82)||code>=95)return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF172554),Color(0xFF1D4ED8),Color(0xFF64748B)]);
+    if(code==45||code==48)return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF475569),Color(0xFF64748B),Color(0xFF94A3B8)]);
+    return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF0369A1),Color(0xFF0288D1),Color(0xFF7DD3FC)]);
+  }
+
   Widget _home()=>_selectedBus!=null?_paymentPanel():RefreshIndicator(onRefresh:()async{await _loadLocations();if(_fromId!=null&&_toId!=null&&_fromId!=_toId){await _search();}else{await _loadAvailableBuses();}},child:ListView(padding:EdgeInsets.zero,children:[
-    Container(padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:AppColors.heroGradient,borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24)),),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-      Row(children:[const Icon(Icons.directions_bus,color:AppColors.white,size:30),const SizedBox(width:10),const Expanded(child:Text('BookIt',style:TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800))),IconButton(onPressed:_openNotifications,icon:const Icon(Icons.notifications_none,color:AppColors.white),tooltip:'Notifications')]),
-      const SizedBox(height:14),Text('Hello, '+((_profileData['name']??widget.userName).toString()),style:const TextStyle(color:AppColors.white,fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:4),Text('Find your next trip in Rwanda.',style:TextStyle(color:AppColors.white.withValues(alpha:.85))),
+    Container(clipBehavior:Clip.antiAlias,padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:_weatherGradient,borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24))),child:Stack(children:[
+      Positioned(right:-12,top:-16,bottom:-16,width:155,child:_WeatherBackdrop(code:_weatherCode)),
+      Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Row(children:[const Icon(Icons.directions_bus,color:AppColors.white,size:30),const SizedBox(width:10),const Expanded(child:Text('BookIt',style:TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800))),IconButton(onPressed:_openNotifications,icon:const Icon(Icons.notifications_none,color:AppColors.white),tooltip:'Notifications')]),
+        const SizedBox(height:14),Text('Hello, '+((_profileData['name']??widget.userName).toString()),style:const TextStyle(color:AppColors.white,fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:4),Text('Find your next trip in Rwanda.',style:TextStyle(color:AppColors.white.withValues(alpha:.9))),
+        const SizedBox(height:14),Row(children:[Icon(_weatherIcon,color:Colors.white,size:22),const SizedBox(width:8),Expanded(child:Text(_weatherLabel,style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700))),if(_temperature!=null)Text('${_temperature!.round()}°C',style:const TextStyle(color:Colors.white,fontSize:18,fontWeight:FontWeight.w800))]),
+      ]),
     ])),
     Padding(padding:const EdgeInsets.fromLTRB(18,20,18,18),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     const Text('Plan your trip',style:TextStyle(fontSize:20,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:12),
@@ -705,6 +786,8 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
       _profileRow(Icons.calendar_today_outlined,'Member since',(_profileData['createdAt']??'—').toString().split('T').first),
     ])),
     const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit profile'))),
+    const SizedBox(height:22),const Text('Preferences',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:9),
+    Card(child:ListTile(leading:const Icon(Icons.palette_outlined,color:AppColors.primary),title:const Text('Appearance'),subtitle:Text(ThemeController.mode.value=='dark'?'Dark':ThemeController.mode.value=='green'?'Light green':'White & blue'),trailing:const Icon(Icons.chevron_right),onTap:_chooseTheme)),
     const SizedBox(height:22),const Text('Help & legal',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:9),
     Card(child:Column(children:[
       ListTile(leading:const Icon(Icons.support_agent_outlined,color:AppColors.primary),title:const Text('Support'),subtitle:const Text('Booking and account help'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Support','For help with BookIt, contact 1% Digital Solutions through your existing support channel. Keep your booking reference, route, travel date and payment reference ready when requesting help.')),
@@ -739,4 +822,28 @@ class _SeatLegend extends StatelessWidget {
       Text(label, style: const TextStyle(fontSize: 10)),
     ],
   );
+}
+
+
+class _WeatherBackdrop extends StatefulWidget {
+  const _WeatherBackdrop({required this.code});
+  final int? code;
+  @override State<_WeatherBackdrop> createState()=>_WeatherBackdropState();
+}
+
+class _WeatherBackdropState extends State<_WeatherBackdrop> with SingleTickerProviderStateMixin {
+  late final AnimationController _animation=AnimationController(vsync:this,duration:const Duration(milliseconds:1400))..repeat();
+  @override void dispose(){_animation.dispose();super.dispose();}
+  @override Widget build(BuildContext context){
+    final code=widget.code;
+    final rainy=code!=null&&((code>=51&&code<=67)||(code>=80&&code<=82)||code>=95);
+    final foggy=code==45||code==48;
+    final clear=code==0;
+    return IgnorePointer(child:AnimatedBuilder(animation:_animation,builder:(context,_)=>Stack(clipBehavior:Clip.none,children:[
+      if(clear)Positioned(right:18,top:35,child:Icon(Icons.wb_sunny_rounded,size:78,color:Colors.white.withValues(alpha:.35))),
+      if(!clear)Positioned(right:0,top:34,child:Icon(foggy?Icons.cloud_queue_rounded:Icons.cloud_rounded,size:94,color:Colors.white.withValues(alpha:.35))),
+      if(rainy)...List.generate(9,(i){final x=8.0+(i*17.0)%135;final progress=(_animation.value+(i*.13))%1;return Positioned(left:x,top:82+progress*80,child:Transform.rotate(angle:.22,child:Container(width:2,height:14,decoration:BoxDecoration(color:Colors.white.withValues(alpha:.15+(.25*(1-progress))),borderRadius:BorderRadius.circular(2)))));}),
+      if(foggy)...List.generate(3,(i)=>Positioned(right:8+i*5.0,top:95+i*17.0,child:Container(width:95-i*12.0,height:3,decoration:BoxDecoration(color:Colors.white.withValues(alpha:.25),borderRadius:BorderRadius.circular(8))))),
+    ])));
+  }
 }
