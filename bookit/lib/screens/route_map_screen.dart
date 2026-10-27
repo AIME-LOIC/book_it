@@ -235,8 +235,9 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                       mapController: _mapController,
                       options: MapOptions(initialCenter: _points.isNotEmpty ? _points.first : _kigali, initialZoom: 8),
                       children: [
+                        // Esri World Imagery provides satellite imagery by default.
                         TileLayer(
-                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                          urlTemplate: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
                           userAgentPackageName: 'rw.onepercent.bookit',
                         ),
                         if (_routeLine.length >= 2)
@@ -262,7 +263,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                         RichAttributionWidget(
                           attributions: [
                             TextSourceAttribution(
-                              'OpenStreetMap contributors',
+                              'Imagery © Esri, Maxar, Earthstar Geographics, and the GIS User Community',
                               onTap: () => launchUrl(Uri.parse('https://www.openstreetmap.org/copyright'), mode: LaunchMode.externalApplication),
                             ),
                           ],
