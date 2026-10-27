@@ -46,12 +46,11 @@ class AppTheme {
   static ThemeData get theme => themeFor('white');
 
   static ThemeData themeFor(String mode) {
-    final isDark = mode == 'dark' || mode == 'blue_dark' || mode == 'green_dark';
-    final isGreen = mode == 'green' || mode == 'green_dark';
-    final primary = isGreen ? const Color(0xFF2E7D32) : AppColors.primary;
-    final primaryLight = isGreen ? const Color(0xFF81C784) : AppColors.primaryLight;
-    final surface = isDark ? (isGreen ? const Color(0xFF18241C) : const Color(0xFF151A20)) : AppColors.white;
-    final background = isDark ? (isGreen ? const Color(0xFF101A14) : const Color(0xFF0D1117)) : (isGreen ? const Color(0xFFF1F8E9) : AppColors.background);
+    final isDark = mode == 'dark' || mode == 'blue_dark';
+    final primary = AppColors.primary;
+    final primaryLight = AppColors.primaryLight;
+    final surface = isDark ? const Color(0xFF151A20) : AppColors.white;
+    final background = isDark ? const Color(0xFF0D1117) : AppColors.background;
     final foreground = isDark ? const Color(0xFFF1F5F9) : AppColors.textDark;
     final muted = isDark ? const Color(0xFFB0BEC5) : AppColors.textMuted;
     final scheme = ColorScheme.fromSeed(
@@ -102,7 +101,7 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
-          borderSide: BorderSide(color: isDark ? const Color(0xFF34404D) : (isGreen ? const Color(0xFFC5E1A5) : const Color(0xFFDCEEFB))),
+          borderSide: BorderSide(color: isDark ? const Color(0xFF34404D) : const Color(0xFFDCEEFB)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
@@ -176,7 +175,7 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
-        indicatorColor: isDark ? const Color(0xFF263238) : (isGreen ? const Color(0xFFC8E6C9) : AppColors.primarySoft),
+        indicatorColor: isDark ? const Color(0xFF17324D) : AppColors.primarySoft,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         labelTextStyle: WidgetStatePropertyAll(
