@@ -14,7 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _tab=0; bool _loadingLocations=true,_searching=false,_loadingTickets=false,_loadingProfile=false,_loadingNotifications=false;
   List<Map<String,dynamic>> _locations=[],_buses=[],_tickets=[],_notifications=[];
   Map<String,dynamic> _profileData={};
-  String? _fromId,_toId,_activeTicketId; DateTime _date=DateTime.now().add(const Duration(days:1));
+  String? _fromId,_toId,_activeTicketId,_selectedHistoryRoute; DateTime _date=DateTime.now().add(const Duration(days:1));
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer;
   final _phone=TextEditingController(); String _network='mtn';
   @override void initState(){super.initState();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();}
@@ -229,7 +229,46 @@ class _HomeScreenState extends State<HomeScreen> {
     ]);
   }
   Widget _ticketTab(){final xs=_tickets.where((t)=>(t['status']??'').toString().toLowerCase()=='paid').toList();if(_loadingTickets)return const Center(child:CircularProgressIndicator());return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:const EdgeInsets.all(18),children:[const Text('My tickets',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)),if(xs.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:25),child:Text('Confirmed tickets appear here after payment succeeds.')),...xs.map(_ticketCard)]));}
-  Widget _historyTab()=>RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:const EdgeInsets.all(18),children:[const Text('Booking history',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)),if(_loadingTickets)const Center(child:CircularProgressIndicator()),if(!_loadingTickets&&_tickets.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:24),child:Text('No bookings found.')),..._tickets.map(_ticketCard)]));
+  String _ticketRoute(Map<String,dynamic> t){
+    final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};
+    final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};
+    final from=route['fromLocation'] is Map?(route['fromLocation']['name']??'From').toString():'From';
+    final to=route['toLocation'] is Map?(route['toLocation']['name']??'To').toString():'To';
+    return '$from → $to';
+  }
+  Widget _historyTab(){
+    final groups=<String,List<Map<String,dynamic>>>{};
+    for(final ticket in _tickets){groups.putIfAbsent(_ticketRoute(ticket),()=>[]).add(ticket);}
+    final selected=_selectedHistoryRoute;
+    final selectedTickets=selected==null? <Map<String,dynamic>>[] : (groups[selected]??<Map<String,dynamic>>[]);
+    final children=<Widget>[];
+    if(selected==null){
+      children.add(const Text('Booking history',style:TextStyle(fontSize:22,fontWeight:FontWeight.w800)));
+      children.add(const SizedBox(height:6));
+      children.add(const Text('Choose a route to view its bookings.',style:TextStyle(color:AppColors.textMuted)));
+      if(_loadingTickets)children.add(const Padding(padding:EdgeInsets.all(20),child:Center(child:CircularProgressIndicator())));
+      if(!_loadingTickets&&groups.isEmpty)children.add(const Padding(padding:EdgeInsets.symmetric(vertical:24),child:Text('No bookings found.')));
+      final entries=groups.entries.toList()..sort((a,b)=>a.key.compareTo(b.key));
+      for(final entry in entries){
+        children.add(Card(margin:const EdgeInsets.only(top:10),child:ListTile(
+          leading:Container(width:46,height:46,decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),child:const Icon(Icons.route_rounded,color:AppColors.primary)),
+          title:Text(entry.key,style:const TextStyle(fontWeight:FontWeight.w800)),
+          subtitle:Text('${entry.value.length} ${entry.value.length==1?'ticket':'tickets'}'),
+          trailing:const Icon(Icons.chevron_right),
+          onTap:()=>setState(()=>_selectedHistoryRoute=entry.key),
+        )));
+      }
+    }else{
+      children.add(Row(children:[
+        IconButton(onPressed:()=>setState(()=>_selectedHistoryRoute=null),icon:const Icon(Icons.arrow_back)),
+        Expanded(child:Text(selected,style:const TextStyle(fontSize:20,fontWeight:FontWeight.w800))),
+      ]));
+      children.add(Text('${selectedTickets.length} ${selectedTickets.length==1?'ticket':'tickets'}',style:const TextStyle(color:AppColors.textMuted)));
+      if(selectedTickets.isEmpty)children.add(const Padding(padding:EdgeInsets.symmetric(vertical:24),child:Text('No bookings found for this route.')));
+      children.addAll(selectedTickets.map(_ticketCard));
+    }
+    return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:const EdgeInsets.all(18),children:children));
+  }
   Widget _ticketCard(Map<String,dynamic> t){final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};final from=route['fromLocation'] is Map?(route['fromLocation']['name']??'From').toString():'From';final to=route['toLocation'] is Map?(route['toLocation']['name']??'To').toString():'To';
     return Card(margin:const EdgeInsets.only(top:10),child:ListTile(
       leading:Container(width:48,height:48,decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),child:const Icon(Icons.directions_bus_rounded,color:AppColors.primary)),
