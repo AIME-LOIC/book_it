@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/api_client.dart';
+import 'route_map_screen.dart';
 import '../theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -248,6 +249,28 @@ class _HomeScreenState extends State<HomeScreen> {
     if(_buses.isEmpty&&!_searching)const Padding(padding:EdgeInsets.symmetric(vertical:18),child:Text('No active buses are available right now. Try refreshing or search a different trip.',style:TextStyle(color:AppColors.textMuted))),
     ..._buses.map(_busCard),
   ]));
+  Future<void> _openRouteMap({
+    required String from,
+    required String to,
+    List<Map<String, dynamic>> stops = const [],
+    String? routeId,
+    String busName = 'BookIt bus',
+    String travelDate = '',
+    String seatLabel = '',
+  }) async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => RouteMapScreen(
+        fromName: from,
+        toName: to,
+        stops: stops,
+        routeId: routeId,
+        busName: busName,
+        travelDate: travelDate,
+        seatLabel: seatLabel,
+      ),
+    ));
+  }
+
   Widget _busCard(Map<String,dynamic> b){final r=b['route'] is Map?Map<String,dynamic>.from(b['route']):<String,dynamic>{};final op=b['operator'] is Map?Map<String,dynamic>.from(b['operator']):<String,dynamic>{};final seats=b['available_seats'] as List? ?? const[];final routeFrom=r['fromLocation'] is Map?(r['fromLocation']['name']??'Origin').toString():'Route details';final routeTo=r['toLocation'] is Map?(r['toLocation']['name']??'Destination').toString():'Select locations to see route';
     return Card(margin:const EdgeInsets.only(top:12),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
       Row(children:[const Icon(Icons.directions_bus,color:AppColors.primary,size:28),const SizedBox(width:10),Expanded(child:Text((op['company_name']??b['plate_number']??'Bus operator').toString(),style:const TextStyle(fontWeight:FontWeight.w800,fontSize:16))),Text((b['price']??'—').toString()+' RWF',style:const TextStyle(color:AppColors.primary,fontWeight:FontWeight.w800))]),
@@ -260,7 +283,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return ListView(padding:const EdgeInsets.all(20),children:[
       Text('Confirm your seat',style:Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight:FontWeight.w800)),
       Card(child:ListTile(leading:const Icon(Icons.event_seat,color:AppColors.primary),title:Text('Seat '+(_seat?.toString()??'—')),subtitle:Text((op['company_name']??b['plate_number']??'Bus').toString()+' • '+_dateText(_date)),trailing:Text(_seconds.toString()+'s',style:const TextStyle(color:AppColors.primary,fontWeight:FontWeight.w800)))),
-      Text('Route: '+_name(_fromId)+' → '+_name(_toId)),Text('Amount: '+(b['price']??'—').toString()+' RWF'),const SizedBox(height:18),
+      Text('Route: '+_name(_fromId)+' → '+_name(_toId)),Text('Amount: '+(b['price']??'—').toString()+' RWF'),const SizedBox(height:10),
+      OutlinedButton.icon(
+        onPressed:()=>_openRouteMap(
+          from:_name(_fromId),to:_name(_toId),
+          stops:(b['route_stops'] is List?(b['route_stops'] as List).whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList():<Map<String,dynamic>>[]),
+          routeId:(b['route'] is Map?b['route']['id']:null)?.toString(),
+          busName:(op['company_name']??b['plate_number']??'BookIt bus').toString(),
+          travelDate:_dateText(_date),seatLabel:(_seat?.toString()??''),
+        ),
+        icon:const Icon(Icons.map_outlined),label:const Text('View full route map'),
+      ),
+      const SizedBox(height:18),
       const Text('Pay with mobile money',style:TextStyle(fontSize:18,fontWeight:FontWeight.w800)),const SizedBox(height:10),
       SegmentedButton<String>(segments:const[ButtonSegment(value:'mtn',label:Text('MTN MoMo')),ButtonSegment(value:'airtel',label:Text('Airtel Money'))],selected:{_network},onSelectionChanged:(v)=>setState(()=>_network=v.first)),
       const SizedBox(height:12),TextField(controller:_phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'Mobile money phone number',prefixIcon:Icon(Icons.phone_android))),
@@ -273,8 +307,12 @@ class _HomeScreenState extends State<HomeScreen> {
   String _ticketRoute(Map<String,dynamic> t){
     final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};
     final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};
-    final from=route['fromLocation'] is Map?(route['fromLocation']['name']??'From').toString():'From';
-    final to=route['toLocation'] is Map?(route['toLocation']['name']??'To').toString():'To';
+    final boarding=t['boardingStop'] is Map?Map<String,dynamic>.from(t['boardingStop']):<String,dynamic>{};
+    final dropoff=t['dropoffStop'] is Map?Map<String,dynamic>.from(t['dropoffStop']):<String,dynamic>{};
+    final boardingLocation=boarding['location'] is Map?Map<String,dynamic>.from(boarding['location']):<String,dynamic>{};
+    final dropoffLocation=dropoff['location'] is Map?Map<String,dynamic>.from(dropoff['location']):<String,dynamic>{};
+    final from=(boardingLocation['name']??(route['fromLocation'] is Map?route['fromLocation']['name']:'From')).toString();
+    final to=(dropoffLocation['name']??(route['toLocation'] is Map?route['toLocation']['name']:'To')).toString();
     return '$from → $to';
   }
   Widget _historyTab(){
@@ -346,6 +384,16 @@ class _HomeScreenState extends State<HomeScreen> {
         _detailLine('Fare',(t['price']??bus['price']??'—').toString()+' RWF'),
         _detailLine('Status',(t['status']??'unknown').toString().toUpperCase()),
         const SizedBox(height:14),
+        OutlinedButton.icon(
+          onPressed:()=>_openRouteMap(
+            from:from,to:to,routeId:route['id']?.toString(),
+            busName:(op['company_name']??plate).toString(),
+            travelDate:(t['travel_date']??'').toString(),
+            seatLabel:(t['seat_number']??'').toString(),
+          ),
+          icon:const Icon(Icons.map_outlined),label:const Text('View full route map'),
+        ),
+        const SizedBox(height:8),
         FilledButton.icon(onPressed:lat!=null&&lng!=null?()async{
           final uri=Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
           final ok=await launchUrl(uri,mode:LaunchMode.externalApplication);
