@@ -19,7 +19,7 @@ export const loginUser = async (req, res) => {
   try {
     const { token, user } = await authService.loginUser(req.body);
     res.cookie('bookit_token', token, authCookieOptions);
-    res.status(200).json({ user });
+    res.status(200).json({ user, token });
   } catch (err) { res.status(401).json({ message: clientMessage(err) }); }
 };
 
