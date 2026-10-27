@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../services/api_client.dart';
@@ -181,6 +182,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final supportsNativeMap = Platform.isAndroid || Platform.isIOS;
     final initial = _polyline.isNotEmpty ? _polyline.first : _fallback;
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -224,23 +226,25 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                   borderRadius: BorderRadius.circular(22),
                   child: SizedBox(
                     height: 330,
-                    child: GoogleMap(
-                      initialCameraPosition: CameraPosition(target: initial, zoom: 9),
-                      onMapCreated: _onMapCreated,
-                      markers: _markers,
-                      polylines: {
-                        if (_polyline.isNotEmpty) Polyline(
-                          polylineId: const PolylineId('bookit-full-route'),
-                          points: _polyline,
-                          color: AppColors.primary,
-                          width: 6,
-                          geodesic: true,
-                        ),
-                      },
-                      myLocationButtonEnabled: false,
-                      zoomControlsEnabled: true,
-                      mapToolbarEnabled: false,
-                    ),
+                    child: supportsNativeMap
+                        ? GoogleMap(
+                            initialCameraPosition: CameraPosition(target: initial, zoom: 9),
+                            onMapCreated: _onMapCreated,
+                            markers: _markers,
+                            polylines: {
+                              if (_polyline.isNotEmpty) Polyline(
+                                polylineId: const PolylineId('bookit-full-route'),
+                                points: _polyline,
+                                color: AppColors.primary,
+                                width: 6,
+                                geodesic: true,
+                              ),
+                            },
+                            myLocationButtonEnabled: false,
+                            zoomControlsEnabled: true,
+                            mapToolbarEnabled: false,
+                          )
+                        : _mapUnavailable(),
                   ),
                 ),
                 if (_mapMessage != null) Padding(
@@ -281,9 +285,9 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
       child: Column(mainAxisSize: MainAxisSize.min, children: const [
         Icon(Icons.map_outlined, size: 48, color: AppColors.primary),
         SizedBox(height: 10),
-        Text('Google Maps setup required', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textDark)),
+        Text('Map preview unavailable on this platform', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textDark)),
         SizedBox(height: 6),
-        Text('Configure the Google Maps API key to display the live map and road path.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted)),
+        Text('The full route and stop timeline are available here. Open BookIt on Android or iOS to view the embedded Google Map.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted)),
       ]),
     )),
   );
