@@ -182,6 +182,8 @@ export const searchBuses = async ({ from_location_id, to_location_id, travel_dat
   }
 
   const route_ids = validRoutes.map(r => r.route_id);
+  const locationRows = await Location.findAll({ attributes: ['id', 'name'], raw: true });
+  const locationNames = new Map(locationRows.map(location => [location.id, location.name]));
   const buses = await Bus.findAll({
     where: { route_id: { [Op.in]: route_ids }, is_active: true },
     include: [
@@ -217,6 +219,17 @@ export const searchBuses = async ({ from_location_id, to_location_id, travel_dat
       price: routeInfo.price,
       boarding_stop_id: routeInfo.boarding_stop_id,
       dropoff_stop_id: routeInfo.dropoff_stop_id,
+      // Return the exact ordered stops for the passenger's selected segment.
+      route_stops: (byRoute[routeInfo.route_id] || [])
+        .filter(stop => stop.stop_order >= routeInfo.boarding_order && stop.stop_order <= routeInfo.dropoff_order)
+        .sort((a, b) => a.stop_order - b.stop_order)
+        .map(stop => ({
+          id: stop.id,
+          stop_order: stop.stop_order,
+          location_id: stop.location_id,
+          name: locationNames.get(stop.location_id) || 'Stop',
+          price_from_origin: Number(stop.price_from_origin || 0),
+        })),
       operator: bus.operator,
       route: bus.route,
     };
