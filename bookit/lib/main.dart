@@ -20,9 +20,9 @@ class BookItApp extends StatelessWidget {
       builder: (context, mode, _) => MaterialApp(
         title: 'BookIt',
         debugShowCheckedModeBanner: false,
-        theme: AppTheme.themeFor(mode),
+        theme: AppTheme.themeFor(mode == 'green' ? 'green' : 'white'),
         darkTheme: AppTheme.themeFor('dark'),
-        themeMode: mode == 'dark' ? ThemeMode.dark : ThemeMode.light,
+        themeMode: mode == 'device' ? ThemeMode.system : (mode == 'dark' ? ThemeMode.dark : ThemeMode.light),
         home: const LoadingScreen(),
       ),
     );
