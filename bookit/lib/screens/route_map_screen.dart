@@ -264,7 +264,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
                           attributions: [
                             TextSourceAttribution(
                               'Imagery © Esri, Maxar, Earthstar Geographics, and the GIS User Community',
-                              onTap: () => launchUrl(Uri.parse('https://www.openstreetmap.org/copyright'), mode: LaunchMode.externalApplication),
+                              onTap: () => launchUrl(Uri.parse('https://www.esri.com/en-us/legal/terms/full-master-agreement'), mode: LaunchMode.externalApplication),
                             ),
                           ],
                         ),
