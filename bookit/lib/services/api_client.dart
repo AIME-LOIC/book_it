@@ -1,11 +1,25 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/api_config.dart';
 
 class ApiClient {
   ApiClient._();
   static String? _token;
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+  static bool get hasToken => _token != null && _token!.isNotEmpty;
   static void setToken(String? token) => _token = token;
+  static Future<void> saveToken(String token) async {
+    _token = token;
+    await _secureStorage.write(key: 'bookit_access_token', value: token);
+  }
+  static Future<void> loadToken() async {
+    _token = await _secureStorage.read(key: 'bookit_access_token');
+  }
+  static Future<void> clearToken() async {
+    _token = null;
+    await _secureStorage.delete(key: 'bookit_access_token');
+  }
   static Map<String,String> _headers(bool auth) => {
     'Accept':'application/json','Content-Type':'application/json',
     if(auth && _token != null) 'Authorization':'Bearer $_token',
