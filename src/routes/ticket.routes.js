@@ -3,7 +3,7 @@ import {
   search, book, pay, payStatus, flutterwaveWebhook, cancel,
   getMyTickets, getTicketById,
   getOperatorTickets, getAllTickets,
-  validateByQR, validateByNumber,
+  validateByQR, validateByNumber, markDeparted,
 } from '../controllers/ticket.controller.js';
 import authenticate from '../middleware/auth.js';
 import isAdmin      from '../middleware/admin.js';
@@ -22,6 +22,9 @@ router.get('/search',           search);
 // NOTE: make sure this route is mounted with express.json() (raw JSON
 // body, not urlencoded) so req.body.data.id / status parse correctly.
 router.post('/webhooks/flutterwave', flutterwaveWebhook);
+
+// departure event — deliberately separate from ticket validation/redemption
+router.post('/:id/departed',       authenticate, isDriver, markDeparted);
 
 // validate
 router.post('/validate/qr',     authenticate, isDriver, validateByQR);
