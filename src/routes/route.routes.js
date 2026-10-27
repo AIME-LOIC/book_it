@@ -7,6 +7,7 @@ import {
   update,
   remove,
   getRuraSuggestion,
+  getDirections,
 } from '../controllers/route.controller.js';
 import authenticate from '../middleware/auth.js';
 import isOperator from '../middleware/operator.js';
@@ -16,6 +17,7 @@ const router = Router();
 
 router.get('/mine', authenticate, isOperator, getMine);
 router.get('/rura-suggestion', authenticate, isOperator, getRuraSuggestion);
+router.get('/directions', getDirections);
 router.get('/', getAll);
 router.get('/:id', getById);
 router.post('/', authenticate, isOperator, validateCreateRoute, create);
