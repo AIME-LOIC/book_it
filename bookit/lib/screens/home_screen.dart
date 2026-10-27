@@ -516,14 +516,42 @@ class _HomeScreenState extends State<HomeScreen> {
     ));
   }
 
-  Widget _busCard(Map<String,dynamic> b){final r=b['route'] is Map?Map<String,dynamic>.from(b['route']):<String,dynamic>{};final op=b['operator'] is Map?Map<String,dynamic>.from(b['operator']):<String,dynamic>{};final seats=b['available_seats'] as List? ?? const[];final routeFrom=r['fromLocation'] is Map?(r['fromLocation']['name']??'Origin').toString():'Route details';final routeTo=r['toLocation'] is Map?(r['toLocation']['name']??'Destination').toString():'Select locations to see route';
-    return Card(margin:const EdgeInsets.only(top:12),child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-      Row(children:[const Icon(Icons.directions_bus,color:AppColors.primary,size:28),const SizedBox(width:10),Expanded(child:Text((op['company_name']??b['plate_number']??'Bus operator').toString(),style:const TextStyle(fontWeight:FontWeight.w800,fontSize:16))),Text((b['price']??'—').toString()+' RWF',style:const TextStyle(color:AppColors.primary,fontWeight:FontWeight.w800))]),
-      const SizedBox(height:9),Text(_showingSearchResults?_name(_fromId)+' → '+_name(_toId):routeFrom+' → '+routeTo,style:const TextStyle(fontWeight:FontWeight.w700,fontSize:16)),const SizedBox(height:5),
-      Text('Departure '+(b['departure_time']??'TBA').toString()+(_showingSearchResults?' • '+seats.length.toString()+' seats left':' • Active bus'),style:const TextStyle(color:AppColors.textMuted)),
-      const SizedBox(height:10),SizedBox(width:double.infinity,child:FilledButton(onPressed:_searching?null:()=>_bookBusFromList(b),child:Text(_searching?'Checking seats…':'Choose seat & book'))),
-    ])));
+  Future<void> _showBusDetails(Map<String,dynamic> bus) async {
+    final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};
+    final operatorData=bus['operator'] is Map?Map<String,dynamic>.from(bus['operator']):<String,dynamic>{};
+    final from=_showingSearchResults?_name(_fromId):(route['fromLocation'] is Map?(route['fromLocation']['name']??'Origin').toString():'Origin');
+    final to=_showingSearchResults?_name(_toId):(route['toLocation'] is Map?(route['toLocation']['name']??'Destination').toString():'Destination');
+    final stops=(bus['route_stops'] is List?bus['route_stops'] as List:const []).whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>BusDetailsScreen(
+      bus:bus,
+      from:from,
+      to:to,
+      operatorName:(operatorData['company_name']??bus['plate_number']??'Bus operator').toString(),
+      travelDate:_dateText(_date),
+      stops:stops,
+      onOpenMap:()=>_openRouteMap(from:from,to:to,stops:stops,routeId:(route['id']??bus['route_id'])?.toString(),busName:(operatorData['company_name']??bus['plate_number']??'BookIt bus').toString(),travelDate:_dateText(_date)),
+      onBook:()=>_bookBusFromList(bus),
+    )));
   }
+
+  Widget _busCard(Map<String,dynamic> b){
+    final r=b['route'] is Map?Map<String,dynamic>.from(b['route']):<String,dynamic>{};
+    final op=b['operator'] is Map?Map<String,dynamic>.from(b['operator']):<String,dynamic>{};
+    final seats=b['available_seats'] as List? ?? const[];
+    final routeFrom=r['fromLocation'] is Map?(r['fromLocation']['name']??'Origin').toString():'Route details';
+    final routeTo=r['toLocation'] is Map?(r['toLocation']['name']??'Destination').toString():'Select locations to see route';
+    return Card(margin:const EdgeInsets.only(top:12),clipBehavior:Clip.antiAlias,child:InkWell(
+      onTap:()=>_showBusDetails(b),
+      child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Row(children:[const Icon(Icons.directions_bus,color:AppColors.primary,size:28),const SizedBox(width:10),Expanded(child:Text((op['company_name']??b['plate_number']??'Bus operator').toString(),style:const TextStyle(fontWeight:FontWeight.w800,fontSize:16))),Text((b['price']??r['price']??'—').toString()+' RWF',style:const TextStyle(color:AppColors.primary,fontWeight:FontWeight.w800))]),
+        const SizedBox(height:9),Text(_showingSearchResults?_name(_fromId)+' → '+_name(_toId):routeFrom+' → '+routeTo,style:const TextStyle(fontWeight:FontWeight.w700,fontSize:16)),const SizedBox(height:5),
+        Text('Departure '+(b['departure_time']??'TBA').toString()+(_showingSearchResults?' • '+seats.length.toString()+' seats left':' • Active bus'),style:const TextStyle(color:AppColors.textMuted)),
+        const SizedBox(height:10),Row(children:[const Icon(Icons.info_outline_rounded,size:16,color:AppColors.primary),const SizedBox(width:6),Text('Tap for bus details, amenities & map',style:TextStyle(fontSize:12,color:Theme.of(context).colorScheme.primary,fontWeight:FontWeight.w600))]),
+        const SizedBox(height:10),SizedBox(width:double.infinity,child:FilledButton(onPressed:_searching?null:()=>_bookBusFromList(b),child:Text(_searching?'Checking seats…':'Choose seat & book'))),
+      ])),
+    ));
+  }
+
   Widget _paymentPanel() {
     final b = _selectedBus!;
     final op = b['operator'] is Map
