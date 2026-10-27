@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import 'home_screen.dart';
+import 'signup_screen.dart';
 
 /// Animated login screen.
 ///
@@ -342,7 +343,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(color: AppColors.textMuted),
                       ),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SignupScreen())),
                         child: const Text(
                           'Sign up',
                           style: TextStyle(
