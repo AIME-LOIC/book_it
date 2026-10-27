@@ -1,4 +1,3 @@
-import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../services/api_client.dart';
@@ -182,7 +181,7 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final supportsNativeMap = Platform.isAndroid || Platform.isIOS;
+    final supportsNativeMap = defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS;
     final initial = _polyline.isNotEmpty ? _polyline.first : _fallback;
     return Scaffold(
       backgroundColor: AppColors.background,
