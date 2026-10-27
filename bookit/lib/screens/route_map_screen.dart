@@ -105,10 +105,14 @@ class _RouteMapScreenState extends State<RouteMapScreen> {
         line = _decodePolyline((overview['points'] ?? '').toString());
         final legs = (route['legs'] as List?) ?? [];
         final coords = <LatLng>[];
-        for (final leg in legs.whereType<Map>()) {
+        for (var legIndex = 0; legIndex < legs.length; legIndex++) {
+          final leg = legs[legIndex];
+          if (leg is! Map) continue;
           final start = leg['start_location'];
           final end = leg['end_location'];
-          if (start is Map) coords.add(LatLng((start['lat'] as num).toDouble(), (start['lng'] as num).toDouble()));
+          if (legIndex == 0 && start is Map) {
+            coords.add(LatLng((start['lat'] as num).toDouble(), (start['lng'] as num).toDouble()));
+          }
           if (end is Map) coords.add(LatLng((end['lat'] as num).toDouble(), (end['lng'] as num).toDouble()));
         }
         for (var i = 0; i < stops.length; i++) {
