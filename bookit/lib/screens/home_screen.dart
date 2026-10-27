@@ -172,12 +172,21 @@ class _HomeScreenState extends State<HomeScreen> {
             padding:const EdgeInsets.symmetric(horizontal:12,vertical:14),
             decoration:BoxDecoration(color:const Color(0xFF0C1511),border:Border.all(color:AppColors.success.withValues(alpha:.45),width:1.5),borderRadius:BorderRadius.circular(34)),
             child:Column(children:[
-              Row(mainAxisAlignment:MainAxisAlignment.end,children:[_seatButton(c,'1C',available),const SizedBox(width:8),_seatButton(c,'1D',available)]),
+              SizedBox(width:270,child:Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,crossAxisAlignment:CrossAxisAlignment.center,children:[
+                const SizedBox(width:42,height:42,child:Center(child:Icon(Icons.directions_car_filled_outlined,color:Color(0xFF66736C),size:25))),
+                _seatButton(c,'1C',available),const SizedBox(width:8),_seatButton(c,'1D',available),
+              ])),
               const SizedBox(height:10),
               for(var row=2;row<=8;row++)
-                Padding(padding:const EdgeInsets.only(bottom:8),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-                  _seatButton(c,'${row}A',available),const SizedBox(width:6),_seatButton(c,'${row}B',available),const SizedBox(width:18),_seatButton(c,'${row}C',available),const SizedBox(width:6),_seatButton(c,'${row}D',available),
-                ])),
+                Padding(padding:const EdgeInsets.only(bottom:8),child:SizedBox(width:270,child:row==3
+                  ?Row(mainAxisAlignment:MainAxisAlignment.start,children:[
+                    _seatButton(c,'3A',available),const SizedBox(width:6),_seatButton(c,'3B',available),const SizedBox(width:18),_seatButton(c,'3C',available),
+                    const Spacer(),Container(width:25,height:40,decoration:const BoxDecoration(border:Border(left:BorderSide(color:Color(0xFF00A650),width:1.5),top:BorderSide(color:Color(0xFF00A650),width:1.5),bottom:BorderSide(color:Color(0xFF00A650),width:1.5))),child:const Icon(Icons.door_sliding_outlined,size:15,color:Color(0xFF00A650))),
+                  ])
+                  :Row(mainAxisAlignment:MainAxisAlignment.start,children:[
+                    _seatButton(c,'${row}A',available),const SizedBox(width:6),_seatButton(c,'${row}B',available),const SizedBox(width:18),_seatButton(c,'${row}C',available),const SizedBox(width:6),_seatButton(c,'${row}D',available),
+                  ]))),
+
             ]),
           ))),
           const SizedBox(height:8),const Text('Seat labels match the bus layout: 1C–1D at the front, rows 2–8 with seats A–D.',style:TextStyle(fontSize:11,color:AppColors.textMuted),textAlign:TextAlign.center),
