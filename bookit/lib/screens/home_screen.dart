@@ -515,14 +515,54 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:const EdgeInsets.all(18),children:children));
   }
-  Widget _ticketCard(Map<String,dynamic> t){final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};final from=route['fromLocation'] is Map?(route['fromLocation']['name']??'From').toString():'From';final to=route['toLocation'] is Map?(route['toLocation']['name']??'To').toString():'To';
-    return Card(margin:const EdgeInsets.only(top:10),child:ListTile(
-      leading:Container(width:48,height:48,decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),child:const Icon(Icons.directions_bus_rounded,color:AppColors.primary)),
-      title:Text(from+' → '+to,style:const TextStyle(fontWeight:FontWeight.w800)),
-      subtitle:Text('Seat '+(t['seat_number']??'—').toString()+' • '+(t['travel_date']??'Date pending').toString()+'\nStatus: '+(t['status']??'unknown').toString()),
-      isThreeLine:true,trailing:const Icon(Icons.chevron_right),
-      onTap:()=>_showTicketDetails(t),
-    ));
+  Widget _ticketCard(Map<String,dynamic> t){
+    final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};
+    final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};
+    final from=route['fromLocation'] is Map?(route['fromLocation']['name']??'From').toString():'From';
+    final to=route['toLocation'] is Map?(route['toLocation']['name']??'To').toString():'To';
+    final status=(t['status']??'pending').toString().trim().toLowerCase();
+    final Color statusColor = status == 'paid'
+        ? const Color(0xFF16803D)
+        : (status == 'cancelled' || status == 'canceled'
+            ? const Color(0xFFDC2626)
+            : const Color(0xFFB77900));
+    final Color statusBackground = status == 'paid'
+        ? const Color(0xFFE4F6E9)
+        : (status == 'cancelled' || status == 'canceled'
+            ? const Color(0xFFFDE8E7)
+            : const Color(0xFFFFF4CC));
+    final label=status.isEmpty?'PENDING':status.toUpperCase();
+    return Card(
+      margin:const EdgeInsets.only(top:10),
+      clipBehavior:Clip.antiAlias,
+      color:statusBackground,
+      child:ListTile(
+        leading:Container(
+          width:48,height:48,
+          decoration:BoxDecoration(color:statusColor.withValues(alpha:.12),borderRadius:BorderRadius.circular(12)),
+          child:Icon(Icons.confirmation_num_rounded,color:statusColor),
+        ),
+        title:Text('${from} → ${to}',style:const TextStyle(fontWeight:FontWeight.w800)),
+        subtitle:Padding(
+          padding:const EdgeInsets.only(top:6),
+          child:Column(
+            crossAxisAlignment:CrossAxisAlignment.start,
+            children:[
+              Text('Seat ${(t['seat_number']??'—').toString()} • ${(t['travel_date']??'Date pending').toString()}'),
+              const SizedBox(height:7),
+              Container(
+                padding:const EdgeInsets.symmetric(horizontal:10,vertical:5),
+                decoration:BoxDecoration(color:statusColor,borderRadius:BorderRadius.circular(20)),
+                child:Text(label,style:const TextStyle(color:Colors.white,fontSize:11,fontWeight:FontWeight.w800,letterSpacing:.4)),
+              ),
+            ],
+          ),
+        ),
+        isThreeLine:true,
+        trailing:Icon(Icons.chevron_right,color:statusColor),
+        onTap:()=>_showTicketDetails(t),
+      ),
+    );
   }
   Future<void> _showTicketDetails(Map<String,dynamic> t) async {
     final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};
