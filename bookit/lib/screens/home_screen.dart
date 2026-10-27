@@ -62,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
           isExpanded:true,
           decoration:const InputDecoration(labelText:'Departure'),
           items:_locations.map((x)=>DropdownMenuItem<String>(value:x['id']?.toString(),child:Text((x['name']??'Location').toString(),overflow:TextOverflow.ellipsis))).toList(),
-          onChanged:(value)=>setDialogState(()=>fromId=value),
+          onChanged:(value)=>setDialogState((){fromId=value;if(toId==fromId)toId=_locations.firstWhere((x)=>x['id']?.toString()!=fromId)['id']?.toString();}),
         ),
         const SizedBox(height:10),
         DropdownButtonFormField<String>(
