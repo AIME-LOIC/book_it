@@ -1335,7 +1335,8 @@ class TicketDetailsScreen extends StatelessWidget {
             const SizedBox(height:8),
             FilledButton.icon(onPressed:onTrackBus,icon:const Icon(Icons.my_location),label:const Text('Track bus location')),
             if(onTrackBus==null)const Padding(padding:EdgeInsets.only(top:8),child:Text('Live tracking is unavailable because the operator has not supplied current GPS coordinates.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:AppColors.textMuted))),
-          ])),
+            ])),
+          ]),
         ),
       ),
     );
