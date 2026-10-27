@@ -2,6 +2,7 @@ import Bus      from '../database/models/bus.js';
 import Operator from '../database/models/operator.js';
 import Route    from '../database/models/route.js';
 import Location from '../database/models/location.js';
+import Ticket from '../database/models/ticket.js';
 import { createMany } from './notification.service.js';
 import { generateDailyLoyaltyPromo } from './promo.service.js';
 
@@ -41,6 +42,27 @@ export const checkDepartedBuses = async () => {
         message:        `Bus ${bus.plate_number} (${from} → ${to}) has departed at ${String(bus.departure_time).slice(0,5)}. It will be reactivated tomorrow.`,
         meta:           { bus_id: bus.id, plate: bus.plate_number },
       }]);
+
+      // Notify passengers with paid tickets for this bus on today's service.
+      // The bus is deactivated above, so this block runs only once per service day.
+      const today = now.toISOString().split('T')[0];
+      const passengers = await Ticket.findAll({
+        where: { bus_id: bus.id, travel_date: today, status: 'paid' },
+        attributes: ['id', 'user_id', 'seat_number', 'travel_date'],
+      });
+      if (passengers.length) {
+        try {
+          await createMany(passengers.map(ticket => ({
+            recipient_id: ticket.user_id,
+            recipient_type: 'user',
+            type: 'bus_departed',
+            message: `Your bus ${bus.plate_number} (${from} → ${to}) has reached its scheduled departure time.`,
+            meta: { bus_id: bus.id, ticket_id: ticket.id, seat_number: ticket.seat_number, travel_date: ticket.travel_date },
+          })));
+        } catch (err) {
+          console.error('[Scheduler] Bus departed but passenger notifications failed:', err?.stack || err);
+        }
+      }
 
       console.log(`[Scheduler] Bus ${bus.plate_number} deactivated — departed at ${String(bus.departure_time).slice(0,5)}`);
     }
