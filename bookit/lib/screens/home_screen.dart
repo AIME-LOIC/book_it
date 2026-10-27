@@ -134,16 +134,21 @@ class _HomeScreenState extends State<HomeScreen> {
     finally{if(mounted)setState(()=>_searching=false);}
   }
   Future<void> _choose(Map<String,dynamic> bus) async {
-    final rawSeats=bus['available_seats'] is List?bus['available_seats'] as List:const[];
-    final available=rawSeats.map((x){
-      if(x is Map)return int.tryParse((x['seat_number']??x['number']??x['seat'])?.toString()??'');
-      return int.tryParse(x.toString());
-    }).whereType<int>().toSet();
-    if(available.isEmpty){_msg('No available seats.');return;}
-    final reportedCapacity=int.tryParse((bus['total_seats'] ?? bus['seat_capacity'] ?? '').toString());
-    final capacity=(reportedCapacity != null && reportedCapacity > 0)
-        ? reportedCapacity
-        : (available.reduce((a,b)=>a>b?a:b) < 40 ? 40 : available.reduce((a,b)=>a>b?a:b));
+    final dynamic rawSeatData=bus['available_seats']??bus['availableSeats']??bus['available_seat_numbers']??bus['availableSeatNumbers']??bus['seats'];
+    final rawSeats=rawSeatData is List?rawSeatData:const<dynamic>[];
+    final available=<int>{};
+    for(final item in rawSeats){
+      if(item is Map){
+        final status=(item['status']??item['state']??'available').toString().toLowerCase();
+        final isFree=item['available']==true||item['is_available']==true||item['isAvailable']==true||const['available','free','open'].contains(status);
+        final number=int.tryParse((item['seat_number']??item['seatNumber']??item['number']??item['seat']??item['label'])?.toString()??'');
+        if(number!=null&&isFree)available.add(number);
+      }else{final number=int.tryParse(item.toString());if(number!=null)available.add(number);}
+    }
+    if(available.isEmpty){_msg('The server did not return available seat numbers for this bus. Refresh the bus list or try another trip.');return;}
+    final reportedCapacity=int.tryParse((bus['total_seats']??bus['seat_capacity']??bus['seatCapacity']??bus['capacity']??'').toString());
+    final highest=available.reduce((a,b)=>a>b?a:b);
+    final capacity=(reportedCapacity!=null&&reportedCapacity>0)?reportedCapacity:(highest>40?highest:40);
     final n=await showDialog<int>(
       context:context,
       builder:(c)=>Dialog(
@@ -165,28 +170,26 @@ class _HomeScreenState extends State<HomeScreen> {
               ]),
               const SizedBox(height:12),
               Flexible(child:SingleChildScrollView(child:Column(children:[
-                if(capacity>=9 && (capacity-5)%4==0)...[
-                  for(var start=1;start<=capacity-5;start+=4)
-                    Padding(padding:const EdgeInsets.only(bottom:8),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-                      _seatButton(c,start,available),const SizedBox(width:7),_seatButton(c,start+1,available),
-                      const SizedBox(width:22),_seatButton(c,start+2,available),const SizedBox(width:7),_seatButton(c,start+3,available),
-                    ])),
-                  const SizedBox(height:5),const Text('REAR ROW',style:TextStyle(fontSize:10,fontWeight:FontWeight.w700,color:AppColors.textMuted)),const SizedBox(height:6),
-                  Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-                    _seatButton(c,capacity-4,available),const SizedBox(width:7),_seatButton(c,capacity-3,available),
-                    const SizedBox(width:14),_seatButton(c,capacity-2,available),const SizedBox(width:7),_seatButton(c,capacity-1,available),const SizedBox(width:7),_seatButton(c,capacity,available),
-                  ]),
-                ] else ...[
-                  for(var start=1;start<=capacity;start+=4)
-                    Padding(padding:const EdgeInsets.only(bottom:8),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-                      _seatButton(c,start,available),const SizedBox(width:7),if(start+1<=capacity)_seatButton(c,start+1,available),
-                      const SizedBox(width:22),if(start+2<=capacity)_seatButton(c,start+2,available),const SizedBox(width:7),if(start+3<=capacity)_seatButton(c,start+3,available),
-                    ])),
-                ]
-              ]))),
-              const SizedBox(height:8),
-              const Text('Front of bus: driver on the left. Standard rows have 2 seats on each side of the aisle; the rear row has 5 seats with a wider gap in the middle.',style:TextStyle(fontSize:11,color:AppColors.textMuted),textAlign:TextAlign.center),
-              TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel'))
+                 Row(crossAxisAlignment:CrossAxisAlignment.center,children:[
+                   Container(width:88,height:56,decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.12),borderRadius:BorderRadius.circular(12),border:Border.all(color:AppColors.primary.withValues(alpha:.3))),child:const Column(mainAxisAlignment:MainAxisAlignment.center,children:[Icon(Icons.directions_bus,color:AppColors.primary),Text('DRIVER',style:TextStyle(fontSize:9,fontWeight:FontWeight.w800))])),
+                   const SizedBox(width:12),Expanded(child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[_seatButton(c,1,available),const SizedBox(width:8),_seatButton(c,2,available)])),
+                 ]),
+                 const SizedBox(height:12),const Align(alignment:Alignment.centerLeft,child:Text('PASSENGER SEATS',style:TextStyle(fontSize:10,fontWeight:FontWeight.w800,color:AppColors.textMuted))),const SizedBox(height:8),
+                 for(var start=3;start<=capacity-5;start+=3)
+                   Padding(padding:const EdgeInsets.only(bottom:8),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+                     _seatButton(c,start,available),const SizedBox(width:7),
+                     if(start+1<=capacity-5)_seatButton(c,start+1,available) else const SizedBox(width:42),
+                     const SizedBox(width:22),if(start+2<=capacity-5)_seatButton(c,start+2,available),
+                   ])),
+                 const SizedBox(height:6),const Center(child:Text('REAR ROW',style:TextStyle(fontSize:10,fontWeight:FontWeight.w800,color:AppColors.textMuted))),const SizedBox(height:7),
+                 Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+                   _seatButton(c,capacity-4,available),const SizedBox(width:7),_seatButton(c,capacity-3,available),const SizedBox(width:22),
+                   _seatButton(c,capacity-2,available),const SizedBox(width:7),_seatButton(c,capacity-1,available),const SizedBox(width:7),_seatButton(c,capacity,available),
+                 ]),
+               ]))),
+               const SizedBox(height:8),
+               const Text('Front row: 2 seats beside the driver. Regular rows: 2 seats on the left and 1 window seat on the right (2 + aisle + 1). Rear row: 5 seats with a wider centre gap.',style:TextStyle(fontSize:11,color:AppColors.textMuted),textAlign:TextAlign.center),
+               TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Cancel'))
             ]),
           ),
         ),
@@ -349,39 +352,110 @@ class _HomeScreenState extends State<HomeScreen> {
       ]))),
     ));
   }
+  static const String _termsText = '''1. Acceptance of Terms
+By accessing or using the services provided by 1% Digital Solutions ("the Company"), including our website, training programmes, and software development services, you agree to be bound by these Terms of Service. If you do not agree, do not use our services.
+
+2. Services
+1% Digital Solutions provides the following services from Kigali, Rwanda:
+• Full-stack software development (web, mobile, AI, IoT)
+• The 1% Expert developer training programme
+• Cybersecurity consulting and penetration testing
+• UI/UX design and consulting services
+
+3. Training Programme
+Enrolment in the 1% Expert Programme requires acceptance of these terms. Students must:
+• Be at least 16 years of age
+• Complete assigned coursework and projects
+• Adhere to the code of conduct
+• Not redistribute course materials
+
+4. Intellectual Property
+All course materials, software, and content created by 1% Digital Solutions remain the intellectual property of the Company unless otherwise stated. Students retain ownership of their original project work.
+
+5. Limitation of Liability
+1% Digital Solutions shall not be liable for any indirect, incidental, or consequential damages. Our total liability shall not exceed the amount paid for the specific service in question.
+
+6. Governing Law
+These terms are governed by the laws of the Republic of Rwanda. Any disputes shall be resolved in the courts of Kigali.
+
+7. Changes
+We reserve the right to modify these terms at any material time. Continued use of our services constitutes acceptance of updated terms.''';
+
+  static const String _privacyText = '''1. Information We Collect
+When you use our services, we may collect:
+• Name and email address (when you sign up or contact us)
+• Account credentials (managed securely via Supabase Auth)
+• Course progress and completion data
+• Service inquiry details (project requirements, budget)
+• Cookie and usage data
+
+2. How We Use Your Information
+• To provide and improve our training and development services
+• To track your learning progress and issue certifications
+• To communicate about courses, services, and updates
+• To process service inquiries and project proposals
+• To comply with legal obligations
+
+3. Data Storage & Security
+Your data is stored securely using Supabase (hosted on AWS infrastructure). We implement industry-standard encryption, access controls, and regular security audits.
+
+4. Data Sharing
+We do not sell your personal data. We may share data with:
+• Service providers essential to our operations (hosting, email)
+• Law enforcement when legally required
+
+5. Your Rights
+You have the right to access, correct, or delete your personal data. Contact us at 1percentrwanda@gmail.com to exercise these rights.
+
+6. Cookies
+We use essential cookies for site functionality and optional analytics cookies. You can manage preferences through the cookie consent banner.
+
+7. Contact
+For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions, Kigali, Rwanda.''';
+
   Future<void> _showInfo(String title,String body) async {
-    await showDialog<void>(context:context,builder:(c)=>AlertDialog(
-      title:Text(title),content:SingleChildScrollView(child:Text(body)),
-      actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('Close'))],
+    await showDialog<void>(context:context,builder:(c)=>Dialog(
+      child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:480,maxHeight:720),child:Padding(
+        padding:const EdgeInsets.all(22),child:Column(mainAxisSize:MainAxisSize.min,crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+          Row(children:[Expanded(child:Text(title,style:const TextStyle(fontSize:21,fontWeight:FontWeight.w800))),IconButton(onPressed:()=>Navigator.pop(c),icon:const Icon(Icons.close))]),
+          const Divider(),Flexible(child:SingleChildScrollView(child:Text(body,style:const TextStyle(fontSize:13,height:1.5)))),
+          const SizedBox(height:12),FilledButton(onPressed:()=>Navigator.pop(c),child:const Text('Close')),
+        ]),
+      )),
     ));
   }
   Widget _detailLine(String label,String value)=>Padding(padding:const EdgeInsets.symmetric(vertical:6),child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[SizedBox(width:112,child:Text(label,style:const TextStyle(color:AppColors.textMuted))),Expanded(child:Text(value,style:const TextStyle(fontWeight:FontWeight.w700)))]));
   Widget _history()=>_historyTab();
-  Widget _profile()=>RefreshIndicator(onRefresh:_loadProfile,child:ListView(padding:const EdgeInsets.all(20),children:[
-    const SizedBox(height:10),const CircleAvatar(radius:42,child:Icon(Icons.person,size:42)),const SizedBox(height:14),
-    Text((_profileData['name']??widget.userName).toString(),textAlign:TextAlign.center,style:const TextStyle(fontSize:22,fontWeight:FontWeight.w800)),
-    const SizedBox(height:5),Text((_profileData['role']??'passenger').toString().toUpperCase(),textAlign:TextAlign.center,style:const TextStyle(color:AppColors.textMuted)),
-    const SizedBox(height:24),
-    if(_loadingProfile)const Center(child:CircularProgressIndicator()),
-    Card(child:Column(children:[
-      ListTile(leading:const Icon(Icons.person_outline,color:AppColors.primary),title:const Text('Full name'),subtitle:Text((_profileData['name']??widget.userName).toString())),
-      const Divider(height:1),
-      ListTile(leading:const Icon(Icons.email_outlined,color:AppColors.primary),title:const Text('Email'),subtitle:Text((_profileData['email']??'Not provided').toString())),
-      const Divider(height:1),
-      ListTile(leading:const Icon(Icons.phone_outlined,color:AppColors.primary),title:const Text('Phone'),subtitle:Text((_profileData['phone']??'Not provided').toString())),
-      const Divider(height:1),
-      ListTile(leading:const Icon(Icons.calendar_today_outlined,color:AppColors.primary),title:const Text('Member since'),subtitle:Text((_profileData['createdAt']??'—').toString().split('T').first)),
+  Widget _profile()=>RefreshIndicator(onRefresh:_loadProfile,child:ListView(padding:const EdgeInsets.fromLTRB(18,18,18,28),children:[
+    Container(padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.circular(24)),child:Row(children:[
+      CircleAvatar(radius:31,backgroundColor:AppColors.white.withValues(alpha:.18),child:const Icon(Icons.person_rounded,color:AppColors.white,size:34)),const SizedBox(width:14),
+      Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        const Text('My profile',style:TextStyle(color:AppColors.white,fontSize:13)),const SizedBox(height:4),
+        Text((_profileData['name']??widget.userName).toString(),maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800)),
+        const SizedBox(height:3),Text((_profileData['role']??'passenger').toString().toUpperCase(),style:TextStyle(color:AppColors.white.withValues(alpha:.85),fontSize:11,fontWeight:FontWeight.w700)),
+      ])),
     ])),
-    const SizedBox(height:16),FilledButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit profile')),
-    const SizedBox(height:10),     const SizedBox(height:16),Card(child:Column(children:[
-       ListTile(leading:const Icon(Icons.support_agent,color:AppColors.primary),title:const Text('Support'),subtitle:const Text('Help with bookings and payments'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('BookIt Support','For help with a reservation or payment, keep your ticket code, travel date, route and payment reference ready. If a payment is pending, do not submit repeated payment requests. Contact the bus operator for departure or route changes.')),
-       const Divider(height:1),
-       ListTile(leading:const Icon(Icons.description_outlined,color:AppColors.primary),title:const Text('Terms and conditions'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Terms and conditions','Bookings are subject to seat availability and operator schedules. A seat is held temporarily after reservation; complete payment before the countdown expires. A booking is confirmed only when BookIt reports successful payment. Check route, travel date, passenger details and fare before paying. Refunds, cancellations and schedule changes may be subject to operator rules and applicable law. Do not share ticket QR codes or booking references publicly.')),
-       const Divider(height:1),
-       ListTile(leading:const Icon(Icons.privacy_tip_outlined,color:AppColors.primary),title:const Text('Privacy policy'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Privacy policy','BookIt uses account details to provide sign-in, reservations, ticket history and customer support. Booking and payment details are processed to manage your trip and confirm transactions. Keep your account credentials and ticket QR code private. Only provide accurate contact information, and contact support if you believe your account or booking has been accessed without permission.')),
-     ])),
-OutlinedButton.icon(onPressed:()async{try{await ApiClient.post('auth/logout',auth:true);}catch(_){}ApiClient.setToken(null);if(mounted)_msg('Signed out. Close and reopen BookIt to sign in again.');},icon:const Icon(Icons.logout),label:const Text('Sign out'))
+    if(_loadingProfile)const Padding(padding:EdgeInsets.all(18),child:Center(child:CircularProgressIndicator())),
+    const SizedBox(height:20),const Text('Personal information',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:9),
+    Card(child:Column(children:[
+      _profileRow(Icons.person_outline,'Full name',(_profileData['name']??widget.userName).toString()),const Divider(height:1,indent:56),
+      _profileRow(Icons.email_outlined,'Email',(_profileData['email']??'Not provided').toString()),const Divider(height:1,indent:56),
+      _profileRow(Icons.phone_outlined,'Phone',(_profileData['phone']??'Not provided').toString()),const Divider(height:1,indent:56),
+      _profileRow(Icons.calendar_today_outlined,'Member since',(_profileData['createdAt']??'—').toString().split('T').first),
+    ])),
+    const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit profile'))),
+    const SizedBox(height:22),const Text('Help & legal',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:AppColors.textDark)),const SizedBox(height:9),
+    Card(child:Column(children:[
+      ListTile(leading:const Icon(Icons.support_agent_outlined,color:AppColors.primary),title:const Text('Support'),subtitle:const Text('Booking and account help'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Support','For help with BookIt, contact 1% Digital Solutions through your existing support channel. Keep your booking reference, route, travel date and payment reference ready when requesting help.')),
+      const Divider(height:1,indent:56),
+      ListTile(leading:const Icon(Icons.description_outlined,color:AppColors.primary),title:const Text('Terms of Service'),subtitle:const Text('Read the service terms'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Terms of Service',_termsText)),
+      const Divider(height:1,indent:56),
+      ListTile(leading:const Icon(Icons.privacy_tip_outlined,color:AppColors.primary),title:const Text('Privacy Policy'),subtitle:const Text('How information is handled'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Privacy Policy',_privacyText)),
+    ])),
+    const SizedBox(height:20),OutlinedButton.icon(onPressed:()async{try{await ApiClient.post('auth/logout',auth:true);}catch(_){}ApiClient.setToken(null);if(mounted)_msg('Signed out. Close and reopen BookIt to sign in again.');},icon:const Icon(Icons.logout),label:const Text('Sign out')),
   ]));
+  Widget _profileRow(IconData icon,String label,String value)=>ListTile(leading:Icon(icon,color:AppColors.primary),title:Text(label,style:const TextStyle(fontSize:12,color:AppColors.textMuted)),subtitle:Text(value,style:const TextStyle(fontWeight:FontWeight.w600)),dense:true);
+
 }
 
 
