@@ -391,10 +391,10 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height:14),
           Flexible(child:SingleChildScrollView(child:Container(
             padding:const EdgeInsets.symmetric(horizontal:12,vertical:14),
-            decoration:BoxDecoration(color:const Color(0xFF0C1511),border:Border.all(color:AppColors.success.withValues(alpha:.45),width:1.5),borderRadius:BorderRadius.circular(34)),
+            decoration:BoxDecoration(color:const Color(0xFF0D1B2A),border:Border.all(color:AppColors.success.withValues(alpha:.45),width:1.5),borderRadius:BorderRadius.circular(34)),
             child:Column(children:[
               SizedBox(width:270,child:Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,crossAxisAlignment:CrossAxisAlignment.center,children:[
-                const SizedBox(width:42,height:42,child:Center(child:Icon(Icons.directions_car_filled_outlined,color:Color(0xFF66736C),size:25))),
+                const SizedBox(width:42,height:42,child:Center(child:Icon(Icons.directions_car_filled_outlined,color:Color(0xFF64748B),size:25))),
                 _seatButton(c,'1C',available),const SizedBox(width:8),_seatButton(c,'1D',available),
               ])),
               const SizedBox(height:10),
@@ -402,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Padding(padding:const EdgeInsets.only(bottom:8),child:SizedBox(width:270,child:row==3
                   ?Row(mainAxisAlignment:MainAxisAlignment.start,children:[
                     _seatButton(c,'3A',available),const SizedBox(width:6),_seatButton(c,'3B',available),const SizedBox(width:18),_seatButton(c,'3C',available),
-                    const Spacer(),Container(width:25,height:40,decoration:const BoxDecoration(border:Border(left:BorderSide(color:Color(0xFF00A650),width:1.5),top:BorderSide(color:Color(0xFF00A650),width:1.5),bottom:BorderSide(color:Color(0xFF00A650),width:1.5))),child:const Icon(Icons.door_sliding_outlined,size:15,color:Color(0xFF00A650))),
+                    const Spacer(),Container(width:25,height:40,decoration:const BoxDecoration(border:Border(left:BorderSide(color:Color(0xFF0288D1),width:1.5),top:BorderSide(color:Color(0xFF0288D1),width:1.5),bottom:BorderSide(color:Color(0xFF0288D1),width:1.5))),child:const Icon(Icons.door_sliding_outlined,size:15,color:Color(0xFF0288D1))),
                   ])
                   :Row(mainAxisAlignment:MainAxisAlignment.start,children:[
                     _seatButton(c,'${row}A',available),const SizedBox(width:6),_seatButton(c,'${row}B',available),const SizedBox(width:18),_seatButton(c,'${row}C',available),const SizedBox(width:6),_seatButton(c,'${row}D',available),
@@ -476,7 +476,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Container(clipBehavior:Clip.antiAlias,padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:_weatherGradient,borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24))),child:Stack(children:[
       Positioned(right:-12,top:-16,bottom:-16,width:155,child:_WeatherBackdrop(code:_weatherCode)),
       Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        Row(children:[const Icon(Icons.directions_bus,color:AppColors.white,size:30),const SizedBox(width:10),const Expanded(child:Text('BookIt',style:TextStyle(color:AppColors.white,fontSize:21,fontWeight:FontWeight.w800))),IconButton(onPressed:_openNotifications,icon:const Icon(Icons.notifications_none,color:AppColors.white),tooltip:'Notifications')]),
+        Row(children:[ColorFiltered(colorFilter:const ColorFilter.mode(Colors.white,BlendMode.srcIn),child:Image.asset('assets/bookit_logo.png',width:132,height:42,fit:BoxFit.contain)),const Spacer(),IconButton(onPressed:_openNotifications,icon:const Icon(Icons.notifications_none,color:AppColors.white),tooltip:'Notifications')]),
         const SizedBox(height:14),Text('${_timeGreeting()}, ${_displayFirstName()}',style:const TextStyle(color:AppColors.white,fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:4),Text(_homeHeadline(),style:TextStyle(color:AppColors.white.withValues(alpha:.95),fontSize:16,fontWeight:FontWeight.w600)),const SizedBox(height:3),Text(_todayDateLabel(),style:TextStyle(color:AppColors.white.withValues(alpha:.78),fontSize:12)),
         const SizedBox(height:14),Material(color:Colors.transparent,child:InkWell(borderRadius:BorderRadius.circular(12),onTap:_openWeatherForecast,child:Padding(padding:const EdgeInsets.symmetric(vertical:4),child:Row(children:[Icon(_weatherIcon,color:Colors.white,size:22),const SizedBox(width:8),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(_weatherLabel,style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700)),const SizedBox(height:2),Text('Tap for 7-day forecast',style:TextStyle(color:Colors.white.withValues(alpha:.82),fontSize:12))])),if(_temperature!=null)Text('${_temperature!.round()}°C',style:const TextStyle(color:Colors.white,fontSize:18,fontWeight:FontWeight.w800)),const SizedBox(width:4),const Icon(Icons.chevron_right,color:Colors.white)])))),
       ]),
@@ -798,12 +798,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCancelled = status == 'cancelled' || status == 'canceled';
     final Color statusColor = status == 'paid'
-        ? (isDark ? const Color(0xFF64B5F6) : const Color(0xFF16803D))
+        ? (isDark ? const Color(0xFF64B5F6) : const Color(0xFF0288D1))
         : (isCancelled
             ? (isDark ? const Color(0xFFFF8A80) : const Color(0xFFDC2626))
             : (isDark ? const Color(0xFFFFD180) : const Color(0xFFB77900)));
     final Color statusBackground = status == 'paid'
-        ? (isDark ? const Color(0xFF102A43) : const Color(0xFFE4F6E9))
+        ? (isDark ? const Color(0xFF102A43) : const Color(0xFFE1F5FE))
         : (isCancelled
             ? (isDark ? const Color(0xFF3B2022) : const Color(0xFFFDE8E7))
             : (isDark ? const Color(0xFF3A3020) : const Color(0xFFFFF4CC)));
@@ -1256,7 +1256,7 @@ class TicketDetailsScreen extends StatelessWidget {
     final status=(ticket['status']??'unknown').toString().toLowerCase();
     final isDark=Theme.of(context).brightness==Brightness.dark;
     final departed=ticket['departed_at']!=null||ticket['departure_status']?.toString().toLowerCase()=='departed';
-    final Color accent=departed?AppColors.primary:(status=='paid'?(isDark?const Color(0xFF64B5F6):const Color(0xFF16803D)):AppColors.textMuted);
+    final Color accent=departed?AppColors.primary:(status=='paid'?(isDark?const Color(0xFF64B5F6):const Color(0xFF0288D1)):AppColors.textMuted);
     return Scaffold(
       appBar:AppBar(
         title:const Text('Ticket details',style:TextStyle(fontWeight:FontWeight.w800)),

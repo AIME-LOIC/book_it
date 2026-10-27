@@ -20,7 +20,7 @@ abstract final class AppColors {
   static const Color textMuted = Color(0xFF7B8CA3);
 
   // Feedback.
-  static const Color success = Color(0xFF26C281);
+  static const Color success = Color(0xFF1976D2);
   static const Color danger = Color(0xFFFF5252);
 
   /// Signature gradient used by banners, buttons and the splash logo.
