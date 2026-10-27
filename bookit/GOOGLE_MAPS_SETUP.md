@@ -1,29 +1,26 @@
-# Google Maps setup for BookIt
+# BookIt map setup (no API key required)
 
-The embedded route map uses Google Maps SDK for Android/iOS and the Google Directions API through the BookIt backend. Do not put the Directions server key in the Flutter app.
+BookIt uses `flutter_map`, OpenStreetMap tiles, Nominatim geocoding, and OSRM routing. This avoids Google Maps SDK keys and a Google Cloud billing account.
 
-## 1. Google Cloud
-1. Enable billing for the Google Cloud project.
-2. Enable **Maps SDK for Android**, **Maps SDK for iOS**, and **Directions API**.
-3. Create a separate mobile key for the Android/iOS map SDKs and a server key for Directions.
-4. Restrict each key to only the APIs and apps/IPs that need it.
+## Flutter dependencies
 
-## 2. Mobile map SDK key
-Replace `YOUR_GOOGLE_MAPS_API_KEY` in:
-- `bookit/android/app/src/main/AndroidManifest.xml`
-- `bookit/ios/Runner/AppDelegate.swift`
-
-Use a mobile-restricted key. Restrict Android by the BookIt application ID and SHA-1 certificate fingerprint; restrict iOS by the bundle identifier.
-
-## 3. Directions server key
-Set `GOOGLE_MAPS_SERVER_API_KEY` in the deployed BookIt backend environment (Render service environment variables). Use a server-restricted key and restrict it to the Directions API. Do not commit the real key to GitHub.
-
-## 4. Build
-From the `bookit` directory:
+From this directory:
 
 ```bash
 flutter pub get
-flutter run -d linux
+flutter run
 ```
 
-For Android/iOS, run on the target device after configuring its SDK key. Linux desktop does not render the native Google Maps Flutter view, so test the embedded map on Android or iOS. The route timeline remains available on other platforms.
+The dependencies are declared in `pubspec.yaml`. No Google Maps API key or server environment variable is needed for the route map.
+
+## Map and routing providers
+
+- Map tiles: OpenStreetMap. The map must keep the visible OpenStreetMap attribution.
+- Place lookup: Nominatim public search endpoint.
+- Driving route: OSRM public demo endpoint.
+
+The public geocoding, tile, and routing services are shared community infrastructure, have fair-use policies, and are not guaranteed for production uptime or high request volumes. Do not send frequent/bulk geocoding requests. Before scaling BookIt to many passengers, use a provider with a production plan or host your own services. Never bulk-prefetch or download tiles from the public OpenStreetMap tile service.
+
+## Native configuration
+
+No Android Google Maps metadata or iOS Google Maps SDK initialization is required. Internet access remains enabled for online map tiles, geocoding, and routing.
