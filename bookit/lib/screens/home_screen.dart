@@ -19,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 }
 class _HomeScreenState extends State<HomeScreen> {
   int _tab=0; bool _loadingLocations=true,_searching=false,_loadingTickets=false,_loadingProfile=false,_loadingNotifications=false,_showingSearchResults=false;
+  String? _searchError;
   List<Map<String,dynamic>> _locations=[],_buses=[],_tickets=[],_notifications=[],_tripReminders=[];
   Map<String,dynamic> _profileData={};
   int? _weatherCode;
@@ -325,6 +326,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _search() async {
     if(_fromId==null||_toId==null||_fromId==_toId){_msg('Choose a departure and destination to search for a bookable trip.');return;}
     setState(()=>_searching=true);
+    setState(()=>_searchError=null);
     try {
       final r=await ApiClient.get('tickets/search',query:{
         'from_location_id':_fromId!,
@@ -338,9 +340,11 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     } on ApiException catch(e) {
       if(mounted)setState(()=>_buses=[]);
+      if(mounted)setState(()=>_searchError=e.message);
       _msg(e.message);
     } catch (_) {
       if(mounted)setState(()=>_buses=[]);
+      if(mounted)setState(()=>_searchError='Could not load buses. Check your connection and try again.');
       _msg('Could not load buses. Check your connection and try again.');
     } finally {
       if(mounted)setState(()=>_searching=false);
@@ -523,7 +527,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const SizedBox(height:8),OutlinedButton.icon(onPressed:()async{final d=await showDatePicker(context:context,initialDate:_date,firstDate:DateTime.now(),lastDate:DateTime.now().add(const Duration(days:365)));if(d!=null)setState(()=>_date=d);},icon:const Icon(Icons.calendar_month),label:Text('Travel date: '+_dateText(_date))),
     const SizedBox(height:8),SizedBox(height:50,child:FilledButton.icon(onPressed:_searching?null:_search,icon:_searching?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2)):const Icon(Icons.search),label:const Text('Search live buses'))),
     const SizedBox(height:20),Text('Available buses',style:TextStyle(fontSize:19,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),
-    if(_buses.isEmpty&&!_searching)Padding(padding:const EdgeInsets.symmetric(vertical:28),child:Center(child:Column(children:[Icon(_showingSearchResults?Icons.search_off_rounded:Icons.directions_bus_outlined,size:42,color:Theme.of(context).colorScheme.onSurface.withValues(alpha:.45)),const SizedBox(height:10),Text(_showingSearchResults?'No buses found for this route and date.':'No active buses are available right now.',textAlign:TextAlign.center,style:TextStyle(fontWeight:FontWeight.w700,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:5),Text(_showingSearchResults?'Try another travel date or choose a different route.':'Try refreshing or search a different trip.',textAlign:TextAlign.center,style:TextStyle(color:Theme.of(context).colorScheme.onSurface.withValues(alpha:.65)))]))),
+    if(_buses.isEmpty&&!_searching)Padding(padding:const EdgeInsets.symmetric(vertical:28),child:Center(child:Column(children:[Icon(_showingSearchResults?Icons.search_off_rounded:Icons.directions_bus_outlined,size:42,color:Theme.of(context).colorScheme.onSurface.withValues(alpha:.45)),const SizedBox(height:10),Text(_searchError??(_showingSearchResults?'No buses found for this route and date.':'No active buses are available right now.'),textAlign:TextAlign.center,style:TextStyle(fontWeight:FontWeight.w700,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:5),Text(_searchError!=null?'Check your connection and search again.':(_showingSearchResults?'Try another travel date or choose a different route.':'Try refreshing or search a different trip.'),textAlign:TextAlign.center,style:TextStyle(color:Theme.of(context).colorScheme.onSurface.withValues(alpha:.65)))]))),
     ..._buses.map(_busCard),
     ])),
   ]));
@@ -1368,6 +1372,12 @@ class TicketDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status=(ticket['status']??'unknown').toString().toLowerCase();
+    final boarding=ticket['boardingStop'] is Map?Map<String,dynamic>.from(ticket['boardingStop']):<String,dynamic>{};
+    final dropoff=ticket['dropoffStop'] is Map?Map<String,dynamic>.from(ticket['dropoffStop']):<String,dynamic>{};
+    final boardingLocation=boarding['location'] is Map?Map<String,dynamic>.from(boarding['location']):<String,dynamic>{};
+    final dropoffLocation=dropoff['location'] is Map?Map<String,dynamic>.from(dropoff['location']):<String,dynamic>{};
+    final boardingPoint=(boardingLocation['name']??boarding['name'])?.toString();
+    final dropoffPoint=(dropoffLocation['name']??dropoff['name'])?.toString();
     final isDark=Theme.of(context).brightness==Brightness.dark;
     final departed=ticket['departed_at']!=null||ticket['departure_status']?.toString().toLowerCase()=='departed';
     final Color accent=departed?AppColors.primary:(status=='paid'?(isDark?const Color(0xFF64B5F6):const Color(0xFF0288D1)):AppColors.textMuted);
@@ -1428,6 +1438,8 @@ class TicketDetailsScreen extends StatelessWidget {
               padding:const EdgeInsets.symmetric(horizontal:16,vertical:8),
               child:Column(children:[
                 _detailLine('Travel date',(ticket['travel_date']??'Not provided').toString()),
+                if(boardingPoint!=null&&boardingPoint.trim().isNotEmpty)_detailLine('Boarding point',boardingPoint),
+                if(dropoffPoint!=null&&dropoffPoint.trim().isNotEmpty)_detailLine('Drop-off point',dropoffPoint),
                 _detailLine('Departure',(ticket['departure_time']??(ticket['bus'] is Map?ticket['bus']['departure_time']:null)??'Not provided').toString()),
                 _detailLine('Seat number',(ticket['seat_number']??'—').toString()),
                 _detailLine('Bus plate',plate),
