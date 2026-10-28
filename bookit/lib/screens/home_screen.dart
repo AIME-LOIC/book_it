@@ -1554,7 +1554,7 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
         const SizedBox(height:3),Text(_historyText('Choose English or Kinyarwanda','Hitamo Icyongereza cyangwa Ikinyarwanda'),style:TextStyle(color:Theme.of(context).colorScheme.onSurfaceVariant,fontSize:12)),
       ]))]),
       const SizedBox(height:12),
-      SegmentedButton<bool>(isSelected:{!_historyKinyarwanda,_historyKinyarwanda},onSelectionChanged:(values){if(values.isNotEmpty)_setAppLanguage(values.first);},segments:const[
+      SegmentedButton<bool>(selected:{!_historyKinyarwanda,_historyKinyarwanda},onSelectionChanged:(values){if(values.isNotEmpty)_setAppLanguage(values.first);},segments:const[
         ButtonSegment<bool>(value:false,label:Text('English')),
         ButtonSegment<bool>(value:true,label:Text('Kinyarwanda')),
       ],showSelectedIcon:false,expanded:true),
