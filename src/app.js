@@ -16,7 +16,7 @@ import ticketRoutes from './routes/ticket.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import promoRoutes from './routes/promo.routes.js';
 import cors from 'cors';
-import { checkDepartedBuses, checkMidnightReactivation, checkPromoCodeGeneration } from './services/scheduler.service.js';
+import { checkDepartedBuses, checkMidnightReactivation, checkPromoCodeGeneration, archiveOldTickets } from './services/scheduler.service.js';
 
 
 dotenv.config();
@@ -184,10 +184,12 @@ app.listen(PORT, HOST, () => {
   checkDepartedBuses();
   checkMidnightReactivation();
   checkPromoCodeGeneration();
+  archiveOldTickets();
   setInterval(() => {
     checkDepartedBuses();
     checkMidnightReactivation();
     checkPromoCodeGeneration();
+    archiveOldTickets();
   }, 60 * 1000);
 });
 
