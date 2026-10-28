@@ -3,6 +3,7 @@ import Operator from '../database/models/operator.js';
 import Route    from '../database/models/route.js';
 import Location from '../database/models/location.js';
 import Ticket from '../database/models/ticket.js';
+import RouteStop from '../database/models/route_stop.js';
 import { createMany } from './notification.service.js';
 import { generateDailyLoyaltyPromo } from './promo.service.js';
 import { Op } from 'sequelize';
@@ -110,7 +111,31 @@ export const archiveOldTickets = async () => {
         await Ticket.sequelize.transaction(async (transaction) => {
           const ticket = await Ticket.findByPk(candidate.id, {
             transaction,
-            lock: transaction.LOCK.UPDATE,
+            lock: { level: transaction.LOCK.UPDATE, of: Ticket },
+            include: [
+              {
+                model: Bus, as: 'bus',
+                attributes: ['id', 'plate_number', 'driver_name', 'departure_time', 'capacity'],
+                include: [{
+                  model: Route, as: 'route', attributes: ['id', 'price'],
+                  include: [
+                    { model: Location, as: 'fromLocation', attributes: ['id', 'name'] },
+                    { model: Location, as: 'toLocation', attributes: ['id', 'name'] },
+                  ],
+                }],
+              },
+              { model: Operator, as: 'operator', attributes: ['id', 'company_name'] },
+              {
+                model: RouteStop, as: 'boardingStop',
+                attributes: ['id', 'stop_order', 'price_from_origin'],
+                include: [{ model: Location, as: 'location', attributes: ['id', 'name'] }],
+              },
+              {
+                model: RouteStop, as: 'dropoffStop',
+                attributes: ['id', 'stop_order', 'price_from_origin'],
+                include: [{ model: Location, as: 'location', attributes: ['id', 'name'] }],
+              },
+            ],
           });
           if (!ticket || !['paid', 'cancelled'].includes(ticket.status) || String(ticket.travel_date) >= cutoff) return;
 
