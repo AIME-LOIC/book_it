@@ -244,7 +244,7 @@ class _LoadingScreenState extends State<LoadingScreen>
             animation: _master,
             builder: (context, _) {
               final progress = _master.value;
-              final letters = ((progress - 0.36) / 0.085)
+              final letters = ((progress - 0.40) / 0.0333)
                   .clamp(0.0, 1.0) * 6;
               final word = 'BOOKIT'.substring(0, letters.floor());
               final width = MediaQuery.sizeOf(context).width;
