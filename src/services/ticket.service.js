@@ -713,6 +713,29 @@ export const cancelTicket = async (user_id, ticket_id) => {
   if (ticket.status === 'cancelled') throw new Error('Already cancelled');
   if (ticket.status === 'paid') throw new Error('Paid tickets cannot be cancelled');
 
+  // A reservation cannot be released while a charge may still succeed. Only
+  // clear payment identifiers after Flutterwave definitively reports failure.
+  if (ticket.flw_charge_id) {
+    const charge = await getCharge(ticket.flw_charge_id);
+    assertChargeMatchesTicket(charge, ticket);
+    const providerStatus = String(charge.status || '').toLowerCase();
+    if (!FLW_FAILED_STATUSES.includes(providerStatus)) {
+      throw new Error('Payment is still processing. Check its status before cancelling this reservation.');
+    }
+    await ticket.update({
+      payment_reference: null,
+      flw_payment_method_id: null,
+      flw_charge_id: null,
+      payment_network: null,
+    });
+  } else if (ticket.payment_reference) {
+    const claimAge = Date.now() - new Date(ticket.updatedAt || 0).getTime();
+    if (claimAge < 60_000) {
+      throw new Error('Payment request is still being initialized. Wait a moment and check its status before cancelling.');
+    }
+    await ticket.update({ payment_reference: null, payment_network: null });
+  }
+
   await ticket.update({ status: 'cancelled' });
   const full = await Ticket.findByPk(ticket_id, { include: ticketIncludes });
 
