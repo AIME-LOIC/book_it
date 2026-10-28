@@ -358,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final rows=r is List?r:(r is Map&&r['tickets'] is List?r['tickets'] as List:<dynamic>[]);
       final fresh=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();
       await prefs.setString('bookit_ticket_history_cache',jsonEncode(fresh));
-      if(mounted)setState(()=>{_tickets=fresh,_usingOfflineTickets=false});
+      if(mounted)setState((){_tickets=fresh;_usingOfflineTickets=false;});
     }on ApiException catch(e){
       if(mounted&&_tickets.isEmpty)_msg(e.message);
       if(mounted&&_tickets.isNotEmpty)setState(()=>_usingOfflineTickets=true);
