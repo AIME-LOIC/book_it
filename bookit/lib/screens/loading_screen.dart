@@ -95,7 +95,11 @@ class _LoadingScreenState extends State<LoadingScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (defaultTargetPlatform == TargetPlatform.android ||
+    // Use the compact splash on phones/tablets and narrow mobile layouts,
+    // including mobile browsers where defaultTargetPlatform may be desktop.
+    final screenWidth = MediaQuery.sizeOf(context).width;
+    if (screenWidth <= 600 ||
+        defaultTargetPlatform == TargetPlatform.android ||
         defaultTargetPlatform == TargetPlatform.iOS) {
       return _buildMobileSplash();
     }
