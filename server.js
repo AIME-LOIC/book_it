@@ -1,6 +1,7 @@
 import sequelize, { isLocal } from './src/config/sequelize.js';
 import './src/app.js';
 import { seedDatabase } from './src/database/seed.js';
+import TicketArchive from './src/database/models/ticket_archive.js';
 
 // ── GLOBAL ERROR HANDLERS ─────────────────────────────────────
 process.on('uncaughtException', (err) => {
@@ -46,6 +47,9 @@ const ensureNotificationTypeColumn = async () => {
 
 sequelize.authenticate()
 .then(async ()=> {
+  // Create the archive table if it does not exist. This table-only sync does
+  // not alter or drop the live tickets schema.
+  await TicketArchive.sync();
   await ensureNotificationTypeColumn();
   // Apply schema changes automatically in local/dev environments so new columns/types
   // (such as promo-code notification types) are reflected in the local DB.
