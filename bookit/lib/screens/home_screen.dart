@@ -1557,7 +1557,7 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
       SegmentedButton<bool>(selected:{!_historyKinyarwanda,_historyKinyarwanda},onSelectionChanged:(values){if(values.isNotEmpty)_setAppLanguage(values.first);},segments:const[
         ButtonSegment<bool>(value:false,label:Text('English')),
         ButtonSegment<bool>(value:true,label:Text('Kinyarwanda')),
-      ],showSelectedIcon:false,expanded:true),
+      ],showSelectedIcon:false),
     ]))),
     const SizedBox(height:10),
     Card(child:ListTile(leading:const Icon(Icons.palette_outlined,color:AppColors.primary),title:Text(_historyText('Appearance','Imigaragarire')),subtitle:Text(ThemeController.mode.value=='device'?_historyText('Use device theme','Koresha insanganyamatsiko y’igikoresho'):ThemeController.mode.value=='blue_dark'||ThemeController.mode.value=='dark'?'Blue + dark':'Blue'),trailing:const Icon(Icons.chevron_right),onTap:_chooseTheme)),
