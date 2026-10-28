@@ -1129,9 +1129,9 @@ class BusDetailsScreen extends StatelessWidget {
               decoration:BoxDecoration(
                 gradient:AppColors.heroGradient,
                 image:DecorationImage(
-                  image:NetworkImage(to.trim().toLowerCase()=='muhanga' ? 'https://i.guim.co.uk/img/media/e3b81f8a3544b88f7cc4162ce9a7b95173205c77/0_0_5931_3959/master/5931.jpg?auto=format&fit=max&quality=85&width=1200' : 'https://bugatechexpress.com/asset/img/marketing/kigali-city-skyline.jpg'),
+                  image:NetworkImage(to.trim().toLowerCase().contains('muhanga') ? 'https://commons.wikimedia.org/wiki/Special:FilePath/Zipline-Muhanga-Robin-Dropping-Package.jpg?width=1200' : 'https://commons.wikimedia.org/wiki/Special:FilePath/Kigali%20skyline.jpg?width=1200'),
                   fit:BoxFit.cover,
-                  colorFilter:ColorFilter.mode(const Color(0x70003768),BlendMode.darken),
+                  colorFilter:ColorFilter.mode(const Color(0x40003768),BlendMode.darken),
                   onError:(_,__) {},
                 ),
                 borderRadius:BorderRadius.circular(24),
@@ -1279,9 +1279,9 @@ class TicketDetailsScreen extends StatelessWidget {
               decoration:BoxDecoration(
                 gradient:AppColors.heroGradient,
                 image:DecorationImage(
-                  image:NetworkImage('https://bugatechexpress.com/asset/img/marketing/kigali-city-skyline.jpg'),
+                  image:NetworkImage('https://commons.wikimedia.org/wiki/Special:FilePath/The%20view%20across%20Kigali%20in%20Rwanda%20at%20night.jpg?width=1200'),
                   fit:BoxFit.cover,
-                  colorFilter:ColorFilter.mode(Color(0x70001638),BlendMode.darken),
+                  colorFilter:ColorFilter.mode(Color(0x40001638),BlendMode.darken),
                   onError:(_,__) {},
                 ),
                 borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24)),
