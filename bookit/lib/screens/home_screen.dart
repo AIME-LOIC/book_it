@@ -371,13 +371,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   Future<void> _loadHistoryLanguage() async {
     final prefs=await SharedPreferences.getInstance();
-    if(mounted)setState(()=>_historyKinyarwanda=prefs.getBool('bookit_history_kinyarwanda')??false);
+    if(mounted)setState(()=>_historyKinyarwanda=prefs.getBool('bookit_language_kinyarwanda') ?? prefs.getBool('bookit_history_kinyarwanda') ?? false);
   }
-  Future<void> _toggleHistoryLanguage() async {
-    final next=!_historyKinyarwanda;
+  Future<void> _setAppLanguage(bool kinyarwanda) async {
     final prefs=await SharedPreferences.getInstance();
-    await prefs.setBool('bookit_history_kinyarwanda',next);
-    if(mounted)setState(()=>_historyKinyarwanda=next);
+    await prefs.setBool('bookit_language_kinyarwanda',kinyarwanda);
+    // Keep the legacy key in sync so older saved settings remain compatible.
+    await prefs.setBool('bookit_history_kinyarwanda',kinyarwanda);
+    if(mounted)setState(()=>_historyKinyarwanda=kinyarwanda);
   }
   String _historyText(String english,String kinyarwanda)=>_historyKinyarwanda?kinyarwanda:english;
   String _csvCell(Object? value){
@@ -735,11 +736,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  @override Widget build(BuildContext context)=>Scaffold(body:SafeArea(child:IndexedStack(index:_tab,children:[_home(),_ticketTab(),_historyTab(),_profile()])),bottomNavigationBar:NavigationBar(selectedIndex:_tab,onDestinationSelected:(i)=>setState(()=>_tab=i),destinations:const[
-    NavigationDestination(icon:Icon(Icons.home_outlined),selectedIcon:Icon(Icons.home),label:'Home'),
-    NavigationDestination(icon:Icon(Icons.confirmation_num_outlined),selectedIcon:Icon(Icons.confirmation_num),label:'Ticket'),
-    NavigationDestination(icon:Icon(Icons.history),selectedIcon:Icon(Icons.history),label:'History'),
-    NavigationDestination(icon:Icon(Icons.person_outline),selectedIcon:Icon(Icons.person),label:'Profile'),
+  @override Widget build(BuildContext context)=>Scaffold(body:SafeArea(child:IndexedStack(index:_tab,children:[_home(),_ticketTab(),_historyTab(),_profile()])),bottomNavigationBar:NavigationBar(selectedIndex:_tab,onDestinationSelected:(i)=>setState(()=>_tab=i),destinations:[
+    NavigationDestination(icon:const Icon(Icons.home_outlined),selectedIcon:const Icon(Icons.home),label:_historyText('Home','Ahabanza')),
+    NavigationDestination(icon:const Icon(Icons.confirmation_num_outlined),selectedIcon:const Icon(Icons.confirmation_num),label:_historyText('Ticket','Itike')),
+    NavigationDestination(icon:const Icon(Icons.history),selectedIcon:const Icon(Icons.history),label:_historyText('History','Amateka')),
+    NavigationDestination(icon:const Icon(Icons.person_outline),selectedIcon:const Icon(Icons.person),label:_historyText('Profile','Umwirondoro')),
   ]));
   LinearGradient get _weatherGradient {
     final code=_weatherCode;
@@ -1277,7 +1278,6 @@ class _HomeScreenState extends State<HomeScreen> {
             else const Icon(Icons.history_rounded,color:Colors.white,size:28),
             const SizedBox(width:8),
             Expanded(child:Text(selected??_historyText('Booking history','Amateka y’ingendo'),style:const TextStyle(color:Colors.white,fontSize:23,fontWeight:FontWeight.w800),maxLines:2,overflow:TextOverflow.ellipsis)),
-            IconButton(onPressed:_toggleHistoryLanguage,tooltip:_historyText('Switch to Kinyarwanda','Hindura mu Cyongereza'),icon:Container(padding:const EdgeInsets.symmetric(horizontal:8,vertical:5),decoration:BoxDecoration(color:Colors.white.withValues(alpha:.18),borderRadius:BorderRadius.circular(9)),child:Text(_historyKinyarwanda?'RW':'EN',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w900,fontSize:12)))),
             IconButton(onPressed:_downloadTicketHistory,tooltip:_historyText('Download ticket history','Bika amateka y’amatike'),icon:const Icon(Icons.download_rounded,color:Colors.white)),
           ]),
           const SizedBox(height:4),
@@ -1547,8 +1547,20 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
       _profileRow(Icons.calendar_today_outlined,'Member since',(_profileData['createdAt']??'—').toString().split('T').first),
     ])),
     const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit profile'))),
-    const SizedBox(height:22),Text('Preferences',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
-    Card(child:ListTile(leading:const Icon(Icons.palette_outlined,color:AppColors.primary),title:const Text('Appearance'),subtitle:Text(ThemeController.mode.value=='device'?'Use device theme':ThemeController.mode.value=='blue_dark'||ThemeController.mode.value=='dark'?'Blue + dark':'Blue'),trailing:const Icon(Icons.chevron_right),onTap:_chooseTheme)),
+    const SizedBox(height:22),Text(_historyText('Preferences','Ibyifuzo'),style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
+    Card(child:Padding(padding:const EdgeInsets.symmetric(horizontal:16,vertical:12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Row(children:[const Icon(Icons.language_rounded,color:AppColors.primary),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text(_historyText('App language','Ururimi rwa porogaramu'),style:const TextStyle(fontWeight:FontWeight.w800)),
+        const SizedBox(height:3),Text(_historyText('Choose English or Kinyarwanda','Hitamo Icyongereza cyangwa Ikinyarwanda'),style:TextStyle(color:Theme.of(context).colorScheme.onSurfaceVariant,fontSize:12)),
+      ]))]),
+      const SizedBox(height:12),
+      SegmentedButton<bool>(isSelected:{!_historyKinyarwanda,_historyKinyarwanda},onSelectionChanged:(values){if(values.isNotEmpty)_setAppLanguage(values.first);},segments:const[
+        ButtonSegment<bool>(value:false,label:Text('English')),
+        ButtonSegment<bool>(value:true,label:Text('Kinyarwanda')),
+      ],showSelectedIcon:false,expanded:true),
+    ]))),
+    const SizedBox(height:10),
+    Card(child:ListTile(leading:const Icon(Icons.palette_outlined,color:AppColors.primary),title:Text(_historyText('Appearance','Imigaragarire')),subtitle:Text(ThemeController.mode.value=='device'?_historyText('Use device theme','Koresha insanganyamatsiko y’igikoresho'):ThemeController.mode.value=='blue_dark'||ThemeController.mode.value=='dark'?'Blue + dark':'Blue'),trailing:const Icon(Icons.chevron_right),onTap:_chooseTheme)),
     const SizedBox(height:22),Text('Help & legal',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
     Card(child:Column(children:[
       ListTile(leading:const Icon(Icons.support_agent_outlined,color:AppColors.primary),title:const Text('Support'),subtitle:const Text('Booking and account help'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Support','For help with BookIt, contact 1% Digital Solutions through your existing support channel. Keep your booking reference, route, travel date and payment reference ready when requesting help.')),
