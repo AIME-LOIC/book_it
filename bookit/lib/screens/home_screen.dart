@@ -325,9 +325,26 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _search() async {
     if(_fromId==null||_toId==null||_fromId==_toId){_msg('Choose a departure and destination to search for a bookable trip.');return;}
     setState(()=>_searching=true);
-    try{final r=await ApiClient.get('tickets/search',query:{'from_location_id':_fromId!,'to_location_id':_toId!,'travel_date':_dateText(_date)});
-      final rows=r is List?r:(r is Map&&r['buses'] is List?r['buses'] as List:<dynamic>[]);if(mounted)setState(() {_buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();_showingSearchResults=true;});
-    }on ApiException catch(e){_msg(e.message);}finally{if(mounted)setState(()=>_searching=false);}
+    try {
+      final r=await ApiClient.get('tickets/search',query:{
+        'from_location_id':_fromId!,
+        'to_location_id':_toId!,
+        'travel_date':_dateText(_date),
+      });
+      final rows=r is List?r:(r is Map&&r['buses'] is List?r['buses'] as List:<dynamic>[]);
+      if(mounted)setState((){
+        _buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();
+        _showingSearchResults=true;
+      });
+    } on ApiException catch(e) {
+      if(mounted)setState(()=>_buses=[]);
+      _msg(e.message);
+    } catch (_) {
+      if(mounted)setState(()=>_buses=[]);
+      _msg('Could not load buses. Check your connection and try again.');
+    } finally {
+      if(mounted)setState(()=>_searching=false);
+    }
   }
   Future<void> _bookBusFromList(Map<String,dynamic> listedBus) async {
     final route=listedBus['route'] is Map?Map<String,dynamic>.from(listedBus['route']):<String,dynamic>{};
@@ -553,19 +570,83 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _busCard(Map<String,dynamic> b){
     final r=b['route'] is Map?Map<String,dynamic>.from(b['route']):<String,dynamic>{};
     final op=b['operator'] is Map?Map<String,dynamic>.from(b['operator']):<String,dynamic>{};
-    final seats=b['available_seats'] as List? ?? const[];
+    final seats=b['available_seats'] is List?b['available_seats'] as List:const<dynamic>[];
     final routeFrom=r['fromLocation'] is Map?(r['fromLocation']['name']??'Origin').toString():'Route details';
-    final routeTo=r['toLocation'] is Map?(r['toLocation']['name']??'Destination').toString():'Select locations to see route';
-    return Card(margin:const EdgeInsets.only(top:12),clipBehavior:Clip.antiAlias,child:InkWell(
-      onTap:()=>_showBusDetails(b),
-      child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        Row(children:[const Icon(Icons.directions_bus,color:AppColors.primary,size:28),const SizedBox(width:10),Expanded(child:Text((op['company_name']??b['plate_number']??'Bus operator').toString(),style:const TextStyle(fontWeight:FontWeight.w800,fontSize:16))),Text((b['price']??r['price']??'—').toString()+' RWF',style:const TextStyle(color:AppColors.primary,fontWeight:FontWeight.w800))]),
-        const SizedBox(height:9),Text(_showingSearchResults?_name(_fromId)+' → '+_name(_toId):routeFrom+' → '+routeTo,style:const TextStyle(fontWeight:FontWeight.w700,fontSize:16)),const SizedBox(height:5),
-        Text('Departure '+(b['departure_time']??'TBA').toString()+(_showingSearchResults?' • '+seats.length.toString()+' seats left':' • Active bus'),style:const TextStyle(color:AppColors.textMuted)),
-        const SizedBox(height:10),Row(children:[const Icon(Icons.info_outline_rounded,size:16,color:AppColors.primary),const SizedBox(width:6),Text('Tap for bus details, amenities & map',style:TextStyle(fontSize:12,color:Theme.of(context).colorScheme.primary,fontWeight:FontWeight.w600))]),
-        const SizedBox(height:10),SizedBox(width:double.infinity,child:FilledButton(onPressed:_searching?null:()=>_bookBusFromList(b),child:Text(_searching?'Checking seats…':'Choose seat & book'))),
-      ])),
-    ));
+    final routeTo=r['toLocation'] is Map?(r['toLocation']['name']??'Destination').toString():'Route details';
+    final routeLabel=_showingSearchResults?_name(_fromId)+' → '+_name(_toId):routeFrom+' → '+routeTo;
+    final operatorName=(op['company_name']??b['plate_number']??'Bus operator').toString();
+    final price=b['price']??r['price'];
+    final departure=(b['departure_time']??'Time to be confirmed').toString();
+    final availableCount=seats.length;
+    final theme=Theme.of(context);
+    return Card(
+      margin:const EdgeInsets.only(top:12),
+      clipBehavior:Clip.antiAlias,
+      child:InkWell(
+        onTap:()=>_showBusDetails(b),
+        child:Padding(
+          padding:const EdgeInsets.all(16),
+          child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
+              Container(
+                width:44,height:44,
+                decoration:BoxDecoration(color:theme.colorScheme.primary.withValues(alpha:.09),borderRadius:BorderRadius.circular(13)),
+                child:Icon(Icons.directions_bus_rounded,color:theme.colorScheme.primary,size:25),
+              ),
+              const SizedBox(width:12),
+              Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                Text(operatorName,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:15)),
+                const SizedBox(height:3),
+                Text(_showingSearchResults?'Travel date: '+_dateText(_date):'Active bus',style:TextStyle(fontSize:12,color:theme.colorScheme.onSurfaceVariant)),
+              ])),
+              const SizedBox(width:8),
+              Column(crossAxisAlignment:CrossAxisAlignment.end,children:[
+                Text(price==null?'Price unavailable':price.toString(),style:TextStyle(color:theme.colorScheme.primary,fontWeight:FontWeight.w900,fontSize:18)),
+                Text(price==null?'':'RWF per ticket',style:TextStyle(color:theme.colorScheme.onSurfaceVariant,fontSize:11)),
+              ]),
+            ]),
+            const SizedBox(height:15),
+            Container(
+              width:double.infinity,
+              padding:const EdgeInsets.all(13),
+              decoration:BoxDecoration(color:theme.colorScheme.surfaceContainerHighest.withValues(alpha:.45),borderRadius:BorderRadius.circular(14)),
+              child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                Text(routeLabel,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontSize:16,fontWeight:FontWeight.w800)),
+                const SizedBox(height:10),
+                Wrap(spacing:14,runSpacing:8,children:[
+                  Row(mainAxisSize:MainAxisSize.min,children:[
+                    Icon(Icons.schedule_rounded,size:16,color:theme.colorScheme.onSurfaceVariant),
+                    const SizedBox(width:6),
+                    Text('Departs '+departure,style:TextStyle(fontSize:12,fontWeight:FontWeight.w600,color:theme.colorScheme.onSurfaceVariant)),
+                  ]),
+                  if(_showingSearchResults)Row(mainAxisSize:MainAxisSize.min,children:[
+                    Icon(Icons.event_seat_outlined,size:16,color:theme.colorScheme.onSurfaceVariant),
+                    const SizedBox(width:6),
+                    Text(availableCount.toString()+' '+(availableCount==1?'seat':'seats')+' listed available',style:TextStyle(fontSize:12,fontWeight:FontWeight.w600,color:theme.colorScheme.onSurfaceVariant)),
+                  ]),
+                ]),
+              ]),
+            ),
+            const SizedBox(height:12),
+            Row(children:[
+              Icon(Icons.info_outline_rounded,size:16,color:theme.colorScheme.primary),
+              const SizedBox(width:6),
+              Expanded(child:Text('View bus details, amenities and route map',style:TextStyle(fontSize:12,color:theme.colorScheme.onSurfaceVariant))),
+              const Icon(Icons.chevron_right_rounded,size:20),
+            ]),
+            const SizedBox(height:10),
+            SizedBox(
+              width:double.infinity,
+              child:FilledButton.icon(
+                onPressed:_searching?null:()=>_bookBusFromList(b),
+                icon:const Icon(Icons.event_seat_rounded),
+                label:Text(_searching?'Checking availability…':'Choose seat'),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
   }
 
   Widget _paymentPanel() {
@@ -760,16 +841,26 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
   Widget _ticketTab(){final xs=_tickets.where((t)=>(t['status']??'').toString().toLowerCase()=='paid').toList();return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:EdgeInsets.zero,children:[Container(padding:const EdgeInsets.fromLTRB(22,24,22,24),decoration:BoxDecoration(gradient:AppColors.heroGradient,image:const DecorationImage(image:AssetImage('assets/kigali.webp'),fit:BoxFit.cover,colorFilter:ColorFilter.mode(Color(0x66001638),BlendMode.darken)),borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('My tickets',style:TextStyle(color:Colors.white,fontSize:25,fontWeight:FontWeight.w800)),const SizedBox(height:5),Text('Your confirmed journeys in one place.',style:TextStyle(color:Colors.white.withValues(alpha:.86),fontSize:14)),const SizedBox(height:12),Row(children:[const Icon(Icons.confirmation_number_outlined,color:Colors.white,size:20),const SizedBox(width:8),Text('${xs.length} ${xs.length==1?'ticket':'tickets'}',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700))])]),),Padding(padding:const EdgeInsets.all(18),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[if(_loadingTickets)const Padding(padding:EdgeInsets.all(24),child:Center(child:CircularProgressIndicator())),if(!_loadingTickets&&xs.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:25),child:Text('Confirmed tickets appear here after payment succeeds.')),...xs.map(_ticketCard)]))]));}
-  String _ticketRoute(Map<String,dynamic> t){
+  Map<String,String> _ticketEndpoints(Map<String,dynamic> t){
     final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};
     final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};
     final boarding=t['boardingStop'] is Map?Map<String,dynamic>.from(t['boardingStop']):<String,dynamic>{};
     final dropoff=t['dropoffStop'] is Map?Map<String,dynamic>.from(t['dropoffStop']):<String,dynamic>{};
     final boardingLocation=boarding['location'] is Map?Map<String,dynamic>.from(boarding['location']):<String,dynamic>{};
     final dropoffLocation=dropoff['location'] is Map?Map<String,dynamic>.from(dropoff['location']):<String,dynamic>{};
-    final from=(boardingLocation['name']??(route['fromLocation'] is Map?route['fromLocation']['name']:'From')).toString();
-    final to=(dropoffLocation['name']??(route['toLocation'] is Map?route['toLocation']['name']:'To')).toString();
-    return '$from → $to';
+    final from=(boardingLocation['name']??(route['fromLocation'] is Map?route['fromLocation']['name']:null)??'From').toString();
+    final to=(dropoffLocation['name']??(route['toLocation'] is Map?route['toLocation']['name']:null)??'To').toString();
+    return {'from':from,'to':to};
+  }
+  String? _ticketDestinationImage(String destination){
+    final name=destination.trim().toLowerCase();
+    if(name.contains('muhanga'))return 'assets/muhanga.jpg';
+    if(name=='kigali'||name.startsWith('kigali '))return 'assets/kigali.webp';
+    return null;
+  }
+  String _ticketRoute(Map<String,dynamic> t){
+    final endpoints=_ticketEndpoints(t);
+    return endpoints['from']!+' → '+endpoints['to']!;
   }
   Widget _historyTab(){
     final groups=<String,List<Map<String,dynamic>>>{};
@@ -794,10 +885,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ]))
     ]));
   }
-  Widget _ticketCard(Map<String,dynamic> t){    final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};
-    final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};
-    final from=route['fromLocation'] is Map?(route['fromLocation']['name']??'From').toString():'From';
-    final to=route['toLocation'] is Map?(route['toLocation']['name']??'To').toString():'To';
+  Widget _ticketCard(Map<String,dynamic> t){
+    final endpoints=_ticketEndpoints(t);
+    final from=endpoints['from']!;
+    final to=endpoints['to']!;
     final status=(t['status']??'pending').toString().trim().toLowerCase();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isCancelled = status == 'cancelled' || status == 'canceled';
@@ -815,40 +906,45 @@ class _HomeScreenState extends State<HomeScreen> {
     return Card(
       margin:const EdgeInsets.only(top:10),
       clipBehavior:Clip.antiAlias,
-      color:statusBackground,
+      color:Theme.of(context).colorScheme.surface,
       child:ListTile(
         leading:ClipRRect(
           borderRadius:BorderRadius.circular(12),
           child:SizedBox(
             width:58,height:58,
-            child:Image.asset(
-              to.toLowerCase().contains('muhanga') ? 'assets/muhanga.jpg' : 'assets/kigali.webp',
-              fit:BoxFit.cover,
-              errorBuilder:(_,__,___)=>Container(
-                color:statusColor.withValues(alpha:.12),
-                child:Icon(Icons.confirmation_num_rounded,color:statusColor),
-              ),
-            ),
+            child:_ticketDestinationImage(to)==null
+                ? Container(
+                    color:statusColor.withValues(alpha:.10),
+                    child:Icon(Icons.confirmation_num_rounded,color:statusColor),
+                  )
+                : Image.asset(
+                    _ticketDestinationImage(to)!,
+                    fit:BoxFit.cover,
+                    errorBuilder:(_,__,___)=>Container(
+                      color:statusColor.withValues(alpha:.10),
+                      child:Icon(Icons.confirmation_num_rounded,color:statusColor),
+                    ),
+                  ),
           ),
         ),
-        title:Text('${from} → ${to}',style:const TextStyle(fontWeight:FontWeight.w800)),
+        title:Text('$from → $to',maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w800)),
         subtitle:Padding(
           padding:const EdgeInsets.only(top:6),
           child:Column(
             crossAxisAlignment:CrossAxisAlignment.start,
             children:[
-              Text('Seat ${(t['seat_number']??'—').toString()} • ${(t['travel_date']??'Date pending').toString()}'),
+              Text('Seat '+(t['seat_number']??'—').toString()+'  •  '+(t['travel_date']??'Date pending').toString()),
               const SizedBox(height:7),
               Container(
                 padding:const EdgeInsets.symmetric(horizontal:10,vertical:5),
-                decoration:BoxDecoration(color:statusColor,borderRadius:BorderRadius.circular(20)),
-                child:Text(label,style:const TextStyle(color:Colors.white,fontSize:11,fontWeight:FontWeight.w800,letterSpacing:.4)),
+                decoration:BoxDecoration(color:statusBackground,borderRadius:BorderRadius.circular(20),border:Border.all(color:statusColor.withValues(alpha:.4))),
+                child:Text(label,style:TextStyle(color:statusColor,fontSize:11,fontWeight:FontWeight.w800,letterSpacing:.4)),
               ),
             ],
           ),
         ),
         isThreeLine:true,
-        trailing:Icon(Icons.chevron_right,color:statusColor),
+        trailing:const Icon(Icons.chevron_right_rounded),
         onTap:()=>_showTicketDetails(t),
       ),
     );
@@ -857,8 +953,9 @@ class _HomeScreenState extends State<HomeScreen> {
     final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};
     final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};
     final op=bus['operator'] is Map?Map<String,dynamic>.from(bus['operator']):<String,dynamic>{};
-    final from=route['fromLocation'] is Map?(route['fromLocation']['name']??'From').toString():'From';
-    final to=route['toLocation'] is Map?(route['toLocation']['name']??'To').toString():'To';
+    final endpoints=_ticketEndpoints(t);
+    final from=endpoints['from']!;
+    final to=endpoints['to']!;
     final plate=(bus['plate_number']??bus['registration_number']??bus['plate']??'Not provided by operator').toString();
     final code=(t['ticket_code']??t['ticket_number']??t['code']??t['reference']??t['id']??'BOOKIT-TICKET').toString();
     final qrData=(t['qr_code']??t['qr_data']??t['qr_token']??code).toString();
