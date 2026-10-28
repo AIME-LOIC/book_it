@@ -407,8 +407,13 @@ class _HomeScreenState extends State<HomeScreen> {
       final date=DateTime.now().toIso8601String().substring(0,10);
       final file=File('${directory.path}/bookit-ticket-history-$date.csv');
       await file.writeAsString('\uFEFF${rows.join('\r\n')}',flush:true);
-      await Share.shareXFiles([XFile(file.path)],text:_historyText('BookIt ticket history','Amateka y’amatike ya BookIt'));
-      if(mounted)_msg(_historyText('Ticket history exported. Choose where to save or share the CSV file.','Amateka y’amatike yateguwe. Hitamo aho ubika cyangwa wohereza dosiye ya CSV.'));
+      if(Platform.isLinux){
+        try{await Process.run('xdg-open',[directory.path]);}catch(_){}
+        if(mounted)_msg(_historyText('CSV saved to: ${file.path}','Dosiye ya CSV yabitswe aha: ${file.path}'));
+      }else{
+        await Share.shareXFiles([XFile(file.path)],text:_historyText('BookIt ticket history','Amateka y’amatike ya BookIt'));
+        if(mounted)_msg(_historyText('Ticket history exported. Choose where to save or share the CSV file.','Amateka y’amatike yateguwe. Hitamo aho ubika cyangwa wohereza dosiye ya CSV.'));
+      }
     }catch(e){
       if(mounted)_msg(_historyText('Could not export ticket history. Please try again.','Ntibishobotse kohereza hanze amateka y’amatike. Ongera ugerageze.'));
     }
