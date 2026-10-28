@@ -52,7 +52,9 @@ static void my_application_activate(GApplication* application) {
     gtk_window_set_title(window, "bookit");
   }
 
-  gtk_window_set_default_size(window, 1280, 720);
+  // Open in a phone-sized portrait window by default (Flutter logical pixels).
+  gtk_window_set_default_size(window, 390, 844);
+  gtk_window_set_resizable(window, TRUE);
 
   g_autoptr(FlDartProject) project = fl_dart_project_new();
   fl_dart_project_set_dart_entrypoint_arguments(
