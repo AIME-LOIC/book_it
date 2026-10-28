@@ -151,32 +151,110 @@ const getSegmentSeats = async (bus, travel_date, boarding_order, dropoff_order) 
 };
 
 // ── SEARCH ────────────────────────────────────────────
+const sameId = (left, right) =>
+  left != null && right != null && String(left).toLowerCase() === String(right).toLowerCase();
+
+// Some older routes were created without origin/destination RouteStop rows.
+// Tickets reference RouteStop IDs, so repair missing endpoints once, safely,
+// before searching. Existing stop IDs and prices are preserved.
+const ensureRouteEndpointStops = async (routeId) => {
+  await Route.sequelize.transaction(async (transaction) => {
+    const route = await Route.findByPk(routeId, {
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+    if (!route) return;
+
+    let stops = await RouteStop.findAll({
+      where: { route_id: routeId },
+      order: [['stop_order', 'DESC']],
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+
+    if (!stops.some((stop) => sameId(stop.location_id, route.from_location_id))) {
+      // Shift descending to avoid collisions with the unique (route_id, stop_order) index.
+      for (const stop of stops) {
+        await stop.update({ stop_order: Number(stop.stop_order) + 1 }, { transaction });
+      }
+      await RouteStop.create({
+        route_id: route.id,
+        location_id: route.from_location_id,
+        stop_order: 1,
+        price_from_origin: 0,
+        leg_route_id: null,
+      }, { transaction });
+    }
+
+    stops = await RouteStop.findAll({
+      where: { route_id: routeId },
+      order: [['stop_order', 'ASC']],
+      transaction,
+    });
+
+    if (!stops.some((stop) => sameId(stop.location_id, route.to_location_id))) {
+      const lastOrder = stops.reduce((max, stop) => Math.max(max, Number(stop.stop_order) || 0), 0);
+      await RouteStop.create({
+        route_id: route.id,
+        location_id: route.to_location_id,
+        stop_order: lastOrder + 1,
+        price_from_origin: route.price,
+        leg_route_id: null,
+      }, { transaction });
+    }
+  });
+};
+
 export const searchBuses = async ({ from_location_id, to_location_id, travel_date }) => {
-  // load all stops raw
-  const allStops = await RouteStop.findAll({ raw: true });
-
-  const fromStops = allStops.filter(s => s.location_id === from_location_id);
-  const toStops = allStops.filter(s => s.location_id === to_location_id);
-
-  if (!fromStops.length || !toStops.length) {
-    throw new Error(
-      `Stop not found in DB. ` +
-      `Searching from: "${from_location_id}" to: "${to_location_id}". ` +
-      `DB has: [${[...new Set(allStops.map(s => s.location_id))].join(', ')}]`
-    );
+  if (!from_location_id || !to_location_id || sameId(from_location_id, to_location_id)) {
+    return [];
   }
 
-  // group stops by route
+  // Only repair routes that have active buses; routes without service should
+  // not be mutated just because a passenger searches for a trip.
+  const activeBusRows = await Bus.findAll({
+    where: { is_active: true },
+    attributes: ['route_id'],
+    raw: true,
+  });
+  const activeRouteIds = [...new Set(activeBusRows.map((bus) => bus.route_id).filter(Boolean))];
+  if (!activeRouteIds.length) return [];
+
+  const routes = await Route.findAll({
+    where: { id: { [Op.in]: activeRouteIds } },
+    attributes: ['id', 'from_location_id', 'to_location_id', 'price'],
+  });
+
+  let allStops = await RouteStop.findAll({ raw: true });
+  const initialStopsByRoute = new Map();
+  for (const stop of allStops) {
+    if (!initialStopsByRoute.has(stop.route_id)) initialStopsByRoute.set(stop.route_id, []);
+    initialStopsByRoute.get(stop.route_id).push(stop);
+  }
+
+  for (const route of routes) {
+    const stops = initialStopsByRoute.get(route.id) || [];
+    const hasOrigin = stops.some((stop) => sameId(stop.location_id, route.from_location_id));
+    const hasDestination = stops.some((stop) => sameId(stop.location_id, route.to_location_id));
+    if (!hasOrigin || !hasDestination) {
+      await ensureRouteEndpointStops(route.id);
+    }
+  }
+
+  // Reload after any endpoint repairs so every booking uses real RouteStop IDs.
+  allStops = await RouteStop.findAll({ raw: true });
+
+  // Group stops by route.
   const byRoute = {};
-  allStops.forEach(s => {
-    if (!byRoute[s.route_id]) byRoute[s.route_id] = [];
-    byRoute[s.route_id].push(s);
+  allStops.forEach((stop) => {
+    if (!byRoute[stop.route_id]) byRoute[stop.route_id] = [];
+    byRoute[stop.route_id].push(stop);
   });
 
   const validRoutes = [];
   for (const [route_id, stops] of Object.entries(byRoute)) {
-    const fromStop = stops.find(s => s.location_id === from_location_id);
-    const toStop = stops.find(s => s.location_id === to_location_id);
+    const fromStop = stops.find(s => sameId(s.location_id, from_location_id));
+    const toStop = stops.find(s => sameId(s.location_id, to_location_id));
     if (!fromStop || !toStop) continue;
     if (fromStop.stop_order >= toStop.stop_order) continue;
 
@@ -193,12 +271,12 @@ export const searchBuses = async ({ from_location_id, to_location_id, travel_dat
   }
 
   if (!validRoutes.length) {
-    const details = Object.entries(byRoute).map(([rid, stops]) => {
-      const f = stops.find(s => s.location_id === from_location_id);
-      const t = stops.find(s => s.location_id === to_location_id);
-      return `Route ${rid}: fromFound=${!!f} toFound=${!!t}${f && t ? ` orders:${f.stop_order}→${t.stop_order}` : ''}`;
-    }).join(' | ');
-    throw new Error(`No valid route. Debug: ${details}`);
+    console.info('[BUS_SEARCH] No route serves the requested locations in this direction.', {
+      from_location_id,
+      to_location_id,
+      routes_checked: Object.keys(byRoute).length,
+    });
+    return [];
   }
 
   const route_ids = validRoutes.map(r => r.route_id);
@@ -218,7 +296,7 @@ export const searchBuses = async ({ from_location_id, to_location_id, travel_dat
     ],
   });
 
-  if (!buses.length) throw new Error('Route found but no buses assigned to it yet.');
+  if (!buses.length) return [];
 
   const results = await Promise.all(buses.map(async (bus) => {
     const routeInfo = validRoutes.find(r => r.route_id === bus.route_id);
