@@ -1129,9 +1129,9 @@ class BusDetailsScreen extends StatelessWidget {
               decoration:BoxDecoration(
                 gradient:AppColors.heroGradient,
                 image:DecorationImage(
-                  image:NetworkImage(to.trim().toLowerCase().contains('muhanga') ? 'https://commons.wikimedia.org/wiki/Special:FilePath/Zipline-Muhanga-Robin-Dropping-Package.jpg?width=1200' : 'https://commons.wikimedia.org/wiki/Special:FilePath/Kigali%20skyline.jpg?width=1200'),
+                  image:AssetImage(to.trim().toLowerCase().contains('muhanga') ? 'assets/muhanga.jpg' : 'assets/kigali.webp'),
                   fit:BoxFit.cover,
-                  colorFilter:ColorFilter.mode(const Color(0x40003768),BlendMode.darken),
+                  colorFilter:ColorFilter.mode(const Color(0x50003768),BlendMode.darken),
                   onError:(_,__) {},
                 ),
                 borderRadius:BorderRadius.circular(24),
@@ -1279,9 +1279,9 @@ class TicketDetailsScreen extends StatelessWidget {
               decoration:BoxDecoration(
                 gradient:AppColors.heroGradient,
                 image:DecorationImage(
-                  image:NetworkImage('https://commons.wikimedia.org/wiki/Special:FilePath/The%20view%20across%20Kigali%20in%20Rwanda%20at%20night.jpg?width=1200'),
+                  image:const AssetImage('assets/kigali.webp'),
                   fit:BoxFit.cover,
-                  colorFilter:ColorFilter.mode(Color(0x40001638),BlendMode.darken),
+                  colorFilter:ColorFilter.mode(Color(0x50001638),BlendMode.darken),
                   onError:(_,__) {},
                 ),
                 borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24)),
