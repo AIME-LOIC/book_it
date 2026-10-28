@@ -76,6 +76,7 @@ export const checkDepartedBuses = async () => {
 let lastReactivationDate = null;
 let lastPromoGenerationDate = null;
 let lastTicketArchiveDate = null;
+let ticketArchiveTableReady = false;
 
 // Archive only completed/cancelled trips after 365 days. The full ticket row
 // is copied to ticket_archives inside the same transaction before deletion.
@@ -88,6 +89,12 @@ export const archiveOldTickets = async () => {
   const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   try {
+    // The API listener can start before the server bootstrap's database check;
+    // ensure the backup table exists before this job reads or deletes anything.
+    if (!ticketArchiveTableReady) {
+      await TicketArchive.sync();
+      ticketArchiveTableReady = true;
+    }
     const candidates = await Ticket.findAll({
       where: {
         status: { [Op.in]: ['paid', 'cancelled'] },
