@@ -120,6 +120,11 @@ class _LoadingScreenState extends State<LoadingScreen>
                 clipBehavior: Clip.hardEdge,
                 children: [
                   Positioned(
+                    left: busLeft,
+                    top: size.height * 0.30 + 16,
+                    child: const _ThreeDBus(),
+                  ),
+                  Positioned(
                     top: size.height * 0.30,
                     left: 0,
                     right: 0,
@@ -153,11 +158,6 @@ class _LoadingScreenState extends State<LoadingScreen>
                         ),
                       ],
                     ),
-                  ),
-                  Positioned(
-                    left: busLeft,
-                    top: size.height * 0.30 + 16,
-                    child: const _ThreeDBus(),
                   ),
                   Positioned(
                     left: 0,
