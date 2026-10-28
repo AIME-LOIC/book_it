@@ -420,6 +420,10 @@ export const payTicket = async (user_id, ticket_id, { network, phone_number, pro
     });
   }
 
+  if (promo_code && ticket.payment_reference && !ticket.flw_charge_id) {
+    throw new Error('A mobile-money payment request is being initialized. Check its status before applying a promo code.');
+  }
+
   if (promo_code) {
     await validateAndConsumePromoCode({ code: promo_code, recipient_id: user_id, ticket_id: ticket.id });
     const finalized = await finalizeTicketPayment(ticket.id);
