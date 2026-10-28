@@ -1128,6 +1128,12 @@ class BusDetailsScreen extends StatelessWidget {
               padding:const EdgeInsets.all(20),
               decoration:BoxDecoration(
                 gradient:AppColors.heroGradient,
+                image:DecorationImage(
+                  image:NetworkImage('https://loremflickr.com/1200/800/${Uri.encodeComponent(to)},Rwanda,city'),
+                  fit:BoxFit.cover,
+                  colorFilter:ColorFilter.mode(const Color(0xB8003768),BlendMode.darken),
+                  onError:(_,__) {},
+                ),
                 borderRadius:BorderRadius.circular(24),
               ),
               child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
@@ -1270,7 +1276,16 @@ class TicketDetailsScreen extends StatelessWidget {
           child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
             Container(
               padding:const EdgeInsets.all(20),
-              decoration:const BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24))),
+              decoration:BoxDecoration(
+                gradient:AppColors.heroGradient,
+                image:const DecorationImage(
+                  image:NetworkImage('https://commons.wikimedia.org/wiki/Special:FilePath/KIGALI%20city%20view.jpg?width=1200'),
+                  fit:BoxFit.cover,
+                  colorFilter:ColorFilter.mode(Color(0xB8001638),BlendMode.darken),
+                  onError:(_,__) {},
+                ),
+                borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24)),
+              ),
               child:Column(children:[
                 const Icon(Icons.confirmation_num_rounded,color:Colors.white,size:34),
                 const SizedBox(height:10),
