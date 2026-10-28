@@ -1278,7 +1278,7 @@ class TicketDetailsScreen extends StatelessWidget {
               padding:const EdgeInsets.all(20),
               decoration:BoxDecoration(
                 gradient:AppColors.heroGradient,
-                image:const DecorationImage(
+                image:DecorationImage(
                   image:NetworkImage('https://commons.wikimedia.org/wiki/Special:FilePath/KIGALI%20city%20view.jpg?width=1200'),
                   fit:BoxFit.cover,
                   colorFilter:ColorFilter.mode(Color(0xB8001638),BlendMode.darken),
