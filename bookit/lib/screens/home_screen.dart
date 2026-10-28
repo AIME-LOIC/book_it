@@ -19,6 +19,8 @@ class HomeScreen extends StatefulWidget {
 }
 class _HomeScreenState extends State<HomeScreen> {
   int _tab=0; bool _loadingLocations=true,_searching=false,_loadingTickets=false,_loadingProfile=false,_loadingNotifications=false,_showingSearchResults=false;
+  int _unreadNotifications=0;
+  Timer? _notificationTimer;
   String? _searchError;
   String _ticketSearchQuery='',_ticketSort='newest';
   bool _paymentSubmitting=false,_paymentPending=false,_checkingPaymentStatus=false;
@@ -35,8 +37,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _fromId,_toId,_activeTicketId,_selectedHistoryRoute; DateTime _date=DateTime.now().add(const Duration(days:1));
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer;
   final _phone=TextEditingController(); String _network='mtn'; bool _phoneManuallyEdited=false; String? _detectedNetwork;
-  @override void initState(){super.initState();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
-  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_paymentPollTimer?.cancel();_phone.dispose();super.dispose();}
+  @override void initState(){super.initState();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
+  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_notificationTimer?.cancel();_paymentPollTimer?.cancel();_phone.dispose();super.dispose();}
 
 
   Future<void> _loadTripReminders() async {
@@ -268,12 +270,23 @@ class _HomeScreenState extends State<HomeScreen> {
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
     finally { if(mounted)setState(()=>_loadingProfile=false); }
   }
+  Future<void> _loadUnreadCount() async {
+    try {
+      final r=await ApiClient.get('notifications/unread',auth:true);
+      final value=r is Map?int.tryParse((r['unread']??0).toString())??0:0;
+      if(mounted&&value!=_unreadNotifications)setState(()=>_unreadNotifications=value);
+    } on ApiException {
+      // Keep the last known badge count if a temporary request fails.
+    }
+  }
+
   Future<void> _loadNotifications() async {
     if(mounted)setState(()=>_loadingNotifications=true);
     try {
       final r=await ApiClient.get('notifications',auth:true);
       final rows=r is List?r:(r is Map&&r['notifications'] is List?r['notifications'] as List:<dynamic>[]);
       if(mounted)setState(()=>_notifications=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList());
+      await _loadUnreadCount();
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
     finally { if(mounted)setState(()=>_loadingNotifications=false); }
   }
@@ -297,7 +310,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title:Text((n['type']??'Update').toString().replaceAll('_',' '),style:TextStyle(fontWeight:read?FontWeight.w500:FontWeight.w800)),
               subtitle:Text((n['message']??'').toString()),
               trailing:read?null:TextButton(onPressed:()async{
-                try{await ApiClient.patch('notifications/'+n['id'].toString()+'/read',auth:true);setState(()=>n['is_read']=true);setSheetState((){});}
+                try{await ApiClient.patch('notifications/'+n['id'].toString()+'/read',auth:true);if(mounted)setState(()=>n['is_read']=true);await _loadUnreadCount();setSheetState((){});}
                 on ApiException catch(e){_msg(e.message);}
               },child:const Text('Read')),
             );
@@ -665,7 +678,25 @@ class _HomeScreenState extends State<HomeScreen> {
     Container(clipBehavior:Clip.antiAlias,padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:_weatherGradient,borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24))),child:Stack(children:[
       Positioned(right:-12,top:-16,bottom:-16,width:155,child:_WeatherBackdrop(code:_weatherCode)),
       Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        Row(children:[const Icon(Icons.directions_bus_rounded,color:Colors.white,size:32),const SizedBox(width:10),const Expanded(child:Text('BookIt',style:TextStyle(color:Colors.white,fontSize:21,fontWeight:FontWeight.w800))),IconButton(onPressed:_openNotifications,icon:const Icon(Icons.notifications_none,color:AppColors.white),tooltip:'Notifications')]),
+        Row(children:[
+          const Expanded(child:Text('BookIt',style:TextStyle(color:Colors.white,fontSize:21,fontWeight:FontWeight.w800))),
+          IconButton(
+            onPressed:_openNotifications,
+            tooltip:_unreadNotifications==0?'Notifications':'Notifications, $_unreadNotifications unread',
+            icon:Stack(clipBehavior:Clip.none,children:[
+              const Icon(Icons.notifications_none,color:AppColors.white,size:27),
+              if(_unreadNotifications>0)Positioned(
+                right:-7,top:-5,
+                child:Container(
+                  constraints:const BoxConstraints(minWidth:18,minHeight:18),
+                  padding:const EdgeInsets.symmetric(horizontal:4,vertical:1),
+                  decoration:BoxDecoration(color:AppColors.danger,borderRadius:BorderRadius.circular(20),border:Border.all(color:Colors.white,width:1.2)),
+                  child:Text(_unreadNotifications>99?'99+':_unreadNotifications.toString(),textAlign:TextAlign.center,style:const TextStyle(color:Colors.white,fontSize:10,fontWeight:FontWeight.w900,height:1.2)),
+                ),
+              ),
+            ]),
+          ),
+        ]),
         const SizedBox(height:14),Text('${_timeGreeting()}, ${_displayFirstName()}',style:const TextStyle(color:AppColors.white,fontSize:24,fontWeight:FontWeight.w800)),const SizedBox(height:4),Text(_homeHeadline(),style:TextStyle(color:AppColors.white.withValues(alpha:.95),fontSize:16,fontWeight:FontWeight.w600)),const SizedBox(height:3),Text(_todayDateLabel(),style:TextStyle(color:AppColors.white.withValues(alpha:.78),fontSize:12)),
         const SizedBox(height:14),Material(color:Colors.transparent,child:InkWell(borderRadius:BorderRadius.circular(12),onTap:_openWeatherForecast,child:Padding(padding:const EdgeInsets.symmetric(vertical:4),child:Row(children:[Icon(_weatherIcon,color:Colors.white,size:22),const SizedBox(width:8),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(_weatherLabel,style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700)),const SizedBox(height:2),Text('Tap for 7-day forecast',style:TextStyle(color:Colors.white.withValues(alpha:.82),fontSize:12))])),if(_temperature!=null)Text('${_temperature!.round()}°C',style:const TextStyle(color:Colors.white,fontSize:18,fontWeight:FontWeight.w800)),const SizedBox(width:4),const Icon(Icons.chevron_right,color:Colors.white)])))),
       ]),
