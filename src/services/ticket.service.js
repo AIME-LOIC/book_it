@@ -65,6 +65,21 @@ const isStillAvailable = (departure_time, travel_date) => {
 const PENDING_TIMEOUT_MINUTES = 15;
 const PENDING_HOLD_CUTOFF = () => new Date(Date.now() - PENDING_TIMEOUT_MINUTES * 60000);
 
+// The provider is authoritative for payment state. Whenever it returns
+// transaction details, reject mismatched reference, amount or currency.
+const assertChargeMatchesTicket = (charge, ticket) => {
+  if (charge?.reference && ticket.payment_reference && String(charge.reference) !== String(ticket.payment_reference)) {
+    throw new Error('Payment reference does not match this reservation');
+  }
+  if (charge?.amount != null && Number.isFinite(Number(charge.amount)) &&
+      Math.round(Number(charge.amount)) !== Math.round(Number(ticket.price))) {
+    throw new Error('Payment amount does not match this reservation');
+  }
+  if (charge?.currency && String(charge.currency).toUpperCase() !== 'RWF') {
+    throw new Error('Payment currency does not match this reservation');
+  }
+};
+
 // segments overlap if existing boarding < new dropoff AND existing dropoff > new boarding
 const segmentsOverlap = (existingBoarding, existingDropoff, newBoarding, newDropoff) => {
   const eb = Number(existingBoarding);
@@ -377,6 +392,7 @@ export const payTicket = async (user_id, ticket_id, { network, phone_number, pro
       throw new Error('A mobile-money payment is already associated with this reservation. Check its status before applying a promo code.');
     }
     const existingCharge = await getCharge(ticket.flw_charge_id);
+    assertChargeMatchesTicket(existingCharge, ticket);
     const existingStatus = String(existingCharge.status || '').toLowerCase();
 
     if (FLW_SUCCESS_STATUSES.includes(existingStatus)) {
@@ -476,17 +492,19 @@ export const checkPaymentStatus = async (user_id, ticket_id) => {
   }
 
   const charge = await getCharge(ticket.flw_charge_id);
+  assertChargeMatchesTicket(charge, ticket);
+  const providerStatus = String(charge.status || '').toLowerCase();
 
-  if (FLW_SUCCESS_STATUSES.includes(charge.status)) {
+  if (FLW_SUCCESS_STATUSES.includes(providerStatus)) {
     const finalized = await finalizeTicketPayment(ticket.id);
     return { status: 'paid', ticket: finalized };
   }
 
-  if (FLW_FAILED_STATUSES.includes(charge.status)) {
-    return { status: 'failed', reason: charge.failure_reason || charge.status };
+  if (FLW_FAILED_STATUSES.includes(providerStatus)) {
+    return { status: 'failed', reason: charge.failure_reason || providerStatus };
   }
 
-  return { status: charge.status || 'pending' };
+  return { status: providerStatus || 'pending' };
 };
 
 // ── PAY (WEBHOOK) ───────────────────────────────────────
@@ -501,13 +519,18 @@ export const handleFlutterwaveWebhook = async (payload, signatureHeader) => {
   }
 
   const chargeId = payload?.data?.id;
-  const status = payload?.data?.status;
   if (!chargeId) return { ok: false, reason: 'Missing charge id in payload' };
 
   const ticket = await Ticket.findOne({ where: { flw_charge_id: chargeId } });
   if (!ticket) return { ok: false, reason: 'No matching ticket for charge' };
 
   if (ticket.status === 'paid') return { ok: true, reason: 'Already paid' };
+
+  // Do not trust the webhook's status alone. Fetch the charge directly from
+  // Flutterwave and verify its details against the reserved ticket.
+  const charge = await getCharge(chargeId);
+  assertChargeMatchesTicket(charge, ticket);
+  const status = String(charge.status || '').toLowerCase();
 
   if (FLW_SUCCESS_STATUSES.includes(status)) {
     await finalizeTicketPayment(ticket.id);
