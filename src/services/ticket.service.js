@@ -81,7 +81,7 @@ const isSeatFree = async (bus_id, travel_date, seat_number, boarding_order, drop
       ...(excludeTicketId ? { id: { [Op.ne]: excludeTicketId } } : {}),
       [Op.or]: [
         { status: 'paid' },
-        { status: 'pending', createdAt: { [Op.gt]: PENDING_HOLD_CUTOFF() } }
+        { status: 'pending', updatedAt: { [Op.gt]: PENDING_HOLD_CUTOFF() } }
       ]
     },
     include: [
@@ -110,7 +110,7 @@ const getSegmentSeats = async (bus, travel_date, boarding_order, dropoff_order) 
       bus_id: bus.id, travel_date,
       [Op.or]: [
         { status: 'paid' },
-        { status: 'pending', createdAt: { [Op.gt]: PENDING_HOLD_CUTOFF() } }
+        { status: 'pending', updatedAt: { [Op.gt]: PENDING_HOLD_CUTOFF() } }
       ]
     },
     include: [
@@ -369,6 +369,40 @@ export const payTicket = async (user_id, ticket_id, { network, phone_number, pro
   if (!ticket) throw new Error('Ticket not found');
   if (ticket.status === 'paid') throw new Error('Ticket already paid');
   if (ticket.status === 'cancelled') throw new Error('Ticket is cancelled');
+
+  // A repeated mobile-money request must reuse the active charge instead of
+  // creating a second charge for the same reservation.
+  if (ticket.flw_charge_id) {
+    if (promo_code) {
+      throw new Error('A mobile-money payment is already associated with this reservation. Check its status before applying a promo code.');
+    }
+    const existingCharge = await getCharge(ticket.flw_charge_id);
+    const existingStatus = String(existingCharge.status || '').toLowerCase();
+
+    if (FLW_SUCCESS_STATUSES.includes(existingStatus)) {
+      const finalized = await finalizeTicketPayment(ticket.id);
+      return { status: 'paid', ticket: finalized };
+    }
+
+    if (!FLW_FAILED_STATUSES.includes(existingStatus)) {
+      return {
+        status: existingStatus || 'pending',
+        reference: ticket.payment_reference,
+        charge_id: ticket.flw_charge_id,
+        next_action: existingCharge.next_action || null,
+        message: 'A payment request is already active. Approve it on your phone or check its status before trying again.',
+      };
+    }
+
+    // The provider has definitively failed/expired the previous attempt.
+    // Clear its active identifiers so the passenger can safely retry.
+    await ticket.update({
+      payment_reference: null,
+      flw_payment_method_id: null,
+      flw_charge_id: null,
+      payment_network: null,
+    });
+  }
 
   if (promo_code) {
     await validateAndConsumePromoCode({ code: promo_code, recipient_id: user_id, ticket_id: ticket.id });
