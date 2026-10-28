@@ -25,7 +25,7 @@ class LoadingScreen extends StatefulWidget {
 
 class _LoadingScreenState extends State<LoadingScreen>
     with TickerProviderStateMixin {
-  static const Duration _splashDuration = Duration(seconds: 25);
+  static const Duration _splashDuration = Duration(seconds: 6);
 
   late final AnimationController _master = AnimationController(
     vsync: this,
@@ -110,8 +110,10 @@ class _LoadingScreenState extends State<LoadingScreen>
               final width = size.width;
               // Time the reveal around the moment the bus crosses screen center.
               final centerCrossing = (width / 2 + 65) / (width + 308);
+              // Reveal six distinct characters over ~1.4 seconds as the
+              // bus passes the center; never show partial or skipped letters.
               final revealProgress =
-                  ((progress - (centerCrossing - 0.10)) / 0.20)
+                  ((progress - (centerCrossing - 0.12)) / 0.24)
                       .clamp(0.0, 1.0);
               final letters = (revealProgress * 6).floor().clamp(0, 6);
               final word = 'BOOKIT'.substring(0, letters);
@@ -213,183 +215,193 @@ class _LoadingScreenState extends State<LoadingScreen>
   }
 }
 
-/// A compact perspective-styled bus illustration built from Flutter shapes.
+/// Perspective-painted bus with visible side, front, roof, windows and wheels.
 class _ThreeDBus extends StatelessWidget {
   const _ThreeDBus();
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 178,
-      height: 104,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned(
-            left: 10,
-            right: 3,
-            bottom: 6,
-            child: Container(
-              height: 13,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.22),
-                borderRadius: BorderRadius.circular(50),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
-                    blurRadius: 12,
-                    spreadRadius: 3,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 4,
-            top: 14,
-            child: Transform(
-              alignment: Alignment.center,
-              transform: Matrix4.skewY(-0.07),
-              child: Container(
-                width: 160,
-                height: 70,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFFFFFFFF), Color(0xFFE2EAF7), Color(0xFF9BB4D8)],
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(15),
-                    topRight: Radius.circular(10),
-                    bottomLeft: Radius.circular(7),
-                    bottomRight: Radius.circular(8),
-                  ),
-                  border: Border.all(color: Colors.white, width: 1.2),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x44001845),
-                      blurRadius: 12,
-                      offset: Offset(0, 7),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF2D6CE0),
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(13),
-                          topRight: Radius.circular(8),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 5, 8, 4),
-                        child: Row(
-                          children: [
-                            for (var i = 0; i < 4; i++) ...[
-                              Expanded(
-                                child: Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 2),
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [Color(0xFF8CE5FF), Color(0xFF15519B)],
-                                    ),
-                                    borderRadius: BorderRadius.circular(3),
-                                    border: Border.all(
-                                      color: const Color(0xFF17467F),
-                                      width: 1,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    ),
-                    Container(
-                      height: 17,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF2363C9),
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(5),
-                          bottomRight: Radius.circular(6),
-                        ),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'BOOKIT',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 8,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          for (final left in [29.0, 126.0])
-            Positioned(
-              left: left,
-              bottom: 7,
-              child: Container(
-                width: 26,
-                height: 26,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF45546B), Color(0xFF111A2A)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  border: Border.all(color: const Color(0xFFD9E5F7), width: 3),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x44000000), blurRadius: 5, offset: Offset(0, 2)),
-                  ],
-                ),
-                child: Center(
-                  child: Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFB9C8DA),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          Positioned(
-            right: 0,
-            top: 39,
-            child: Container(
-              width: 8,
-              height: 15,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFD166),
-                borderRadius: BorderRadius.circular(3),
-                boxShadow: const [
-                  BoxShadow(color: Color(0x88FFD166), blurRadius: 9),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
+  Widget build(BuildContext context) => const SizedBox(
+        width: 250,
+        height: 145,
+        child: CustomPaint(painter: _BusPainter()),
+      );
+}
+
+class _BusPainter extends CustomPainter {
+  const _BusPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final sx = size.width / 250;
+    final sy = size.height / 145;
+    canvas.save();
+    canvas.scale(sx, sy);
+
+    Paint paint(Color color) => Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    Path polygon(List<Offset> points) => Path()..addPolygon(points, true);
+
+    // Soft contact shadow grounds the vehicle.
+    canvas.drawOval(
+      Rect.fromLTWH(18, 112, 220, 24),
+      Paint()
+        ..color = const Color(0x55001635)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
     );
+
+    // Roof and far-side depth.
+    canvas.drawPath(
+      polygon(const [Offset(25, 38), Offset(185, 17), Offset(232, 42), Offset(69, 62)]),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFF9FCFF), Color(0xFF8BA8D2)],
+        ).createShader(const Rect.fromLTWH(25, 17, 207, 45)),
+    );
+
+    // Long side panel, tapered to create perspective.
+    canvas.drawPath(
+      polygon(const [Offset(25, 38), Offset(185, 17), Offset(185, 98), Offset(25, 117)]),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFFFFFFFF), Color(0xFFE2ECFA), Color(0xFF7E9FCB)],
+        ).createShader(const Rect.fromLTWH(25, 17, 160, 100)),
+    );
+
+    // Front face angled toward the viewer.
+    canvas.drawPath(
+      polygon(const [Offset(185, 17), Offset(232, 42), Offset(232, 108), Offset(185, 98)]),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFB7D0F3), Color(0xFF315B9B), Color(0xFF173A70)],
+        ).createShader(const Rect.fromLTWH(185, 17, 47, 91)),
+    );
+
+    // Side windows, individually framed to read as glass.
+    for (var i = 0; i < 4; i++) {
+      final x = 37.0 + i * 35;
+      final top = 36.0 - i * 4.4;
+      final bottom = 83.0 - i * 4.4;
+      canvas.drawPath(
+        polygon([
+          Offset(x, top),
+          Offset(x + 27, top - 3.5),
+          Offset(x + 27, bottom - 3),
+          Offset(x, bottom),
+        ]),
+        paint(const Color(0xFF143E75)),
+      );
+      canvas.drawPath(
+        polygon([
+          Offset(x + 2, top + 2),
+          Offset(x + 24, top - 1),
+          Offset(x + 24, bottom - 5),
+          Offset(x + 2, bottom - 2),
+        ]),
+        Paint()
+          ..shader = const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFA7F0FF), Color(0xFF2A75B8), Color(0xFF17416F)],
+          ).createShader(Rect.fromLTWH(x, top, 27, bottom - top)),
+      );
+      canvas.drawLine(
+        Offset(x + 13, top + 1),
+        Offset(x + 13, bottom - 2),
+        Paint()..color = const Color(0xAAE9F8FF)..strokeWidth = 1.3,
+      );
+    }
+
+    // Blue belt and lower chassis add depth and brand color.
+    canvas.drawPath(
+      polygon(const [Offset(25, 91), Offset(185, 73), Offset(185, 96), Offset(25, 117)]),
+      Paint()
+        ..shader = const LinearGradient(
+          colors: [Color(0xFF3487F5), Color(0xFF12459B)],
+        ).createShader(const Rect.fromLTWH(25, 73, 160, 44)),
+    );
+    final textPainter = TextPainter(
+      text: const TextSpan(
+        text: 'BOOKIT',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 2,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    canvas.save();
+    canvas.translate(70, 91);
+    canvas.rotate(-0.11);
+    textPainter.paint(canvas, Offset.zero);
+    canvas.restore();
+
+    // Panoramic windshield on the front plane.
+    canvas.drawPath(
+      polygon(const [Offset(195, 31), Offset(222, 46), Offset(222, 75), Offset(195, 69)]),
+      paint(const Color(0xFF123B70)),
+    );
+    canvas.drawPath(
+      polygon(const [Offset(198, 35), Offset(218, 47), Offset(218, 70), Offset(198, 65)]),
+      Paint()
+        ..shader = const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFB7F4FF), Color(0xFF3B8DCB), Color(0xFF163F78)],
+        ).createShader(const Rect.fromLTWH(195, 31, 27, 44)),
+    );
+    canvas.drawLine(
+      const Offset(205, 39),
+      const Offset(205, 67),
+      Paint()..color = const Color(0x99E5FAFF)..strokeWidth = 1.2,
+    );
+
+    // Headlamp and bumper on the near-facing front.
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(const Rect.fromLTWH(224, 80, 7, 13), const Radius.circular(2)),
+      Paint()
+        ..color = const Color(0xFFFFE9A0)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+    );
+    canvas.drawPath(
+      polygon(const [Offset(185, 98), Offset(232, 108), Offset(229, 116), Offset(185, 106)]),
+      paint(const Color(0xFF182D4A)),
+    );
+
+    // Wheels with metallic hubs.
+    for (final p in [const Offset(55, 104), const Offset(158, 92)]) {
+      canvas.drawCircle(p, 17, paint(const Color(0xFF101B2B)));
+      canvas.drawCircle(p, 12, paint(const Color(0xFF526781)));
+      canvas.drawCircle(
+        p,
+        7,
+        Paint()
+          ..shader = const RadialGradient(
+            colors: [Color(0xFFEAF4FF), Color(0xFF879BB5), Color(0xFF34465E)],
+          ).createShader(Rect.fromCircle(center: p, radius: 7)),
+      );
+      canvas.drawCircle(p, 2.5, paint(const Color(0xFF17263D)));
+    }
+
+    // Highlight along the side gives the body a glossy 3D edge.
+    canvas.drawPath(
+      polygon(const [Offset(28, 39), Offset(181, 19), Offset(181, 24), Offset(28, 44)]),
+      paint(const Color(0xCCFFFFFF)),
+    );
+    canvas.restore();
   }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 /// An expanding, fading circle used behind the splash logo.
