@@ -279,15 +279,16 @@ export async function initiateMobileMoneyCharge({ user, network, phone_number, a
  */
 export function verifyWebhookSignature(receivedHash) {
   if (!WEBHOOK_SECRET_HASH) {
-    console.warn('[flutterwave] FLW_WEBHOOK_SECRET_HASH is not set — webhook signature is NOT being verified.');
-    return true;
+    console.warn('[flutterwave] FLW_WEBHOOK_SECRET_HASH is not set — rejecting webhook because its signature cannot be verified.');
+    // Never accept unsigned payment webhooks in production.
+    return process.env.NODE_ENV !== 'production';
   }
   if (!receivedHash) return false;
-  // constant-time-ish comparison
-  return crypto.timingSafeEqual(
-    Buffer.from(String(receivedHash)),
-    Buffer.from(String(WEBHOOK_SECRET_HASH))
-  ) && receivedHash.length === WEBHOOK_SECRET_HASH.length;
+  const received = Buffer.from(String(receivedHash));
+  const expected = Buffer.from(String(WEBHOOK_SECRET_HASH));
+  // timingSafeEqual throws if lengths differ, so reject that case first.
+  if (received.length !== expected.length) return false;
+  return crypto.timingSafeEqual(received, expected);
 }
 
 export const FLW_SUCCESS_STATUSES = ['successful', 'success', 'completed','succeeded'];
