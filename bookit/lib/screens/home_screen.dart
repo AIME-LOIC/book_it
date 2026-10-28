@@ -817,10 +817,19 @@ class _HomeScreenState extends State<HomeScreen> {
       clipBehavior:Clip.antiAlias,
       color:statusBackground,
       child:ListTile(
-        leading:Container(
-          width:48,height:48,
-          decoration:BoxDecoration(color:statusColor.withValues(alpha:.12),borderRadius:BorderRadius.circular(12)),
-          child:Icon(Icons.confirmation_num_rounded,color:statusColor),
+        leading:ClipRRect(
+          borderRadius:BorderRadius.circular(12),
+          child:SizedBox(
+            width:58,height:58,
+            child:Image.asset(
+              to.toLowerCase().contains('muhanga') ? 'assets/muhanga.jpg' : 'assets/kigali.webp',
+              fit:BoxFit.cover,
+              errorBuilder:(_,__,___)=>Container(
+                color:statusColor.withValues(alpha:.12),
+                child:Icon(Icons.confirmation_num_rounded,color:statusColor),
+              ),
+            ),
+          ),
         ),
         title:Text('${from} → ${to}',style:const TextStyle(fontWeight:FontWeight.w800)),
         subtitle:Padding(
@@ -1278,12 +1287,13 @@ class TicketDetailsScreen extends StatelessWidget {
               padding:const EdgeInsets.all(20),
               decoration:BoxDecoration(
                 gradient:AppColors.heroGradient,
-                image:DecorationImage(
-                  image:const AssetImage('assets/kigali.webp'),
-                  fit:BoxFit.cover,
-                  colorFilter:ColorFilter.mode(Color(0x50001638),BlendMode.darken),
-                  onError:(_,__) {},
-                ),
+                image:to.trim().toLowerCase().contains('muhanga')
+                    ? const DecorationImage(
+                        image:AssetImage('assets/muhanga.jpg'),
+                        fit:BoxFit.cover,
+                        colorFilter:ColorFilter.mode(Color(0x50001638),BlendMode.darken),
+                      )
+                    : null,
                 borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24)),
               ),
               child:Column(children:[
