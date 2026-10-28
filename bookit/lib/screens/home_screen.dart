@@ -1129,7 +1129,7 @@ class BusDetailsScreen extends StatelessWidget {
               decoration:BoxDecoration(
                 gradient:AppColors.heroGradient,
                 image:DecorationImage(
-                  image:NetworkImage('https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&auto=format&fit=crop&q=85'),
+                  image:NetworkImage(to.trim().toLowerCase()=='muhanga' ? 'https://i.guim.co.uk/img/media/e3b81f8a3544b88f7cc4162ce9a7b95173205c77/0_0_5931_3959/master/5931.jpg?auto=format&fit=max&quality=85&width=1200' : 'https://bugatechexpress.com/asset/img/marketing/kigali-city-skyline.jpg'),
                   fit:BoxFit.cover,
                   colorFilter:ColorFilter.mode(const Color(0x70003768),BlendMode.darken),
                   onError:(_,__) {},
@@ -1279,7 +1279,7 @@ class TicketDetailsScreen extends StatelessWidget {
               decoration:BoxDecoration(
                 gradient:AppColors.heroGradient,
                 image:DecorationImage(
-                  image:NetworkImage('https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1200&auto=format&fit=crop&q=85'),
+                  image:NetworkImage('https://bugatechexpress.com/asset/img/marketing/kigali-city-skyline.jpg'),
                   fit:BoxFit.cover,
                   colorFilter:ColorFilter.mode(Color(0x70001638),BlendMode.darken),
                   onError:(_,__) {},
