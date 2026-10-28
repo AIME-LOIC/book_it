@@ -20,6 +20,11 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tab=0; bool _loadingLocations=true,_searching=false,_loadingTickets=false,_loadingProfile=false,_loadingNotifications=false,_showingSearchResults=false;
   String? _searchError;
+  String _ticketSearchQuery='',_ticketSort='newest';
+  bool _paymentSubmitting=false,_paymentPending=false,_checkingPaymentStatus=false;
+  String? _paymentStatusMessage;
+  int _paymentPollAttempts=0;
+  Timer? _paymentPollTimer;
   List<Map<String,dynamic>> _locations=[],_buses=[],_tickets=[],_notifications=[],_tripReminders=[];
   Map<String,dynamic> _profileData={};
   int? _weatherCode;
@@ -31,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer;
   final _phone=TextEditingController(); String _network='mtn'; bool _phoneManuallyEdited=false; String? _detectedNetwork;
   @override void initState(){super.initState();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
-  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_phone.dispose();super.dispose();}
+  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_paymentPollTimer?.cancel();_phone.dispose();super.dispose();}
 
 
   Future<void> _loadTripReminders() async {
@@ -844,7 +849,107 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
-  Widget _ticketTab(){final xs=_tickets.where((t)=>(t['status']??'').toString().toLowerCase()=='paid').toList();return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:EdgeInsets.zero,children:[Container(padding:const EdgeInsets.fromLTRB(22,24,22,24),decoration:BoxDecoration(gradient:AppColors.heroGradient,image:const DecorationImage(image:AssetImage('assets/kigali.webp'),fit:BoxFit.cover,colorFilter:ColorFilter.mode(Color(0x66001638),BlendMode.darken)),borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('My tickets',style:TextStyle(color:Colors.white,fontSize:25,fontWeight:FontWeight.w800)),const SizedBox(height:5),Text('Your confirmed journeys in one place.',style:TextStyle(color:Colors.white.withValues(alpha:.86),fontSize:14)),const SizedBox(height:12),Row(children:[const Icon(Icons.confirmation_number_outlined,color:Colors.white,size:20),const SizedBox(width:8),Text('${xs.length} ${xs.length==1?'ticket':'tickets'}',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700))])]),),Padding(padding:const EdgeInsets.all(18),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[if(_loadingTickets)const Padding(padding:EdgeInsets.all(24),child:Center(child:CircularProgressIndicator())),if(!_loadingTickets&&xs.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:25),child:Text('Confirmed tickets appear here after payment succeeds.')),...xs.map(_ticketCard)]))]));}
+  Widget _ticketTab(){
+    final confirmed=_tickets.where((t)=>(t['status']??'').toString().toLowerCase()=='paid').toList();
+    final query=_ticketSearchQuery.trim().toLowerCase();
+    final xs=confirmed.where((ticket){
+      if(query.isEmpty)return true;
+      final endpoints=_ticketEndpoints(ticket);
+      final searchable=[
+        endpoints['from'],endpoints['to'],_ticketRoute(ticket),
+        ticket['ticket_number'],ticket['ticketNumber'],ticket['seat_number'],
+        ticket['travel_date'],ticket['status'],
+        (ticket['operator'] is Map?ticket['operator']['company_name']:null),
+        (ticket['bus'] is Map?ticket['bus']['plate_number']:null),
+      ].whereType<Object>().join(' ').toLowerCase();
+      return searchable.contains(query);
+    }).toList();
+    DateTime travelDate(Map<String,dynamic> ticket)=>DateTime.tryParse((ticket['travel_date']??'').toString())??DateTime(1970);
+    switch(_ticketSort){
+      case 'oldest': xs.sort((a,b)=>travelDate(a).compareTo(travelDate(b)));break;
+      case 'route': xs.sort((a,b)=>_ticketRoute(a).compareTo(_ticketRoute(b)));break;
+      case 'seat': xs.sort((a,b)=>(int.tryParse((a['seat_number']??'').toString())??0).compareTo(int.tryParse((b['seat_number']??'').toString())??0));break;
+      default: xs.sort((a,b)=>travelDate(b).compareTo(travelDate(a)));
+    }
+    return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:EdgeInsets.zero,children:[
+      Container(
+        padding:const EdgeInsets.fromLTRB(22,24,22,24),
+        decoration:BoxDecoration(
+          gradient:AppColors.heroGradient,
+          image:const DecorationImage(image:AssetImage('assets/kigali.webp'),fit:BoxFit.cover,colorFilter:ColorFilter.mode(Color(0x66001638),BlendMode.darken)),
+          borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24)),
+        ),
+        child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          const Text('My tickets',style:TextStyle(color:Colors.white,fontSize:25,fontWeight:FontWeight.w800)),
+          const SizedBox(height:5),
+          Text('Find and organize your confirmed journeys.',style:TextStyle(color:Colors.white.withValues(alpha:.86),fontSize:14)),
+          const SizedBox(height:12),
+          Row(children:[
+            const Icon(Icons.confirmation_num_outlined,color:Colors.white,size:20),
+            const SizedBox(width:8),
+            Text('\${xs.length} of \${confirmed.length} \${confirmed.length==1?'ticket':'tickets'}',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700)),
+          ]),
+        ]),
+      ),
+      Padding(padding:const EdgeInsets.fromLTRB(18,16,18,24),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        TextField(
+          onChanged:(value)=>setState(()=>_ticketSearchQuery=value),
+          textInputAction:TextInputAction.search,
+          decoration:InputDecoration(
+            hintText:'Search route, date, seat or ticket number',
+            prefixIcon:const Icon(Icons.search_rounded),
+            suffixIcon:_ticketSearchQuery.isEmpty?null:IconButton(
+              tooltip:'Clear search',
+              onPressed:()=>setState(()=>_ticketSearchQuery=''),
+              icon:const Icon(Icons.close_rounded),
+            ),
+            border:OutlineInputBorder(borderRadius:BorderRadius.circular(16)),
+          ),
+        ),
+        const SizedBox(height:10),
+        Row(children:[
+          Icon(Icons.sort_rounded,color:Theme.of(context).colorScheme.onSurfaceVariant),
+          const SizedBox(width:8),
+          Expanded(child:Text('Sort tickets',style:TextStyle(fontWeight:FontWeight.w700,color:Theme.of(context).colorScheme.onSurface))),
+          DropdownButton<String>(
+            value:_ticketSort,
+            underline:const SizedBox.shrink(),
+            items:const [
+              DropdownMenuItem(value:'newest',child:Text('Newest first')),
+              DropdownMenuItem(value:'oldest',child:Text('Oldest first')),
+              DropdownMenuItem(value:'route',child:Text('Route A–Z')),
+              DropdownMenuItem(value:'seat',child:Text('Seat number')),
+            ],
+            onChanged:(value){if(value!=null)setState(()=>_ticketSort=value);},
+          ),
+        ]),
+        const SizedBox(height:8),
+        if(_loadingTickets)const Padding(padding:EdgeInsets.all(24),child:Center(child:CircularProgressIndicator())),
+        if(!_loadingTickets&&confirmed.isEmpty)const Padding(
+          padding:EdgeInsets.symmetric(vertical:25),
+          child:Column(children:[
+            Icon(Icons.confirmation_num_outlined,size:44,color:AppColors.textMuted),
+            SizedBox(height:10),
+            Text('No confirmed tickets yet',style:TextStyle(fontWeight:FontWeight.w800)),
+            SizedBox(height:5),
+            Text('Tickets will appear here after payment is confirmed.',textAlign:TextAlign.center),
+          ]),
+        ),
+        if(!_loadingTickets&&confirmed.isNotEmpty&&xs.isEmpty)Padding(
+          padding:const EdgeInsets.symmetric(vertical:25),
+          child:Column(children:[
+            const Icon(Icons.search_off_rounded,size:40,color:AppColors.textMuted),
+            const SizedBox(height:8),
+            const Text('No matching tickets',style:TextStyle(fontWeight:FontWeight.w800)),
+            const SizedBox(height:5),
+            const Text('Try another route, date, seat number or ticket number.',textAlign:TextAlign.center),
+            TextButton(onPressed:()=>setState(()=>_ticketSearchQuery=''),child:const Text('Clear search')),
+          ]),
+        ),
+        ...xs.map(_ticketCard),
+      ])),
+    ]));
+  }
   Map<String,String> _ticketEndpoints(Map<String,dynamic> t){
     final bus=t['bus'] is Map?Map<String,dynamic>.from(t['bus']):<String,dynamic>{};
     final route=bus['route'] is Map?Map<String,dynamic>.from(bus['route']):<String,dynamic>{};
