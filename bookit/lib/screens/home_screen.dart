@@ -587,7 +587,7 @@ class _HomeScreenState extends State<HomeScreen> {
         });
         return;
       }
-      if(mounted)setState(()=>_paymentStatusMessage='Payment status: \${status.isEmpty?'pending':status}. Approve the mobile money prompt on your phone.');
+      if(mounted)setState(()=>_paymentStatusMessage='Payment status: ${status.isEmpty?'pending':status}. Approve the mobile money prompt on your phone.');
     } on ApiException catch(e) {
       if(mounted)setState(()=>_paymentStatusMessage='Could not verify payment status. Your reservation is unchanged; check again in a moment.');
       if(!silent)_msg(e.message);
@@ -1098,7 +1098,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(children:[
             const Icon(Icons.confirmation_num_outlined,color:Colors.white,size:20),
             const SizedBox(width:8),
-            Text('\${xs.length} of \${confirmed.length} \${confirmed.length==1?'ticket':'tickets'}',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700)),
+            Text('${xs.length} of ${confirmed.length} ${confirmed.length==1?'ticket':'tickets'}',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700)),
           ]),
         ]),
       ),
