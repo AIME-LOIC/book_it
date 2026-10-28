@@ -25,7 +25,7 @@ class LoadingScreen extends StatefulWidget {
 
 class _LoadingScreenState extends State<LoadingScreen>
     with TickerProviderStateMixin {
-  static const Duration _splashDuration = Duration(seconds: 6);
+  static const Duration _splashDuration = Duration(milliseconds: 4200);
 
   late final AnimationController _master = AnimationController(
     vsync: this,
@@ -108,16 +108,14 @@ class _LoadingScreenState extends State<LoadingScreen>
               final progress = _master.value;
               final size = MediaQuery.sizeOf(context);
               final width = size.width;
-              // Time the reveal around the moment the bus crosses screen center.
-              final centerCrossing = (width / 2 + 125) / (width + 500);
-              // Reveal six distinct characters over ~1.4 seconds as the
-              // bus passes the center; never show partial or skipped letters.
-              final revealProgress =
-                  ((progress - (centerCrossing - 0.12)) / 0.24)
-                      .clamp(0.0, 1.0);
-              final letters = (revealProgress * 6).floor().clamp(0, 6);
+              // Each letter is uncovered by the moving bus, one at a time.
+              final busLeft = -250 + (width + 500) * Curves.easeInOutCubic.transform(progress);
+              final busCenter = busLeft + 125;
+              final center = width / 2;
+              final letterProgress = ((busCenter - (center - 132)) / 264)
+                  .clamp(0.0, 1.0);
+              final letters = (letterProgress * 6).floor().clamp(0, 6);
               final word = 'BOOKIT'.substring(0, letters);
-              final busLeft = -250 + (width + 500) * progress;
               return Stack(
                 clipBehavior: Clip.hardEdge,
                 children: [
@@ -130,26 +128,24 @@ class _LoadingScreenState extends State<LoadingScreen>
                     top: size.height * 0.30,
                     left: 0,
                     right: 0,
-                    child: Column(
-                      children: [
-                        Text(
-                          word,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.white,
-                            fontSize: 42,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 5,
-                            shadows: [
-                              Shadow(
-                                color: Color(0x55000000),
-                                blurRadius: 16,
-                                offset: Offset(0, 5),
-                              ),
-                            ],
-                          ),
+                    child: Center(
+                      child: Text(
+                        word,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppColors.white,
+                          fontSize: 42,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 5,
+                          shadows: [
+                            Shadow(
+                              color: Color(0x55000000),
+                              blurRadius: 16,
+                              offset: Offset(0, 5),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                   Positioned(
