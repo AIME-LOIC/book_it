@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import '../theme/theme_controller.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -22,7 +25,8 @@ class _HomeScreenState extends State<HomeScreen> {
   int _unreadNotifications=0;
   Timer? _notificationTimer;
   String? _searchError;
-  String _ticketSearchQuery='',_ticketSort='newest';
+  String _ticketSearchQuery='',_ticketSort='newest',_historySearchQuery='';
+  bool _historyKinyarwanda=false,_usingOfflineTickets=false;
   bool _paymentSubmitting=false,_paymentPending=false,_checkingPaymentStatus=false;
   String? _paymentStatusMessage;
   int _paymentPollAttempts=0;
@@ -37,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _fromId,_toId,_activeTicketId,_selectedHistoryRoute; DateTime _date=DateTime.now().add(const Duration(days:1));
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer;
   final _phone=TextEditingController(); String _network='mtn'; bool _phoneManuallyEdited=false; String? _detectedNetwork;
-  @override void initState(){super.initState();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
+  @override void initState(){super.initState();_loadHistoryLanguage();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
   @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_notificationTimer?.cancel();_paymentPollTimer?.cancel();_phone.dispose();super.dispose();}
 
 
@@ -338,8 +342,76 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   Future<void> _loadTickets() async {
     if(mounted)setState(()=>_loadingTickets=true);
-    try{final r=await ApiClient.get('tickets/my',auth:true);final rows=r is List?r:(r is Map&&r['tickets'] is List?r['tickets'] as List:<dynamic>[]);if(mounted)setState(()=>_tickets=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList());}
-    on ApiException catch(e){if(mounted)_msg(e.message);}finally{if(mounted)setState(()=>_loadingTickets=false);}
+    final prefs=await SharedPreferences.getInstance();
+    final cached=prefs.getString('bookit_ticket_history_cache');
+    if(cached!=null&&cached.isNotEmpty){
+      try{
+        final decoded=jsonDecode(cached);
+        if(decoded is List&&mounted)setState((){
+          _tickets=decoded.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();
+          _usingOfflineTickets=true;
+        });
+      }catch(_){}
+    }
+    try{
+      final r=await ApiClient.get('tickets/my',auth:true);
+      final rows=r is List?r:(r is Map&&r['tickets'] is List?r['tickets'] as List:<dynamic>[]);
+      final fresh=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();
+      await prefs.setString('bookit_ticket_history_cache',jsonEncode(fresh));
+      if(mounted)setState(()=>{_tickets=fresh,_usingOfflineTickets=false});
+    }on ApiException catch(e){
+      if(mounted&&_tickets.isEmpty)_msg(e.message);
+      if(mounted&&_tickets.isNotEmpty)setState(()=>_usingOfflineTickets=true);
+    }catch(_){
+      if(mounted&&_tickets.isNotEmpty)setState(()=>_usingOfflineTickets=true);
+      else if(mounted)_msg(_historyKinyarwanda?'Nta murongo wa interineti kandi nta matike yabitswe kuri iki gikoresho.':'You are offline and no saved tickets are available on this device.');
+    }finally{
+      if(mounted)setState(()=>_loadingTickets=false);
+    }
+  }
+  Future<void> _loadHistoryLanguage() async {
+    final prefs=await SharedPreferences.getInstance();
+    if(mounted)setState(()=>_historyKinyarwanda=prefs.getBool('bookit_history_kinyarwanda')??false);
+  }
+  Future<void> _toggleHistoryLanguage() async {
+    final next=!_historyKinyarwanda;
+    final prefs=await SharedPreferences.getInstance();
+    await prefs.setBool('bookit_history_kinyarwanda',next);
+    if(mounted)setState(()=>_historyKinyarwanda=next);
+  }
+  String _historyText(String english,String kinyarwanda)=>_historyKinyarwanda?kinyarwanda:english;
+  String _csvCell(Object? value){
+    final raw=(value??'').toString().replaceAll('"','""').replaceAll('\r',' ').replaceAll('\n',' ');
+    return '"$raw"';
+  }
+  Future<void> _downloadTicketHistory() async {
+    if(_tickets.isEmpty){
+      _msg(_historyText('There are no tickets to export yet.','Nta matike yo kohereza hanze arahari.'));
+      return;
+    }
+    try{
+      final rows=<String>[
+        ['Ticket reference','From','To','Travel date','Seat','Status','Fare (RWF)','Bus'].map(_csvCell).join(','),
+      ];
+      for(final ticket in _tickets){
+        final endpoints=_ticketEndpoints(ticket);
+        final bus=ticket['bus'] is Map?Map<String,dynamic>.from(ticket['bus']):<String,dynamic>{};
+        final reference=ticket['ticket_number']??ticket['ticketNumber']??ticket['ticket_code']??ticket['reference']??ticket['id']??'';
+        final fare=ticket['price']??bus['price']??'';
+        rows.add([
+          reference,endpoints['from'],endpoints['to'],ticket['travel_date'],
+          ticket['seat_number'],ticket['status'],fare,bus['plate_number']??bus['registration_number']??'',
+        ].map(_csvCell).join(','));
+      }
+      final directory=await getApplicationDocumentsDirectory();
+      final date=DateTime.now().toIso8601String().substring(0,10);
+      final file=File('${directory.path}/bookit-ticket-history-$date.csv');
+      await file.writeAsString('\uFEFF${rows.join('\r\n')}',flush:true);
+      await Share.shareXFiles([XFile(file.path)],text:_historyText('BookIt ticket history','Amateka y'amatike ya BookIt'));
+      if(mounted)_msg(_historyText('Ticket history exported. Choose where to save or share the CSV file.','Amateka y'amatike yateguwe. Hitamo aho ubika cyangwa wohereza dosiye ya CSV.'));
+    }catch(e){
+      if(mounted)_msg(_historyText('Could not export ticket history. Please try again.','Ntibishobotse kohereza hanze amateka y'amatike. Ongera ugerageze.'));
+    }
   }
   Future<void> _search() async {
     if(_fromId==null||_toId==null||_fromId==_toId){_msg('Choose a departure and destination to search for a bookable trip.');return;}
@@ -1187,24 +1259,96 @@ class _HomeScreenState extends State<HomeScreen> {
     for(final ticket in _tickets){groups.putIfAbsent(_ticketRoute(ticket),()=>[]).add(ticket);}
     final selected=_selectedHistoryRoute;
     final selectedTickets=selected==null? <Map<String,dynamic>>[] : (groups[selected]??<Map<String,dynamic>>[]);
-    final entries=groups.entries.toList()..sort((a,b)=>a.key.compareTo(b.key));
+    final entries=groups.entries.where((entry)=>_historySearchQuery.trim().isEmpty||entry.key.toLowerCase().contains(_historySearchQuery.trim().toLowerCase())).toList()..sort((a,b)=>a.key.compareTo(b.key));
+    final paid=_tickets.where((t)=>(t['status']??'').toString().toLowerCase()=='paid').length;
+    final cancelled=_tickets.where((t)=>const ['cancelled','canceled'].contains((t['status']??'').toString().toLowerCase())).length;
     return RefreshIndicator(onRefresh:_loadTickets,child:ListView(padding:EdgeInsets.zero,children:[
-      Container(padding:const EdgeInsets.fromLTRB(22,24,22,24),decoration:const BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24))),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        if(selected!=null)Row(children:[IconButton(onPressed:()=>setState(()=>_selectedHistoryRoute=null),icon:const Icon(Icons.arrow_back,color:Colors.white),tooltip:'All routes'),const SizedBox(width:4),Expanded(child:Text(selected,style:const TextStyle(color:Colors.white,fontSize:21,fontWeight:FontWeight.w800),maxLines:2,overflow:TextOverflow.ellipsis))]) else const Text('Booking history',style:TextStyle(color:Colors.white,fontSize:25,fontWeight:FontWeight.w800)),
-        const SizedBox(height:5),
-        Text(selected==null?'Review bookings grouped by route.':'Bookings for this route.',style:TextStyle(color:Colors.white.withValues(alpha:.86),fontSize:14)),
-        const SizedBox(height:12),
-        Row(children:[const Icon(Icons.route_rounded,color:Colors.white,size:20),const SizedBox(width:8),Text('${selected==null?groups.length:selectedTickets.length} ${selected==null?(groups.length==1?'routes':'routes'):(selectedTickets.length==1?'ticket':'tickets')}',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w700))])
-      ])),
-      Padding(padding:const EdgeInsets.all(18),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-        if(_loadingTickets)const Padding(padding:EdgeInsets.all(20),child:Center(child:CircularProgressIndicator())),
-        if(selected==null&&!_loadingTickets&&groups.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:24),child:Text('No bookings found.')),
-        if(selected!=null&&!_loadingTickets&&selectedTickets.isEmpty)const Padding(padding:EdgeInsets.symmetric(vertical:24),child:Text('No bookings found for this route.')),
-        if(selected==null)for(final entry in entries)Card(margin:const EdgeInsets.only(top:10),child:ListTile(leading:Container(width:46,height:46,decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.10),borderRadius:BorderRadius.circular(12)),child:const Icon(Icons.route_rounded,color:AppColors.primary)),title:Text(entry.key,style:const TextStyle(fontWeight:FontWeight.w800)),subtitle:Text('${entry.value.length} ${entry.value.length==1?'ticket':'tickets'}'),trailing:const Icon(Icons.chevron_right),onTap:()=>setState(()=>_selectedHistoryRoute=entry.key))),
-        if(selected!=null)...selectedTickets.map(_ticketCard)
+      Container(
+        padding:const EdgeInsets.fromLTRB(20,20,20,22),
+        decoration:const BoxDecoration(gradient:AppColors.heroGradient,borderRadius:BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24))),
+        child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+          Row(children:[
+            if(selected!=null)IconButton(onPressed:()=>setState(()=>_selectedHistoryRoute=null),icon:const Icon(Icons.arrow_back_rounded,color:Colors.white),tooltip:_historyText('All routes','Inzira zose'))
+            else const Icon(Icons.history_rounded,color:Colors.white,size:28),
+            const SizedBox(width:8),
+            Expanded(child:Text(selected??_historyText('Booking history','Amateka y’ingendo'),style:const TextStyle(color:Colors.white,fontSize:23,fontWeight:FontWeight.w800),maxLines:2,overflow:TextOverflow.ellipsis)),
+            IconButton(onPressed:_toggleHistoryLanguage,tooltip:_historyText('Switch to Kinyarwanda','Hindura mu Cyongereza'),icon:Container(padding:const EdgeInsets.symmetric(horizontal:8,vertical:5),decoration:BoxDecoration(color:Colors.white.withValues(alpha:.18),borderRadius:BorderRadius.circular(9)),child:Text(_historyKinyarwanda?'RW':'EN',style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w900,fontSize:12)))),
+            IconButton(onPressed:_downloadTicketHistory,tooltip:_historyText('Download ticket history','Bika amateka y’amatike'),icon:const Icon(Icons.download_rounded,color:Colors.white)),
+          ]),
+          const SizedBox(height:4),
+          Text(selected==null?_historyText('Your journeys, organized by route.','Ingendo zawe zitondetse hakurikijwe inzira.'): _historyText('Tickets for this route.','Amatike y’iyi nzira.'),style:TextStyle(color:Colors.white.withValues(alpha:.88),fontSize:14)),
+          const SizedBox(height:15),
+          Row(children:[
+            Expanded(child:_historySummary(Icons.confirmation_num_outlined,_tickets.length.toString(),_historyText('All tickets','Amatike yose'))),
+            const SizedBox(width:9),
+            Expanded(child:_historySummary(Icons.check_circle_outline_rounded,paid.toString(),_historyText('Paid','Yishyuwe'))),
+            const SizedBox(width:9),
+            Expanded(child:_historySummary(Icons.cancel_outlined,cancelled.toString(),_historyText('Cancelled','Yahagaritswe'))),
+          ]),
+        ]),
+      ),
+      if(_usingOfflineTickets)Padding(padding:const EdgeInsets.fromLTRB(16,14,16,0),child:Container(padding:const EdgeInsets.all(12),decoration:BoxDecoration(color:Theme.of(context).colorScheme.tertiaryContainer,borderRadius:BorderRadius.circular(14)),child:Row(children:[
+        Icon(Icons.cloud_off_rounded,color:Theme.of(context).colorScheme.onTertiaryContainer),
+        const SizedBox(width:10),
+        Expanded(child:Text(_historyText('Offline mode: showing the last tickets saved on this device. Refresh when you reconnect.','Uri kuri interineti idahari: herekanwa amatike aheruka kubikwa kuri iki gikoresho. Ongera uvugurure umaze guhuza. '),style:TextStyle(color:Theme.of(context).colorScheme.onTertiaryContainer,fontSize:12,fontWeight:FontWeight.w600))),
+      ]))),
+      Padding(padding:const EdgeInsets.fromLTRB(16,14,16,24),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        if(selected==null)TextField(
+          onChanged:(value)=>setState(()=>_historySearchQuery=value),
+          decoration:InputDecoration(
+            hintText:_historyText('Search routes or destinations','Shakisha inzira cyangwa aho ujya'),
+            prefixIcon:const Icon(Icons.search_rounded),
+            suffixIcon:_historySearchQuery.isEmpty?null:IconButton(onPressed:()=>setState(()=>_historySearchQuery=''),icon:const Icon(Icons.close_rounded),tooltip:_historyText('Clear search','Siba ibyo washakishije')),
+            filled:true,fillColor:Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha:.35),
+            border:OutlineInputBorder(borderRadius:BorderRadius.circular(15),borderSide:BorderSide.none),
+          ),
+        ),
+        if(selected==null)const SizedBox(height:6),
+        if(_loadingTickets&&_tickets.isEmpty)const Padding(padding:EdgeInsets.all(24),child:Center(child:CircularProgressIndicator())),
+        if(!_loadingTickets&&groups.isEmpty)Padding(padding:const EdgeInsets.symmetric(vertical:30),child:Column(children:[
+          Icon(Icons.luggage_outlined,size:48,color:Theme.of(context).colorScheme.onSurfaceVariant),
+          const SizedBox(height:10),
+          Text(_historyText('No booking history yet','Nta mateka y’ingendo arahari'),style:const TextStyle(fontWeight:FontWeight.w800,fontSize:16)),
+          const SizedBox(height:6),
+          Text(_historyText('Your bookings will appear here. Pull down to refresh or book your first trip.','Ingendo wanditseho zizagaragara hano. Kurura hasi kugira ngo uvugurure cyangwa utangire wandike urugendo.'),textAlign:TextAlign.center,style:TextStyle(color:Theme.of(context).colorScheme.onSurfaceVariant)),
+          const SizedBox(height:12),
+          FilledButton.icon(onPressed:()=>setState(()=>_tab=0),icon:const Icon(Icons.search_rounded),label:Text(_historyText('Find a trip','Shaka urugendo'))),
+        ])),
+        if(selected==null&&!_loadingTickets&&groups.isNotEmpty&&entries.isEmpty)Padding(padding:const EdgeInsets.symmetric(vertical:24),child:Text(_historyText('No routes match your search.','Nta nzira ihuye n’ibyo washakishije.'))),
+        if(selected==null)for(final entry in entries)Card(
+          margin:const EdgeInsets.only(top:9),clipBehavior:Clip.antiAlias,
+          child:InkWell(
+            onTap:()=>setState(()=>_selectedHistoryRoute=entry.key),
+            child:Padding(padding:const EdgeInsets.all(13),child:Row(children:[
+              ClipRRect(borderRadius:BorderRadius.circular(12),child:SizedBox(width:62,height:62,child:_ticketDestinationImage(_ticketEndpoints(entry.value.first)['to']!)==null
+                ?Container(color:AppColors.primary.withValues(alpha:.10),child:const Icon(Icons.route_rounded,color:AppColors.primary,size:26))
+                :Image.asset(_ticketDestinationImage(_ticketEndpoints(entry.value.first)['to']!)!,fit:BoxFit.cover,errorBuilder:(_,__,___)=>Container(color:AppColors.primary.withValues(alpha:.10),child:const Icon(Icons.route_rounded,color:AppColors.primary))))),
+              const SizedBox(width:12),
+              Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                Text(entry.key,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w800,fontSize:15)),
+                const SizedBox(height:5),
+                Text(_historyText('${entry.value.length} ${entry.value.length==1?'ticket':'tickets'}','${entry.value.length} ${entry.value.length==1?'itike':'amatike'}'),style:TextStyle(color:Theme.of(context).colorScheme.onSurfaceVariant,fontSize:12)),
+              ])),
+              const Icon(Icons.chevron_right_rounded),
+            ])),
+          ),
+        ),
+        if(selected!=null&&!_loadingTickets&&selectedTickets.isEmpty)Padding(padding:const EdgeInsets.symmetric(vertical:24),child:Text(_historyText('No tickets found for this route.','Nta matike yabonetse kuri iyi nzira.'))),
+        if(selected!=null) ...selectedTickets.map(_ticketCard),
       ]))
     ]));
   }
+  Widget _historySummary(IconData icon,String value,String label)=>Container(
+    padding:const EdgeInsets.symmetric(horizontal:10,vertical:11),
+    decoration:BoxDecoration(color:Colors.white.withValues(alpha:.14),borderRadius:BorderRadius.circular(14),border:Border.all(color:Colors.white.withValues(alpha:.16))),
+    child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+      Icon(icon,color:Colors.white,size:18),
+      const SizedBox(height:7),
+      Text(value,style:const TextStyle(color:Colors.white,fontSize:20,fontWeight:FontWeight.w900)),
+      const SizedBox(height:2),
+      Text(label,maxLines:1,overflow:TextOverflow.ellipsis,style:TextStyle(color:Colors.white.withValues(alpha:.85),fontSize:10,fontWeight:FontWeight.w700)),
+    ]),
+  );
   Widget _ticketCard(Map<String,dynamic> t){
     final endpoints=_ticketEndpoints(t);
     final from=endpoints['from']!;
