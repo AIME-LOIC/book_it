@@ -109,7 +109,7 @@ class _LoadingScreenState extends State<LoadingScreen>
               final size = MediaQuery.sizeOf(context);
               final width = size.width;
               // Time the reveal around the moment the bus crosses screen center.
-              final centerCrossing = (width / 2 + 65) / (width + 308);
+              final centerCrossing = (width / 2 + 125) / (width + 500);
               // Reveal six distinct characters over ~1.4 seconds as the
               // bus passes the center; never show partial or skipped letters.
               final revealProgress =
@@ -117,7 +117,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                       .clamp(0.0, 1.0);
               final letters = (revealProgress * 6).floor().clamp(0, 6);
               final word = 'BOOKIT'.substring(0, letters);
-              final busLeft = -154 + (width + 308) * progress;
+              final busLeft = -250 + (width + 500) * progress;
               return Stack(
                 clipBehavior: Clip.hardEdge,
                 children: [
