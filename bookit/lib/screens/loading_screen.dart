@@ -25,7 +25,7 @@ class LoadingScreen extends StatefulWidget {
 
 class _LoadingScreenState extends State<LoadingScreen>
     with TickerProviderStateMixin {
-  static const Duration _splashDuration = Duration(milliseconds: 3600);
+  static const Duration _splashDuration = Duration(seconds: 25);
 
   late final AnimationController _master = AnimationController(
     vsync: this,
@@ -96,7 +96,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   @override
   Widget build(BuildContext context) => _buildMobileSplash();
 
-  /// Mobile-only cinematic bus intro. Desktop and web keep the existing splash.
+  /// Cinematic bus intro shared by mobile and desktop.
   Widget _buildMobileSplash() {
     return Scaffold(
       body: DecoratedBox(
