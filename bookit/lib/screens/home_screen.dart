@@ -449,7 +449,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final body=<String,dynamic>{'bus_id':bus['bus_id']??bus['id'],'seat_number':seatIndex,'seat_label':selected,'boarding_stop_id':bus['boarding_stop_id'],'dropoff_stop_id':bus['dropoff_stop_id'],'travel_date':_dateText(_date)}..removeWhere((key,value)=>value==null);
       final r=await ApiClient.post('tickets',auth:true,body:body);
       if(r is! Map||(r['id']==null&&r['ticket_id']==null)){_msg('Reservation was not confirmed: the server returned no ticket ID.');return;}
-      _timer?.cancel();setState((){_selectedBus=bus;_seat=seatIndex;_activeTicketId=(r['id']??r['ticket_id']).toString();_seconds=300;});
+      _timer?.cancel();setState((){_selectedBus=bus;_seat=seatIndex;_activeTicketId=(r['id']??r['ticket_id']).toString();_seconds=900;});
       _timer=Timer.periodic(const Duration(seconds:1),(t){if(!mounted){t.cancel();return;}if(_seconds<=1){t.cancel();_expire();}else{setState(()=>_seconds--);}});
       _msg('Seat $selected reserved. Complete payment within 5 minutes.');
     }on ApiException catch(e){
@@ -482,8 +482,15 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     ));
   }
-  Future<void> _expire() async {final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}catch(_){}}if(!mounted)return;setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _seconds=0; });_msg('The 5-minute hold expired. Any unpaid reservation was cancelled.');_search();}
-  Future<void> _cancel() async { _timer?.cancel();final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}on ApiException catch(e){_msg(e.message);}}if(mounted)setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; });_search();}
+  Future<void> _expire() async {final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}catch(_){}}if(!mounted)return;setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _seconds=0; });_msg('The 15-minute reservation hold expired. Any unpaid reservation was cancelled.');_search();}
+  Future<void> _cancel() async {
+    if(_paymentPending||_paymentSubmitting){
+      _msg('Payment is still processing. Check its status before leaving checkout so you do not lose a successful payment.');
+      return;
+    }
+    _paymentPollTimer?.cancel();
+    _timer?.cancel();
+    final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}on ApiException catch(e){_msg(e.message);}}if(mounted)setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; });_search();}
   void _detectPaymentNetwork(String value) {
     final digits=value.replaceAll(RegExp(r'\D'), '');
     final local=digits.startsWith('250')?digits.substring(3):digits;
@@ -493,11 +500,151 @@ class _HomeScreenState extends State<HomeScreen> {
     if(detected!=null&&detected!=_network){setState(()=>_network=detected!);}
     if(mounted&&_detectedNetwork!=detected)setState(()=>_detectedNetwork=detected);
   }
-  Future<void> _pay() async {final id=_activeTicketId;if(id==null){_msg('Reservation ID missing. Please book again.');return;}final digits=_phone.text.replaceAll(RegExp(r'\D'), '');if(!(digits.length==10&&digits.startsWith('0'))&&!(digits.length==12&&digits.startsWith('250'))){_msg('Enter a valid Rwanda mobile number, for example 0781234567.');return;}
-    try{final r=await ApiClient.patch('tickets/'+id+'/pay',auth:true,body:{'network':_network,'phone_number':_phone.text.trim()});final message=r is Map?(r['message']??'Payment request sent. Approve the mobile money prompt.'): 'Payment request sent.';_msg(message.toString());await _loadTickets();
-      if(r is Map&&r['status']?.toString().toLowerCase()=='paid'){_timer?.cancel();setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _tab=1; });}
-    }on ApiException catch(e){_msg(e.message);}
+  Future<void> _completePayment() async {
+    _timer?.cancel();
+    _paymentPollTimer?.cancel();
+    await _loadTickets();
+    if(!mounted)return;
+    setState((){
+      _selectedBus=null;
+      _seat=null;
+      _activeTicketId=null;
+      _paymentSubmitting=false;
+      _paymentPending=false;
+      _checkingPaymentStatus=false;
+      _paymentStatusMessage=null;
+      _tab=1;
+    });
+    _msg('Payment confirmed. Your ticket is ready.');
   }
+
+  void _startPaymentPolling() {
+    _paymentPollTimer?.cancel();
+    _paymentPollAttempts=0;
+    _paymentPollTimer=Timer.periodic(const Duration(seconds:5),(timer){
+      if(!mounted){timer.cancel();return;}
+      if(_paymentPollAttempts>=24){
+        timer.cancel();
+        if(mounted)setState(()=>_paymentStatusMessage='Payment is still processing. Your reservation has not been cancelled. Check the status again before leaving checkout.');
+        return;
+      }
+      _paymentPollAttempts++;
+      _checkPaymentStatus(silent:true);
+    });
+  }
+
+  Future<void> _checkPaymentStatus({bool silent=false}) async {
+    final id=_activeTicketId;
+    if(id==null||_checkingPaymentStatus)return;
+    setState(()=>_checkingPaymentStatus=true);
+    try {
+      final r=await ApiClient.get('tickets/'+id+'/pay/status',auth:true);
+      final status=(r is Map?(r['status']??'pending'):'pending').toString().toLowerCase();
+      if(status=='paid'){
+        await _completePayment();
+        return;
+      }
+      if(status=='failed'||status=='declined'||status=='expired'){
+        _paymentPollTimer?.cancel();
+        if(mounted)setState((){
+          _paymentPending=false;
+          _paymentStatusMessage='Payment was not completed. You can safely request payment again.';
+        });
+        if(!silent)_msg('Payment failed or expired. You can try again.');
+        return;
+      }
+      if(status=='cancelled'){
+        _paymentPollTimer?.cancel();
+        if(mounted)setState((){
+          _paymentPending=false;
+          _paymentStatusMessage='This reservation was cancelled.';
+          _selectedBus=null;
+          _seat=null;
+          _activeTicketId=null;
+          _tab=1;
+        });
+        await _loadTickets();
+        return;
+      }
+      if(status=='not_initiated'){
+        _paymentPollTimer?.cancel();
+        if(mounted)setState((){
+          _paymentPending=false;
+          _paymentStatusMessage='No active payment was found. Request payment to continue.';
+        });
+        return;
+      }
+      if(mounted)setState(()=>_paymentStatusMessage='Payment status: \${status.isEmpty?'pending':status}. Approve the mobile money prompt on your phone.');
+    } on ApiException catch(e) {
+      if(mounted)setState(()=>_paymentStatusMessage='Could not verify payment status. Your reservation is unchanged; check again in a moment.');
+      if(!silent)_msg(e.message);
+    } finally {
+      if(mounted)setState(()=>_checkingPaymentStatus=false);
+    }
+  }
+
+  Future<void> _pay() async {
+    final id=_activeTicketId;
+    if(id==null){_msg('Reservation ID missing. Please book again.');return;}
+    if(_paymentSubmitting||_paymentPending)return;
+    final digits=_phone.text.replaceAll(RegExp(r'\D'),'');
+    if(!(digits.length==10&&digits.startsWith('0'))&&!(digits.length==12&&digits.startsWith('250'))){
+      _msg('Enter a valid Rwanda mobile number, for example 0781234567.');
+      return;
+    }
+
+    setState((){
+      _paymentSubmitting=true;
+      _paymentStatusMessage='Sending the secure payment request…';
+    });
+    try {
+      final r=await ApiClient.patch('tickets/'+id+'/pay',auth:true,body:{
+        'network':_network,
+        'phone_number':_phone.text.trim(),
+      });
+      final status=(r is Map?(r['status']??'pending'):'pending').toString().toLowerCase();
+      if(status=='paid'){
+        await _completePayment();
+        return;
+      }
+      if(status=='failed'||status=='declined'||status=='expired'||status=='cancelled'){
+        if(mounted)setState((){
+          _paymentPending=false;
+          _paymentStatusMessage='Payment was not completed. Check your number or network, then try again.';
+        });
+        return;
+      }
+
+      // Once a provider charge exists, do not let the local countdown cancel
+      // the reservation while the provider is still confirming the payment.
+      _timer?.cancel();
+      if(mounted)setState((){
+        _paymentPending=true;
+        _paymentStatusMessage=(r is Map&&r['message']!=null)
+            ?r['message'].toString()
+            :'Payment request sent. Approve the prompt on your mobile phone.';
+      });
+
+      final action=r is Map&&r['next_action'] is Map
+          ?Map<String,dynamic>.from(r['next_action'])
+          :<String,dynamic>{};
+      final redirect=(action['redirect_url']??action['url'])?.toString();
+      if(redirect!=null){
+        final uri=Uri.tryParse(redirect);
+        if(uri!=null&&uri.scheme=='https'){
+          try{await launchUrl(uri,mode:LaunchMode.externalApplication);}
+          catch(_){if(mounted)_msg('Payment was requested. If no prompt appears, check your phone and payment status.');}
+        }
+      }
+      _startPaymentPolling();
+    } on ApiException catch(e) {
+      if(mounted)setState(()=>_paymentStatusMessage='Payment request could not be started. Review the error and try again.');
+      _msg(e.message);
+    } finally {
+      if(mounted)setState(()=>_paymentSubmitting=false);
+    }
+  }
+
   @override Widget build(BuildContext context)=>Scaffold(body:SafeArea(child:IndexedStack(index:_tab,children:[_home(),_ticketTab(),_historyTab(),_profile()])),bottomNavigationBar:NavigationBar(selectedIndex:_tab,onDestinationSelected:(i)=>setState(()=>_tab=i),destinations:const[
     NavigationDestination(icon:Icon(Icons.home_outlined),selectedIcon:Icon(Icons.home),label:'Home'),
     NavigationDestination(icon:Icon(Icons.confirmation_num_outlined),selectedIcon:Icon(Icons.confirmation_num),label:'Ticket'),
@@ -773,6 +920,34 @@ class _HomeScreenState extends State<HomeScreen> {
             ]),
           ),
         ),
+        if (_paymentStatusMessage != null) ...[
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(13),
+            decoration: BoxDecoration(
+              color: (_paymentPending ? AppColors.primary : AppColors.textMuted).withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: (_paymentPending ? AppColors.primary : AppColors.textMuted).withValues(alpha: .25)),
+            ),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (_paymentPending || _paymentSubmitting)
+                const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              else
+                Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.primary, size: 20),
+              const SizedBox(width: 10),
+              Expanded(child: Text(_paymentStatusMessage!, style: const TextStyle(fontSize: 13, height: 1.4))),
+            ]),
+          ),
+          if (_paymentPending)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: OutlinedButton.icon(
+                onPressed: _checkingPaymentStatus ? null : () => _checkPaymentStatus(),
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(_checkingPaymentStatus ? 'Checking status…' : 'Check payment status'),
+              ),
+            ),
+        ],
         const SizedBox(height: 22),
         const Text('PAYMENT METHOD', style: TextStyle(fontSize: 11, letterSpacing: 1.1, fontWeight: FontWeight.w800, color: AppColors.textMuted)),
         const SizedBox(height: 9),
@@ -815,16 +990,21 @@ class _HomeScreenState extends State<HomeScreen> {
               SizedBox(
                 width: double.infinity, height: 54,
                 child: FilledButton.icon(
-                  onPressed: _pay,
-                  icon: const Icon(Icons.lock_outline_rounded),
-                  label: const Text('Request secure payment', style: TextStyle(fontWeight: FontWeight.w800)),
+                  onPressed: (_paymentSubmitting || _paymentPending) ? null : _pay,
+                  icon: _paymentSubmitting
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.lock_outline_rounded),
+                  label: Text(
+                    _paymentSubmitting ? 'Requesting payment…' : _paymentPending ? 'Waiting for approval…' : 'Request secure payment',
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
               Center(child: TextButton.icon(
-                onPressed: _cancel,
+                onPressed: (_paymentPending || _paymentSubmitting) ? null : _cancel,
                 icon: const Icon(Icons.close_rounded, size: 17),
-                label: const Text('Cancel reservation'),
+                label: Text(_paymentPending ? 'Payment in progress' : 'Cancel reservation'),
               )),
             ]),
           ),
