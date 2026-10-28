@@ -149,15 +149,6 @@ class _LoadingScreenState extends State<LoadingScreen>
                             ],
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Container(
-                          width: 120,
-                          height: 3,
-                          decoration: BoxDecoration(
-                            color: AppColors.white.withValues(alpha: 0.75),
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                        ),
                       ],
                     ),
                   ),
