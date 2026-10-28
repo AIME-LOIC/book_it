@@ -1129,9 +1129,9 @@ class BusDetailsScreen extends StatelessWidget {
               decoration:BoxDecoration(
                 gradient:AppColors.heroGradient,
                 image:DecorationImage(
-                  image:NetworkImage('https://loremflickr.com/1200/800/${Uri.encodeComponent(to)},Rwanda,city'),
+                  image:NetworkImage('https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=1200&auto=format&fit=crop&q=85'),
                   fit:BoxFit.cover,
-                  colorFilter:ColorFilter.mode(const Color(0xB8003768),BlendMode.darken),
+                  colorFilter:ColorFilter.mode(const Color(0x70003768),BlendMode.darken),
                   onError:(_,__) {},
                 ),
                 borderRadius:BorderRadius.circular(24),
@@ -1279,9 +1279,9 @@ class TicketDetailsScreen extends StatelessWidget {
               decoration:BoxDecoration(
                 gradient:AppColors.heroGradient,
                 image:DecorationImage(
-                  image:NetworkImage('https://commons.wikimedia.org/wiki/Special:FilePath/KIGALI%20city%20view.jpg?width=1200'),
+                  image:NetworkImage('https://images.unsplash.com/photo-1519501025264-65ba15a82390?w=1200&auto=format&fit=crop&q=85'),
                   fit:BoxFit.cover,
-                  colorFilter:ColorFilter.mode(Color(0xB8001638),BlendMode.darken),
+                  colorFilter:ColorFilter.mode(Color(0x70001638),BlendMode.darken),
                   onError:(_,__) {},
                 ),
                 borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24)),
