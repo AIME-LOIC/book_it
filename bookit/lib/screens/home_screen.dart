@@ -431,12 +431,12 @@ class _HomeScreenState extends State<HomeScreen> {
             padding:const EdgeInsets.symmetric(horizontal:12,vertical:14),
             decoration:BoxDecoration(color:const Color(0xFF071321),border:Border.all(color:const Color(0xFF1687E8).withValues(alpha:.8),width:1.6),borderRadius:BorderRadius.circular(34)),
             child:Column(children:[
-              SizedBox(width:200,child:Row(mainAxisAlignment:MainAxisAlignment.start,crossAxisAlignment:CrossAxisAlignment.center,children:[
+              SizedBox(width:224,child:Row(mainAxisAlignment:MainAxisAlignment.start,crossAxisAlignment:CrossAxisAlignment.center,children:[
                 const SizedBox(width:42,height:42,child:Center(child:Icon(Icons.directions_car_filled_outlined,color:Color(0xFF64748B),size:25))),
                 const SizedBox(width:66),_seatButton(c,'1C',available),const SizedBox(width:18),_seatButton(c,'1D',available),
               ])),
               const SizedBox(height:10),              for(var row=2;row<=8;row++)
-                Padding(padding:EdgeInsets.only(bottom:row==8?0:6),child:SizedBox(width:200,child:row==8
+                Padding(padding:EdgeInsets.only(bottom:row==8?0:6),child:SizedBox(width:224,child:row==8
                   ?Row(mainAxisAlignment:MainAxisAlignment.center,children:[
                     _seatButton(c,'8A',available),const SizedBox(width:6),_seatButton(c,'8B',available),const SizedBox(width:6),_seatButton(c,'8C',available),const SizedBox(width:6),_seatButton(c,'8D',available),
                   ])
