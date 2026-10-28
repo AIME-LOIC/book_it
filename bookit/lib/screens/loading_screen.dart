@@ -94,149 +94,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   }
 
   @override
-  Widget build(BuildContext context) {
-    // Use the compact splash on phones/tablets and narrow mobile layouts,
-    // including mobile browsers where defaultTargetPlatform may be desktop.
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    if (screenWidth <= 600 ||
-        defaultTargetPlatform == TargetPlatform.android ||
-        defaultTargetPlatform == TargetPlatform.iOS) {
-      return _buildMobileSplash();
-    }
-    return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: AppColors.heroGradient),
-        child: SafeArea(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Spacer(flex: 3),
-
-              // Pulsing rings + logo.
-              SizedBox(
-                width: 220,
-                height: 220,
-                child: AnimatedBuilder(
-                  animation: _pulse,
-                  builder: (context, child) => Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      _PulseRing(
-                        animation: _pulse,
-                        color: AppColors.white.withValues(alpha: 0.18),
-                        beginScale: 0.55,
-                        endScale: 1.0,
-                      ),
-                      _PulseRing(
-                        animation: _pulse,
-                        color: AppColors.white.withValues(alpha: 0.10),
-                        beginScale: 0.75,
-                        endScale: 1.2,
-                      ),
-                      child!,
-                    ],
-                  ),
-                  child: ScaleTransition(
-                    scale: _logoScale.drive(
-                      Tween(begin: 0.4, end: 1.0),
-                    ),
-                    child: FadeTransition(
-                      opacity: _logoFade,
-                      child: const BrandLogo(size: 104, onLight: true),
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 36),
-
-              // Word-mark.
-              FadeTransition(
-                opacity: _title,
-                child: SlideTransition(
-                  position: _title
-                      .drive(Tween<Offset>(begin: const Offset(0, .5), end: Offset.zero)),
-                  child: const Text(
-                    'BookIt',
-                    style: TextStyle(
-                      color: AppColors.white,
-                      fontSize: 40,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-
-              // Tagline.
-              FadeTransition(
-                opacity: _tagline,
-                child: SlideTransition(
-                  position: _tagline
-                      .drive(Tween<Offset>(begin: const Offset(0, .5), end: Offset.zero)),
-                  child: Text(
-                    'Book anything, anytime.',
-                    style: TextStyle(
-                      color: AppColors.white.withValues(alpha: 0.85),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
-              ),
-
-              const Spacer(flex: 2),
-
-              // Loading progress.
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.screenPadding * 3,
-                ),
-                child: Column(
-                  children: [
-                    AnimatedBuilder(
-                      animation: _progress,
-                      builder: (context, _) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(99),
-                          child: LinearProgressIndicator(
-                            value: 0.35 + 0.65 * _progress.value,
-                            minHeight: 5,
-                            backgroundColor:
-                                AppColors.white.withValues(alpha: 0.25),
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              AppColors.white,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 14),
-                    FadeTransition(
-                      opacity: _tagline,
-                      child: Text(
-                        ApiConfig.isConfigured
-                            ? 'Connecting…'
-                            : 'Running in demo mode — add API keys in\nconfig/bookit_keys.env',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: AppColors.white.withValues(alpha: 0.75),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _buildMobileSplash();
 
   /// Mobile-only cinematic bus intro. Desktop and web keep the existing splash.
   Widget _buildMobileSplash() {
@@ -248,16 +106,21 @@ class _LoadingScreenState extends State<LoadingScreen>
             animation: _master,
             builder: (context, _) {
               final progress = _master.value;
-              final letters = ((progress - 0.40) / 0.0333)
-                  .clamp(0.0, 1.0) * 6;
-              final word = 'BOOKIT'.substring(0, letters.floor());
-              final width = MediaQuery.sizeOf(context).width;
+              final size = MediaQuery.sizeOf(context);
+              final width = size.width;
+              // Time the reveal around the moment the bus crosses screen center.
+              final centerCrossing = (width / 2 + 65) / (width + 308);
+              final revealProgress =
+                  ((progress - (centerCrossing - 0.10)) / 0.20)
+                      .clamp(0.0, 1.0);
+              final letters = (revealProgress * 6).floor().clamp(0, 6);
+              final word = 'BOOKIT'.substring(0, letters);
               final busLeft = -154 + (width + 308) * progress;
               return Stack(
                 clipBehavior: Clip.hardEdge,
                 children: [
                   Positioned(
-                    top: MediaQuery.sizeOf(context).height * 0.30,
+                    top: size.height * 0.30,
                     left: 0,
                     right: 0,
                     child: Column(
@@ -293,7 +156,7 @@ class _LoadingScreenState extends State<LoadingScreen>
                   ),
                   Positioned(
                     left: busLeft,
-                    top: MediaQuery.sizeOf(context).height * 0.39,
+                    top: size.height * 0.30 + 16,
                     child: const _ThreeDBus(),
                   ),
                   Positioned(
