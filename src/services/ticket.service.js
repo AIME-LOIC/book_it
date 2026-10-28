@@ -434,17 +434,71 @@ export const payTicket = async (user_id, ticket_id, { network, phone_number, pro
   if (!user) throw new Error('User not found');
 
   const shortId = String(ticket.id).replace(/-/g, '').slice(0, 12);
-  const reference = `bk-${shortId}-${Date.now()}`;
+  const reference = 'bk-' + shortId + '-' + Date.now();
 
-  const { customer, paymentMethod, charge } = await initiateMobileMoneyCharge({
-    user,
-    network,
-    phone_number,
-    amount: Math.round(Number(ticket.price)),
-    reference,
-    meta: { ticket_id: ticket.id, user_id },
-    existing_customer_id: user.flw_customer_id || null,
+  // Claim payment initiation under a row lock. This prevents simultaneous API
+  // requests from creating two Flutterwave charges for one reservation.
+  const claim = await Ticket.sequelize.transaction(async (transaction) => {
+    const locked = await Ticket.findOne({
+      where: { id: ticket_id, user_id },
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+    if (!locked) throw new Error('Ticket not found');
+    if (locked.status === 'paid') return { kind: 'paid' };
+    if (locked.status === 'cancelled') throw new Error('Ticket is cancelled');
+    if (locked.flw_charge_id) {
+      return { kind: 'existing', reference: locked.payment_reference, charge_id: locked.flw_charge_id };
+    }
+    if (locked.payment_reference) {
+      const updatedAt = locked.updatedAt ? new Date(locked.updatedAt).getTime() : 0;
+      const claimAge = Date.now() - updatedAt;
+      if (claimAge < 60_000) {
+        return { kind: 'processing', reference: locked.payment_reference };
+      }
+      // Recover a stale claim left by a process that died before creating a
+      // provider charge. The old reference remains in application logs.
+      await locked.update({ payment_reference: null, payment_network: null }, { transaction });
+    }
+    await locked.update({
+      payment_reference: reference,
+      payment_network: network.toLowerCase(),
+    }, { transaction });
+    return { kind: 'claimed' };
   });
+
+  if (claim.kind === 'paid') {
+    return { status: 'paid', ticket: await getTicketById(user_id, ticket_id) };
+  }
+  if (claim.kind === 'processing' || claim.kind === 'existing') {
+    return {
+      status: 'processing',
+      reference: claim.reference,
+      charge_id: claim.charge_id || null,
+      message: 'A payment request is already being processed. Wait for its status before trying again.',
+    };
+  }
+
+  let chargeResult;
+  try {
+    chargeResult = await initiateMobileMoneyCharge({
+      user,
+      network,
+      phone_number,
+      amount: Math.round(Number(ticket.price)),
+      reference,
+      meta: { ticket_id: ticket.id, user_id },
+      existing_customer_id: user.flw_customer_id || null,
+    });
+  } catch (err) {
+    // Release only our own claim so a later retry can proceed safely.
+    await Ticket.update(
+      { payment_reference: null, payment_network: null },
+      { where: { id: ticket.id, user_id, payment_reference: reference, flw_charge_id: null } },
+    );
+    throw err;
+  }
+  const { customer, paymentMethod, charge } = chargeResult;
 
   // remember this customer on the user, not the ticket — one Flutterwave
   // customer per person, reused across every future ticket they buy
@@ -488,7 +542,7 @@ export const checkPaymentStatus = async (user_id, ticket_id) => {
     return { status: 'cancelled' };
   }
   if (!ticket.flw_charge_id) {
-    return { status: 'not_initiated' };
+    return { status: ticket.payment_reference ? 'processing' : 'not_initiated' };
   }
 
   const charge = await getCharge(ticket.flw_charge_id);
