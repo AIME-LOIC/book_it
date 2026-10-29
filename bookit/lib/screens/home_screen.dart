@@ -2388,10 +2388,52 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
         title: const Text('Ticket details', style: TextStyle(fontWeight: FontWeight.w800)),
         leading: IconButton(tooltip: 'Back to tickets', onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.arrow_back_rounded)),
         actions: [
-          IconButton(
-            tooltip: _savedPath == null ? 'Save ticket offline' : 'Ticket saved offline',
-            onPressed: _saving ? null : _saveOffline,
-            icon: Icon(_savedPath == null ? Icons.download_for_offline_outlined : Icons.offline_pin_rounded),
+          PopupMenuButton<String>(
+            tooltip: 'Ticket actions',
+            enabled: !_saving,
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (action) {
+              switch (action) {
+                case 'save':
+                  _saveOffline();
+                  break;
+                case 'print':
+                  _printPaperTicket();
+                  break;
+                case 'share':
+                  _sharePaperTicket();
+                  break;
+                case 'map':
+                  widget.onOpenMap();
+                  break;
+                case 'track':
+                  widget.onTrackBus?.call();
+                  break;
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem<String>(
+                value: 'save',
+                child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(_savedPath == null ? Icons.download_for_offline_outlined : Icons.offline_pin_rounded), title: Text(_savedPath == null ? 'Save offline' : 'Saved offline'), dense: true),
+              ),
+              const PopupMenuItem<String>(
+                value: 'print',
+                child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.print_outlined), title: Text('Print ticket'), dense: true),
+              ),
+              const PopupMenuItem<String>(
+                value: 'share',
+                child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.ios_share_rounded), title: Text('Share / export PDF'), dense: true),
+              ),
+              const PopupMenuItem<String>(
+                value: 'map',
+                child: ListTile(contentPadding: EdgeInsets.zero, leading: Icon(Icons.map_outlined), title: Text('View route map'), dense: true),
+              ),
+              PopupMenuItem<String>(
+                value: 'track',
+                enabled: widget.onTrackBus != null,
+                child: ListTile(contentPadding: EdgeInsets.zero, leading: const Icon(Icons.my_location_rounded), title: Text(widget.onTrackBus != null ? 'Track bus location' : 'Live tracking unavailable'), dense: true),
+              ),
+            ],
           ),
           const SizedBox(width: 4),
         ],
@@ -2531,65 +2573,11 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
               ]),
             ),
             const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(18), border: Border.all(color: borderColor)),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                sectionTitle(Icons.bolt_rounded, 'Ticket actions'),
-                Row(children: [
-                  Expanded(child: _ticketAction(Icons.cloud_download_outlined, _savedPath == null ? 'Save offline' : 'Saved offline', _saving ? null : _saveOffline)),
-                  const SizedBox(width: 8),
-                  Expanded(child: _ticketAction(Icons.print_outlined, 'Print ticket', _saving ? null : _printPaperTicket)),
-                  const SizedBox(width: 8),
-                  Expanded(child: _ticketAction(Icons.ios_share_rounded, 'Share PDF', _saving ? null : _sharePaperTicket)),
-                ]),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  onPressed: widget.onOpenMap,
-                  icon: const Icon(Icons.map_outlined),
-                  label: const Text('View route map'),
-                ),
-                if (widget.onTrackBus != null) ...[
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                    onPressed: widget.onTrackBus,
-                    icon: const Icon(Icons.my_location_rounded),
-                    label: const Text('Track bus location'),
-                  ),
-                ] else
-                  const Padding(
-                    padding: EdgeInsets.only(top: 9),
-                    child: Text('Live tracking is unavailable because the operator has not supplied current GPS coordinates.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, height: 1.4, color: AppColors.textMuted)),
-                  ),
-                if (_savedPath != null) ...[
-                  const SizedBox(height: 10),
-                  Row(children: [
-                    const Icon(Icons.offline_pin_rounded, color: Color(0xFF15945A), size: 18),
-                    const SizedBox(width: 7),
-                    Expanded(child: Text('PDF stored on this device. You can access it without an internet connection.', style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color))),
-                  ]),
-                ],
-              ]),
-            ),
           ]),
         ),
       ),
     );
   }
 
-  Widget _ticketAction(IconData icon, String label, VoidCallback? onPressed) => OutlinedButton(
-    onPressed: onPressed,
-    style: OutlinedButton.styleFrom(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      side: BorderSide(color: AppColors.primary.withValues(alpha: .3)),
-    ),
-    child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 20),
-      const SizedBox(height: 6),
-      Text(label, textAlign: TextAlign.center, maxLines: 2, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
-    ]),
-  );
+
 }
