@@ -44,6 +44,8 @@ dependencies:
   flutter_map: ^8.3.2
   latlong2: ^0.9.1
   geolocator: ^14.0.2
+  pdf: ^3.11.3
+  printing: ^5.15.1
 
 dev_dependencies:
   flutter_test:

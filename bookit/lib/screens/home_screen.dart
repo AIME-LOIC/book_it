@@ -1,6 +1,10 @@
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -2001,7 +2005,7 @@ class BusDetailsScreen extends StatelessWidget {
 }
 
 
-class TicketDetailsScreen extends StatelessWidget {
+class TicketDetailsScreen extends StatefulWidget {
   const TicketDetailsScreen({
     super.key,
     required this.ticket,
@@ -2023,113 +2027,482 @@ class TicketDetailsScreen extends StatelessWidget {
   final VoidCallback onOpenMap;
   final VoidCallback? onTrackBus;
 
-  Widget _detailLine(String label,String value)=>Padding(
-    padding:const EdgeInsets.symmetric(vertical:9),
-    child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
-      SizedBox(width:112,child:Text(label,style:const TextStyle(color:AppColors.textMuted))),
-      Expanded(child:Text(value,style:const TextStyle(fontWeight:FontWeight.w700))),
+  @override
+  State<TicketDetailsScreen> createState() => _TicketDetailsScreenState();
+}
+
+class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
+  bool _saving = false;
+  String? _savedPath;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSavedTicket();
+  }
+
+  String get _safeCode => widget.code.replaceAll(RegExp(r'[^A-Za-z0-9_-]'), '_');
+
+  Future<Directory> _ticketDirectory() async {
+    final root = await getApplicationDocumentsDirectory();
+    final directory = Directory('${root.path}/BookIt Tickets');
+    if (!await directory.exists()) await directory.create(recursive: true);
+    return directory;
+  }
+
+  Future<void> _checkSavedTicket() async {
+    try {
+      final directory = await _ticketDirectory();
+      final file = File('${directory.path}/ticket_$_safeCode.pdf');
+      if (await file.exists() && mounted) setState(() => _savedPath = file.path);
+    } catch (_) {}
+  }
+
+  String _field(dynamic value, [String fallback = 'Not provided']) {
+    if (value == null || value.toString().trim().isEmpty) return fallback;
+    return value.toString();
+  }
+
+  String get _travelDate => _field(widget.ticket['travel_date']);
+  String get _departureTime {
+    final bus = widget.ticket['bus'] is Map
+        ? Map<String,dynamic>.from(widget.ticket['bus'])
+        : <String,dynamic>{};
+    return _field(widget.ticket['departure_time'] ?? bus['departure_time']);
+  }
+  String get _seat => _field(widget.ticket['seat_number'], 'Unassigned');
+  String get _fare {
+    final bus = widget.ticket['bus'] is Map
+        ? Map<String,dynamic>.from(widget.ticket['bus'])
+        : <String,dynamic>{};
+    return '${_field(widget.ticket['price'] ?? bus['price'], '—')} RWF';
+  }
+  String get _status => _field(widget.ticket['status'], 'unknown').toUpperCase();
+
+  Future<Uint8List> _buildPaperTicket() async {
+    final pdf = pw.Document();
+    final status = _status;
+    pdf.addPage(pw.Page(
+      pageFormat: PdfPageFormat.a5,
+      margin: const pw.EdgeInsets.all(22),
+      build: (context) => pw.Container(
+        decoration: pw.BoxDecoration(
+          color: PdfColors.white,
+          border: pw.Border.all(color: PdfColors.blueGrey300, width: 1.2),
+          borderRadius: pw.BorderRadius.circular(10),
+        ),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 20, vertical: 17),
+              decoration: const pw.BoxDecoration(
+                color: PdfColor(0.02, 0.12, 0.25),
+                borderRadius: pw.BorderRadius.only(
+                  topLeft: pw.Radius.circular(9),
+                  topRight: pw.Radius.circular(9),
+                ),
+              ),
+              child: pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Expanded(child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('BOOKIT', style: pw.TextStyle(
+                        color: PdfColors.white, fontSize: 22,
+                        fontWeight: pw.FontWeight.bold, letterSpacing: 1.5,
+                      )),
+                      pw.SizedBox(height: 4),
+                      pw.Text('OFFICIAL BUS TRAVEL TICKET', style: const pw.TextStyle(
+                        color: PdfColor(0.72, 0.83, 0.94), fontSize: 8,
+                      )),
+                    ],
+                  )),
+                  pw.Container(
+                    padding: const pw.EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                    decoration: pw.BoxDecoration(
+                      color: status == 'PAID' ? PdfColors.green700 : PdfColors.blueGrey700,
+                      borderRadius: pw.BorderRadius.circular(4),
+                    ),
+                    child: pw.Text(status, style: pw.TextStyle(
+                      color: PdfColors.white, fontSize: 8, fontWeight: pw.FontWeight.bold,
+                    )),
+                  ),
+                ],
+              ),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.fromLTRB(18, 17, 18, 12),
+              child: pw.Column(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Text('YOUR JOURNEY', style: pw.TextStyle(
+                    color: PdfColors.blueGrey600, fontSize: 8,
+                    fontWeight: pw.FontWeight.bold, letterSpacing: 1.1,
+                  )),
+                  pw.SizedBox(height: 7),
+                  pw.Text(widget.from, style: pw.TextStyle(
+                    color: PdfColor(0.02, 0.12, 0.25), fontSize: 17,
+                    fontWeight: pw.FontWeight.bold,
+                  )),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.only(left: 4, top: 2, bottom: 2),
+                    child: pw.Text('TO', style: const pw.TextStyle(
+                      color: PdfColors.blueGrey500, fontSize: 8,
+                    )),
+                  ),
+                  pw.Text(widget.to, style: pw.TextStyle(
+                    color: PdfColor(0.02, 0.12, 0.25), fontSize: 17,
+                    fontWeight: pw.FontWeight.bold,
+                  )),
+                  pw.SizedBox(height: 12),
+                  pw.Container(height: 1, color: PdfColors.blueGrey200),
+                  pw.SizedBox(height: 11),
+                  pw.Row(children: [
+                    pw.Expanded(child: _pdfDetail('TRAVEL DATE', _travelDate)),
+                    pw.SizedBox(width: 8),
+                    pw.Expanded(child: _pdfDetail('DEPARTURE', _departureTime)),
+                  ]),
+                  pw.SizedBox(height: 12),
+                  pw.Row(children: [
+                    pw.Expanded(child: _pdfDetail('SEAT NUMBER', _seat)),
+                    pw.SizedBox(width: 8),
+                    pw.Expanded(child: _pdfDetail('FARE', _fare)),
+                  ]),
+                  pw.SizedBox(height: 12),
+                  pw.Row(children: [
+                    pw.Expanded(child: _pdfDetail('BUS / PLATE', widget.plate)),
+                    pw.SizedBox(width: 8),
+                    pw.Expanded(child: _pdfDetail('OPERATOR', widget.operatorName)),
+                  ]),
+                ],
+              ),
+            ),
+            pw.Container(
+              margin: const pw.EdgeInsets.symmetric(horizontal: 18),
+              child: pw.Row(children: [
+                pw.Expanded(child: pw.Container(height: 1, color: PdfColors.blueGrey300)),
+                pw.Padding(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 8),
+                  child: pw.Text('DETACHABLE CHECK-IN STUB', style: const pw.TextStyle(
+                    color: PdfColors.blueGrey600, fontSize: 7,
+                  )),
+                ),
+                pw.Expanded(child: pw.Container(height: 1, color: PdfColors.blueGrey300)),
+              ]),
+            ),
+            pw.Padding(
+              padding: const pw.EdgeInsets.fromLTRB(18, 12, 18, 14),
+              child: pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Container(
+                    padding: const pw.EdgeInsets.all(5),
+                    decoration: pw.BoxDecoration(
+                      border: pw.Border.all(color: PdfColors.blueGrey200),
+                      borderRadius: pw.BorderRadius.circular(5),
+                    ),
+                    child: pw.BarcodeWidget(
+                      barcode: pw.Barcode.qrCode(),
+                      data: widget.qrData,
+                      width: 82,
+                      height: 82,
+                    ),
+                  ),
+                  pw.SizedBox(width: 14),
+                  pw.Expanded(child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text('TICKET REFERENCE', style: pw.TextStyle(
+                        color: PdfColors.blueGrey600, fontSize: 7,
+                        fontWeight: pw.FontWeight.bold, letterSpacing: .7,
+                      )),
+                      pw.SizedBox(height: 5),
+                      pw.Text(widget.code, style: pw.TextStyle(
+                        color: PdfColor(0.02, 0.12, 0.25), fontSize: 12,
+                        fontWeight: pw.FontWeight.bold,
+                      )),
+                      pw.SizedBox(height: 8),
+                      pw.Text('Passenger: ${_field(widget.ticket['passenger_name'] ?? widget.ticket['name'], 'Ticket holder')}',
+                        style: const pw.TextStyle(fontSize: 8, color: PdfColors.blueGrey800)),
+                      pw.SizedBox(height: 4),
+                      pw.Text('Operator: ${widget.operatorName}',
+                        style: const pw.TextStyle(fontSize: 8, color: PdfColors.blueGrey800)),
+                      pw.SizedBox(height: 7),
+                      pw.Text('Present this QR code to the attendant at boarding.',
+                        style: const pw.TextStyle(fontSize: 7, color: PdfColors.blueGrey600)),
+                    ],
+                  )),
+                ],
+              ),
+            ),
+            pw.Spacer(),
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+              decoration: const pw.BoxDecoration(
+                color: PdfColor(0.94, 0.96, 0.98),
+                borderRadius: pw.BorderRadius.only(
+                  bottomLeft: pw.Radius.circular(9),
+                  bottomRight: pw.Radius.circular(9),
+                ),
+              ),
+              child: pw.Text('Keep this ticket safe. Ticket validation is subject to the operator records.',
+                textAlign: pw.TextAlign.center,
+                style: const pw.TextStyle(fontSize: 7, color: PdfColors.blueGrey700)),
+            ),
+          ],
+        ),
+      ),
+    ));
+    return Uint8List.fromList(await pdf.save());
+  }
+
+  pw.Widget _pdfDetail(String label, String value) => pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: [
+      pw.Text(label, style: pw.TextStyle(
+        color: PdfColors.blueGrey600, fontSize: 7,
+        fontWeight: pw.FontWeight.bold, letterSpacing: .5,
+      )),
+      pw.SizedBox(height: 4),
+      pw.Text(value, maxLines: 2, style: pw.TextStyle(
+        color: PdfColors.blueGrey900, fontSize: 9, fontWeight: pw.FontWeight.bold,
+      )),
+    ],
+  );
+
+  Future<String> _savePaperTicket() async {
+    final directory = await _ticketDirectory();
+    final file = File('${directory.path}/ticket_$_safeCode.pdf');
+    final bytes = await _buildPaperTicket();
+    await file.writeAsBytes(bytes, flush: true);
+    if (mounted) setState(() => _savedPath = file.path);
+    return file.path;
+  }
+
+  Future<void> _saveOffline() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await _savePaperTicket();
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ticket saved on this device for offline access.')),
+      );
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save ticket: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _printPaperTicket() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await Printing.layoutPdf(
+        name: 'BookIt_Ticket_$_safeCode.pdf',
+        onLayout: (_) => _buildPaperTicket(),
+      );
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open print preview: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _sharePaperTicket() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      final path = await _savePaperTicket();
+      await Share.shareXFiles(
+        [XFile(path, mimeType: 'application/pdf', name: 'BookIt_Ticket_$_safeCode.pdf')],
+        text: 'BookIt travel ticket ${widget.code}',
+        subject: 'BookIt travel ticket',
+      );
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not prepare ticket PDF: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Widget _detailLine(String label, String value) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 10),
+    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SizedBox(width: 112, child: Text(label, style: const TextStyle(color: AppColors.textMuted, fontSize: 13))),
+      Expanded(child: Text(value, style: const TextStyle(fontWeight: FontWeight.w700))),
     ]),
   );
 
   @override
   Widget build(BuildContext context) {
-    final status=(ticket['status']??'unknown').toString().toLowerCase();
-    final boarding=ticket['boardingStop'] is Map?Map<String,dynamic>.from(ticket['boardingStop']):<String,dynamic>{};
-    final dropoff=ticket['dropoffStop'] is Map?Map<String,dynamic>.from(ticket['dropoffStop']):<String,dynamic>{};
-    final boardingLocation=boarding['location'] is Map?Map<String,dynamic>.from(boarding['location']):<String,dynamic>{};
-    final dropoffLocation=dropoff['location'] is Map?Map<String,dynamic>.from(dropoff['location']):<String,dynamic>{};
-    final boardingPoint=(boardingLocation['name']??boarding['name'])?.toString();
-    final dropoffPoint=(dropoffLocation['name']??dropoff['name'])?.toString();
-    final isDark=Theme.of(context).brightness==Brightness.dark;
-    final departed=ticket['departed_at']!=null||ticket['departure_status']?.toString().toLowerCase()=='departed';
-    final Color accent=departed?AppColors.primary:(status=='paid'?(isDark?const Color(0xFF64B5F6):const Color(0xFF0288D1)):AppColors.textMuted);
+    final ticket = widget.ticket;
+    final status = (ticket['status'] ?? 'unknown').toString().toLowerCase();
+    final bus = ticket['bus'] is Map ? Map<String,dynamic>.from(ticket['bus']) : <String,dynamic>{};
+    final boarding = ticket['boardingStop'] is Map ? Map<String,dynamic>.from(ticket['boardingStop']) : <String,dynamic>{};
+    final dropoff = ticket['dropoffStop'] is Map ? Map<String,dynamic>.from(ticket['dropoffStop']) : <String,dynamic>{};
+    final boardingLocation = boarding['location'] is Map ? Map<String,dynamic>.from(boarding['location']) : <String,dynamic>{};
+    final dropoffLocation = dropoff['location'] is Map ? Map<String,dynamic>.from(dropoff['location']) : <String,dynamic>{};
+    final boardingPoint = (boardingLocation['name'] ?? boarding['name'])?.toString();
+    final dropoffPoint = (dropoffLocation['name'] ?? dropoff['name'])?.toString();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final departed = ticket['departed_at'] != null || ticket['departure_status']?.toString().toLowerCase() == 'departed';
+    final Color accent = departed ? AppColors.primary : (status == 'paid' ? (isDark ? const Color(0xFF64B5F6) : const Color(0xFF0288D1)) : AppColors.textMuted);
     return Scaffold(
-      appBar:AppBar(
-        title:const Text('Ticket details',style:TextStyle(fontWeight:FontWeight.w800)),
-        leading:IconButton(tooltip:'Back to tickets',onPressed:()=>Navigator.of(context).pop(),icon:const Icon(Icons.arrow_back_rounded)),
+      appBar: AppBar(
+        title: const Text('Ticket details', style: TextStyle(fontWeight: FontWeight.w800)),
+        leading: IconButton(tooltip: 'Back to tickets', onPressed: () => Navigator.of(context).pop(), icon: const Icon(Icons.arrow_back_rounded)),
+        actions: [
+          IconButton(
+            tooltip: _savedPath == null ? 'Save ticket offline' : 'Ticket saved offline',
+            onPressed: _saving ? null : _saveOffline,
+            icon: Icon(_savedPath == null ? Icons.download_for_offline_outlined : Icons.offline_pin_rounded),
+          ),
+        ],
       ),
-      body:SafeArea(
-        child:SingleChildScrollView(
-          padding:const EdgeInsets.only(bottom:28),
-          child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.only(bottom: 28),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Container(
-              padding:const EdgeInsets.all(20),
-              decoration:BoxDecoration(
-                gradient:AppColors.heroGradient,
-                image:to.trim().toLowerCase().contains('muhanga')
-                    ? const DecorationImage(
-                        image:AssetImage('assets/muhanga.jpg'),
-                        fit:BoxFit.cover,
-                        colorFilter:ColorFilter.mode(Color(0x50001638),BlendMode.darken),
-                      )
-                    : null,
-                borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24)),
+              padding: const EdgeInsets.all(22),
+              decoration: BoxDecoration(
+                gradient: AppColors.heroGradient,
+                image: widget.to.trim().toLowerCase().contains('muhanga')
+                  ? const DecorationImage(
+                      image: AssetImage('assets/muhanga.jpg'),
+                      fit: BoxFit.cover,
+                      colorFilter: ColorFilter.mode(Color(0x50001638), BlendMode.darken),
+                    ) : null,
+                borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(26), bottomRight: Radius.circular(26)),
               ),
-              child:Column(children:[
-                const Icon(Icons.confirmation_num_rounded,color:Colors.white,size:34),
-                const SizedBox(height:10),
-                Text('$from → $to',textAlign:TextAlign.center,style:const TextStyle(color:Colors.white,fontSize:20,fontWeight:FontWeight.w900)),
-                const SizedBox(height:5),
-                Text(operatorName,style:const TextStyle(color:Colors.white70,fontWeight:FontWeight.w600)),
-                const SizedBox(height:14),
+              child: Column(children: [
+                const Icon(Icons.confirmation_num_rounded, color: Colors.white, size: 34),
+                const SizedBox(height: 10),
+                Text('${widget.from}  →  ${widget.to}', textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 5),
+                Text(widget.operatorName, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
+                const SizedBox(height: 14),
                 Container(
-                  padding:const EdgeInsets.symmetric(horizontal:12,vertical:7),
-                  decoration:BoxDecoration(color:Colors.white.withValues(alpha:.16),borderRadius:BorderRadius.circular(24)),
-                  child:Text(departed?'DEPARTED':status.toUpperCase(),style:const TextStyle(color:Colors.white,fontWeight:FontWeight.w800,letterSpacing:.8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: .16), borderRadius: BorderRadius.circular(24)),
+                  child: Text(departed ? 'DEPARTED' : status.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, letterSpacing: .8)),
                 ),
               ]),
             ),
-            Padding(padding:const EdgeInsets.symmetric(horizontal:18),child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-            const SizedBox(height:16),
-            Card(child:Padding(
-              padding:const EdgeInsets.all(18),
-              child:Column(children:[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                const SizedBox(height: 16),
                 Container(
-                  padding:const EdgeInsets.all(12),
-                  decoration:BoxDecoration(color:Colors.white,borderRadius:BorderRadius.circular(18),border:Border.all(color:const Color(0xFFE2E8F0))),
-                  child:QrImageView(data:qrData,version:QrVersions.auto,size:210,backgroundColor:Colors.white,semanticsLabel:'Ticket QR code for ticket $code'),
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .45)),
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? .08 : .035), blurRadius: 20, offset: const Offset(0, 8))],
+                  ),
+                  child: Column(children: [
+                    Row(children: [
+                      const Expanded(child: Text('Your boarding pass', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
+                      if (_savedPath != null) const Chip(
+                        avatar: Icon(Icons.offline_pin_rounded, size: 16, color: Color(0xFF16794B)),
+                        label: Text('Saved offline', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ]),
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFFE2E8F0))),
+                      child: QrImageView(data: widget.qrData, version: QrVersions.auto, size: 190, backgroundColor: Colors.white, semanticsLabel: 'Ticket QR code for ticket ${widget.code}'),
+                    ),
+                    const SizedBox(height: 12),
+                    SelectableText(widget.code, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: .6)),
+                    const SizedBox(height: 5),
+                    const Text('Your QR ticket remains available offline after saving.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  ]),
                 ),
-                const SizedBox(height:12),
-                SelectableText(code,textAlign:TextAlign.center,style:const TextStyle(fontWeight:FontWeight.w900,fontSize:15)),
-                const SizedBox(height:5),
-                const Text('Keep this ticket available when boarding.',textAlign:TextAlign.center,style:TextStyle(color:AppColors.textMuted,fontSize:12)),
-              ]),
-            )),
-            const SizedBox(height:14),
-            Card(child:Padding(
-              padding:const EdgeInsets.symmetric(horizontal:16,vertical:8),
-              child:Column(children:[
-                _detailLine('Travel date',(ticket['travel_date']??'Not provided').toString()),
-                if(boardingPoint!=null&&boardingPoint.trim().isNotEmpty)_detailLine('Boarding point',boardingPoint),
-                if(dropoffPoint!=null&&dropoffPoint.trim().isNotEmpty)_detailLine('Drop-off point',dropoffPoint),
-                _detailLine('Departure',(ticket['departure_time']??(ticket['bus'] is Map?ticket['bus']['departure_time']:null)??'Not provided').toString()),
-                _detailLine('Seat number',(ticket['seat_number']??'—').toString()),
-                _detailLine('Bus plate',plate),
-                _detailLine('Fare',(ticket['price']??(ticket['bus'] is Map?ticket['bus']['price']:null)??'—').toString()+' RWF'),
-                _detailLine('Ticket status',status.toUpperCase()),
-                if(departed)_detailLine('Departure status','Marked as departed'),
-              ]),
-            )),
-            const SizedBox(height:14),
-            Container(
-              padding:const EdgeInsets.all(15),
-              decoration:BoxDecoration(color:AppColors.primary.withValues(alpha:.08),borderRadius:BorderRadius.circular(16),border:Border.all(color:AppColors.primary.withValues(alpha:.2))),
-              child:Row(crossAxisAlignment:CrossAxisAlignment.start,children:[
-                Icon(departed?Icons.directions_bus_filled_rounded:Icons.contactless_rounded,color:accent,size:23),
-                const SizedBox(width:11),
-                const Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-                  Text('Boarding and departure',style:TextStyle(fontWeight:FontWeight.w800)),
-                  SizedBox(height:5),
-                  Text('Departure tap-in is a separate event from ticket validation. NFC device tap-in and automatic departure notifications require the boarding device and server workflow to be configured.',style:TextStyle(fontSize:12,height:1.45,color:AppColors.textMuted)),
-                ])),
+                const SizedBox(height: 14),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Column(children: [
+                      _detailLine('Travel date', _travelDate),
+                      if (boardingPoint != null && boardingPoint.trim().isNotEmpty) _detailLine('Boarding point', boardingPoint),
+                      if (dropoffPoint != null && dropoffPoint.trim().isNotEmpty) _detailLine('Drop-off point', dropoffPoint),
+                      _detailLine('Departure', _departureTime),
+                      _detailLine('Seat number', _seat),
+                      _detailLine('Bus plate', widget.plate),
+                      _detailLine('Operator', widget.operatorName),
+                      _detailLine('Fare', _fare),
+                      _detailLine('Ticket status', status.toUpperCase()),
+                      if (departed) _detailLine('Departure status', 'Marked as departed'),
+                    ]),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(15),
+                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: .08), borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.primary.withValues(alpha: .2))),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Icon(departed ? Icons.directions_bus_filled_rounded : Icons.contactless_rounded, color: accent, size: 23),
+                    const SizedBox(width: 11),
+                    const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Boarding and departure', style: TextStyle(fontWeight: FontWeight.w800)),
+                      SizedBox(height: 5),
+                      Text('Show the QR code to the attendant at boarding. Departure tap-in is a separate event from ticket validation and depends on the operator boarding workflow.', style: TextStyle(fontSize: 12, height: 1.45, color: AppColors.textMuted)),
+                    ])),
+                  ]),
+                ),
+                const SizedBox(height: 14),
+                OutlinedButton.icon(
+                  onPressed: widget.onOpenMap,
+                  icon: const Icon(Icons.map_outlined),
+                  label: const Text('View full route map'),
+                ),
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  onPressed: widget.onTrackBus,
+                  icon: const Icon(Icons.my_location),
+                  label: const Text('Track bus location'),
+                ),
+                if (widget.onTrackBus == null) const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text('Live tracking is unavailable because the operator has not supplied current GPS coordinates.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _saving ? null : _saveOffline,
+                  icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(_savedPath == null ? Icons.download_rounded : Icons.check_circle_outline_rounded),
+                  label: Text(_saving ? 'Preparing ticket…' : (_savedPath == null ? 'Save paper ticket for offline use' : 'Ticket saved offline')),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _saving ? null : _printPaperTicket,
+                  icon: const Icon(Icons.print_outlined),
+                  label: const Text('Print paper ticket'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _saving ? null : _sharePaperTicket,
+                  icon: const Icon(Icons.ios_share_rounded),
+                  label: const Text('Share / export ticket PDF'),
+                ),
+                if (_savedPath != null) Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text('Stored on this device as a PDF. Use Export / print to send it to a printer or another app.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color)),
+                ),
               ]),
             ),
-            const SizedBox(height:14),
-            OutlinedButton.icon(onPressed:onOpenMap,icon:const Icon(Icons.map_outlined),label:const Text('View full route map')),
-            const SizedBox(height:8),
-            FilledButton.icon(onPressed:onTrackBus,icon:const Icon(Icons.my_location),label:const Text('Track bus location')),
-            if(onTrackBus==null)const Padding(padding:EdgeInsets.only(top:8),child:Text('Live tracking is unavailable because the operator has not supplied current GPS coordinates.',textAlign:TextAlign.center,style:TextStyle(fontSize:12,color:AppColors.textMuted))),
-            ])),
           ]),
         ),
       ),
