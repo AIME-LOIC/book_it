@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_client.dart';
 import 'route_map_screen.dart';
+import 'nearby_stations_screen.dart';
 import 'weather_forecast_screen.dart';
 import 'login_screen.dart';
 import '../theme/app_theme.dart';
@@ -27,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _searchError;
   String _ticketSearchQuery='',_ticketSort='newest',_historySearchQuery='';
   bool _historyKinyarwanda=false,_usingOfflineTickets=false;
-  bool _paymentSubmitting=false,_paymentPending=false,_checkingPaymentStatus=false;
+  bool _paymentSubmitting=false,_paymentPending=false,_checkingPaymentStatus=false,_showCheckout=false,_holdWarningShown=false;
   String? _paymentStatusMessage;
   int _paymentPollAttempts=0;
   Timer? _paymentPollTimer;
@@ -39,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _weatherLabel='Checking Kigali weather…';
   Timer? _weatherTimer;
   String? _fromId,_toId,_activeTicketId,_selectedHistoryRoute; DateTime _date=DateTime.now().add(const Duration(days:1));
-  Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer;
+  Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer; DateTime? _holdExpiresAt;
   final _phone=TextEditingController(); String _network='mtn'; bool _phoneManuallyEdited=false; String? _detectedNetwork;
   @override void initState(){super.initState();_loadHistoryLanguage();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
   @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_notificationTimer?.cancel();_paymentPollTimer?.cancel();_phone.dispose();super.dispose();}
@@ -274,6 +275,8 @@ class _HomeScreenState extends State<HomeScreen> {
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
     finally { if(mounted)setState(()=>_loadingProfile=false); }
   }
+  Future<void> _openNearbyStations() async { await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const NearbyStationsScreen())); }
+
   Future<void> _loadUnreadCount() async {
     try {
       final r=await ApiClient.get('notifications/unread',auth:true);
@@ -294,6 +297,103 @@ class _HomeScreenState extends State<HomeScreen> {
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
     finally { if(mounted)setState(()=>_loadingNotifications=false); }
   }
+  void _restorePendingHold(List<Map<String,dynamic>> tickets) {
+    if (_activeTicketId != null) return;
+    final pending = tickets.where((ticket) => (ticket['status'] ?? '').toString().toLowerCase() == 'pending').toList()
+      ..sort((a,b) {
+        final da = DateTime.tryParse((a['createdAt'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final db = DateTime.tryParse((b['createdAt'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return db.compareTo(da);
+      });
+    for (final ticket in pending) {
+      final created = DateTime.tryParse((ticket['createdAt'] ?? '').toString());
+      if (created == null) continue;
+      final expiry = created.toLocal().add(const Duration(minutes: 15));
+      final remaining = expiry.difference(DateTime.now()).inSeconds;
+      if (remaining <= 0) {
+        final id = ticket['id']?.toString();
+        if (id != null) ApiClient.patch('tickets/$id/cancel', auth: true).catchError((_) => null);
+        continue;
+      }
+      final bus = ticket['bus'] is Map ? Map<String,dynamic>.from(ticket['bus']) : <String,dynamic>{};
+      bus['operator'] = ticket['operator'];
+      bus['price'] = ticket['price'];
+      _holdExpiresAt = expiry;
+      _holdWarningShown = remaining <= 180;
+      _activeTicketId = ticket['id']?.toString();
+      _seat = int.tryParse((ticket['seat_number'] ?? '').toString());
+      _selectedBus = bus;
+      _seconds = remaining;
+      _showCheckout = false;
+      _startHoldTimer();
+      if (mounted) setState(() {});
+      break;
+    }
+  }
+
+  void _startHoldTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) { timer.cancel(); return; }
+      final expires = _holdExpiresAt;
+      if (expires == null) { timer.cancel(); return; }
+      final remaining = expires.difference(DateTime.now()).inSeconds;
+      if (remaining <= 0) {
+        timer.cancel();
+        _expire();
+        return;
+      }
+      setState(() => _seconds = remaining);
+      if (remaining <= 180 && !_holdWarningShown) {
+        _holdWarningShown = true;
+        _msg('Only 3 minutes remain before BookIt cancels this unpaid seat reservation.');
+      }
+    });
+  }
+
+  Future<void> _handleNotificationTap(Map<String,dynamic> notification) async {
+    final meta = notification['meta'] is Map ? Map<String,dynamic>.from(notification['meta']) : <String,dynamic>{};
+    final id = (meta['ticket_id'] ?? meta['ticketId'])?.toString();
+    if (id == null || id.isEmpty) return;
+    try {
+      final response = await ApiClient.get('tickets/my/$id', auth: true);
+      final ticket = response is Map && response['ticket'] is Map
+          ? Map<String,dynamic>.from(response['ticket'])
+          : (response is Map ? Map<String,dynamic>.from(response) : <String,dynamic>{});
+      final status = (ticket['status'] ?? '').toString().toLowerCase();
+      if (status == 'pending') {
+        final created = DateTime.tryParse((ticket['createdAt'] ?? '').toString());
+        final expiry = (created ?? DateTime.now()).toLocal().add(const Duration(minutes: 15));
+        final remaining = expiry.difference(DateTime.now()).inSeconds;
+        if (remaining <= 0) {
+          await ApiClient.patch('tickets/$id/cancel', auth: true);
+          await _loadTickets();
+          if (mounted) _msg('This unpaid reservation expired and was cancelled. Choose a seat again.');
+          return;
+        }
+        final bus = ticket['bus'] is Map ? Map<String,dynamic>.from(ticket['bus']) : <String,dynamic>{};
+        bus['operator'] = ticket['operator'];
+        bus['price'] = ticket['price'];
+        _timer?.cancel();
+        _activeTicketId = id;
+        _holdExpiresAt = expiry;
+        _holdWarningShown = remaining <= 180;
+        _seat = int.tryParse((ticket['seat_number'] ?? '').toString());
+        _seconds = remaining;
+        if (mounted) setState(() { _selectedBus = bus; _showCheckout = true; _tab = 0; });
+        _startHoldTimer();
+      } else {
+        await _loadTickets();
+        if (mounted) {
+          setState(() => _tab = 1);
+          _msg(status == 'paid' ? 'This ticket is already paid. Open it from My Tickets.' : 'This ticket is no longer pending, so payment is unavailable.');
+        }
+      }
+    } on ApiException catch (e) {
+      if (mounted) _msg(e.message);
+    }
+  }
+
   Future<void> _openNotifications() async {
     await _loadNotifications();
     if(!mounted)return;
@@ -310,7 +410,7 @@ class _HomeScreenState extends State<HomeScreen> {
           else if(_notifications.isEmpty)const Expanded(child: Center(child: Text('No notifications yet. Booking and trip updates will appear here.',textAlign:TextAlign.center)))
           else Expanded(child:ListView.builder(itemCount:_notifications.length,itemBuilder:(context,index){
             final n=_notifications[index];final read=n['is_read']==true;
-            return ListTile(leading:Icon(read?Icons.notifications_none:Icons.notifications_active,color:read?AppColors.textMuted:AppColors.primary),
+            return ListTile(onTap:()async{try{if(!read)await ApiClient.patch('notifications/'+n['id'].toString()+'/read',auth:true);}catch(_){}if(sheetContext.mounted)Navigator.of(sheetContext).pop();await _handleNotificationTap(n);},leading:Icon(read?Icons.notifications_none:Icons.notifications_active,color:read?AppColors.textMuted:AppColors.primary),
               title:Text((n['type']??'Update').toString().replaceAll('_',' '),style:TextStyle(fontWeight:read?FontWeight.w500:FontWeight.w800)),
               subtitle:Text((n['message']??'').toString()),
               trailing:read?null:TextButton(onPressed:()async{
@@ -359,6 +459,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final fresh=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList();
       await prefs.setString('bookit_ticket_history_cache',jsonEncode(fresh));
       if(mounted)setState((){_tickets=fresh;_usingOfflineTickets=false;});
+      _restorePendingHold(fresh);
     }on ApiException catch(e){
       if(mounted&&_tickets.isEmpty)_msg(e.message);
       if(mounted&&_tickets.isNotEmpty)setState(()=>_usingOfflineTickets=true);
@@ -540,8 +641,8 @@ class _HomeScreenState extends State<HomeScreen> {
       final body=<String,dynamic>{'bus_id':bus['bus_id']??bus['id'],'seat_number':seatIndex,'seat_label':selected,'boarding_stop_id':bus['boarding_stop_id'],'dropoff_stop_id':bus['dropoff_stop_id'],'travel_date':_dateText(_date)}..removeWhere((key,value)=>value==null);
       final r=await ApiClient.post('tickets',auth:true,body:body);
       if(r is! Map||(r['id']==null&&r['ticket_id']==null)){_msg('Reservation was not confirmed: the server returned no ticket ID.');return;}
-      _timer?.cancel();_paymentPollTimer?.cancel();setState((){_selectedBus=bus;_seat=seatIndex;_activeTicketId=(r['id']??r['ticket_id']).toString();_seconds=900;_paymentSubmitting=false;_paymentPending=false;_checkingPaymentStatus=false;_paymentStatusMessage=null;});
-      _timer=Timer.periodic(const Duration(seconds:1),(t){if(!mounted){t.cancel();return;}if(_seconds<=1){t.cancel();_expire();}else{setState(()=>_seconds--);}});
+      _timer?.cancel();_paymentPollTimer?.cancel();_holdExpiresAt=DateTime.now().add(const Duration(minutes:15));_holdWarningShown=false;setState((){_selectedBus=bus;_seat=seatIndex;_activeTicketId=(r['id']??r['ticket_id']).toString();_seconds=900;_showCheckout=true;_paymentSubmitting=false;_paymentPending=false;_checkingPaymentStatus=false;_paymentStatusMessage=null;});
+      _startHoldTimer();
       _msg('Seat $selected reserved. Complete payment within 15 minutes.');
     }on ApiException catch(e){
       if(!mounted)return;
@@ -573,7 +674,34 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     ));
   }
-  Future<void> _expire() async {final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}catch(_){}}if(!mounted)return;setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _seconds=0; _paymentPending=false; _paymentSubmitting=false; _paymentStatusMessage=null; });_msg('The 15-minute reservation hold expired. Any unpaid reservation was cancelled.');_search();}
+  Future<void> _expire() async {
+    final id = _activeTicketId;
+    if (id != null) {
+      try { await ApiClient.patch('tickets/$id/cancel', auth: true); }
+      on ApiException catch (e) {
+        try {
+          final status = await ApiClient.get('tickets/$id/pay/status', auth: true);
+          if (status is Map && (status['status'] ?? '').toString().toLowerCase() == 'paid') {
+            await _completePayment();
+            return;
+          }
+        } catch (_) {}
+        if (mounted) _msg(e.message);
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    _timer?.cancel();
+    _holdExpiresAt = null;
+    setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _seconds=0; _showCheckout=false; _paymentPending=false; _paymentSubmitting=false; _paymentStatusMessage=null; });
+    _msg('The 15-minute reservation hold expired. Any unpaid reservation was cancelled.');
+    _loadTickets();
+    _search();
+  }
+
+  void _leaveCheckout() {
+    if (mounted) setState(() { _showCheckout = false; _tab = 0; });
+    _msg('Your reservation countdown continues. Tap the floating timer to return to payment.');
+  }
   Future<void> _cancel() async {
     if(_paymentPending||_paymentSubmitting){
       _msg('Payment is still processing. Check its status before leaving checkout so you do not lose a successful payment.');
@@ -594,6 +722,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _completePayment() async {
     _timer?.cancel();
     _paymentPollTimer?.cancel();
+    _holdExpiresAt = null;
+    _showCheckout = false;
+    _activeTicketId = null;
     await _loadTickets();
     if(!mounted)return;
     setState((){
@@ -706,9 +837,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return;
       }
 
-      // Once a provider charge exists, do not let the local countdown cancel
-      // the reservation while the provider is still confirming the payment.
-      _timer?.cancel();
+      // Keep the deadline visible while the provider confirms payment; the backend remains authoritative.
       if(mounted)setState((){
         _paymentPending=true;
         _paymentStatusMessage=(r is Map&&r['message']!=null)
@@ -736,7 +865,42 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  @override Widget build(BuildContext context)=>Scaffold(body:SafeArea(child:IndexedStack(index:_tab,children:[_home(),_ticketTab(),_historyTab(),_profile()])),bottomNavigationBar:NavigationBar(selectedIndex:_tab,onDestinationSelected:(i)=>setState(()=>_tab=i),destinations:[
+  Widget _holdCountdownChip() {
+    final left = Duration(seconds: _seconds.clamp(0, 900));
+    final label = '${left.inMinutes.toString().padLeft(2,'0')}:${(left.inSeconds % 60).toString().padLeft(2,'0')}';
+    final urgent = _seconds <= 180;
+    return Material(
+      elevation: 8,
+      color: urgent ? AppColors.danger : const Color(0xFF10243A),
+      borderRadius: BorderRadius.circular(28),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(28),
+        onTap: () {
+          if (_selectedBus != null && _activeTicketId != null) {
+            setState(() { _tab = 0; _showCheckout = true; });
+          } else {
+            _loadTickets();
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.timer_outlined, color: Colors.white, size: 19),
+            const SizedBox(width: 8),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+              Text('$label remaining', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
+              const Text('Tap to finish payment', style: TextStyle(color: Colors.white70, fontSize: 10)),
+            ]),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  @override Widget build(BuildContext context)=>Scaffold(body:SafeArea(child:Stack(children:[
+    Positioned.fill(child:IndexedStack(index:_tab,children:[_home(),_ticketTab(),_historyTab(),_profile()])),
+    if(_activeTicketId!=null&&_seconds>0)Positioned(left:12,right:12,bottom:12,child:Align(alignment:Alignment.bottomRight,child:_holdCountdownChip())),
+  ])),bottomNavigationBar:NavigationBar(selectedIndex:_tab,onDestinationSelected:(i)=>setState(()=>_tab=i),destinations:[
     NavigationDestination(icon:const Icon(Icons.home_outlined),selectedIcon:const Icon(Icons.home),label:_historyText('Home','Ahabanza')),
     NavigationDestination(icon:const Icon(Icons.confirmation_num_outlined),selectedIcon:const Icon(Icons.confirmation_num),label:_historyText('Ticket','Itike')),
     NavigationDestination(icon:const Icon(Icons.history),selectedIcon:const Icon(Icons.history),label:_historyText('History','Amateka')),
@@ -752,12 +916,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF0369A1),Color(0xFF0288D1),Color(0xFF7DD3FC)]);
   }
 
-  Widget _home()=>_selectedBus!=null?_paymentPanel():RefreshIndicator(onRefresh:()async{await _loadLocations();if(_fromId!=null&&_toId!=null&&_fromId!=_toId){await _search();}else{await _loadAvailableBuses();}},child:ListView(padding:EdgeInsets.zero,children:[
+  Widget _home()=>_showCheckout&&_selectedBus!=null?_paymentPanel():RefreshIndicator(onRefresh:()async{await _loadLocations();if(_fromId!=null&&_toId!=null&&_fromId!=_toId){await _search();}else{await _loadAvailableBuses();}},child:ListView(padding:EdgeInsets.zero,children:[
     Container(clipBehavior:Clip.antiAlias,padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:_weatherGradient,borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24))),child:Stack(children:[
       Positioned(right:-12,top:-16,bottom:-16,width:155,child:_WeatherBackdrop(code:_weatherCode)),
       Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Row(children:[
           const Expanded(child:Text('BookIt',style:TextStyle(color:Colors.white,fontSize:21,fontWeight:FontWeight.w800))),
+          IconButton(onPressed:_openNearbyStations,tooltip:'Find nearby bus stations',icon:const Icon(Icons.location_searching_rounded,color:AppColors.white,size:25)),
           IconButton(
             onPressed:_openNotifications,
             tooltip:_unreadNotifications==0?'Notifications':'Notifications, $_unreadNotifications unread',
@@ -930,7 +1095,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(children: [
           IconButton(
             tooltip: 'Back to trip search',
-            onPressed: _cancel,
+            onPressed: _leaveCheckout,
             icon: const Icon(Icons.arrow_back_rounded),
           ),
           const SizedBox(width: 4),
