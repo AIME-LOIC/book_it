@@ -2080,7 +2080,12 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   String get _status => _field(widget.ticket['status'], 'unknown').toUpperCase();
 
   Future<Uint8List> _buildPaperTicket() async {
-    final pdf = pw.Document();
+    // Embed Unicode-capable fonts so names and locations render correctly in PDFs.
+    final baseFont = await PdfGoogleFonts.notoSansRegular();
+    final boldFont = await PdfGoogleFonts.notoSansBold();
+    final pdf = pw.Document(
+      theme: pw.ThemeData.withFont(base: baseFont, bold: boldFont),
+    );
     final status = _status;
     pdf.addPage(pw.Page(
       pageFormat: PdfPageFormat.a5,
