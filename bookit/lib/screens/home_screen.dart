@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:http/http.dart' as http;
 import '../theme/theme_controller.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -2083,8 +2084,15 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     // Embed Unicode-capable fonts so names and locations render correctly in PDFs.
     final baseFont = await PdfGoogleFonts.notoSansRegular();
     final boldFont = await PdfGoogleFonts.notoSansBold();
+    final italicFont = await PdfGoogleFonts.notoSansItalic();
+    final boldItalicFont = await PdfGoogleFonts.notoSansBoldItalic();
     final pdf = pw.Document(
-      theme: pw.ThemeData.withFont(base: baseFont, bold: boldFont),
+      theme: pw.ThemeData.withFont(
+        base: baseFont,
+        bold: boldFont,
+        italic: italicFont,
+        boldItalic: boldItalicFont,
+      ),
     );
     final status = _status;
     pdf.addPage(pw.Page(
@@ -2324,6 +2332,26 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     if (_saving) return;
     setState(() => _saving = true);
     try {
+      // Linux does not implement shareXFiles; use a native Save As dialog instead.
+      if (Platform.isLinux) {
+        final location = await getSaveLocation(
+          suggestedName: 'BookIt_Ticket_$_safeCode.pdf',
+          acceptedTypeGroups: [
+            const XTypeGroup(label: 'PDF document', extensions: ['pdf']),
+          ],
+        );
+        if (location == null) return;
+        final bytes = await _buildPaperTicket();
+        final output = File(location.path);
+        await output.writeAsBytes(bytes, flush: true);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Ticket PDF exported to ${output.path}')),
+          );
+        }
+        return;
+      }
+
       final path = await _savePaperTicket();
       await Share.shareXFiles(
         [XFile(path, mimeType: 'application/pdf', name: 'BookIt_Ticket_$_safeCode.pdf')],
@@ -2332,7 +2360,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       );
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not prepare ticket PDF: $e')),
+        SnackBar(content: Text('Could not export ticket PDF: $e')),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
