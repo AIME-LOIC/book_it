@@ -2086,7 +2086,6 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   String get _status => _field(widget.ticket['status'], 'unknown').toUpperCase();
 
   Future<Uint8List> _buildPaperTicket() async {
-    // Embed Unicode-capable fonts for passenger names and place names.
     final baseFont = await PdfGoogleFonts.notoSansRegular();
     final boldFont = await PdfGoogleFonts.notoSansBold();
     final italicFont = await PdfGoogleFonts.notoSansItalic();
@@ -2120,191 +2119,170 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     );
     final plate = _field(widget.plate, 'Not provided by operator');
     final ticketCode = _field(widget.code, 'Not available');
+    const navy = PdfColor(0.035, 0.18, 0.36);
+    const blue = PdfColor(0.02, 0.55, 0.85);
+    const paleBlue = PdfColor(0.92, 0.96, 0.99);
 
     pdf.addPage(pw.Page(
-      pageFormat: PdfPageFormat.a5.landscape,
-      margin: const pw.EdgeInsets.all(18),
-      build: (context) => pw.Container(
-        decoration: pw.BoxDecoration(
-          color: PdfColors.white,
-          border: pw.Border.all(color: PdfColors.blueGrey300, width: 1),
-          borderRadius: pw.BorderRadius.circular(10),
-        ),
-        child: pw.Row(
-          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
-          children: [
-            // Left rail: brand, operator, QR, and passenger identity.
-            pw.Expanded(
-              flex: 4,
-              child: pw.Container(
-                padding: const pw.EdgeInsets.all(15),
+      pageFormat: PdfPageFormat.a5,
+      margin: const pw.EdgeInsets.all(16),
+      build: (context) => pw.Center(
+        child: pw.Container(
+          width: 310,
+          decoration: pw.BoxDecoration(
+            color: PdfColors.white,
+            border: pw.Border.all(color: blue, width: 1.3),
+            borderRadius: pw.BorderRadius.circular(12),
+          ),
+          child: pw.Column(
+            mainAxisSize: pw.MainAxisSize.min,
+            crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+            children: [
+              // 1. Operator header — a compact blue band at the top.
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(horizontal: 18, vertical: 13),
                 decoration: const pw.BoxDecoration(
-                  color: PdfColor(0.035, 0.18, 0.36),
+                  color: navy,
                   borderRadius: pw.BorderRadius.only(
-                    topLeft: pw.Radius.circular(9),
-                    bottomLeft: pw.Radius.circular(9),
+                    topLeft: pw.Radius.circular(11),
+                    topRight: pw.Radius.circular(11),
                   ),
                 ),
                 child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.center,
                   children: [
                     pw.Text('BOOKIT', style: pw.TextStyle(
-                      color: PdfColors.white, fontSize: 19,
+                      color: PdfColors.white, fontSize: 17,
                       fontWeight: pw.FontWeight.bold, letterSpacing: 1.5,
                     )),
-                    pw.SizedBox(height: 3),
+                    pw.SizedBox(height: 4),
                     pw.Text(operatorLabel.toUpperCase(), maxLines: 2,
                       textAlign: pw.TextAlign.center,
-                      style: const pw.TextStyle(color: PdfColor(0.80, 0.88, 0.96), fontSize: 7)),
-                    pw.SizedBox(height: 12),
-                    pw.Container(height: 1, color: PdfColor(0.30, 0.43, 0.58)),
-                    pw.SizedBox(height: 12),
-                    pw.Text('BOARDING PASS', style: pw.TextStyle(
-                      color: PdfColors.white, fontSize: 10,
-                      fontWeight: pw.FontWeight.bold, letterSpacing: .8,
-                    )),
-                    pw.SizedBox(height: 10),
-                    pw.Container(
-                      padding: const pw.EdgeInsets.all(7),
-                      decoration: pw.BoxDecoration(
-                        color: PdfColors.white,
-                        borderRadius: pw.BorderRadius.circular(5),
-                      ),
-                      child: pw.BarcodeWidget(
-                        barcode: pw.Barcode.qrCode(),
-                        data: widget.qrData,
-                        width: 92,
-                        height: 92,
-                      ),
-                    ),
-                    pw.SizedBox(height: 8),
-                    pw.Text('TICKET CODE', style: const pw.TextStyle(
-                      color: PdfColor(0.80, 0.88, 0.96), fontSize: 7,
-                    )),
-                    pw.SizedBox(height: 3),
-                    pw.Text(ticketCode, maxLines: 2, textAlign: pw.TextAlign.center,
-                      style: pw.TextStyle(color: PdfColors.white, fontSize: 10, fontWeight: pw.FontWeight.bold)),
-                    pw.Spacer(),
-                    pw.Text('PASSENGER', style: const pw.TextStyle(
-                      color: PdfColor(0.80, 0.88, 0.96), fontSize: 7,
-                    )),
-                    pw.SizedBox(height: 3),
-                    pw.Text(passenger, maxLines: 2, textAlign: pw.TextAlign.center,
-                      style: pw.TextStyle(color: PdfColors.white, fontSize: 9, fontWeight: pw.FontWeight.bold)),
+                      style: const pw.TextStyle(color: PdfColor(0.83, 0.91, 0.98), fontSize: 9)),
                   ],
                 ),
               ),
-            ),
-            // Right panel: journey, travel data, fare, and rules.
-            pw.Expanded(
-              flex: 6,
-              child: pw.Padding(
-                padding: const pw.EdgeInsets.all(16),
+              pw.Padding(
+                padding: const pw.EdgeInsets.fromLTRB(17, 14, 17, 0),
                 child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                   children: [
-                    pw.Row(
-                      crossAxisAlignment: pw.CrossAxisAlignment.start,
-                      children: [
-                        pw.Expanded(child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text('TICKET DETAILS', style: pw.TextStyle(
-                              color: PdfColor(0.035, 0.18, 0.36), fontSize: 13,
-                              fontWeight: pw.FontWeight.bold, letterSpacing: .6,
-                            )),
-                            pw.SizedBox(height: 5),
-                            pw.Text(status, style: pw.TextStyle(
-                              color: status == 'PAID' ? PdfColors.green700 : PdfColors.blueGrey700,
-                              fontSize: 8, fontWeight: pw.FontWeight.bold,
-                            )),
-                          ],
-                        )),
-                        pw.Container(
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                          decoration: pw.BoxDecoration(
-                            color: status == 'PAID' ? PdfColors.green50 : PdfColors.blueGrey100,
-                            borderRadius: pw.BorderRadius.circular(4),
-                          ),
-                          child: pw.Text(status, style: pw.TextStyle(
-                            color: status == 'PAID' ? PdfColors.green800 : PdfColors.blueGrey800,
-                            fontSize: 7, fontWeight: pw.FontWeight.bold,
-                          )),
-                        ),
-                      ],
-                    ),
-                    pw.SizedBox(height: 11),
+                    // 2. Ticket details in a single clean vertical card.
+                    pw.Text('TICKET DETAILS', style: pw.TextStyle(
+                      color: navy, fontSize: 12, fontWeight: pw.FontWeight.bold,
+                      letterSpacing: .5,
+                    )),
+                    pw.SizedBox(height: 8),
                     pw.Container(
                       padding: const pw.EdgeInsets.all(10),
                       decoration: pw.BoxDecoration(
-                        color: PdfColors.blueGrey50,
-                        borderRadius: pw.BorderRadius.circular(6),
+                        color: paleBlue,
+                        borderRadius: pw.BorderRadius.circular(7),
                       ),
-                      child: pw.Row(children: [
-                        pw.Expanded(child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text('FROM', style: const pw.TextStyle(color: PdfColors.blueGrey600, fontSize: 7)),
-                            pw.SizedBox(height: 3),
-                            pw.Text(widget.from, maxLines: 2, style: pw.TextStyle(
-                              color: PdfColors.blueGrey900, fontSize: 12, fontWeight: pw.FontWeight.bold)),
-                          ],
-                        )),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.symmetric(horizontal: 8),
-                          child: pw.Text('→', style: pw.TextStyle(
-                            color: PdfColors.blue700, fontSize: 15, fontWeight: pw.FontWeight.bold)),
+                      child: pw.Column(
+                        children: [
+                          pw.Row(children: [
+                            pw.Expanded(child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Text('FROM', style: const pw.TextStyle(color: PdfColors.blueGrey600, fontSize: 7)),
+                                pw.SizedBox(height: 2),
+                                pw.Text(widget.from, maxLines: 2, style: pw.TextStyle(color: navy, fontSize: 11, fontWeight: pw.FontWeight.bold)),
+                              ],
+                            )),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.symmetric(horizontal: 6),
+                              child: pw.Text('→', style: pw.TextStyle(color: blue, fontSize: 13, fontWeight: pw.FontWeight.bold)),
+                            ),
+                            pw.Expanded(child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.end,
+                              children: [
+                                pw.Text('TO', style: const pw.TextStyle(color: PdfColors.blueGrey600, fontSize: 7)),
+                                pw.SizedBox(height: 2),
+                                pw.Text(widget.to, maxLines: 2, textAlign: pw.TextAlign.right, style: pw.TextStyle(color: navy, fontSize: 11, fontWeight: pw.FontWeight.bold)),
+                              ],
+                            )),
+                          ]),
+                          pw.SizedBox(height: 9),
+                          pw.Container(height: .7, color: PdfColors.blueGrey200),
+                          pw.SizedBox(height: 8),
+                          _pdfDetail('PASSENGER', passenger),
+                          pw.SizedBox(height: 7),
+                          pw.Row(children: [
+                            pw.Expanded(child: _pdfDetail('TRAVEL DATE', _travelDate)),
+                            pw.SizedBox(width: 8),
+                            pw.Expanded(child: _pdfDetail('DEPARTURE', _departureTime)),
+                          ]),
+                          pw.SizedBox(height: 7),
+                          pw.Row(children: [
+                            pw.Expanded(child: _pdfDetail('SEAT NUMBER', _seat)),
+                            pw.SizedBox(width: 8),
+                            pw.Expanded(child: _pdfDetail('BUS PLATE', plate)),
+                          ]),
+                          pw.SizedBox(height: 7),
+                          pw.Row(children: [
+                            pw.Expanded(child: _pdfDetail('FARE', _fare)),
+                            pw.SizedBox(width: 8),
+                            pw.Expanded(child: _pdfDetail('STATUS', status)),
+                          ]),
+                          pw.SizedBox(height: 7),
+                          pw.Align(
+                            alignment: pw.Alignment.centerLeft,
+                            child: pw.Column(
+                              crossAxisAlignment: pw.CrossAxisAlignment.start,
+                              children: [
+                                pw.Text('TICKET CODE', style: const pw.TextStyle(color: PdfColors.blueGrey600, fontSize: 7)),
+                                pw.SizedBox(height: 2),
+                                pw.Text(ticketCode, style: pw.TextStyle(color: navy, fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // 3. QR code follows the ticket details.
+                    pw.SizedBox(height: 12),
+                    pw.Center(child: pw.Text('SCAN TICKET', style: pw.TextStyle(
+                      color: navy, fontSize: 9, fontWeight: pw.FontWeight.bold, letterSpacing: .7,
+                    ))),
+                    pw.SizedBox(height: 6),
+                    pw.Center(
+                      child: pw.Container(
+                        padding: const pw.EdgeInsets.all(8),
+                        decoration: pw.BoxDecoration(
+                          color: PdfColors.white,
+                          border: pw.Border.all(color: PdfColors.blueGrey200),
+                          borderRadius: pw.BorderRadius.circular(7),
                         ),
-                        pw.Expanded(child: pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.end,
-                          children: [
-                            pw.Text('TO', style: const pw.TextStyle(color: PdfColors.blueGrey600, fontSize: 7)),
-                            pw.SizedBox(height: 3),
-                            pw.Text(widget.to, maxLines: 2, textAlign: pw.TextAlign.right, style: pw.TextStyle(
-                              color: PdfColors.blueGrey900, fontSize: 12, fontWeight: pw.FontWeight.bold)),
-                          ],
-                        )),
-                      ]),
+                        child: pw.BarcodeWidget(
+                          barcode: pw.Barcode.qrCode(),
+                          data: widget.qrData,
+                          width: 112,
+                          height: 112,
+                        ),
+                      ),
                     ),
                     pw.SizedBox(height: 12),
-                    pw.Row(children: [
-                      pw.Expanded(child: _pdfDetail('TRAVEL DATE', _travelDate)),
-                      pw.SizedBox(width: 8),
-                      pw.Expanded(child: _pdfDetail('DEPARTURE', _departureTime)),
-                    ]),
-                    pw.SizedBox(height: 10),
-                    pw.Row(children: [
-                      pw.Expanded(child: _pdfDetail('PASSENGER', passenger)),
-                      pw.SizedBox(width: 8),
-                      pw.Expanded(child: _pdfDetail('SEAT NUMBER', _seat)),
-                    ]),
-                    pw.SizedBox(height: 10),
-                    pw.Row(children: [
-                      pw.Expanded(child: _pdfDetail('BUS PLATE', plate)),
-                      pw.SizedBox(width: 8),
-                      pw.Expanded(child: _pdfDetail('FARE', _fare)),
-                    ]),
-                    pw.SizedBox(height: 10),
+                    // 4. Travel rules at the bottom, matching the reference order.
                     pw.Container(height: 1, color: PdfColors.blueGrey200),
-                    pw.SizedBox(height: 8),
-                    pw.Text('TRAVEL RULES', style: pw.TextStyle(
-                      color: PdfColor(0.035, 0.18, 0.36), fontSize: 9,
-                      fontWeight: pw.FontWeight.bold,
+                    pw.SizedBox(height: 9),
+                    pw.Text('RULES', style: pw.TextStyle(
+                      color: navy, fontSize: 10, fontWeight: pw.FontWeight.bold,
                     )),
-                    pw.SizedBox(height: 4),
+                    pw.SizedBox(height: 5),
                     pw.Text('1. Arrive at least 5 minutes before departure.',
-                      style: const pw.TextStyle(fontSize: 7, color: PdfColors.blueGrey800)),
+                      style: const pw.TextStyle(fontSize: 8, color: PdfColors.blueGrey800)),
                     pw.SizedBox(height: 3),
                     pw.Text('2. Keep your bags with you.',
-                      style: const pw.TextStyle(fontSize: 7, color: PdfColors.blueGrey800)),
-                    pw.Spacer(),
-                    pw.Text('Ticket support and travel issues are handled through BookIt, subject to operator records.',
-                      maxLines: 2, style: const pw.TextStyle(fontSize: 6, color: PdfColors.blueGrey600)),
+                      style: const pw.TextStyle(fontSize: 8, color: PdfColors.blueGrey800)),
+                    pw.SizedBox(height: 5),
+                    pw.Text('For ticket or travel issues, contact BookIt support. Operator conditions may apply.',
+                      maxLines: 2, style: const pw.TextStyle(fontSize: 7, color: PdfColors.blueGrey600)),
+                    pw.SizedBox(height: 13),
                   ],
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     ));
