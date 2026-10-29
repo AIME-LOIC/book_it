@@ -677,15 +677,35 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _expire() async {
     final id = _activeTicketId;
     if (id != null) {
-      try { await ApiClient.patch('tickets/$id/cancel', auth: true); }
-      on ApiException catch (e) {
+      try {
+        await ApiClient.patch('tickets/$id/cancel', auth: true);
+      } on ApiException catch (e) {
         try {
           final status = await ApiClient.get('tickets/$id/pay/status', auth: true);
-          if (status is Map && (status['status'] ?? '').toString().toLowerCase() == 'paid') {
+          final state = status is Map ? (status['status'] ?? '').toString().toLowerCase() : '';
+          if (state == 'paid') {
             await _completePayment();
             return;
           }
-        } catch (_) {}
+          if (state != 'cancelled' && state != 'failed' && state != 'expired') {
+            if (!mounted) return;
+            setState(() {
+              _seconds = 0;
+              _paymentPending = true;
+              _paymentStatusMessage = 'The hold deadline has passed. BookIt is verifying the mobile-money result before releasing the seat.';
+            });
+            _msg('Payment is still being verified. BookIt will release the seat if the provider confirms that payment failed.');
+            _startPaymentPolling();
+            return;
+          }
+        } catch (_) {
+          if (mounted) {
+            setState(() { _seconds = 0; _paymentPending = true; });
+            _startPaymentPolling();
+            _msg('Could not verify payment yet. The system will keep checking before releasing the seat.');
+          }
+          return;
+        }
         if (mounted) _msg(e.message);
       } catch (_) {}
     }
@@ -709,7 +729,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
     _paymentPollTimer?.cancel();
     _timer?.cancel();
-    final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}on ApiException catch(e){_msg(e.message);}}if(mounted)setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _paymentPending=false; _paymentSubmitting=false; _paymentStatusMessage=null; });_search();}
+    final id=_activeTicketId;if(id!=null){try{await ApiClient.patch('tickets/'+id+'/cancel',auth:true);}on ApiException catch(e){_msg(e.message);}}_holdExpiresAt=null;if(mounted)setState(() { _selectedBus=null; _seat=null; _activeTicketId=null; _showCheckout=false; _paymentPending=false; _paymentSubmitting=false; _paymentStatusMessage=null; });_search();}
   void _detectPaymentNetwork(String value) {
     final digits=value.replaceAll(RegExp(r'\D'), '');
     final local=digits.startsWith('250')?digits.substring(3):digits;
@@ -888,8 +908,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const Icon(Icons.timer_outlined, color: Colors.white, size: 19),
             const SizedBox(width: 8),
             Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Text('$label remaining', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
-              const Text('Tap to finish payment', style: TextStyle(color: Colors.white70, fontSize: 10)),
+              Text(_seconds<=0&&_paymentPending?'Verifying payment':'$label remaining', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13)),
+              Text(_seconds<=0&&_paymentPending?'Seat release pending provider result':'Tap to finish payment', style: const TextStyle(color: Colors.white70, fontSize: 10)),
             ]),
           ]),
         ),
@@ -899,7 +919,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override Widget build(BuildContext context)=>Scaffold(body:SafeArea(child:Stack(children:[
     Positioned.fill(child:IndexedStack(index:_tab,children:[_home(),_ticketTab(),_historyTab(),_profile()])),
-    if(_activeTicketId!=null&&_seconds>0)Positioned(left:12,right:12,bottom:12,child:Align(alignment:Alignment.bottomRight,child:_holdCountdownChip())),
+    if(_activeTicketId!=null&&(_seconds>0||_paymentPending))Positioned(left:12,right:12,bottom:12,child:Align(alignment:Alignment.bottomRight,child:_holdCountdownChip())),
   ])),bottomNavigationBar:NavigationBar(selectedIndex:_tab,onDestinationSelected:(i)=>setState(()=>_tab=i),destinations:[
     NavigationDestination(icon:const Icon(Icons.home_outlined),selectedIcon:const Icon(Icons.home),label:_historyText('Home','Ahabanza')),
     NavigationDestination(icon:const Icon(Icons.confirmation_num_outlined),selectedIcon:const Icon(Icons.confirmation_num),label:_historyText('Ticket','Itike')),
