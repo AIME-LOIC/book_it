@@ -10,6 +10,7 @@ import { Op } from 'sequelize';
 import PromoCode from '../database/models/promo_code.js';
 import TicketArchive from '../database/models/ticket_archive.js';
 import Notification from '../database/models/notification.js';
+import { checkPaymentStatus } from './ticket.service.js';
 
 // ── DEACTIVATE DEPARTED BUSES (runs every 60s) ────────────────
 export const checkDepartedBuses = async () => {
@@ -115,20 +116,30 @@ export const checkPendingTicketHolds = async () => {
   if (warnings.length) await createMany(warnings);
 
   const expired = await Ticket.findAll({
-    where: {
-      status: 'pending',
-      createdAt: { [Op.lte]: expiry },
-      payment_reference: null,
-      flw_charge_id: null,
-    },
+    where: { status: 'pending', createdAt: { [Op.lte]: expiry } },
     limit: 200,
   });
   for (const ticket of expired) {
-    // Recheck before mutation so a concurrent payment attempt is not overwritten.
     const fresh = await Ticket.findByPk(ticket.id);
-    if (!fresh || fresh.status !== 'pending' || fresh.payment_reference || fresh.flw_charge_id ||
-        new Date(fresh.createdAt).getTime() > expiry.getTime()) continue;
-    await fresh.update({ status: 'cancelled' });
+    if (!fresh || fresh.status !== 'pending' || new Date(fresh.createdAt).getTime() > expiry.getTime()) continue;
+
+    // Never cancel a charge that the provider still reports as processing.
+    // Once it definitively fails, checkPaymentStatus cancels expired holds.
+    if (fresh.flw_charge_id) {
+      try { await checkPaymentStatus(fresh.user_id, fresh.id); }
+      catch (error) { console.warn('[ReservationHold] Could not verify provider charge:', fresh.id, error?.message || error); }
+      continue;
+    }
+
+    const initializationAge = Date.now() - new Date(fresh.updatedAt || 0).getTime();
+    if (fresh.payment_reference && initializationAge <= 60_000) continue;
+    await fresh.update({
+      status: 'cancelled',
+      payment_reference: null,
+      flw_payment_method_id: null,
+      flw_charge_id: null,
+      payment_network: null,
+    });
     await createMany([{
       recipient_id: fresh.user_id,
       recipient_type: 'user',
@@ -136,6 +147,12 @@ export const checkPendingTicketHolds = async () => {
       message: `Your unpaid reservation for seat ${fresh.seat_number} expired after 15 minutes and was cancelled.`,
       meta: { ticket_id: fresh.id, seat_number: fresh.seat_number },
     }]);
+    const warnings = await Notification.findAll({
+      where: { recipient_id: fresh.user_id, recipient_type: 'user', type: 'ticket_expiring_soon' },
+      attributes: ['id', 'meta'],
+    });
+    const warning = warnings.find((notification) => notification.meta?.ticket_id === fresh.id);
+    if (warning) await warning.destroy();
   }
 };
 
