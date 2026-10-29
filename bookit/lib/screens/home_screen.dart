@@ -1,8 +1,10 @@
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -2296,6 +2298,23 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     }
   }
 
+  Future<void> _printPaperTicket() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    try {
+      await Printing.layoutPdf(
+        name: 'BookIt_Ticket_$_safeCode.pdf',
+        onLayout: (_) => _buildPaperTicket(),
+      );
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not open print preview: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   Future<void> _sharePaperTicket() async {
     if (_saving) return;
     setState(() => _saving = true);
@@ -2468,9 +2487,15 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                 ),
                 const SizedBox(height: 8),
                 OutlinedButton.icon(
+                  onPressed: _saving ? null : _printPaperTicket,
+                  icon: const Icon(Icons.print_outlined),
+                  label: const Text('Print paper ticket'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
                   onPressed: _saving ? null : _sharePaperTicket,
                   icon: const Icon(Icons.ios_share_rounded),
-                  label: const Text('Export / print paper ticket (PDF)'),
+                  label: const Text('Share / export ticket PDF'),
                 ),
                 if (_savedPath != null) Padding(
                   padding: const EdgeInsets.only(top: 8),
