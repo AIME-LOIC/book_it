@@ -2346,16 +2346,43 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   Widget build(BuildContext context) {
     final ticket = widget.ticket;
     final status = (ticket['status'] ?? 'unknown').toString().toLowerCase();
-    final bus = ticket['bus'] is Map ? Map<String,dynamic>.from(ticket['bus']) : <String,dynamic>{};
-    final boarding = ticket['boardingStop'] is Map ? Map<String,dynamic>.from(ticket['boardingStop']) : <String,dynamic>{};
-    final dropoff = ticket['dropoffStop'] is Map ? Map<String,dynamic>.from(ticket['dropoffStop']) : <String,dynamic>{};
-    final boardingLocation = boarding['location'] is Map ? Map<String,dynamic>.from(boarding['location']) : <String,dynamic>{};
-    final dropoffLocation = dropoff['location'] is Map ? Map<String,dynamic>.from(dropoff['location']) : <String,dynamic>{};
+    final bus = ticket['bus'] is Map ? Map<String, dynamic>.from(ticket['bus']) : <String, dynamic>{};
+    final boarding = ticket['boardingStop'] is Map ? Map<String, dynamic>.from(ticket['boardingStop']) : <String, dynamic>{};
+    final dropoff = ticket['dropoffStop'] is Map ? Map<String, dynamic>.from(ticket['dropoffStop']) : <String, dynamic>{};
+    final boardingLocation = boarding['location'] is Map ? Map<String, dynamic>.from(boarding['location']) : <String, dynamic>{};
+    final dropoffLocation = dropoff['location'] is Map ? Map<String, dynamic>.from(dropoff['location']) : <String, dynamic>{};
     final boardingPoint = (boardingLocation['name'] ?? boarding['name'])?.toString();
     final dropoffPoint = (dropoffLocation['name'] ?? dropoff['name'])?.toString();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final departed = ticket['departed_at'] != null || ticket['departure_status']?.toString().toLowerCase() == 'departed';
-    final Color accent = departed ? AppColors.primary : (status == 'paid' ? (isDark ? const Color(0xFF64B5F6) : const Color(0xFF0288D1)) : AppColors.textMuted);
+    final accent = AppColors.primary;
+    final borderColor = Theme.of(context).dividerColor.withValues(alpha: .45);
+    final cardColor = Theme.of(context).cardColor;
+    final statusLabel = departed ? 'DEPARTED' : status.toUpperCase();
+    Widget sectionTitle(IconData icon, String title) => Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(children: [
+        Icon(icon, size: 19, color: accent),
+        const SizedBox(width: 9),
+        Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.onSurface)),
+      ]),
+    );
+    Widget detailTile(IconData icon, String label, String value) => Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34, height: 34,
+          decoration: BoxDecoration(color: accent.withValues(alpha: .08), borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, size: 18, color: accent),
+        ),
+        const SizedBox(width: 10),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 3),
+          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+        ])),
+      ],
+    );
     return Scaffold(
       appBar: AppBar(
         title: const Text('Ticket details', style: TextStyle(fontWeight: FontWeight.w800)),
@@ -2366,141 +2393,184 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
             onPressed: _saving ? null : _saveOffline,
             icon: Icon(_savedPath == null ? Icons.download_for_offline_outlined : Icons.offline_pin_rounded),
           ),
+          const SizedBox(width: 4),
         ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 28),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 28),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            // One unified boarding pass: status, route, QR and travel summary.
             Container(
-              padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
-                gradient: AppColors.heroGradient,
-                image: widget.to.trim().toLowerCase().contains('muhanga')
-                  ? const DecorationImage(
-                      image: AssetImage('assets/muhanga.jpg'),
-                      fit: BoxFit.cover,
-                      colorFilter: ColorFilter.mode(Color(0x50001638), BlendMode.darken),
-                    ) : null,
-                borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(26), bottomRight: Radius.circular(26)),
+                color: cardColor,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: borderColor),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? .10 : .045), blurRadius: 18, offset: const Offset(0, 6))],
               ),
               child: Column(children: [
-                const Icon(Icons.confirmation_num_rounded, color: Colors.white, size: 34),
-                const SizedBox(height: 10),
-                Text('${widget.from}  →  ${widget.to}', textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 5),
-                Text(widget.operatorName, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
-                const SizedBox(height: 14),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: .16), borderRadius: BorderRadius.circular(24)),
-                  child: Text(departed ? 'DEPARTED' : status.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, letterSpacing: .8)),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+                  decoration: BoxDecoration(
+                    color: accent,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(21)),
+                  ),
+                  child: Row(children: [
+                    const Icon(Icons.verified_rounded, color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(statusLabel, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: .5))),
+                    Icon(_savedPath == null ? Icons.cloud_download_outlined : Icons.cloud_done_rounded, color: Colors.white, size: 18),
+                    const SizedBox(width: 5),
+                    Text(_savedPath == null ? 'Not saved offline' : 'Saved offline', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+                  ]),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+                  child: Column(children: [
+                    Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Text(widget.from, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w900)),
+                        const SizedBox(height: 3),
+                        const Text('FROM', style: TextStyle(fontSize: 10, letterSpacing: 1, color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+                      ])),
+                      Padding(padding: const EdgeInsets.only(top: 7, left: 8, right: 8), child: Icon(Icons.directions_bus_rounded, color: accent, size: 27)),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                        Text(widget.to, textAlign: TextAlign.end, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w900)),
+                        const SizedBox(height: 3),
+                        const Text('TO', style: TextStyle(fontSize: 10, letterSpacing: 1, color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+                      ])),
+                    ]),
+                    const SizedBox(height: 16),
+                    Container(height: 1, color: borderColor),
+                    const SizedBox(height: 17),
+                    Container(
+                      padding: const EdgeInsets.all(11),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE2E8F0))),
+                      child: QrImageView(data: widget.qrData, version: QrVersions.auto, size: 176, backgroundColor: Colors.white, semanticsLabel: 'Ticket QR code for ticket ${widget.code}'),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text('PRESENT THIS QR CODE AT BOARDING', style: TextStyle(fontSize: 10, letterSpacing: .8, color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 5),
+                    SelectableText(widget.code, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: .8, color: accent)),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(color: accent.withValues(alpha: .055), borderRadius: BorderRadius.circular(14)),
+                      child: Row(children: [
+                        Expanded(child: Column(children: [
+                          const Icon(Icons.calendar_month_rounded, size: 18, color: AppColors.primary),
+                          const SizedBox(height: 5),
+                          const Text('TRAVEL DATE', style: TextStyle(fontSize: 9, color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 3),
+                          Text(_travelDate, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                        ])),
+                        Container(width: 1, height: 42, color: borderColor),
+                        Expanded(child: Column(children: [
+                          const Icon(Icons.schedule_rounded, size: 18, color: AppColors.primary),
+                          const SizedBox(height: 5),
+                          const Text('DEPARTURE', style: TextStyle(fontSize: 9, color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 3),
+                          Text(_departureTime, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                        ])),
+                        Container(width: 1, height: 42, color: borderColor),
+                        Expanded(child: Column(children: [
+                          const Icon(Icons.event_seat_rounded, size: 18, color: AppColors.primary),
+                          const SizedBox(height: 5),
+                          const Text('SEAT', style: TextStyle(fontSize: 9, color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 3),
+                          Text(_seat, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800)),
+                        ])),
+                      ]),
+                    ),
+                    const SizedBox(height: 16),
+                  ]),
                 ),
               ]),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: .45)),
-                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? .08 : .035), blurRadius: 20, offset: const Offset(0, 8))],
-                  ),
-                  child: Column(children: [
-                    Row(children: [
-                      const Expanded(child: Text('Your boarding pass', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900))),
-                      if (_savedPath != null) const Chip(
-                        avatar: Icon(Icons.offline_pin_rounded, size: 16, color: Color(0xFF16794B)),
-                        label: Text('Saved offline', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
-                        visualDensity: VisualDensity.compact,
-                      ),
-                    ]),
-                    const SizedBox(height: 14),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: const Color(0xFFE2E8F0))),
-                      child: QrImageView(data: widget.qrData, version: QrVersions.auto, size: 190, backgroundColor: Colors.white, semanticsLabel: 'Ticket QR code for ticket ${widget.code}'),
-                    ),
-                    const SizedBox(height: 12),
-                    SelectableText(widget.code, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: .6)),
-                    const SizedBox(height: 5),
-                    const Text('Your QR ticket remains available offline after saving.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                  ]),
-                ),
-                const SizedBox(height: 14),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Column(children: [
-                      _detailLine('Travel date', _travelDate),
-                      if (boardingPoint != null && boardingPoint.trim().isNotEmpty) _detailLine('Boarding point', boardingPoint),
-                      if (dropoffPoint != null && dropoffPoint.trim().isNotEmpty) _detailLine('Drop-off point', dropoffPoint),
-                      _detailLine('Departure', _departureTime),
-                      _detailLine('Seat number', _seat),
-                      _detailLine('Bus plate', widget.plate),
-                      _detailLine('Operator', widget.operatorName),
-                      _detailLine('Fare', _fare),
-                      _detailLine('Ticket status', status.toUpperCase()),
-                      if (departed) _detailLine('Departure status', 'Marked as departed'),
-                    ]),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.all(15),
-                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: .08), borderRadius: BorderRadius.circular(16), border: Border.all(color: AppColors.primary.withValues(alpha: .2))),
-                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Icon(departed ? Icons.directions_bus_filled_rounded : Icons.contactless_rounded, color: accent, size: 23),
-                    const SizedBox(width: 11),
-                    const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('Boarding and departure', style: TextStyle(fontWeight: FontWeight.w800)),
-                      SizedBox(height: 5),
-                      Text('Show the QR code to the attendant at boarding. Departure tap-in is a separate event from ticket validation and depends on the operator boarding workflow.', style: TextStyle(fontSize: 12, height: 1.45, color: AppColors.textMuted)),
-                    ])),
-                  ]),
-                ),
-                const SizedBox(height: 14),
+            const SizedBox(height: 14),
+            // Journey and vehicle information are grouped instead of one long label/value list.
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(18), border: Border.all(color: borderColor)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                sectionTitle(Icons.route_rounded, 'Journey details'),
+                if (boardingPoint != null && boardingPoint.trim().isNotEmpty)
+                  detailTile(Icons.trip_origin_rounded, 'Boarding point', boardingPoint),
+                if (boardingPoint != null && boardingPoint.trim().isNotEmpty && dropoffPoint != null && dropoffPoint.trim().isNotEmpty)
+                  const SizedBox(height: 13),
+                if (dropoffPoint != null && dropoffPoint.trim().isNotEmpty)
+                  detailTile(Icons.location_on_outlined, 'Drop-off point', dropoffPoint),
+                const SizedBox(height: 13),
+                detailTile(Icons.directions_bus_outlined, 'Bus operator', widget.operatorName),
+                const SizedBox(height: 13),
+                detailTile(Icons.confirmation_number_outlined, 'Bus plate', widget.plate.isEmpty ? 'Not provided' : widget.plate),
+              ]),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(18), border: Border.all(color: borderColor)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                sectionTitle(Icons.receipt_long_rounded, 'Payment summary'),
+                Row(children: [
+                  const Expanded(child: Text('Total fare', style: TextStyle(color: AppColors.textMuted, fontSize: 13))),
+                  Text(_fare, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: accent)),
+                ]),
+                const SizedBox(height: 13),
+                Container(height: 1, color: borderColor),
+                const SizedBox(height: 12),
+                Row(children: [
+                  const Icon(Icons.check_circle_rounded, color: Color(0xFF15945A), size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(departed ? 'Journey marked as departed' : 'Ticket ${status.toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                    const SizedBox(height: 2),
+                    const Text('Keep this QR code ready when boarding.', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  ])),
+                ]),
+              ]),
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: cardColor, borderRadius: BorderRadius.circular(18), border: Border.all(color: borderColor)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                sectionTitle(Icons.bolt_rounded, 'Ticket actions'),
+                Row(children: [
+                  Expanded(child: _ticketAction(Icons.cloud_download_outlined, _savedPath == null ? 'Save offline' : 'Saved offline', _saving ? null : _saveOffline)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _ticketAction(Icons.print_outlined, 'Print ticket', _saving ? null : _printPaperTicket)),
+                  const SizedBox(width: 8),
+                  Expanded(child: _ticketAction(Icons.ios_share_rounded, 'Share PDF', _saving ? null : _sharePaperTicket)),
+                ]),
+                const SizedBox(height: 12),
                 OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   onPressed: widget.onOpenMap,
                   icon: const Icon(Icons.map_outlined),
-                  label: const Text('View full route map'),
+                  label: const Text('View route map'),
                 ),
-                const SizedBox(height: 8),
-                FilledButton.icon(
-                  onPressed: widget.onTrackBus,
-                  icon: const Icon(Icons.my_location),
-                  label: const Text('Track bus location'),
-                ),
-                if (widget.onTrackBus == null) const Padding(
-                  padding: EdgeInsets.only(top: 8),
-                  child: Text('Live tracking is unavailable because the operator has not supplied current GPS coordinates.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-                ),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: _saving ? null : _saveOffline,
-                  icon: _saving ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(_savedPath == null ? Icons.download_rounded : Icons.check_circle_outline_rounded),
-                  label: Text(_saving ? 'Preparing ticket…' : (_savedPath == null ? 'Save paper ticket for offline use' : 'Ticket saved offline')),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _saving ? null : _printPaperTicket,
-                  icon: const Icon(Icons.print_outlined),
-                  label: const Text('Print paper ticket'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: _saving ? null : _sharePaperTicket,
-                  icon: const Icon(Icons.ios_share_rounded),
-                  label: const Text('Share / export ticket PDF'),
-                ),
-                if (_savedPath != null) Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text('Stored on this device as a PDF. Use Export / print to send it to a printer or another app.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color)),
-                ),
+                if (widget.onTrackBus != null) ...[
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(46), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                    onPressed: widget.onTrackBus,
+                    icon: const Icon(Icons.my_location_rounded),
+                    label: const Text('Track bus location'),
+                  ),
+                ] else
+                  const Padding(
+                    padding: EdgeInsets.only(top: 9),
+                    child: Text('Live tracking is unavailable because the operator has not supplied current GPS coordinates.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, height: 1.4, color: AppColors.textMuted)),
+                  ),
+                if (_savedPath != null) ...[
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    const Icon(Icons.offline_pin_rounded, color: Color(0xFF15945A), size: 18),
+                    const SizedBox(width: 7),
+                    Expanded(child: Text('PDF stored on this device. You can access it without an internet connection.', style: TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color))),
+                  ]),
+                ],
               ]),
             ),
           ]),
@@ -2508,4 +2578,18 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       ),
     );
   }
+
+  Widget _ticketAction(IconData icon, String label, VoidCallback? onPressed) => OutlinedButton(
+    onPressed: onPressed,
+    style: OutlinedButton.styleFrom(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      side: BorderSide(color: AppColors.primary.withValues(alpha: .3)),
+    ),
+    child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 20),
+      const SizedBox(height: 6),
+      Text(label, textAlign: TextAlign.center, maxLines: 2, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700)),
+    ]),
+  );
 }
