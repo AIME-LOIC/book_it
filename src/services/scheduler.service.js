@@ -9,6 +9,7 @@ import { generateDailyLoyaltyPromo } from './promo.service.js';
 import { Op } from 'sequelize';
 import PromoCode from '../database/models/promo_code.js';
 import TicketArchive from '../database/models/ticket_archive.js';
+import Notification from '../database/models/notification.js';
 
 // ── DEACTIVATE DEPARTED BUSES (runs every 60s) ────────────────
 export const checkDepartedBuses = async () => {
@@ -73,10 +74,140 @@ export const checkDepartedBuses = async () => {
   }
 };
 
+
+// ── PENDING RESERVATION HOLDS (runs every 60s) ──────────────────
+// Use createdAt: payment attempts update updatedAt but must not reset the 15-minute hold.
+export const checkPendingTicketHolds = async () => {
+  const now = Date.now();
+  const expiry = new Date(now - 15 * 60 * 1000);
+  const warningStart = new Date(now - 13 * 60 * 1000);
+  const warningEnd = new Date(now - 12 * 60 * 1000);
+
+  const expiringSoon = await Ticket.findAll({
+    where: {
+      status: 'pending',
+      createdAt: { [Op.lte]: warningEnd, [Op.gt]: warningStart },
+      payment_reference: null,
+      flw_charge_id: null,
+    },
+    attributes: ['id', 'user_id', 'seat_number', 'travel_date', 'createdAt'],
+  });
+
+  const recentWarnings = expiringSoon.length
+    ? await Notification.findAll({
+        where: {
+          recipient_id: { [Op.in]: [...new Set(expiringSoon.map((ticket) => ticket.user_id))] },
+          recipient_type: 'user',
+          type: 'ticket_expiring_soon',
+          createdAt: { [Op.gte]: new Date(now - 24 * 60 * 60 * 1000) },
+        },
+        attributes: ['meta'],
+      })
+    : [];
+  const warned = new Set(recentWarnings.map((notification) => notification.meta?.ticket_id).filter(Boolean));
+  const warnings = expiringSoon.filter((ticket) => !warned.has(ticket.id)).map((ticket) => ({
+    recipient_id: ticket.user_id,
+    recipient_type: 'user',
+    type: 'ticket_expiring_soon',
+    message: `Only 3 minutes remain to pay for seat ${ticket.seat_number}. BookIt will cancel this reservation when the 15-minute hold expires.`,
+    meta: { ticket_id: ticket.id, seat_number: ticket.seat_number, expires_at: new Date(new Date(ticket.createdAt).getTime() + 15 * 60 * 1000).toISOString(), temporary: true },
+  }));
+  if (warnings.length) await createMany(warnings);
+
+  const expired = await Ticket.findAll({
+    where: {
+      status: 'pending',
+      createdAt: { [Op.lte]: expiry },
+      payment_reference: null,
+      flw_charge_id: null,
+    },
+    limit: 200,
+  });
+  for (const ticket of expired) {
+    // Recheck before mutation so a concurrent payment attempt is not overwritten.
+    const fresh = await Ticket.findByPk(ticket.id);
+    if (!fresh || fresh.status !== 'pending' || fresh.payment_reference || fresh.flw_charge_id ||
+        new Date(fresh.createdAt).getTime() > expiry.getTime()) continue;
+    await fresh.update({ status: 'cancelled' });
+    await createMany([{
+      recipient_id: fresh.user_id,
+      recipient_type: 'user',
+      type: 'ticket_expired',
+      message: `Your unpaid reservation for seat ${fresh.seat_number} expired after 15 minutes and was cancelled.`,
+      meta: { ticket_id: fresh.id, seat_number: fresh.seat_number },
+    }]);
+  }
+};
+
+// ── DEPARTURE REMINDERS: 30, 15 AND 5 MINUTES BEFORE ───────────
+export const notifyUpcomingDepartures = async () => {
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+  const tickets = await Ticket.findAll({
+    where: { status: 'paid', travel_date: today },
+    include: [{ model: Bus, as: 'bus', attributes: ['id', 'plate_number', 'departure_time'] }],
+    attributes: ['id', 'user_id', 'bus_id', 'seat_number', 'travel_date'],
+  });
+  if (!tickets.length) return;
+
+  const recent = await Notification.findAll({
+    where: {
+      recipient_id: { [Op.in]: [...new Set(tickets.map((ticket) => ticket.user_id))] },
+      recipient_type: 'user',
+      type: 'trip_departure_reminder',
+      createdAt: { [Op.gte]: new Date(now.getTime() - 24 * 60 * 60 * 1000) },
+    },
+    attributes: ['meta'],
+  });
+  const alreadySent = new Set(recent.map((notification) =>
+    notification.meta?.ticket_id && notification.meta?.minutes_before
+      ? `${notification.meta.ticket_id}:${notification.meta.minutes_before}`
+      : null,
+  ).filter(Boolean));
+  const reminders = [];
+  for (const ticket of tickets) {
+    if (!ticket.bus?.departure_time) continue;
+    const [hours, minutes] = String(ticket.bus.departure_time).split(':').map(Number);
+    const departure = new Date(now);
+    departure.setHours(hours, minutes, 0, 0);
+    const remainingMs = departure.getTime() - now.getTime();
+    if (remainingMs <= 0) continue;
+    for (const target of [30, 15, 5]) {
+      if (remainingMs <= target * 60000 && remainingMs > (target - 1) * 60000 &&
+          !alreadySent.has(`${ticket.id}:${target}`)) {
+        reminders.push({
+          recipient_id: ticket.user_id,
+          recipient_type: 'user',
+          type: 'trip_departure_reminder',
+          message: `Your bus ${ticket.bus.plate_number} departs in ${target} minutes. Be at the station on time (seat ${ticket.seat_number}).`,
+          meta: { ticket_id: ticket.id, bus_id: ticket.bus_id, minutes_before: target, seat_number: ticket.seat_number },
+        });
+      }
+    }
+  }
+  if (reminders.length) await createMany(reminders);
+};
+
+// Permanently remove notifications older than 60 days.
+export const cleanupOldNotifications = async () => {
+  const today = new Date().toISOString().slice(0, 10);
+  if (lastNotificationCleanupDate === today) return;
+  lastNotificationCleanupDate = today;
+  try {
+    const cutoff = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
+    const deleted = await Notification.destroy({ where: { createdAt: { [Op.lt]: cutoff } } });
+    if (deleted) console.log(`[Notifications] Deleted ${deleted} notification(s) older than 60 days.`);
+  } catch (error) {
+    lastNotificationCleanupDate = null;
+    console.error('[Notifications] Retention cleanup failed:', error?.message || error);
+  }
+};
+
 // ── REACTIVATE ALL BUSES AT MIDNIGHT (runs every 60s, triggers once) ─────────
 let lastReactivationDate = null;
 let lastPromoGenerationDate = null;
 let lastTicketArchiveDate = null;
+let lastNotificationCleanupDate = null;
 let ticketArchiveTableReady = false;
 
 // Archive only completed/cancelled trips after 365 days. The full ticket row
