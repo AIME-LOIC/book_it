@@ -886,7 +886,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _holdCountdownChip() {
-    final left = Duration(seconds: _seconds.clamp(0, 900));
+    final left = Duration(seconds: _seconds.clamp(0, 900).toInt());
     final label = '${left.inMinutes.toString().padLeft(2,'0')}:${(left.inSeconds % 60).toString().padLeft(2,'0')}';
     final urgent = _seconds <= 180;
     return Material(
