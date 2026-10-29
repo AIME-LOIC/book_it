@@ -463,6 +463,21 @@ export const payTicket = async (user_id, ticket_id, { network, phone_number, pro
   if (ticket.status === 'paid') throw new Error('Ticket already paid');
   if (ticket.status === 'cancelled') throw new Error('Ticket is cancelled');
 
+  // A payment may only be initiated during the 15-minute hold. Existing
+  // provider charges are checked first and remain provider-authoritative.
+  const holdExpired = Date.now() - new Date(ticket.createdAt).getTime() >= PENDING_TIMEOUT_MINUTES * 60000;
+  const staleInitialization = ticket.payment_reference && !ticket.flw_charge_id &&
+    Date.now() - new Date(ticket.updatedAt || 0).getTime() > 60_000;
+  if (holdExpired && !ticket.flw_charge_id && (!ticket.payment_reference || staleInitialization)) {
+    await ticket.update({ status: 'cancelled', payment_reference: null, payment_network: null });
+    await createMany([{
+      recipient_id: user_id, recipient_type: 'user', type: 'ticket_expired',
+      message: `Your unpaid reservation for seat ${ticket.seat_number} expired after 15 minutes and was cancelled.`,
+      meta: { ticket_id: ticket.id, seat_number: ticket.seat_number },
+    }]);
+    throw new Error('This reservation expired after 15 minutes. Please choose a seat again.');
+  }
+
   // A repeated mobile-money request must reuse the active charge instead of
   // creating a second charge for the same reservation.
   if (ticket.flw_charge_id) {
@@ -637,6 +652,22 @@ export const checkPaymentStatus = async (user_id, ticket_id) => {
   }
 
   if (FLW_FAILED_STATUSES.includes(providerStatus)) {
+    const holdExpired = Date.now() - new Date(ticket.createdAt).getTime() >= PENDING_TIMEOUT_MINUTES * 60000;
+    if (holdExpired) {
+      await ticket.update({
+        status: 'cancelled',
+        payment_reference: null,
+        flw_payment_method_id: null,
+        flw_charge_id: null,
+        payment_network: null,
+      });
+      await createMany([{
+        recipient_id: user_id, recipient_type: 'user', type: 'ticket_expired',
+        message: `Your payment did not complete before the 15-minute reservation hold expired. Seat ${ticket.seat_number} was released.`,
+        meta: { ticket_id: ticket.id, seat_number: ticket.seat_number },
+      }]);
+      return { status: 'cancelled' };
+    }
     return { status: 'failed', reason: charge.failure_reason || providerStatus };
   }
 
