@@ -2109,7 +2109,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
           widget.passengerName,
       widget.passengerName,
     );
-    final operator = _field(
+    final operatorLabel = _field(
       widget.ticket['operator_name'] ??
           widget.ticket['company_name'] ??
           (widget.ticket['operator'] is Map
@@ -2153,7 +2153,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                       fontWeight: pw.FontWeight.bold, letterSpacing: 1.5,
                     )),
                     pw.SizedBox(height: 3),
-                    pw.Text(operator.toUpperCase(), maxLines: 2,
+                    pw.Text(operatorLabel.toUpperCase(), maxLines: 2,
                       textAlign: pw.TextAlign.center,
                       style: const pw.TextStyle(color: PdfColor(0.80, 0.88, 0.96), fontSize: 7)),
                     pw.SizedBox(height: 12),
