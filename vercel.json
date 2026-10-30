@@ -1,28 +1,16 @@
 {
   "version": 2,
   "framework": null,
-  "outputDirectory": "frontend",
   "functions": {
     "api/[...path].js": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "includeFiles": "frontend/**"
     }
   },
   "rewrites": [
     {
-      "source": "/book",
-      "destination": "/user.html"
-    },
-    {
-      "source": "/rw/v1/bk/auth/login",
-      "destination": "/api/auth/login"
-    },
-    {
-      "source": "/rw/v1/bk",
-      "destination": "/api"
-    },
-    {
-      "source": "/rw/v1/bk/:path*",
-      "destination": "/api/:path*"
+      "source": "/(.*)",
+      "destination": "/api/$1"
     }
   ]
 }
