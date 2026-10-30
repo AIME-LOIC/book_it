@@ -9,6 +9,10 @@
   },
   "rewrites": [
     {
+      "source": "/book",
+      "destination": "/user.html"
+    },
+    {
       "source": "/rw/v1/bk/auth/login",
       "destination": "/api/auth/login"
     },
