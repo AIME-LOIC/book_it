@@ -42,6 +42,12 @@ app.use((req, res, next) => {
 // Lightweight health check for deployments (Render, etc.)
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
 
+// On Vercel the Express function answers `/` before the vercel.json rewrite is applied,
+// so send the root to the static landing page in public/.
+if (process.env.VERCEL === '1') {
+  app.get('/', (req, res) => res.redirect(302, '/index.html'));
+}
+
 app.use(express.json());
 app.use(cors({
   origin: (origin, callback) => {
