@@ -2126,7 +2126,8 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
     pdf.addPage(pw.Page(
       pageFormat: PdfPageFormat.a5,
       margin: const pw.EdgeInsets.all(16),
-      build: (context) => pw.Center(
+      build: (context) => pw.Align(
+        alignment: pw.Alignment.topCenter,
         child: pw.Container(
           width: 310,
           decoration: pw.BoxDecoration(
@@ -2164,6 +2165,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
               pw.Padding(
                 padding: const pw.EdgeInsets.fromLTRB(17, 14, 17, 0),
                 child: pw.Column(
+                  mainAxisSize: pw.MainAxisSize.min,
                   crossAxisAlignment: pw.CrossAxisAlignment.stretch,
                   children: [
                     // 2. Ticket details in a single clean vertical card.
@@ -2179,6 +2181,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                         borderRadius: pw.BorderRadius.circular(7),
                       ),
                       child: pw.Column(
+                        mainAxisSize: pw.MainAxisSize.min,
                         children: [
                           pw.Row(children: [
                             pw.Expanded(child: pw.Column(
