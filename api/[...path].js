@@ -13,17 +13,20 @@ async function ensureDatabase() {
   return databaseReady;
 }
 
+// Every request is routed through this function so Express serves both
+// the frontend files and the API from the same application.
 export default async function handler(req, res) {
   try {
     await ensureDatabase();
-    const originalUrl = req.url || '/';
-    if (!originalUrl.startsWith('/rw/v1/bk')) {
-      const apiPath = originalUrl.replace(/^\/api(?=\/|\?|$)/, '');
-      req.url = '/rw/v1/bk' + (apiPath.startsWith('/') ? apiPath : '/' + apiPath);
-    }
+
+    const incomingUrl = req.url || '/';
+    req.url = incomingUrl.replace(/^\/api(?=\/|\?|$)/, '') || '/';
+
     return app(req, res);
   } catch (error) {
-    console.error('[BookIt API bootstrap]', error);
-    return res.status(503).json({ message: 'BookIt API is temporarily unavailable' });
+    console.error('[BookIt Express bootstrap]', error);
+    return res.status(503).json({
+      message: 'BookIt service is temporarily unavailable'
+    });
   }
 }
