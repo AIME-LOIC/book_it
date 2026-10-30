@@ -2086,10 +2086,12 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
   String get _status => _field(widget.ticket['status'], 'unknown').toUpperCase();
 
   Future<Uint8List> _buildPaperTicket() async {
-    final baseFont = await PdfGoogleFonts.notoSansRegular();
-    final boldFont = await PdfGoogleFonts.notoSansBold();
-    final italicFont = await PdfGoogleFonts.notoSansItalic();
-    final boldItalicFont = await PdfGoogleFonts.notoSansBoldItalic();
+    // Use PDF's embedded standard fonts so ticket generation never needs
+    // a network request. This is important when passengers are offline.
+    final baseFont = pw.Font.helvetica();
+    final boldFont = pw.Font.helveticaBold();
+    final italicFont = pw.Font.helveticaOblique();
+    final boldItalicFont = pw.Font.helveticaBoldOblique();
     final pdf = pw.Document(
       theme: pw.ThemeData.withFont(
         base: baseFont,
@@ -2128,7 +2130,9 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
       margin: const pw.EdgeInsets.all(16),
       build: (context) => pw.Align(
         alignment: pw.Alignment.topCenter,
-        child: pw.Container(
+        child: pw.FittedBox(
+          fit: pw.BoxFit.scaleDown,
+          child: pw.Container(
           width: 310,
           decoration: pw.BoxDecoration(
             color: PdfColors.white,
@@ -2194,7 +2198,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                             )),
                             pw.Padding(
                               padding: const pw.EdgeInsets.symmetric(horizontal: 6),
-                              child: pw.Text('→', style: pw.TextStyle(color: blue, fontSize: 13, fontWeight: pw.FontWeight.bold)),
+                              child: pw.Text('TO', style: pw.TextStyle(color: blue, fontSize: 10, fontWeight: pw.FontWeight.bold)),
                             ),
                             pw.Expanded(child: pw.Column(
                               crossAxisAlignment: pw.CrossAxisAlignment.end,
@@ -2285,6 +2289,7 @@ class _TicketDetailsScreenState extends State<TicketDetailsScreen> {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),
