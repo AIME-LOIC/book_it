@@ -1,5 +1,6 @@
 import dns from 'node:dns/promises';
 import { Sequelize } from 'sequelize';
+import pg from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: process.env.DOTENV_CONFIG_PATH || '.env' });
@@ -22,6 +23,8 @@ async function getOptions() {
       url: process.env.DATABASE_URL,
       options: {
         dialect: 'postgres',
+        // Explicit import so Vercel's file tracer bundles `pg` (Sequelize loads it via a dynamic require it can't see)
+        dialectModule: pg,
         host: resolvedHost,
         port: parseInt(parsed.port, 10) || 5432,
         dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
