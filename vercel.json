@@ -4,7 +4,7 @@
   "functions": {
     "api/[...path].js": {
       "maxDuration": 30,
-      "includeFiles": "frontend/**"
+      "includeFiles": "frontend/**,node_modules/pg-hstore/**"
     }
   },
   "rewrites": [
