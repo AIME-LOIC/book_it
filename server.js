@@ -31,10 +31,24 @@ process.on('SIGINT', () => {
   });
 });
 
+const ensureNotificationTypeColumn = async () => {
+  if (!isLocal) return;
+  try {
+    await sequelize.query('ALTER TABLE notifications MODIFY COLUMN type VARCHAR(50) NOT NULL');
+    console.log('[DB] notifications.type column normalized to VARCHAR(50)');
+  } catch (err) {
+    const msg = err?.message || '';
+    if (!msg.includes('Unknown column') && !msg.includes('doesn\'t exist')) {
+      console.warn('[DB] notification type column update skipped:', msg);
+    }
+  }
+};
+
 sequelize.authenticate()
-.then(()=> {
-  // Only apply schema `alter` automatically in local/dev environments.
-  // Altering enums on Postgres (Supabase) can fail in-place; run migrations manually there.
+.then(async ()=> {
+  await ensureNotificationTypeColumn();
+  // Apply schema changes automatically in local/dev environments so new columns/types
+  // (such as promo-code notification types) are reflected in the local DB.
   return isLocal ? sequelize.sync({ alter: true }) : Promise.resolve();
 })
 .then(async () => {

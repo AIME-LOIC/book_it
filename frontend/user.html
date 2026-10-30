@@ -1849,9 +1849,11 @@
         <button class="btn btn-ghost" onclick="closeMapModal()"><i class="fa fa-times"></i></button>
       </div>
 
-      <div style="text-align:center; margin-bottom:24px;">
-        <i class="fa fa-map-marker-alt" style="font-size:64px; color:var(--secondary);"></i>
-        <p style="margin-top:12px; color:var(--text-muted);">Click below to open in Google Maps.</p>
+      <div id="map-preview" style="min-height:220px; border:1px solid var(--border); border-radius:20px; overflow:hidden; margin-bottom:20px; background:rgba(0,0,0,0.18); display:flex; align-items:center; justify-content:center;">
+        <div style="text-align:center; color:var(--text-muted);">
+          <i class="fa fa-map-marked-alt" style="font-size:44px; margin-bottom:10px;"></i>
+          <p>Waiting for live GPS signal…</p>
+        </div>
       </div>
 
       <div style="display: flex; gap: 12px; margin-top: 24px;">
@@ -1914,6 +1916,10 @@
           <button class="eye-btn" type="button" onclick="toggleEye('reg-password', this)"><i
               class="fa fa-eye"></i></button>
         </div>
+        <label style="display:flex; align-items:flex-start; gap:10px; font-size:13px; color:var(--text-muted); cursor:pointer; user-select:none;">
+          <input type="checkbox" id="reg-terms" style="width:18px; height:18px; margin-top:2px; accent-color:var(--secondary); cursor:pointer; flex-shrink:0;">
+          <span><span id="agree-terms-prefix">I agree to BookIt's</span> <a href="/policy" target="_blank" id="agree-terms-link" style="color:var(--secondary); font-weight:700; text-decoration:underline;">Terms &amp; Policy</a></span>
+        </label>
         <button class="btn btn-primary btn-block" onclick="doRegister()">Create Account</button>
       </div>
     </div>
@@ -2182,22 +2188,53 @@
               style="color:white;"></i></button>
           <h3 id="pay-step2-title" style="font-size:18px; font-weight:900;"></h3>
         </div>
-        <p id="pay-step2-desc" style="color:var(--text-muted); font-size:13px; margin-bottom:8px; text-align:center;">
+        <p id="pay-step2-desc" style="color:var(--text-muted); font-size:13px; margin-bottom:16px; text-align:center;">
         </p>
-        <div class="pin-inputs">
-          <input class="pin-input" id="pin-0" maxlength="1" inputmode="numeric" type="password"
-            oninput="pinNext(this,0)">
-          <input class="pin-input" id="pin-1" maxlength="1" inputmode="numeric" type="password"
-            oninput="pinNext(this,1)">
-          <input class="pin-input" id="pin-2" maxlength="1" inputmode="numeric" type="password"
-            oninput="pinNext(this,2)">
-          <input class="pin-input" id="pin-3" maxlength="1" inputmode="numeric" type="password"
-            oninput="pinNext(this,3)">
+
+        <!-- MTN / Airtel: real Flutterwave mobile money charge needs the payer's phone number -->
+        <div id="pay-phone-form">
+          <input id="pay-phone" type="tel" inputmode="numeric" autocomplete="tel" placeholder="07XXXXXXXX"
+            style="margin-bottom:4px;height:48px;border-radius:12px;padding:0 16px;border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--text);transition:all 0.2s ease;">
+          <p style="color:var(--text-muted); font-size:12px; margin-bottom:12px;">
+            You'll get a payment prompt on this number — approve it there to finish.
+          </p>
         </div>
+
+        <!-- Promo code: one-time code sent in notification -->
+        <div id="pay-promo-form" style="display:none;">
+          <input id="promo-code" type="text" autocomplete="off" placeholder="Enter your one-time promo code"
+            style="margin-bottom:4px;height:48px;border-radius:12px;padding:0 16px;border:1px solid var(--border);font-size:14px;font-weight:500;color:var(--text);transition:all 0.2s ease;text-transform:uppercase;">
+          <p style="color:var(--text-muted); font-size:12px; margin-bottom:12px;">
+            Use the code sent to you in a notification. It can be used once.
+          </p>
+        </div>
+
         <div id="pay-err"
           style="color:#f87171; font-size:13px; font-weight:600; text-align:center; min-height:20px; margin-bottom:12px;">
         </div>
-        <button class="btn btn-primary btn-block" onclick="confirmPayment()">Confirm Payment</button>
+        <button class="btn btn-primary btn-block" id="pay-step2-btn" onclick="confirmPayment()">Send Payment
+          Request</button>
+      </div>
+
+      <!-- Waiting for the customer to approve the MTN/Airtel prompt on their phone -->
+      <div class="pay-step" id="pay-step-pending" style="text-align:center; padding:16px 0;">
+        <div style="font-size:52px; margin-bottom:16px;"><i class="fa fa-spinner fa-spin"
+            style="color:var(--secondary);"></i></div>
+        <h3 style="font-size:18px; font-weight:900;">Approve on your phone</h3>
+        <p id="pay-pending-desc" style="color:var(--text-muted); margin-top:8px; font-size:13px;"></p>
+        <a id="pay-pending-redirect" href="#" target="_blank" rel="noopener"
+          class="btn btn-primary btn-block" style="margin-top:16px; display:none;">Open Test Approval Page</a>
+        <p id="pay-pending-timer" style="color:var(--text-muted); margin-top:16px; font-size:12px; font-weight:600;">
+        </p>
+        <button class="btn btn-ghost btn-block" style="margin-top:16px;" onclick="cancelPendingPayment()">Cancel</button>
+      </div>
+
+      <!-- Charge failed / expired / declined -->
+      <div class="pay-step" id="pay-step-failed" style="text-align:center; padding:16px 0;">
+        <div style="font-size:56px; margin-bottom:16px;">❌</div>
+        <h3 style="font-size:20px; font-weight:900; color:#f87171;">Payment Failed</h3>
+        <p id="pay-failed-reason" style="color:var(--text-muted); margin-top:8px; font-size:13px;"></p>
+        <button class="btn btn-primary btn-block" style="margin-top:24px;" onclick="showPayStep(1)">Try Again</button>
       </div>
 
       <div class="pay-step" id="pay-step-3" style="text-align:center; padding:16px 0;">
@@ -2241,8 +2278,20 @@
 
   <script src="./api.js"></script>
   <script>
-    const { api, setToken, clearToken, getToken } = window.BookItApi;
+    const { api, clearToken } = window.BookItApi;
     window.api = api;
+
+    // HTML-escape untrusted server data before any interpolation into
+    // innerHTML or inline event handler attributes. Escapes &, <, >, " and '
+    // so server-supplied strings (names, plate numbers, notification
+    // messages, promo codes) can never break out of an attribute or inject
+    // markup (stored XSS defense).
+    const esc = (v) => String(v ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
 
     let locations = [];
     let allBuses = [];
@@ -2299,6 +2348,9 @@
         paid: 'Paid', pending: 'Awaiting Payment', cancelled: 'Cancelled',
         payBtn: 'Pay', cancelledMsg: 'Cancelled',
         travelDate: 'Travel Date',
+        agreeTermsPrefix: "I agree to BookIt's",
+termsLink: 'Terms & Policy',
+acceptTermsError: 'Please accept the Terms & Policy to continue.',
       },
       rw: {
         tagline: 'Genda mu Rwanda neza',
@@ -2346,6 +2398,9 @@
         paid: 'Wishyuye', pending: 'Ntarashyurwa', cancelled: 'Ihagaritswe',
         payBtn: 'Ishyura', cancelledMsg: 'Ihagaritswe',
         travelDate: 'Itariki y\'urugendo',
+        agreeTermsPrefix: 'Nemeye',
+termsLink: 'Amategeko n\'Amabwiriza',
+acceptTermsError: 'Nyamuneka wemere Amategeko n\'Amabwiriza kugira ngo ukomeze.',
       }
     };
 
@@ -2359,6 +2414,8 @@
       window.currentLang = lang;
       localStorage.setItem('lang', lang);
       applyLang();
+      set('agree-terms-prefix', t('agreeTermsPrefix'));
+set('agree-terms-link', t('termsLink'));
     };
 
     const applyLang = () => {
@@ -2542,7 +2599,6 @@
       err.style.display = 'none';
       try {
         const data = await api.loginUser({ email, password });
-        setToken(data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
         document.getElementById('user-name').textContent = data.user.name;
         document.getElementById('user-initial').textContent = data.user.name.charAt(0);
@@ -2557,6 +2613,11 @@
     window.doRegister = async () => {
       const err = document.getElementById('auth-err');
       err.style.display = 'none';
+      if (!document.getElementById('reg-terms').checked) {
+  err.textContent = t('acceptTermsError');
+  err.style.display = 'block';
+  return;
+}
       try {
         await api.register({
           name: document.getElementById('reg-name').value.trim(),
@@ -2592,7 +2653,7 @@
       if (mbtn) mbtn.innerHTML = `<i class="fa ${icon}"></i>`;
     })();
 
-    window.logout = () => { clearToken(); location.reload(); };
+    window.logout = async () => { await clearToken(); localStorage.removeItem('user'); location.reload(); };
 
     // --- CORE ---
     async function init() {
@@ -2648,11 +2709,17 @@
       const fromOpts = document.getElementById('from-options');
       const toOpts = document.getElementById('to-options');
       fromOpts.innerHTML = locations.map(l =>
-        `<div class="custom-select-option" onclick="selectCustomOption('from','${l.id}','${l.name}')">${l.name}</div>`
+        `<div class="custom-select-option" data-which="from" data-id="${esc(l.id)}" data-name="${esc(l.name)}">${esc(l.name)}</div>`
       ).join('');
       toOpts.innerHTML = locations.map(l =>
-        `<div class="custom-select-option" onclick="selectCustomOption('to','${l.id}','${l.name}')">${l.name}</div>`
+        `<div class="custom-select-option" data-which="to" data-id="${esc(l.id)}" data-name="${esc(l.name)}">${esc(l.name)}</div>`
       ).join('');
+      // delegation replaces per-option inline onclick handlers — option names
+      // (operator-created) can contain quotes, which used to be attribute-injectable
+      fromOpts?.querySelectorAll('.custom-select-option').forEach(o =>
+        o.addEventListener('click', () => selectCustomOption('from', o.dataset.id, o.dataset.name)));
+      toOpts?.querySelectorAll('.custom-select-option').forEach(o =>
+        o.addEventListener('click', () => selectCustomOption('to', o.dataset.id, o.dataset.name)));
     }
 
     window.toggleCustomSelect = (which) => {
@@ -2788,19 +2855,19 @@
       }
       res.innerHTML = `<p style="color:var(--text-muted); font-size:13px; margin-bottom:16px;">Click a bus to select seats and book. Availability is checked for the selected date.</p>` +
         buses.map((b, idx) => `
-    <div class="bus-card" data-idx="${idx}" onclick="openBrowseBus('${b.id}')">
+    <div class="bus-card" data-idx="${idx}" onclick="openBrowseBus('${esc(b.id)}')">
       <div class="bus-card-main">
         <div class="bus-info">
-          <div class="operator-name">${b.operator?.company_name || 'BookIt Express'}</div>
+          <div class="operator-name">${esc(b.operator?.company_name || 'BookIt Express')}</div>
           <div class="bus-meta">
-            <span><i class="fa fa-bus"></i> ${b.plate_number}</span>
-            <span><i class="fa fa-map-marker-alt"></i> ${b.route?.fromLocation?.name || '?'} &rarr; ${b.route?.toLocation?.name || '?'}</span>
-            <span><i class="fa fa-clock"></i> ${String(b.departure_time).slice(0, 5)}</span>
+            <span><i class="fa fa-bus"></i> ${esc(b.plate_number)}</span>
+            <span><i class="fa fa-map-marker-alt"></i> ${esc(b.route?.fromLocation?.name || '?')} &rarr; ${esc(b.route?.toLocation?.name || '?')}</span>
+            <span><i class="fa fa-clock"></i> ${esc(String(b.departure_time).slice(0, 5))}</span>
           </div>
         </div>
         <div class="time-price">
-          <div class="departure-time">${String(b.departure_time).slice(0, 5)}</div>
-          <div class="price">${Number(b.route?.price || 0).toLocaleString()} RWF</div>
+          <div class="departure-time">${esc(String(b.departure_time).slice(0, 5))}</div>
+          <div class="price">${esc(Number(b.route?.price || 0).toLocaleString())} RWF</div>
         </div>
       </div>
       <div class="occupancy-bar-container">
@@ -2856,22 +2923,23 @@
         const percent = Math.round((b.taken_seats?.length / b.capacity) * 100);
         const amenityHtml = (b.amenities || []).map(a => {
           const icons = { wifi: 'fa-wifi', ac: 'fa-wind', charging: 'fa-plug' };
-          return `<span class="amenity-tag"><i class="fa ${icons[a] || 'fa-check'}"></i> ${a}</span>`;
+          const label = esc(a);
+          return `<span class="amenity-tag"><i class="fa ${icons[a] || 'fa-check'}"></i> ${label}</span>`;
         }).join(' ');
 
         return `
-            <div class="bus-card" onclick="openSeatModal('${b.bus_id}', '${b.boarding_stop_id}', '${b.dropoff_stop_id}', '${b.capacity}', '${JSON.stringify(b.taken_seats || [])}', '${b.operator?.company_name}', '${b.price}', '${date}')">
+            <div class="bus-card" onclick="openSeatModal('${esc(b.bus_id)}', '${esc(b.boarding_stop_id)}', '${esc(b.dropoff_stop_id)}', '${esc(b.capacity)}', '${esc(JSON.stringify(b.taken_seats || []))}', '${esc(b.operator?.company_name)}', '${esc(b.price)}', '${esc(date)}')">
                 <div class="bus-card-main">
                     <div class="bus-info">
-                        <div class="operator-name">${b.operator?.company_name}</div>
+                        <div class="operator-name">${esc(b.operator?.company_name)}</div>
                         <div class="bus-meta">
-                            <span><i class="fa fa-clock"></i> Departs ${String(b.departure_time).slice(0, 5)}</span>
-                            <span><i class="fa fa-chair"></i> ${b.available_seats.length} free</span>
+                            <span><i class="fa fa-clock"></i> Departs ${esc(String(b.departure_time).slice(0, 5))}</span>
+                            <span><i class="fa fa-chair"></i> ${esc(b.available_seats.length)} free</span>
                         </div>
                         <div style="margin-top:8px; display:flex; gap:6px;">${amenityHtml}</div>
                     </div>
                     <div class="time-price">
-                        <div class="departure-time">${Number(b.price).toLocaleString()}</div>
+                        <div class="departure-time">${esc(Number(b.price).toLocaleString())}</div>
                         <div class="price" style="font-size:12px; color:var(--text-muted)">RWF / Seat</div>
                     </div>
                 </div>
@@ -2974,6 +3042,53 @@
       if (confirmResolve) { confirmResolve(val); confirmResolve = null; }
     };
 
+    const toArray = (value) => {
+      if (Array.isArray(value)) return value;
+      if (value == null) return [];
+      if (typeof value === 'string') {
+        const trimmed = value.trim();
+        if (!trimmed) return [];
+        try {
+          const parsed = JSON.parse(trimmed);
+          return Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          return trimmed.split(',').map(v => v.trim()).filter(Boolean);
+        }
+      }
+      if (typeof value === 'object') {
+        if (Array.isArray(value.items)) return value.items;
+        if (Array.isArray(value.data)) return value.data;
+        if (Array.isArray(value.tickets)) return value.tickets;
+        if (Array.isArray(value.results)) return value.results;
+        if (Array.isArray(value.list)) return value.list;
+      }
+      return [];
+    };
+
+    const normalizeAmenities = (value) => {
+      const list = toArray(value);
+      return list.map(item => (typeof item === 'string' ? item : item?.name || item?.label || '')).filter(Boolean).map(item => String(item).trim()).filter(Boolean);
+    };
+
+    const parseTicketDeparture = (ticket) => {
+      if (!ticket?.travel_date || !ticket?.bus?.departure_time) return null;
+      const departureTime = String(ticket.bus.departure_time).trim();
+      const match = departureTime.match(/^(\d{1,2})(?::(\d{2}))?(?::(\d{2}))?$/);
+      if (!match) return null;
+      const hours = Number(match[1]);
+      const mins = Number(match[2] || 0);
+      const secs = Number(match[3] || 0);
+      if (hours < 0 || hours > 23 || mins < 0 || mins > 59 || secs < 0 || secs > 59) return null;
+      const departureDate = new Date(`${ticket.travel_date}T${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`);
+      return Number.isNaN(departureDate.getTime()) ? null : departureDate;
+    };
+
+    const isPendingTicketExpired = (ticket) => {
+      if (ticket?.status !== 'pending') return false;
+      const departureDate = parseTicketDeparture(ticket);
+      return Boolean(departureDate && departureDate <= new Date());
+    };
+
     window.cancelTicket = async (id) => {
       const ok = await showConfirm('Cancel Ticket', 'This will free your seat. This action cannot be undone.');
       if (!ok) return;
@@ -2989,14 +3104,36 @@
       const list = document.getElementById('my-tickets-list');
       list.innerHTML = '<div class="loading-shimmer"></div>';
       try {
-        const tickets = await api.getMyTickets();
+        let tickets = await api.getMyTickets();
+        if (!Array.isArray(tickets)) {
+          if (Array.isArray(tickets?.tickets)) tickets = tickets.tickets;
+          else if (Array.isArray(tickets?.data)) tickets = tickets.data;
+          else if (Array.isArray(tickets?.items)) tickets = tickets.items;
+          else tickets = [];
+        }
+
+        const autoCancelledIds = [];
+
+        for (const t of tickets) {
+          if (isPendingTicketExpired(t)) {
+            try {
+              await api.cancelTicket(t.id);
+              autoCancelledIds.push(t.id);
+            } catch (e) {
+              console.warn('Auto-cancel failed for expired pending ticket', t.id, e.message);
+            }
+          }
+        }
+
+        const normalizedTickets = tickets.map(t => autoCancelledIds.includes(t.id) ? { ...t, status: 'cancelled' } : t);
+
         // Populate cache for tracking functionality
-        tickets.forEach(t => { ticketsCache[t.id] = t; });
+        normalizedTickets.forEach(t => { ticketsCache[t.id] = t; });
 
         // Process Travel History and Quick Search Chips
-        updateHistoryAndChips(tickets);
+        updateHistoryAndChips(normalizedTickets);
 
-        if (!tickets.length) {
+        if (!normalizedTickets.length) {
           list.innerHTML = '<div style="text-align:center; padding:60px;"><i class="fa fa-ticket-alt" style="font-size:60px; color:var(--border); margin-bottom:20px;"></i><p>Your tickets will appear here.</p></div>';
           return;
         }
@@ -3004,8 +3141,8 @@
         const today = new Date().toISOString().split('T')[0];
 
         // Split into Active and Past
-        const activeTickets = tickets.filter(t => t.status !== 'cancelled' && t.travel_date >= today);
-        const pastTickets = tickets.filter(t => t.status === 'cancelled' || t.travel_date < today);
+        const activeTickets = normalizedTickets.filter(t => t.status !== 'cancelled' && t.travel_date >= today);
+        const pastTickets = normalizedTickets.filter(t => t.status === 'cancelled' || t.travel_date < today);
 
         let html = '';
 
@@ -3020,7 +3157,10 @@
         }
 
         list.innerHTML = html;
-      } catch (e) { list.innerHTML = `<p>${e.message}</p>`; }
+      } catch (e) {
+        // server error text must not be interpolated raw into HTML
+        list.textContent = e.message || 'Something went wrong. Please try again.';
+      }
     };
 
     function updateHistoryAndChips(tickets) {
@@ -3056,7 +3196,7 @@
       if (chipsContainer) { // Always update, even if empty, to clear previous chips
         if (uniqueQuickSearchRoutes.length > 0) {
           chipsContainer.innerHTML = uniqueQuickSearchRoutes.slice(0, 5).map(r =>
-            `<span class="chip" onclick="quickSearch('${r.from}', '${r.to}')">${r.from} → ${r.to}</span>`
+            `<span class="chip" onclick="quickSearch('${esc(r.from)}', '${esc(r.to)}')">${esc(r.from)} → ${esc(r.to)}</span>`
           ).join('');
         } else {
           // Fallback to default chips if no history for quick search
@@ -3077,11 +3217,11 @@
           historyList.innerHTML = `<div class="col-span-full text-center py-10 color-text-muted">No travel history found yet. Start booking to see your favorite routes here!</div>`;
         } else {
           historyList.innerHTML = uniqueHistoryRoutes.map(r => `
-            <div class="bus-card" onclick="quickSearch('${r.from}', '${r.to}')" style="opacity:1; transform:none; margin-bottom:0;">
+            <div class="bus-card" onclick="quickSearch('${esc(r.from)}', '${esc(r.to)}')" style="opacity:1; transform:none; margin-bottom:0;">
               <div class="flex justify-between items-center">
                 <div>
-                  <div class="font-bold text-lg">${r.from} → ${r.to} ${r.time ? `<span style="color:var(--secondary); font-size:14px;">(${r.time})</span>` : ''}</div>
-                  <div class="text-xs text-muted-foreground">${r.count} trip${r.count > 1 ? 's' : ''} taken</div>
+                  <div class="font-bold text-lg">${esc(r.from)} → ${esc(r.to)} ${r.time ? `<span style="color:var(--secondary); font-size:14px;">(${esc(r.time)})</span>` : ''}</div>
+                  <div class="text-xs text-muted-foreground">${esc(r.count)} trip${r.count > 1 ? 's' : ''} taken</div>
                 </div>
                 <i class="fa fa-chevron-right text-secondary"></i>
               </div>
@@ -3095,56 +3235,58 @@
     function renderTicketCard(t, isHistory = false) {
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&qzone=3&data=${encodeURIComponent(t.ticket_number || t.id)}`;
       const qrFilename = `ticket-${t.ticket_number || t.id}.png`;
-      const statusIcon = { paid: '<i class="fa fa-circle-check"></i>', pending: '<i class="fa fa-clock"></i>', cancelled: '<i class="fa fa-circle-xmark"></i>' }[t.status] || '<i class="fa fa-ticket"></i>';
-      const amenitiesHtml = (t.bus?.amenities || []).map(a => `<span class="amenity-tag"><i class="fa ${getAmenityIcon(a)}"></i> ${a}</span>`).join(' ');
-      const statusLabel = { paid: 'Paid', pending: 'Pending', cancelled: 'Cancelled' }[t.status] || t.status;
+      const effectiveStatus = isPendingTicketExpired(t) ? 'cancelled' : t.status;
+      const statusIcon = { paid: '<i class="fa fa-circle-check"></i>', pending: '<i class="fa fa-clock"></i>', cancelled: '<i class="fa fa-circle-xmark"></i>' }[effectiveStatus] || '<i class="fa fa-ticket"></i>';
+      const amenities = normalizeAmenities(t.bus?.amenities);
+      const amenitiesHtml = amenities.map(a => `<span class="amenity-tag"><i class="fa ${getAmenityIcon(a)}"></i> ${esc(a)}</span>`).join(' ');
+      const statusLabel = { paid: 'Paid', pending: 'Pending', cancelled: 'Cancelled' }[effectiveStatus] || effectiveStatus;
       return `
             <div class="ticket-wrapper" style="${isHistory ? 'opacity: 0.7; filter: grayscale(0.5);' : ''}">
               <div class="ticket-main">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                   <img src="./download.png" alt="BookIt" class="logo-img" style="height:52px;width:auto;">
                   <div style="text-align:right;">
-                    ${t.ticket_number ? `<div style="font-family:monospace;font-size:13px;font-weight:800;color:var(--secondary);">${t.ticket_number}</div>` : '<div style="font-size:11px;color:var(--text-muted);">Awaiting payment</div>'}
-                    <span class="badge badge-${t.status}" style="margin-top:4px;">${statusIcon} ${statusLabel}</span>
+                    ${t.ticket_number ? `<div style="font-family:monospace;font-size:13px;font-weight:800;color:var(--secondary);">${esc(t.ticket_number)}</div>` : '<div style="font-size:11px;color:var(--text-muted);">Awaiting payment</div>'}
+                    <span class="badge badge-${effectiveStatus}" style="margin-top:4px;">${statusIcon} ${statusLabel}</span>
                   </div>
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
                   <div style="text-align:center;flex:1;">
                     <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">FROM</div>
-                    <div style="font-size:18px;font-weight:900;">${t.boardingStop?.location?.name || '—'}</div>
+                    <div style="font-size:18px;font-weight:900;">${esc(t.boardingStop?.location?.name || '—')}</div>
                   </div>
                   <i class="fa fa-arrow-right" style="color:var(--secondary);"></i>
                   <div style="text-align:center;flex:1;">
                     <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">TO</div>
-                    <div style="font-size:18px;font-weight:900;">${t.dropoffStop?.location?.name || '—'}</div>
+                    <div style="font-size:18px;font-weight:900;">${esc(t.dropoffStop?.location?.name || '—')}</div>
                   </div>
                 </div>
                 <div style="display:flex;justify-content:space-between;margin-top:14px;font-size:14px;">
-                  <div><div style="font-size:11px;color:var(--text-muted);">Date</div><strong>${t.travel_date}</strong></div>
+                  <div><div style="font-size:11px;color:var(--text-muted);">Date</div><strong>${esc(t.travel_date)}</strong></div>
                   <div style="text-align:center;"><div style="font-size:11px;color:var(--text-muted);">Seat</div><strong style="font-size:22px;color:var(--secondary);">${t.seat_number}</strong></div>
                   <div style="text-align:right;"><div style="font-size:11px;color:var(--text-muted);">Price</div><strong>${Number(t.price).toLocaleString()} RWF</strong></div>
                 </div>
               </div>
               ${t.bus?.last_lat && t.bus?.last_lng ? `
                 <div style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                  <button class="btn btn-ghost btn-sm" onclick="openMapModal('${t.id}')"><i class="fa fa-map-marker-alt"></i> Track Bus</button>
+                  <button class="btn btn-ghost btn-sm" onclick="openMapModal('${esc(t.id)}')"><i class="fa fa-map-marker-alt"></i> Track Bus</button>
                   <div style="display:flex; gap:8px;">${amenitiesHtml}</div>
                 </div>
               ` : ''}
 
               <div class="ticket-footer">
-                ${t.status === 'pending' ? `
-                  <button class="btn btn-primary btn-block" style="min-height:52px;" onclick="payTicket('${t.id}','${t.price}')">
+                ${effectiveStatus === 'pending' ? `
+                  <button class="btn btn-primary btn-block" style="min-height:52px;" onclick="payTicket('${esc(t.id)}','${esc(t.price)}')">
                     <i class="fa fa-lock" style="color:white;"></i> Pay ${Number(t.price).toLocaleString()} RWF
                   </button>
-                  <button onclick="cancelTicket('${t.id}')" style="width:100%;margin-top:10px;padding:12px;border-radius:12px;border:1px solid #ef4444;background:transparent;color:#f87171;font-weight:700;font-size:14px;cursor:pointer;">
+                  <button onclick="cancelTicket('${esc(t.id)}')" style="width:100%;margin-top:10px;padding:12px;border-radius:12px;border:1px solid #ef4444;background:transparent;color:#f87171;font-weight:700;font-size:14px;cursor:pointer;">
                     <i class="fa fa-times-circle"></i> Cancel Ticket
                   </button>
-                ` : t.status === 'paid' ? `
+                ` : effectiveStatus === 'paid' ? `
                   <p style="font-weight:600;margin-bottom:12px;font-size:14px;"><i class="fa fa-qrcode"></i> Show to driver when boarding</p>
                   <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
-                    <img src="${qrUrl}" alt="QR" style="background:#fff;padding:16px;border-radius:12px;cursor:zoom-in;" onclick="openLightbox('${qrUrl}')">
-                    <button onclick="downloadQR('${qrUrl}','${qrFilename}')" style="display:inline-flex;align-items:center;gap:8px;background:var(--secondary);color:white;padding:10px 24px;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;">
+                    <img src="${esc(qrUrl)}" alt="QR" style="background:#fff;padding:16px;border-radius:12px;cursor:zoom-in;" onclick="openLightbox('${esc(qrUrl)}')">
+                    <button onclick="downloadQR('${esc(qrUrl)}','${esc(qrFilename)}')" style="display:inline-flex;align-items:center;gap:8px;background:var(--secondary);color:white;padding:10px 24px;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer;">
                       <i class="fa fa-download" style="color:white;"></i> Save to Phone
                     </button>
                   </div>
@@ -3186,6 +3328,9 @@
           const btn = document.getElementById('map-link-btn');
           btn.href = googleMapsUrl;
 
+          const preview = document.getElementById('map-preview');
+          preview.innerHTML = `<iframe src="https://www.google.com/maps?q=${lat},${lng}&z=15&output=embed" style="width:100%;height:220px;border:0;" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
+
           // Add/Update last seen text
           let lastSeen = document.getElementById('map-last-seen');
           if (!lastSeen) {
@@ -3197,6 +3342,8 @@
           lastSeen.innerHTML = `<i class="fa fa-sync fa-spin"></i> Live update: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
 
         } catch (e) {
+          const preview = document.getElementById('map-preview');
+          preview.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:24px;"><i class="fa fa-location-slash" style="font-size:44px; margin-bottom:10px;"></i><p>Live GPS is not available yet for this bus.</p></div>`;
           // Only show toast if modal is opening, don't interrupt background refreshes
           if (document.getElementById('map-modal').style.display !== 'flex') showToast(e.message, 'warning');
         }
@@ -3217,6 +3364,10 @@
 
     let currentPayTicketId = null;
     let currentPayMethod = null;
+    let payPollInterval = null;
+    let payPollElapsed = 0;
+    const PAY_POLL_MS = 5000;
+    const PAY_POLL_MAX_SECONDS = 120;
 
     window.payTicket = (id, price) => {
       currentPayTicketId = id;
@@ -3226,57 +3377,176 @@
     };
 
     window.closePayModal = () => {
+      stopPayPolling();
       document.getElementById('pay-modal').classList.remove('open');
       showPayStep(1);
-      [0, 1, 2, 3].forEach(i => document.getElementById(`pin-${i}`).value = '');
+      document.getElementById('pay-phone').value = '';
+      document.getElementById('promo-code').value = '';
       document.getElementById('pay-err').textContent = '';
+      document.getElementById('pay-pending-redirect').style.display = 'none';
       showSection('tickets', document.querySelector('.nav-item:nth-child(2)'));
     };
 
+    // step can be a number (1-3, matches #pay-step-N) or a full element id
+    // like 'pay-step-pending' / 'pay-step-failed'
     window.showPayStep = (step, method) => {
+      stopPayPolling();
       document.querySelectorAll('.pay-step').forEach(s => s.classList.remove('active'));
-      document.getElementById(`pay-step-${step}`).classList.add('active');
+      const targetId = typeof step === 'number' ? `pay-step-${step}` : step;
+      document.getElementById(targetId).classList.add('active');
+
       if (method) {
         currentPayMethod = method;
-        const titles = { momo: 'MTN MoMo PIN', airtel: 'Airtel Money PIN', promo: 'Promo Code' };
-        const descs = { momo: 'Enter your 4-digit MTN MoMo PIN', airtel: 'Enter your 4-digit Airtel PIN', promo: 'Enter your 4-digit promo code' };
+        const titles = { momo: 'MTN Mobile Money', airtel: 'Airtel Money', promo: 'Promo Code' };
+        const descs = {
+          momo: 'Enter the phone number registered with MTN MoMo',
+          airtel: 'Enter the phone number registered with Airtel Money',
+          promo: 'Enter your one-time promo code',
+        };
         document.getElementById('pay-step2-title').textContent = titles[method];
         document.getElementById('pay-step2-desc').textContent = descs[method];
         document.getElementById('pay-err').textContent = '';
-        [0, 1, 2, 3].forEach(i => document.getElementById(`pin-${i}`).value = '');
-        document.getElementById('pin-0').focus();
-      }
-    };
 
-    window.pinNext = (el, idx) => {
-      el.value = el.value.replace(/[^0-9]/g, '');
-      if (el.value && idx < 3) document.getElementById(`pin-${idx + 1}`).focus();
+        const isPromo = method === 'promo';
+        document.getElementById('pay-phone-form').style.display = isPromo ? 'none' : 'block';
+        document.getElementById('pay-promo-form').style.display = isPromo ? 'block' : 'none';
+        document.getElementById('pay-step2-btn').textContent = isPromo ? 'Confirm Payment' : 'Send Payment Request';
+
+        if (isPromo) {
+          document.getElementById('promo-code').value = '';
+          setTimeout(() => document.getElementById('promo-code').focus(), 50);
+        } else {
+          document.getElementById('pay-phone').value = '';
+          setTimeout(() => document.getElementById('pay-phone').focus(), 50);
+        }
+      }
     };
 
     window.confirmPayment = async () => {
-      const pin = [0, 1, 2, 3].map(i => document.getElementById(`pin-${i}`).value).join('');
       const errEl = document.getElementById('pay-err');
       errEl.textContent = '';
-      if (pin.length < 4) { errEl.textContent = 'Enter all 4 digits'; return; }
+      const btn = event.target;
 
       if (currentPayMethod === 'promo') {
-        if (pin !== '0000') { errEl.textContent = 'Invalid promo code'; return; }
+        const promoCode = document.getElementById('promo-code').value.trim().toUpperCase();
+        if (!promoCode) { errEl.textContent = 'Enter your promo code'; return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Processing...';
+        try {
+          const res = await api.payTicket(currentPayTicketId, { promo_code: promoCode });
+          if (res.status === 'paid') {
+            showPayStep(3);
+            loadMyTickets();
+            loadNotifications();
+          } else {
+            errEl.textContent = res.message || 'Promo code could not be used';
+          }
+        } catch (e) {
+          errEl.textContent = e.message || 'Payment failed';
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Confirm Payment';
+        }
+        return;
       }
 
-      const btn = event.target;
+      // MTN / Airtel: real Flutterwave mobile money charge
+      const rawPhone = document.getElementById('pay-phone').value.trim().replace(/\s+/g, '');
+      if (!/^(?:250)?0?7[2389][0-9]{7}$/.test(rawPhone)) {
+        errEl.textContent = 'Enter a valid Rwandan phone number';
+        return;
+      }
+
       btn.disabled = true;
-      btn.textContent = 'Processing...';
+      btn.textContent = 'Sending request...';
       try {
-        await api.payTicket(currentPayTicketId);
-        showPayStep(3);
-        loadMyTickets();
-        loadNotifications();
+        const res = await api.payTicket(currentPayTicketId, {
+          network: currentPayMethod, // 'momo' or 'airtel'
+          phone_number: rawPhone,
+        });
+
+        if (res.status === 'paid') {
+          showPayStep(3);
+          loadMyTickets();
+          loadNotifications();
+          return;
+        }
+
+        // charge is pending — customer needs to approve the prompt on their phone
+      const note = res.next_action?.payment_instruction?.note;
+const redirectUrl = res.next_action?.redirect_url?.url;
+
+document.getElementById('pay-pending-desc').textContent =
+  note || res.message || `We sent a payment request to ${rawPhone}. Approve it on your phone to confirm.`;
+  const redirectLink = document.getElementById('pay-pending-redirect');
+if (redirectUrl) {
+  redirectLink.href = redirectUrl;
+  redirectLink.style.display = 'block';
+  redirectLink.textContent = 'Open Test Approval Page';
+} else {
+  redirectLink.style.display = 'none';
+}
+
+        showPayStep('pay-step-pending');
+        startPayPolling();
       } catch (e) {
-        errEl.textContent = e.message || 'Payment failed';
+        errEl.textContent = e.message || 'Could not start payment';
       } finally {
         btn.disabled = false;
-        btn.textContent = 'Confirm Payment';
+        btn.textContent = 'Send Payment Request';
       }
+    };
+
+    function startPayPolling() {
+      stopPayPolling();
+      payPollElapsed = 0;
+      document.getElementById('pay-pending-timer').textContent = '';
+
+      payPollInterval = setInterval(async () => {
+        payPollElapsed += PAY_POLL_MS / 1000;
+        document.getElementById('pay-pending-timer').textContent = `Waiting for approval… (${payPollElapsed}s)`;
+
+        try {
+          const res = await api.checkPaymentStatus(currentPayTicketId);
+
+          if (res.status === 'paid') {
+            stopPayPolling();
+            showPayStep(3);
+            loadMyTickets();
+            loadNotifications();
+            return;
+          }
+
+          if (res.status === 'failed' || res.status === 'cancelled') {
+            stopPayPolling();
+            document.getElementById('pay-failed-reason').textContent = res.reason || 'The payment was not approved.';
+            showPayStep('pay-step-failed');
+            return;
+          }
+        } catch (e) {
+          // transient network hiccup while polling — keep trying until timeout
+        }
+
+        if (payPollElapsed >= PAY_POLL_MAX_SECONDS) {
+          stopPayPolling();
+          document.getElementById('pay-failed-reason').textContent =
+            "We didn't receive approval in time. You can try again.";
+          showPayStep('pay-step-failed');
+        }
+      }, PAY_POLL_MS);
+    }
+
+    function stopPayPolling() {
+      if (payPollInterval) {
+        clearInterval(payPollInterval);
+        payPollInterval = null;
+      }
+    }
+
+    window.cancelPendingPayment = () => {
+      stopPayPolling();
+      showPayStep(1);
     };
 
     // --- NOTIFICATIONS ---
@@ -3284,8 +3554,10 @@
 
     async function loadNotifications() {
       try {
-        const [notifs, unread] = await Promise.all([api.getNotifications(), api.getUnread()]);
-        const count = unread.unread;
+        const [notifsResponse, unreadResponse] = await Promise.all([api.getNotifications(), api.getUnread()]);
+        const notifs = toArray(notifsResponse);
+        const unread = unreadResponse?.unread ?? unreadResponse?.count ?? 0;
+        const count = Number(unread) || 0;
         document.getElementById('bell-count').textContent = count;
         document.getElementById('bell-count').style.display = count > 0 ? 'flex' : 'none';
         document.getElementById('m-bell-count').textContent = count;
@@ -3293,15 +3565,26 @@
 
         const icons = { booked: 'fa-ticket', paid: 'fa-check-circle', cancelled: 'fa-times-circle' };
 
-        document.getElementById('notif-list').innerHTML = notifs.length ? notifs.map(n => `
-            <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markRead('${n.id}')">
+        document.getElementById('notif-list').innerHTML = notifs.length ? notifs.map(n => {
+          const promoCode = n?.meta?.promo_code;
+          const isPromoNotification = n?.type === 'promo_code_generated' || Boolean(promoCode);
+          const notifTime = n.createdAt ? new Date(n.createdAt) : null;
+          return `
+            <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markRead('${esc(n.id)}')">
                 <div class="notif-icon"><i class="fa ${icons[n.type] || 'fa-bell'}"></i></div>
-                <div>
-                    <p style="font-size:13px; font-weight:600;">${n.message}</p>
-                    <small style="color:var(--text-muted); font-size:11px;">${new Date(n.createdAt).toLocaleTimeString()}</small>
+                <div style="flex:1; min-width:0;">
+                    <p style="font-size:13px; font-weight:600;">${esc(n.message ?? '')}</p>
+                    <small style="color:var(--text-muted); font-size:11px;">${notifTime && !Number.isNaN(notifTime.getTime()) ? notifTime.toLocaleTimeString() : ''}</small>
+                    ${isPromoNotification && promoCode ? `
+                      <div style="display:flex; align-items:center; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                        <code style="background:var(--surface-2); padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:0.04em;">${esc(promoCode)}</code>
+                        <button type="button" class="btn btn-ghost btn-sm" style="padding:6px 10px; font-size:12px;" data-promo="${esc(promoCode)}" onclick="event.stopPropagation(); copyPromoCode(this.dataset.promo)">Copy</button>
+                      </div>
+                    ` : ''}
                 </div>
             </div>
-        `).join('') : `
+        `;
+        }).join('') : `
             <div style="text-align:center; padding:48px 20px;">
                 <i class="fa fa-bell-slash" style="font-size:48px; color:var(--border); margin-bottom:16px; display:block;"></i>
                 <p style="font-weight:700; font-size:15px;">No notifications yet</p>
@@ -3310,6 +3593,29 @@
         `;
       } catch (e) { }
     }
+
+    window.copyPromoCode = async (code) => {
+      if (!code) return;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(code);
+          showToast('Promo code copied', 'success');
+        } else {
+          const input = document.createElement('textarea');
+          input.value = code;
+          input.setAttribute('readonly', '');
+          input.style.position = 'fixed';
+          input.style.left = '-9999px';
+          document.body.appendChild(input);
+          input.select();
+          document.execCommand('copy');
+          document.body.removeChild(input);
+          showToast('Promo code copied', 'success');
+        }
+      } catch (e) {
+        showToast('Unable to copy promo code', 'error');
+      }
+    };
 
     window.markRead = async (id) => {
       await api.markRead(id);
@@ -3322,21 +3628,17 @@
     else document.addEventListener('DOMContentLoaded', applyLang);
 
     (async () => {
-      if (!getToken()) {
-        hideAppLoader(() => {
-          document.getElementById('dashboard').style.display = 'none';
-          document.getElementById('bottom-nav').style.display = 'none';
-          document.getElementById('auth-screen').style.display = 'flex';
-          document.body.classList.add('auth-mode');
-        });
-        return;
-      }
       try {
+        const me = await api.getMe();
+        if (me.role !== 'user') throw new Error('Access only for users');
         await api.getLocations();
         const u = JSON.parse(localStorage.getItem('user') || 'null');
         if (u?.name) {
           document.getElementById('user-name').textContent = u.name;
           document.getElementById('user-initial').textContent = u.name.charAt(0);
+        } else if (me.name) {
+          document.getElementById('user-name').textContent = me.name;
+          document.getElementById('user-initial').textContent = me.name.charAt(0);
         }
         hideAppLoader(() => {
           document.getElementById('auth-screen').style.display = 'none';
@@ -3346,10 +3648,9 @@
           init();
         });
       } catch (e) {
-        // only clear token on 401 (expired/invalid)
-        // network errors or server errors should NOT log the user out
-        if (e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token') || e.message.toLowerCase().includes('unauthorized'))) {
-          clearToken();
+        const msg = e.message || '';
+        if (msg.includes('401') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('access only') || msg.includes('403')) {
+          await clearToken();
           localStorage.removeItem('user');
           hideAppLoader(() => {
             document.getElementById('dashboard').style.display = 'none';
@@ -3358,7 +3659,6 @@
             document.body.classList.add('auth-mode');
           });
         } else {
-          // server error — still show dashboard with cached user data
           const u = JSON.parse(localStorage.getItem('user') || 'null');
           if (u?.name) {
             document.getElementById('user-name').textContent = u.name;

@@ -935,20 +935,20 @@
 
   <script src="./api.js"></script>
   <script>
-    const { api, setToken, clearToken, getToken } = window.BookItApi;
+    const { api, clearToken } = window.BookItApi;
     window.api = api;
 
-    const parseJwt = (token) => {
-      try {
-        const part = token.split('.')[1];
-        if (!part) return null;
-        const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
-        return JSON.parse(atob(b64));
-      } catch { return null; }
-    };
-    const tokenRole = () => parseJwt(getToken() || '')?.role || null;
+    // HTML-escape untrusted server data before interpolating into innerHTML or
+    // inline event handlers (stored-XSS defense — company/contact names,
+    // location names, notification messages are operator/user-controlled).
+    const esc = (v) => String(v ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
 
-    // ── CONFIRM POPUP ─────────────────────────────────────
+    // ── CONFIRM POPUP ─────────────────────────────────
     let _adConfirmResolve = null;
     const showConfirm = (title, msg) => {
       document.getElementById('ad-confirm-title').textContent = title;
@@ -1002,14 +1002,13 @@
       try {
         const data = await api.loginUser({ email, password });
         if (data.user.role !== 'admin') throw new Error('Not an admin account');
-        setToken(data.token);
         document.getElementById('login-screen').style.display = 'none';
         document.getElementById('dashboard').style.display = 'block';
         init();
       } catch (e) { err.textContent = e.message; err.style.display = 'block'; }
     };
 
-    window.logout = () => { clearToken(); location.reload(); };
+    window.logout = async () => { await clearToken(); location.reload(); };
 
     // ── INIT ──────────────────────────────────────────────
     async function init() {
@@ -1049,12 +1048,12 @@
         const ops = await api.getOperators();
         document.getElementById('op-table').innerHTML = ops.map(o => `
       <tr>
-        <td data-label="Company">${o.company_name}</td>
-        <td data-label="Contact">${o.contact || '—'}</td>
+        <td data-label="Company">${esc(o.company_name)}</td>
+        <td data-label="Contact">${esc(o.contact || '—')}</td>
         <td data-label="Status"><span class="badge ${o.is_active ? 'badge-green' : 'badge-red'}">${o.is_active ? 'Active' : 'Suspended'}</span></td>
         <td data-label="Actions" style="display:flex;gap:8px;">
-          <button class="btn btn-ghost btn-sm" onclick="toggleOp('${o.id}')">${o.is_active ? 'Suspend' : 'Activate'}</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteOp('${o.id}')">Delete</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleOp('${esc(o.id)}')">${o.is_active ? 'Suspend' : 'Activate'}</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteOp('${esc(o.id)}')">Delete</button>
         </td>
       </tr>
     `).join('');
@@ -1096,8 +1095,8 @@
         const locs = await api.getLocations();
         document.getElementById('loc-table').innerHTML = locs.map(l => `
       <tr>
-        <td data-label="Name">${l.name}</td>
-        <td data-label="Actions"><button class="btn btn-danger btn-sm" onclick="deleteLoc('${l.id}')">Delete</button></td>
+        <td data-label="Name">${esc(l.name)}</td>
+        <td data-label="Actions"><button class="btn btn-danger btn-sm" onclick="deleteLoc('${esc(l.id)}')">Delete</button></td>
       </tr>
     `).join('');
       } catch (e) { showToast(e.message, 'error'); }
@@ -1135,11 +1134,11 @@
         if (mbell) { mbell.textContent = count; mbell.style.display = count > 0 ? 'flex' : 'none'; }
 
         document.getElementById('notif-list').innerHTML = notifs.length ? notifs.map(n => `
-      <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${n.id}',this)">
+      <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="readNotif('${esc(n.id)}',this)">
         <div class="notif-icon"><i class="fa fa-bell"></i></div>
         <div style="flex:1;">
-          <p style="font-size:13px;font-weight:600;">${n.message}</p>
-          <small style="color:var(--muted);font-size:11px;">${new Date(n.createdAt).toLocaleTimeString()}</small>
+          <p style="font-size:13px;font-weight:600;">${esc(n.message ?? '')}</p>
+          <small style="color:var(--muted);font-size:11px;">${n.createdAt && !Number.isNaN(new Date(n.createdAt).getTime()) ? new Date(n.createdAt).toLocaleTimeString() : ''}</small>
         </div>
       </div>
     `).join('') : `<div style="text-align:center;padding:48px 20px;">
@@ -1202,7 +1201,7 @@
       el.innerHTML = _lockerData.map((o, i) => `
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--bg);border-radius:12px;border:1px solid var(--border);margin-bottom:10px;">
       <div>
-        <div style="font-weight:700;font-size:14px;">${o.company_name}</div>
+        <div style="font-weight:700;font-size:14px;">${esc(o.company_name)}</div>
         <div style="font-size:12px;margin-top:3px;">
           ${o.default_password
           ? '<span style="color:var(--muted);">Default password set</span>'
@@ -1223,14 +1222,14 @@
     <div style="display:flex;flex-direction:column;gap:14px;">
       <div style="background:var(--bg);border-radius:12px;padding:16px;">
         <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px;">Operator</div>
-        <div style="font-weight:700;font-size:16px;">${o.company_name}</div>
-        ${o.contact ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${o.contact}</div>` : ''}
+        <div style="font-weight:700;font-size:16px;">${esc(o.company_name)}</div>
+        ${o.contact ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${esc(o.contact)}</div>` : ''}
       </div>
       <div style="background:var(--bg);border-radius:12px;padding:16px;">
         <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:8px;">Default Password</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-          <span style="font-family:monospace;font-size:22px;font-weight:900;color:var(--primary);letter-spacing:3px;">${o.default_password}</span>
-          <button class="btn btn-ghost btn-sm" onclick="copyText('${o.default_password}')"><i class="fa fa-copy"></i> Copy</button>
+          <span style="font-family:monospace;font-size:22px;font-weight:900;color:var(--primary);letter-spacing:3px;">${esc(o.default_password)}</span>
+          <button class="btn btn-ghost btn-sm" onclick="copyText('${esc(o.default_password)}')"><i class="fa fa-copy"></i> Copy</button>
         </div>
       </div>
     </div>
@@ -1256,11 +1255,11 @@
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
         <div style="background:var(--bg);border-radius:12px;padding:14px;">
           <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Name</div>
-          <div style="font-weight:700;">${me.name}</div>
+          <div style="font-weight:700;">${esc(me.name)}</div>
         </div>
         <div style="background:var(--bg);border-radius:12px;padding:14px;">
           <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Email</div>
-          <div style="font-weight:700;font-size:13px;">${me.email}</div>
+          <div style="font-weight:700;font-size:13px;">${esc(me.email)}</div>
         </div>
         <div style="background:var(--bg);border-radius:12px;padding:14px;">
           <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px;">Role</div>
@@ -1314,34 +1313,23 @@
       setTimeout(() => { el.style.display = 'none'; }, 500);
     };
 
-    if (getToken()) {
-      // If token exists but isn't admin, force login
-      if (tokenRole() !== 'admin') {
-        clearToken();
+    (async () => {
+      try {
+        const me = await api.getMe();
+        if (me.role !== 'admin') throw new Error('Access only for admins');
+        hideLoader(() => {
+          document.getElementById('login-screen').style.display = 'none';
+          document.getElementById('dashboard').style.display = 'block';
+          init();
+        });
+      } catch (e) {
+        const isAuth = e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token') || e.message.toLowerCase().includes('access only') || e.message.includes('403'));
+        if (isAuth) await clearToken();
         hideLoader(() => {
           document.getElementById('login-screen').style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),#0a0f1e),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),#0a0f1e);';
         });
-      } else {
-        // validate admin token by calling an admin-only endpoint
-        api.getOperators().then(() => {
-          hideLoader(() => {
-            document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            init();
-          });
-        }).catch((e) => {
-          const isAuth = e.message && (e.message.includes('401') || e.message.toLowerCase().includes('token'));
-          if (isAuth) clearToken();
-          hideLoader(() => {
-            document.getElementById('login-screen').style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),#0a0f1e),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),#0a0f1e);';
-          });
-        });
       }
-    } else {
-      hideLoader(() => {
-        document.getElementById('login-screen').style.cssText = 'display:flex;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top right,rgba(5,150,105,0.18),#0a0f1e),radial-gradient(circle at bottom left,rgba(16,185,129,0.10),#0a0f1e);';
-      });
-    }
+    })();
   </script>
 </body>
 

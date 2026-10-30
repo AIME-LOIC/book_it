@@ -8,6 +8,10 @@ const User = sequelize.define('User', {
   phone:         { type: DataTypes.STRING(20),  allowNull: false },
   password_hash: { type: DataTypes.STRING(255), allowNull: false },
   role:          { type: DataTypes.ENUM('admin', 'user'), defaultValue: 'user' },
+  flw_customer_id: { type: DataTypes.STRING, allowNull: true },
+  terms_accepted_at: { type: DataTypes.DATE, allowNull: true },
+  // flw_customer_id: { type: DataTypes.STRING, allowNull: true },
+
 }, { tableName: 'users', timestamps: true });
 
 export default User;

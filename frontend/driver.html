@@ -910,18 +910,18 @@
 
   <script src="./api.js"></script>
   <script>
-    const { api, setToken, clearToken, getToken } = window.BookItApi;
+    const { api, clearToken } = window.BookItApi;
     window.api = api;
 
-    const parseJwt = (token) => {
-      try {
-        const part = token.split('.')[1];
-        if (!part) return null;
-        const b64 = part.replace(/-/g, '+').replace(/_/g, '/');
-        return JSON.parse(atob(b64));
-      } catch { return null; }
-    };
-    const tokenRole = () => parseJwt(getToken() || '')?.role || null;
+    // HTML-escape untrusted server data before interpolating into innerHTML or
+    // inline event handlers (stored-XSS defense — passenger names, stop
+    // names, notification messages are user/operator-controlled).
+    const esc = (v) => String(v ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
 
     const $ = (sel) => document.querySelector(sel);
 
@@ -964,8 +964,8 @@
       toast.innerHTML = `
         <div class="toast-icon" style="background: ${color}20; color: ${color}">${icon}</div>
         <div class="toast-info">
-          <div class="toast-title">${title}</div>
-          <div class="toast-body">${body}</div>
+          <div class="toast-title">${esc(title)}</div>
+          <div class="toast-body">${esc(body)}</div>
         </div>
       `;
 
@@ -987,14 +987,12 @@
 
       try {
         const data = await api.loginDriver({ phone, password });
-        setToken(data.token);
         driverState.name = data.driver?.name || 'Driver';
         driverState.bus = data.driver?.bus || null;
         driverState.bus_id = data.driver?.bus_id || data.driver?.bus?.id;
         localStorage.setItem('driver', JSON.stringify({ name: driverState.name, bus: driverState.bus, bus_id: driverState.bus_id }));
         $('#driver-name').textContent = driverState.name;
-        $('#login-screen').style.display = 'none';
-        $('#dashboard').classList.remove('hidden');
+        showDashboardView();
         init();
       } catch (e) {
         err.textContent = e.message || 'Authentication failed';
@@ -1013,6 +1011,30 @@
       if (mbtn) mbtn.innerHTML = `<i class="fa ${icon}"></i><span>Theme</span>`;
     };
 
+    const showDashboardView = () => {
+      const dashboard = $('#dashboard');
+      const login = $('#login-screen');
+      dashboard.style.display = 'flex';
+      dashboard.classList.remove('hidden');
+      login.style.display = 'none';
+      login.classList.add('hidden');
+      showSection('home');
+    };
+
+    const showLoginView = (message = '') => {
+      const dashboard = $('#dashboard');
+      const login = $('#login-screen');
+      dashboard.style.display = 'none';
+      dashboard.classList.add('hidden');
+      login.style.display = 'flex';
+      login.classList.remove('hidden');
+      if (message) {
+        const err = document.getElementById('login-err');
+        err.textContent = message;
+        err.classList.remove('hidden');
+      }
+    };
+
     // apply saved theme
     (function () {
       if (localStorage.getItem('driver-theme') === 'light') {
@@ -1024,9 +1046,9 @@
       }
     })();
 
-    window.logout = () => {
+    window.logout = async () => {
       if (driverState.watchId) navigator.geolocation.clearWatch(driverState.watchId);
-      clearToken();
+      await clearToken();
       localStorage.removeItem('driver');
       location.reload();
     };
@@ -1057,12 +1079,12 @@
         }
         listEl.innerHTML = passengers.map(t => `
           <div class="passenger-card">
-            <div class="seat-label">${t.seat_number || '??'}</div>
+            <div class="seat-label">${esc(t.seat_number || '??')}</div>
             <div style="flex: 1;">
-              <div style="font-weight: 800;">${t.user?.name || 'Guest'}</div>
-              <div style="font-size: 12px; color: var(--muted);">${t.boardingStop?.location?.name} → ${t.dropoffStop?.location?.name}</div>
+              <div style="font-weight: 800;">${esc(t.user?.name || 'Guest')}</div>
+              <div style="font-size: 12px; color: var(--muted);">${esc(t.boardingStop?.location?.name)} → ${esc(t.dropoffStop?.location?.name)}</div>
             </div>
-            <button class="btn btn-ghost" style="width: auto; padding: 8px 12px; font-size: 12px;" onclick="notifyExit('${t.id}')">Exit</button>
+            <button class="btn btn-ghost" style="width: auto; padding: 8px 12px; font-size: 12px;" onclick="notifyExit('${esc(t.id)}')">Exit</button>
           </div>
         `).join('');
         updateDashboard();
@@ -1189,11 +1211,11 @@
         if (mbell) { mbell.textContent = count; mbell.style.display = count > 0 ? 'flex' : 'none'; }
 
         document.getElementById('dr-notif-list').innerHTML = notifs.length ? notifs.map(n => `
-          <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markDrNotif('${n.id}', this)">
+          <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="markDrNotif('${esc(n.id)}', this)">
             <div class="notif-icon"><i class="fa fa-bell"></i></div>
             <div style="flex:1;">
-              <p style="font-size:13px; font-weight:600;">${n.message}</p>
-              <small style="color:var(--muted); font-size:11px;">${new Date(n.createdAt).toLocaleTimeString()}</small>
+              <p style="font-size:13px; font-weight:600;">${esc(n.message ?? '')}</p>
+              <small style="color:var(--muted); font-size:11px;">${n.createdAt && !Number.isNaN(new Date(n.createdAt).getTime()) ? new Date(n.createdAt).toLocaleTimeString() : ''}</small>
             </div>
           </div>
         `).join('') : `
@@ -1318,15 +1340,11 @@
       }, 3500);
     };
 
-    // If a token exists but it's for a different role (user/admin/operator), force login.
-    if (getToken() && tokenRole() !== 'driver') {
-      clearToken();
-      localStorage.removeItem('driver');
-    }
-
-    // Auto-login if token exists
-    if (getToken()) {
-      api.getPassengers(new Date().toISOString().split('T')[0]).then(() => {
+    (async () => {
+      try {
+        const me = await api.getMe();
+        if (me.role !== 'driver') throw new Error('Access only for drivers');
+        await api.getPassengers(new Date().toISOString().split('T')[0]);
         try {
           const saved = JSON.parse(localStorage.getItem('driver') || 'null');
           if (saved?.name) {
@@ -1336,31 +1354,25 @@
             $('#driver-name').textContent = saved.name;
           }
         } catch { }
-        hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').style.display = 'block'; init(); });
-      }).catch((e) => {
+        hideDrLoader(() => { showDashboardView(); init(); });
+      } catch (e) {
         const msg = (e && e.message) ? String(e.message) : '';
         const isAuthErr = msg.includes('401') || msg.toLowerCase().includes('token') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('access only') || msg.toLowerCase().includes('suspended') || msg.includes('403');
         if (isAuthErr) {
-          clearToken();
+          await clearToken();
           localStorage.removeItem('driver');
           hideDrLoader(() => {
-            const err = document.getElementById('login-err');
-            err.textContent = msg || 'Please login';
-            err.classList.remove('hidden');
-            $('#login-screen').style.display = 'flex';
+            showLoginView(msg || 'Please login');
           });
         } else {
-          // server error — show dashboard anyway
           try {
             const saved = JSON.parse(localStorage.getItem('driver') || 'null');
             if (saved?.name) { driverState.name = saved.name; driverState.bus = saved.bus; $('#driver-name').textContent = saved.name; }
           } catch { }
-          hideDrLoader(() => { $('#login-screen').style.display = 'none'; $('#dashboard').style.display = 'block'; init(); });
+          hideDrLoader(() => { showDashboardView(); init(); });
         }
-      });
-    } else {
-      hideDrLoader(() => { $('#login-screen').style.display = 'flex'; });
-    }
+      }
+    })();
   </script>
 </body>
 

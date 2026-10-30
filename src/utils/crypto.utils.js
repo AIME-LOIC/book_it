@@ -1,7 +1,22 @@
 import crypto from 'crypto';
 
 const ALGO    = 'aes-256-gcm';
-const SECRET  = process.env.QR_SECRET || process.env.JWT_SECRET;
+// Deliberately a separate secret from JWT_SECRET/QR_SECRET: those are for
+// auth tokens and QR tickets. Reusing them here meant a JWT_SECRET rotation
+// (e.g. after a leak) would break decryption of every stored default
+// password, and a leak of either secret would compromise BOTH auth tokens
+// and stored passwords at once. Falls back to QR_SECRET only for existing
+// deployments that haven't set DEFAULT_PW_SECRET yet — set it and rotate.
+const SECRET  = process.env.DEFAULT_PW_SECRET || process.env.QR_SECRET || process.env.JWT_SECRET;
+if (!SECRET) {
+  throw new Error(
+    'crypto.utils: none of DEFAULT_PW_SECRET, QR_SECRET, or JWT_SECRET are set. ' +
+    'Check that your env file is actually being loaded (e.g. DOTENV_CONFIG_PATH for local dev).'
+  );
+}
+if (!process.env.DEFAULT_PW_SECRET) {
+  console.warn('[crypto.utils] DEFAULT_PW_SECRET not set — falling back to QR_SECRET/JWT_SECRET. Set DEFAULT_PW_SECRET explicitly.');
+}
 // derive a 32-byte key from the secret
 const KEY     = crypto.createHash('sha256').update(SECRET).digest();
 

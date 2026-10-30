@@ -34,12 +34,28 @@ export async function seedDatabase() {
     'Muhanga', 'Nyanza'
   ];
 
+  // Verified/known terminal pins. These are boarding-terminal coordinates,
+  // not town-centre coordinates. Keep unverified terminals nullable rather than
+  // silently routing passengers to a guessed location.
+  const terminalCoordinates = {
+    // Coordinates from the Google Maps place pins supplied for these terminals
+    Kigali: { latitude: -1.9418697, longitude: 30.0439804 },
+    Kayonza: { latitude: -1.9008982, longitude: 30.5077285 },
+    Muhanga: { latitude: -2.0832867, longitude: 29.7514289 },
+    Huye: { latitude: -2.5951809, longitude: 29.7423325 },
+    Rwamagana: { latitude: -1.9518545, longitude: 30.4332740 },
+  };
+
   const locMap = {};
   for (const name of locNames) {
     const [loc] = await Location.findOrCreate({ where: { name } });
+    const coordinates = terminalCoordinates[name];
+    if (coordinates) {
+      await loc.update(coordinates);
+    }
     locMap[name] = loc;
   }
-  console.log('✅ Locations seeded');
+  console.log('✅ Locations seeded with available terminal coordinates');
 
   // 3. Setup a default Operator (Ritco is a common Rwandan carrier)
   const [operator] = await Operator.findOrCreate({

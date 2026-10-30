@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import {
-  search, book, pay, cancel,
+  search, book, pay, payStatus, flutterwaveWebhook, cancel,
   getMyTickets, getTicketById,
   getOperatorTickets, getAllTickets,
-  validateByQR, validateByNumber,
+  validateByQR, validateByNumber, markDeparted,
 } from '../controllers/ticket.controller.js';
 import authenticate from '../middleware/auth.js';
 import isAdmin      from '../middleware/admin.js';
@@ -16,6 +16,15 @@ const router = Router();
 
 // public
 router.get('/search',           search);
+
+// Flutterwave webhook — no auth middleware; Flutterwave calls this
+// directly and it's verified via the verif-hash header instead.
+// NOTE: make sure this route is mounted with express.json() (raw JSON
+// body, not urlencoded) so req.body.data.id / status parse correctly.
+router.post('/webhooks/flutterwave', flutterwaveWebhook);
+
+// departure event — deliberately separate from ticket validation/redemption
+router.post('/:id/departed',       authenticate, isDriver, markDeparted);
 
 // validate
 router.post('/validate/qr',     authenticate, isDriver, validateByQR);
@@ -32,6 +41,7 @@ router.get('/my',               authenticate, isUser, getMyTickets);
 router.get('/my/:id',           authenticate, isUser, getTicketById);
 router.post('/',                authenticate, isUser, validateBookTicket, book);
 router.patch('/:id/pay',        authenticate, isUser, pay);
+router.get('/:id/pay/status',   authenticate, isUser, payStatus);
 router.patch('/:id/cancel',     authenticate, isUser, cancel);
 
 export default router;

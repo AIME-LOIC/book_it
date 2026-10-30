@@ -6,7 +6,9 @@ const QR_SECRET = process.env.QR_SECRET;
 if (!QR_SECRET) throw new Error('QR_SECRET environment variable is not set');
 
 export const generateTicketNumber = () => {
-  const digits  = Math.floor(1000 + Math.random() * 9000);
+  // crypto-secure: Math.random was predictable under load and collisions
+  // cross-referenced against the DB unique index anyway
+  const digits = 1000 + crypto.randomInt(0, 9000); // 1000–9999 uniform
   const letters = crypto.randomBytes(2).toString('hex').toUpperCase().slice(0, 2);
   return `BK-${digits}-${letters}`;
 };

@@ -345,6 +345,14 @@
   <script>
     const BASE = `${window.location.protocol}//${window.location.host}/rw/v1/bk`;
 
+    // HTML-escape API data before interpolating into innerHTML (XSS defense)
+    const esc = (v) => String(v ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
     function getToken() { return document.getElementById('token').value || localStorage.getItem('debug_token') || ''; }
     function saveToken() {
       localStorage.setItem('debug_token', document.getElementById('token').value);
@@ -380,7 +388,7 @@
       const el = document.getElementById(id);
       const ok = res.status < 400;
       el.className = `result ${ok ? 'ok' : 'err'}`;
-      el.innerHTML = `<b>Status: ${res.status}</b><br><pre>${JSON.stringify(res.data, null, 2)}</pre>`;
+      el.innerHTML = `<b>Status: ${esc(res.status)}</b><br><pre>${esc(JSON.stringify(res.data, null, 2))}</pre>`;
       el.style.display = 'block';
     }
 
@@ -390,14 +398,14 @@
       const tbody = document.getElementById('loc-body');
       tbody.innerHTML = data.map(l => `
     <tr>
-      <td>${l.name}</td>
-      <td class="id-cell">${l.id}</td>
+      <td>${esc(l.name)}</td>
+      <td class="id-cell">${esc(l.id)}</td>
     </tr>
   `).join('');
       document.getElementById('loc-out').style.display = 'block';
 
       // populate search selects
-      const opts = data.map(l => `<option value="${l.id}">${l.name}</option>`).join('');
+      const opts = data.map(l => `<option value="${esc(l.id)}">${esc(l.name)}</option>`).join('');
       document.getElementById('search-from').innerHTML = '<option value="">— From —</option>' + opts;
       document.getElementById('search-to').innerHTML = '<option value="">— To —</option>' + opts;
     }
@@ -408,11 +416,11 @@
       const tbody = document.getElementById('rt-body');
       tbody.innerHTML = data.map(r => `
     <tr>
-      <td>${r.fromLocation?.name || '?'}</td>
-      <td>${r.toLocation?.name || '?'}</td>
-      <td>${Number(r.price).toLocaleString()} RWF</td>
+      <td>${esc(r.fromLocation?.name || '?')}</td>
+      <td>${esc(r.toLocation?.name || '?')}</td>
+      <td>${esc(Number(r.price).toLocaleString())} RWF</td>
       <td><span class="badge ${r.is_reverse ? 'badge-blue' : 'badge-green'}">${r.is_reverse ? 'reverse' : 'main'}</span></td>
-      <td class="id-cell">${r.id}</td>
+      <td class="id-cell">${esc(r.id)}</td>
     </tr>
   `).join('');
       document.getElementById('rt-out').style.display = 'block';
@@ -448,12 +456,12 @@
       } else {
         tbody.innerHTML = stops.map(s => `
       <tr>
-        ${showRoute ? `<td style="color:#94a3b8;font-size:11px;">${s._route || ''}</td>` : ''}
-        <td><b>${s.stop_order}</b></td>
-        <td>${s.location?.name || '?'}</td>
-        <td class="id-cell">${s.location_id}</td>
-        <td>${Number(s.price_from_origin).toLocaleString()} RWF</td>
-        <td class="id-cell">${s.id}</td>
+        ${showRoute ? `<td style="color:#94a3b8;font-size:11px;">${esc(s._route || '')}</td>` : ''}
+        <td><b>${esc(s.stop_order)}</b></td>
+        <td>${esc(s.location?.name || '?')}</td>
+        <td class="id-cell">${esc(s.location_id)}</td>
+        <td>${esc(Number(s.price_from_origin).toLocaleString())} RWF</td>
+        <td class="id-cell">${esc(s.id)}</td>
       </tr>
     `).join('');
       }
@@ -466,11 +474,11 @@
       const tbody = document.getElementById('bus-body');
       tbody.innerHTML = data.map(b => `
     <tr>
-      <td>${b.plate_number}</td>
-      <td class="id-cell">${b.route_id}</td>
-      <td>${b.departure_time}</td>
-      <td>${b.capacity}</td>
-      <td class="id-cell">${b.id}</td>
+      <td>${esc(b.plate_number)}</td>
+      <td class="id-cell">${esc(b.route_id)}</td>
+      <td>${esc(b.departure_time)}</td>
+      <td>${esc(b.capacity)}</td>
+      <td class="id-cell">${esc(b.id)}</td>
     </tr>
   `).join('');
       document.getElementById('bus-out').style.display = 'block';
@@ -494,7 +502,7 @@
       if (res.status >= 400) {
         el.className = 'result err';
         el.innerHTML = `
-      <b>❌ Error: ${res.data.message}</b>
+      <b>❌ Error: ${esc(res.data.message)}</b>
       <br><br>
       <b>Debugging checklist:</b>
       <ul style="margin-top:8px;padding-left:16px;color:#fca5a5;font-size:12px;line-height:1.8;">
@@ -503,14 +511,14 @@
         <li>Check stop_order: from stop must have LOWER order than to stop</li>
         <li>Make sure a bus is assigned to the route that has the stops</li>
       </ul>
-      <br><b>From location ID:</b> <span style="color:#38bdf8;">${from}</span>
-      <br><b>To location ID:</b>   <span style="color:#38bdf8;">${to}</span>
+      <br><b>From location ID:</b> <span style="color:#38bdf8;">${esc(from)}</span>
+      <br><b>To location ID:</b>   <span style="color:#38bdf8;">${esc(to)}</span>
     `;
       } else {
         el.className = 'result ok';
         el.innerHTML = `
-      <b>✅ Found ${res.data.length} bus(es)</b>
-      <pre>${JSON.stringify(res.data, null, 2)}</pre>
+      <b>✅ Found ${esc(res.data.length)} bus(es)</b>
+      <pre>${esc(JSON.stringify(res.data, null, 2))}</pre>
     `;
       }
     }
