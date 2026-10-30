@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "framework": null,
+  "outputDirectory": "frontend",
+  "functions": {
+    "api/[...path].js": {
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/rw/v1/bk",
+      "destination": "/api"
+    },
+    {
+      "source": "/rw/v1/bk/:path*",
+      "destination": "/api/:path*"
+    }
+  ]
+}
