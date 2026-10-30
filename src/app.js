@@ -2,7 +2,6 @@ import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import os from 'os';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import authRoutes from './routes/auth.routes.js';
@@ -16,7 +15,6 @@ import ticketRoutes from './routes/ticket.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import promoRoutes from './routes/promo.routes.js';
 import cors from 'cors';
-import { checkDepartedBuses, checkMidnightReactivation, checkPromoCodeGeneration, archiveOldTickets, checkPendingTicketHolds, notifyUpcomingDepartures, cleanupOldNotifications } from './services/scheduler.service.js';
 
 
 dotenv.config();
@@ -29,7 +27,7 @@ const dbVars = process.env.DATABASE_URL
   ? ['DATABASE_URL']
   : ['DB_HOST', 'DB_USER', 'DB_NAME'];
 for (const key of [...required, ...dbVars]) {
-  if (!process.env[key]) { console.error(`Missing required env var: ${key}`); process.exit(1); }
+  if (!process.env[key]) throw new Error(`Missing required env var: ${key}`);
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -166,37 +164,6 @@ app.use((err, req, res, next) => {
       ? 'Something went wrong. Please try again.'
       : err.message,
   });
-});
-
-const PORT = process.env.PORT || 2000;
-const HOST = '0.0.0.0';
-app.listen(PORT, HOST, () => {
-  const nets = os.networkInterfaces();
-  let lanIP = 'localhost';
-  for (const iface of Object.values(nets)) {
-    for (const net of iface) {
-      if (net.family === 'IPv4' && !net.internal) { lanIP = net.address; break; }
-    }
-  }
-  console.log(` BookIt running on:`);
-  console.log(`   Local:   http://localhost:${PORT}`);
-  console.log(`   Network: http://${lanIP}:${PORT}`);
-  checkDepartedBuses();
-  checkMidnightReactivation();
-  checkPromoCodeGeneration();
-  archiveOldTickets();
-  checkPendingTicketHolds();
-  notifyUpcomingDepartures();
-  cleanupOldNotifications();
-  setInterval(() => {
-    checkDepartedBuses();
-    checkMidnightReactivation();
-    checkPromoCodeGeneration();
-    archiveOldTickets();
-    checkPendingTicketHolds();
-    notifyUpcomingDepartures();
-    cleanupOldNotifications();
-  }, 60 * 1000);
 });
 
 export default app;
