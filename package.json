@@ -5,7 +5,7 @@
   "main": "server.js",
   "type": "module",
   "engines": {
-    "node": ">=18.0.0"
+    "node": "22.x"
   },
   "scripts": {
     "test": "node --test tests/*.test.js",
