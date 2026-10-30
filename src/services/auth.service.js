@@ -1,4 +1,4 @@
-import bcrypt   from 'bcrypt';
+import bcrypt   from 'bcryptjs';
 import jwt      from 'jsonwebtoken';
 import User     from '../database/models/user.js';
 import Operator from '../database/models/operator.js';
