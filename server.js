@@ -1,5 +1,7 @@
 import sequelize, { isLocal } from './src/config/sequelize.js';
-import './src/app.js';
+import app from './src/app.js';
+import os from 'node:os';
+import { checkDepartedBuses, checkMidnightReactivation, checkPromoCodeGeneration, archiveOldTickets, checkPendingTicketHolds, notifyUpcomingDepartures, cleanupOldNotifications } from './src/services/scheduler.service.js';
 import { seedDatabase } from './src/database/seed.js';
 
 // ── GLOBAL ERROR HANDLERS ─────────────────────────────────────
@@ -58,8 +60,32 @@ sequelize.authenticate()
   await seedDatabase();
 })
 .then(()=>{
-    // The app is started in src/app.js
     console.log('database connected');
+    const PORT = process.env.PORT || 2000;
+    const HOST = '0.0.0.0';
+    app.listen(PORT, HOST, () => {
+      const nets = os.networkInterfaces();
+      let lanIP = 'localhost';
+      for (const iface of Object.values(nets)) {
+        for (const net of iface || []) {
+          if (net.family === 'IPv4' && !net.internal) { lanIP = net.address; break; }
+        }
+      }
+      console.log('BookIt running on:');
+      console.log('  Local: http://localhost:' + PORT);
+      console.log('  Network: http://' + lanIP + ':' + PORT);
+      const runJobs = () => {
+        checkDepartedBuses().catch(err => console.error('[Scheduler] departed buses:', err));
+        checkMidnightReactivation().catch(err => console.error('[Scheduler] midnight reactivation:', err));
+        checkPromoCodeGeneration().catch(err => console.error('[Scheduler] promo generation:', err));
+        archiveOldTickets().catch(err => console.error('[Scheduler] ticket archive:', err));
+        checkPendingTicketHolds().catch(err => console.error('[Scheduler] pending holds:', err));
+        notifyUpcomingDepartures().catch(err => console.error('[Scheduler] departure reminders:', err));
+        cleanupOldNotifications().catch(err => console.error('[Scheduler] notification cleanup:', err));
+      };
+      runJobs();
+      setInterval(runJobs, 60 * 1000);
+    });
 })
 .catch((error)=>{
     console.error("failed to connect ", error)
