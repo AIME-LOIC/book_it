@@ -1,7 +1,5 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import authRoutes from './routes/auth.routes.js';
@@ -23,8 +21,6 @@ dotenv.config();
 // Vercel serves public assets from its CDN. API requests validate runtime configuration
 // and establish a reusable database connection before reaching controllers.
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const app = express();
 app.set('trust proxy', 1);
 // ── SECURITY HEADERS ─────────────────────────────────────────────
@@ -136,18 +132,6 @@ app.use(`${P}/auth/login`, loginLimiter);
 app.use(`${P}/auth/operator/login`, loginLimiter);
 app.use(`${P}/drivers/login`, loginLimiter);
 app.use(`${P}/tickets/validate`, ticketValidateLimiter);
-
-// Serve frontend static files
-app.use(express.static(path.join(__dirname, '../frontend')));
-
-// Explicit page routes
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
-app.get('/book', (req, res) => res.sendFile(path.join(__dirname, '../frontend/user.html')));
-app.get('/operator', (req, res) => res.sendFile(path.join(__dirname, '../frontend/operator.html')));
-app.get('/driver', (req, res) => res.sendFile(path.join(__dirname, '../frontend/driver.html')));
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '../frontend/admin.html')));
-app.get('/policy', (req, res) => res.sendFile(path.join(__dirname, '../frontend/policy.html')));
-app.get('/docs', (req, res) => res.sendFile(path.join(__dirname, '../frontend/docs.html')));
 
 app.use(`${P}/auth`, authRoutes);
 app.use(`${P}/locations`, locationRoutes);
