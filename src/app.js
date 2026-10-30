@@ -2,7 +2,6 @@ import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import os from 'os';
 import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import authRoutes from './routes/auth.routes.js';
@@ -16,21 +15,13 @@ import ticketRoutes from './routes/ticket.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import promoRoutes from './routes/promo.routes.js';
 import cors from 'cors';
-import { checkDepartedBuses, checkMidnightReactivation, checkPromoCodeGeneration, archiveOldTickets, checkPendingTicketHolds, notifyUpcomingDepartures, cleanupOldNotifications } from './services/scheduler.service.js';
+import sequelize from './config/sequelize.js';
 
 
 dotenv.config();
 
-// Fail fast if critical env vars are missing
-const required = process.env.NODE_ENV === 'production'
-  ? ['JWT_SECRET', 'QR_SECRET', 'DEFAULT_PW_SECRET', 'ALLOWED_ORIGINS']
-  : ['JWT_SECRET', 'QR_SECRET'];
-const dbVars = process.env.DATABASE_URL
-  ? ['DATABASE_URL']
-  : ['DB_HOST', 'DB_USER', 'DB_NAME'];
-for (const key of [...required, ...dbVars]) {
-  if (!process.env[key]) { console.error(`Missing required env var: ${key}`); process.exit(1); }
-}
+// Vercel serves public assets from its CDN. API requests validate runtime configuration
+// and establish a reusable database connection before reaching controllers.
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -116,6 +107,30 @@ const ticketValidateLimiter = rateLimit({
 
 const P = '/rw/v1/bk'; // obscure API prefix
 
+let databaseReady;
+app.use(P, async (req, res, next) => {
+  const required = ['JWT_SECRET', 'QR_SECRET', 'DEFAULT_PW_SECRET', 'ALLOWED_ORIGINS'];
+  const missing = required.filter((key) => !process.env[key]?.trim());
+  if (!process.env.DATABASE_URL && !(process.env.DB_HOST && process.env.DB_USER && process.env.DB_NAME)) {
+    missing.push('DATABASE_URL (or DB_HOST, DB_USER, DB_NAME)');
+  }
+  if (missing.length) {
+    return res.status(503).json({
+      message: 'BookIt server configuration is incomplete.',
+      missing,
+    });
+  }
+  try {
+    databaseReady ||= sequelize.authenticate();
+    await databaseReady;
+    next();
+  } catch (error) {
+    databaseReady = null;
+    console.error('[DB] Connection failed:', error.message);
+    res.status(503).json({ message: 'BookIt database is unavailable.' });
+  }
+});
+
 app.use(`${P}/`, apiLimiter);
 app.use(`${P}/auth/login`, loginLimiter);
 app.use(`${P}/auth/operator/login`, loginLimiter);
@@ -168,35 +183,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 2000;
-const HOST = '0.0.0.0';
-app.listen(PORT, HOST, () => {
-  const nets = os.networkInterfaces();
-  let lanIP = 'localhost';
-  for (const iface of Object.values(nets)) {
-    for (const net of iface) {
-      if (net.family === 'IPv4' && !net.internal) { lanIP = net.address; break; }
-    }
-  }
-  console.log(` BookIt running on:`);
-  console.log(`   Local:   http://localhost:${PORT}`);
-  console.log(`   Network: http://${lanIP}:${PORT}`);
-  checkDepartedBuses();
-  checkMidnightReactivation();
-  checkPromoCodeGeneration();
-  archiveOldTickets();
-  checkPendingTicketHolds();
-  notifyUpcomingDepartures();
-  cleanupOldNotifications();
-  setInterval(() => {
-    checkDepartedBuses();
-    checkMidnightReactivation();
-    checkPromoCodeGeneration();
-    archiveOldTickets();
-    checkPendingTicketHolds();
-    notifyUpcomingDepartures();
-    cleanupOldNotifications();
-  }, 60 * 1000);
-});
+// The app is exported for Vercel's Express runtime. Local listening and
+// background schedulers are started by server.js only.
 
 export default app;
