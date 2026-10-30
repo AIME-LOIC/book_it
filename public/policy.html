@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms & Privacy Policy — BookIt</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #059669;
+            --bg-main: #f0f4f8;
+            --card: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border: #e2e8f0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-main: #0a0f1e;
+                --card: #111827;
+                --text-main: #f9fafb;
+                --text-muted: #9ca3af;
+                --border: #1f2937;
+            }
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .policy-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 24px;
+            color: var(--primary);
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 22px;
+            font-weight: 800;
+            margin-top: 32px;
+            margin-bottom: 16px;
+            border-bottom: 2px solid var(--primary);
+            display: inline-block;
+        }
+
+        p {
+            margin-bottom: 16px;
+            color: var(--text-muted);
+        }
+
+        ul {
+            margin-bottom: 16px;
+            padding-left: 20px;
+            list-style-type: disc;
+            color: var(--text-muted);
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+            margin-bottom: 20px;
+            transition: 0.2s;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+            transform: translateX(-4px);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="/" class="back-link"><i class="fa fa-arrow-left"></i> Back to Home</a>
+        <div class="policy-card">
+            <h1>Terms & Policy</h1>
+            <p style="text-align: center; font-size: 14px;">Last Updated: June 2024</p>
+
+            <h2>1. Terms of Service</h2>
+            <p>By using BookIt, you agree to the following conditions:</p>
+            <ul>
+                <li><strong>Booking Responsibility:</strong> Users are responsible for providing accurate information
+                    (name, phone) during booking.</li>
+                <li><strong>Ticket Validity:</strong> A ticket is only valid for the specific bus, date, and seat number
+                    indicated.</li>
+                <li><strong>Cancellations:</strong> Tickets can be cancelled up to 2 hours before departure. Refunds are
+                    processed according to operator policies.</li>
+                <li><strong>User Conduct:</strong> You agree not to use the platform for any fraudulent or unauthorized
+                    activities.</li>
+            </ul>
+
+            <h2>2. Privacy Policy</h2>
+            <p>Your privacy is important to us. Here is how we handle your data:</p>
+            <ul>
+                <li><strong>Data Collection:</strong> We collect your name, email, and phone number to facilitate
+                    bookings and notifications.</li>
+                <li><strong>Location Data:</strong> We may use your location to show nearby bus stops and track live bus
+                    positions for your convenience.</li>
+                <li><strong>Security:</strong> All payments are handled through secure gateways. We do not store your
+                    PINs or full credit card details.</li>
+                <li><strong>Third Parties:</strong> Your contact information is shared with the specific bus operator
+                    you booked with to ensure your travel manifest is complete.</li>
+            </ul>
+
+            <h2>3. Refund & Support</h2>
+            <p>If you encounter issues with your booking or payment:</p>
+            <ul>
+                <li>Contact our support team via the settings menu in the app.</li>
+                <li>Refunds for cancelled trips are typically credited back to your MRT Wallet or original payment
+                    method within 24-48 hours.</li>
+            </ul>
+
+            <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
+                <p style="font-size: 14px;">Questions? Email us at <a href="mailto:support@bookit.rw"
+                        style="color: var(--primary); font-weight: 700;">support@bookit.rw</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
