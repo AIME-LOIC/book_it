@@ -1,0 +1,29 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    {
+      "source": "/book",
+      "destination": "/user.html"
+    },
+    {
+      "source": "/operator",
+      "destination": "/operator.html"
+    },
+    {
+      "source": "/driver",
+      "destination": "/driver.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/policy",
+      "destination": "/policy.html"
+    },
+    {
+      "source": "/docs",
+      "destination": "/docs.html"
+    }
+  ]
+}
