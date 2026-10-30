@@ -17,8 +17,10 @@ export default async function handler(req, res) {
   try {
     await ensureDatabase();
     const originalUrl = req.url || '/';
-    const apiPath = originalUrl.replace(/^\/api(?=\/|\?|$)/, '');
-    req.url = '/rw/v1/bk' + (apiPath.startsWith('/') ? apiPath : '/' + apiPath);
+    if (!originalUrl.startsWith('/rw/v1/bk')) {
+      const apiPath = originalUrl.replace(/^\/api(?=\/|\?|$)/, '');
+      req.url = '/rw/v1/bk' + (apiPath.startsWith('/') ? apiPath : '/' + apiPath);
+    }
     return app(req, res);
   } catch (error) {
     console.error('[BookIt API bootstrap]', error);
