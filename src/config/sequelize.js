@@ -1,5 +1,6 @@
 import dns from 'node:dns/promises';
 import { Sequelize } from 'sequelize';
+import pg from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config({ path: process.env.DOTENV_CONFIG_PATH || '.env' });
@@ -58,7 +59,10 @@ async function getOptions() {
 }
 
 const { url, options } = await getOptions();
-const sequelize = new Sequelize(url, options);
+const sequelize = new Sequelize(url, {
+  ...options,
+  ...(options.dialect === 'postgres' ? { dialectModule: pg } : {}),
+});
 
 export const isLocal = useLocal;
 export default sequelize;
