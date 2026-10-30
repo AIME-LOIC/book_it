@@ -1,4 +1,4 @@
-import bcrypt   from 'bcrypt';
+import bcrypt   from 'bcryptjs';
 import jwt      from 'jsonwebtoken';
 import crypto   from 'crypto';
 import Driver   from '../database/models/driver.js';

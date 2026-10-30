@@ -38,7 +38,7 @@ test('setup: isolated test DB schema + fixtures', async () => {
   await sequelize.authenticate();
   await sequelize.sync({ force: true });
 
-  const bcrypt = (await import('bcrypt')).default;
+  const bcrypt = (await import('bcryptjs')).default;
   const hash = await bcrypt.hash('testpass123', 10);
 
   const operator = await Operator.create({ company_name: 'TestBus Co', password_hash: hash, contact: '0788000000', is_active: true });

@@ -4,7 +4,7 @@ import RouteStop from './models/route_stop.js';
 import Bus from './models/bus.js';
 import Operator from './models/operator.js';
 import Driver from './models/driver.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 export const seedDatabase = async () => {
   try {

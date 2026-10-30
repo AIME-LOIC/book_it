@@ -1,4 +1,4 @@
-import bcrypt   from 'bcrypt';
+import bcrypt   from 'bcryptjs';
 import Operator from '../database/models/operator.js';
 import { encryptPassword, decryptPassword } from '../utils/crypto.utils.js';
 
