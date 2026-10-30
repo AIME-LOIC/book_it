@@ -9,6 +9,10 @@
   },
   "rewrites": [
     {
+      "source": "/rw/v1/bk/auth/login",
+      "destination": "/api/auth/login"
+    },
+    {
       "source": "/rw/v1/bk",
       "destination": "/api"
     },
