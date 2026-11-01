@@ -231,7 +231,7 @@ let ticketArchiveTableReady = false;
 // Archive only completed/cancelled trips after 365 days. The full ticket row
 // is copied to ticket_archives inside the same transaction before deletion.
 export const archiveOldTickets = async () => {
-  const today = getRwandaDateKey();
+  const today = new Date().toISOString().slice(0, 10);
   if (lastTicketArchiveDate === today) return;
   lastTicketArchiveDate = today;
 
@@ -339,23 +339,17 @@ export const checkMidnightReactivation = async () => {
 
   lastReactivationDate = today;
 
-  try {
-    const inactiveBuses = await Bus.findAll({
-      where: { is_active: false, is_manually_disabled: false },
-    });
+  const inactiveBuses = await Bus.findAll({
+    where: { is_active: false },
+  });
 
-    for (const bus of inactiveBuses) {
-      await bus.update({ is_active: true });
-      console.log(`[Scheduler] Bus ${bus.plate_number} reactivated for ${today}`);
-    }
+  for (const bus of inactiveBuses) {
+    await bus.update({ is_active: true });
+    console.log(`[Scheduler] Bus ${bus.plate_number} reactivated for ${today}`);
+  }
 
-    if (inactiveBuses.length > 0) {
-      console.log(`[Scheduler] ${inactiveBuses.length} bus(es) reactivated for ${today}`);
-    }
-  } catch (error) {
-    lastReactivationDate = null;
-    console.error('[Scheduler] Midnight bus reactivation failed:', error?.message || error);
-    throw error;
+  if (inactiveBuses.length > 0) {
+    console.log(`[Scheduler] ${inactiveBuses.length} bus(es) reactivated for ${today}`);
   }
 };
 

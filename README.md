@@ -126,10 +126,9 @@ Set `CRON_SECRET` in the Vercel production environment and redeploy. The
 endpoint requires a Bearer token and rejects missing or invalid secrets. It
 runs departed-bus checks, unpaid reservation expiry, departure reminders,
 ticket archiving, daily loyalty promos, and notification retention. Daily
-operations are designed to be safe to retry. Midnight reactivation only restores buses marked as automatically hidden
-by the departure scheduler. Operator-disabled buses remain inactive. Existing
-inactive buses are conservatively marked as operator-disabled by the migration
-so they are not unexpectedly listed after deployment.
+operations are designed to be safe to retry. The midnight bus-reactivation
+job is intentionally not exposed to serverless scheduling until bus
+availability distinguishes operator-disabled buses from daily departures.
 
 ### Database migrations
 
