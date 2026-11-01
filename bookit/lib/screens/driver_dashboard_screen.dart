@@ -35,6 +35,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   bool _scanBusy = false;
   String? _lastScan;
   Position? _position;
+  String _savedIdentifier = '';
+  int? _savedAt;
+  bool _checkingSavedSession = false;
   StreamSubscription<Position>? _positionSubscription;
   final MobileScannerController _scanner = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
@@ -43,7 +46,45 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   @override
   void initState() {
     super.initState();
+    _loadSavedProfile();
     _refresh();
+  }
+
+  Future<void> _loadSavedProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _savedIdentifier = prefs.getString('bookit_saved_profile_identifier') ?? '';
+      _savedAt = prefs.getInt('bookit_saved_profile_at');
+    });
+  }
+
+  Future<void> _verifySavedSession() async {
+    if (_checkingSavedSession) return;
+    setState(() => _checkingSavedSession = true);
+    final name = await AuthService.restoreSession();
+    if (!mounted) return;
+    setState(() => _checkingSavedSession = false);
+    if (name == null) {
+      _show('This saved session has expired. Please sign in again.');
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
+        (_) => false,
+      );
+      return;
+    }
+    await _loadSavedProfile();
+    await _refresh();
+    _show('Saved profile is ready to use.');
+  }
+
+  String _savedDateLabel() {
+    final value = _savedAt;
+    if (value == null) return 'Saved on this device';
+    final date = DateTime.fromMillisecondsSinceEpoch(value).toLocal();
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    return 'Saved $day/$month/${date.year}';
   }
 
   @override
@@ -259,6 +300,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     await ApiClient.clearToken();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('bookit_driver_session', false);
+    await prefs.remove('bookit_saved_profile_name');
+    await prefs.remove('bookit_saved_profile_identifier');
+    await prefs.remove('bookit_saved_profile_type');
+    await prefs.remove('bookit_saved_profile_at');
     AuthService.isDriverSession = false;
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
@@ -756,6 +801,55 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
       ])),
       const SizedBox(height: 24),
+      _heading('Saved profile', 'Your secure sign-in is stored on this device'),
+      const SizedBox(height: 10),
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: _surfaceDecoration(),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(width: 42, height: 42,
+              decoration: BoxDecoration(
+                color: const Color(0xFF15966B).withValues(alpha: .10),
+                borderRadius: BorderRadius.circular(13)),
+              child: const Icon(Icons.verified_user_rounded,
+                color: Color(0xFF15966B))),
+            const SizedBox(width: 11),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('BookIt session saved',
+                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+              const SizedBox(height: 3),
+              Text(_savedDateLabel(),
+                style: TextStyle(fontSize: 10,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            ])),
+            const Icon(Icons.lock_rounded, color: Color(0xFF15966B), size: 18),
+          ]),
+          const SizedBox(height: 13),
+          Text('Signed in as',
+            style: TextStyle(fontSize: 10,
+              color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 3),
+          Text(_savedIdentifier.isEmpty ? _driverName : _savedIdentifier,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 5),
+          Text('Your access token is kept in secure device storage. BookIt can restore this profile when you reopen the app. Your password is never saved.',
+            style: TextStyle(fontSize: 10,
+              color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 12),
+          SizedBox(width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _checkingSavedSession ? null : _verifySavedSession,
+              icon: _checkingSavedSession
+                  ? const SizedBox(width: 16, height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.sync_rounded),
+              label: Text(_checkingSavedSession
+                  ? 'Checking saved profile…' : 'Use saved profile / sync now'),
+            )),
+        ]),
+      ),
+      const SizedBox(height: 20),
       _heading('Personal information', 'Your registered driver details'),
       const SizedBox(height: 10),
       _infoCard([
