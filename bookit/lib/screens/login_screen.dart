@@ -499,4 +499,4 @@ class __FloatingLogoState extends State<_FloatingLogo>
     );
   }
 }
-)
+
