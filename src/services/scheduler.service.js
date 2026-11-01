@@ -217,6 +217,7 @@ export const cleanupOldNotifications = async () => {
   } catch (error) {
     lastNotificationCleanupDate = null;
     console.error('[Notifications] Retention cleanup failed:', error?.message || error);
+    throw error;
   }
 };
 
@@ -323,6 +324,7 @@ export const archiveOldTickets = async () => {
   } catch (err) {
     lastTicketArchiveDate = null; // retry on the next scheduler tick
     console.error('[TicketArchive] Daily archive job failed:', err?.message || err);
+    throw err;
   }
 };
 
@@ -363,6 +365,8 @@ export const checkPromoCodeGeneration = async () => {
       console.log(`[Scheduler] Promo code generated for ${result.user?.name || result.user?.email || 'top buyer'}: ${result.promoCode.code}`);
     }
   } catch (err) {
+    lastPromoGenerationDate = null;
     console.error('[Scheduler] Promo generation failed', err.message);
+    throw err;
   }
 };
