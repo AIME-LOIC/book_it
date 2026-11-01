@@ -26,26 +26,26 @@ export const getUnreadCount = async (recipient_id, recipient_type) => {
   });
 };
 
-// Mark one as read
-export const markAsRead = async (recipient_id, id) => {
-  const notif = await Notification.findOne({ where: { id, recipient_id } });
+// Mark one as read. Scope by both owner ID and recipient role.
+export const markAsRead = async (recipient_id, recipient_type, id) => {
+  const notif = await Notification.findOne({ where: { id, recipient_id, recipient_type } });
   if (!notif) throw new Error('Notification not found');
   await notif.update({ is_read: true });
   return notif;
 };
 
-// Mark all as read
-export const markAllAsRead = async (recipient_id) => {
+// Mark all as read for the authenticated recipient and role only.
+export const markAllAsRead = async (recipient_id, recipient_type) => {
   await Notification.update(
     { is_read: true },
-    { where: { recipient_id, is_read: false } }
+    { where: { recipient_id, recipient_type, is_read: false } }
   );
   return { message: 'All notifications marked as read' };
 };
 
-// Delete one
-export const deleteNotification = async (recipient_id, id) => {
-  const notif = await Notification.findOne({ where: { id, recipient_id } });
+// Delete one. Scope by both owner ID and recipient role.
+export const deleteNotification = async (recipient_id, recipient_type, id) => {
+  const notif = await Notification.findOne({ where: { id, recipient_id, recipient_type } });
   if (!notif) throw new Error('Notification not found');
   await notif.destroy();
   return { message: 'Notification deleted' };
