@@ -785,19 +785,22 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(22),
           child: Stack(fit: StackFit.expand, children: [
-            if (_scannerReady)
-              MobileScanner(
+            Visibility(
+              visible: _scannerReady,
+              maintainState: true,
+              child: MobileScanner(
                 controller: _scanner,
                 onDetect: _handleScan,
                 errorBuilder: (context, error) => _scannerFailure(error.errorCode.name),
-              )
-            else
+              ),
+            ),
+            if (!_scannerReady)
               Container(
                 color: Colors.black,
                 child: Center(child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.qr_code_scanner_rounded, size: 52, color: Colors.white70),
+                    const Icon(Icons.qr_code_scanner_rounded, size: 52, color: Colors.white70),
                     const SizedBox(height: 12),
                     Text(_scannerError ?? (_scannerStarting
                         ? 'Starting camera…' : 'Camera is not active'),
