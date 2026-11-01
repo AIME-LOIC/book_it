@@ -206,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const Text(
-                            'Email address',
+                            'Email or phone number',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -230,7 +230,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 _passwordFocus.requestFocus(),
                             validator: (v) {
                               final value = v?.trim() ?? '';
-                              if (value.isEmpty) return 'Email is required';
+                              if (value.isEmpty) return 'Email or phone number is required';
                               if (value.contains('@')) {
                                 if (!value.contains('.') || value.startsWith('@')) {
                                   return 'Enter a valid email address';
@@ -568,47 +568,6 @@ class __FloatingLogoState extends State<_FloatingLogo>
                           const SizedBox(height: 18),
 
                           // Divider "or".
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Divider(
-                                  color: Color(0xFFDCEEFB),
-                                  thickness: 1,
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12),
-                                child: Text(
-                                  'or',
-                                  style: TextStyle(
-                                    color: AppColors.textMuted,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                              const Expanded(
-                                child: Divider(
-                                  color: Color(0xFFDCEEFB),
-                                  thickness: 1,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-
-                          OutlinedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.admin_panel_settings_rounded,
-                                size: 20),
-                            label: const Text('Sign in with admin key'),
-                          ),
-                          const SizedBox(height: 12),
-                          OutlinedButton.icon(
-                            onPressed: _driverSignIn,
-                            icon: const Icon(Icons.directions_bus_filled_rounded),
-                            label: const Text('Driver sign in'),
-                          ),
                         ],
                       ),
                     ),
