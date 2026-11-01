@@ -37,7 +37,10 @@ export const generateDailyLoyaltyPromo = async (issuedAt = new Date()) => {
   });
 
   const todayKey = getRwandaDateKey(issuedAt);
-  if (existingCode?.metadata?.day_key === todayKey) return existingCode;
+  if (existingCode?.metadata?.day_key === todayKey) {
+    const user = await User.findByPk(topBuyer.user_id, { attributes: ['id', 'name', 'email'] });
+    return { promoCode: existingCode, user };
+  }
 
   const codeValue = buildPromoCodeValue(issuedAt);
   const expiresAt = new Date(issuedAt);
