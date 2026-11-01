@@ -42,73 +42,38 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 
-  Future<void> _driverSignIn() async {
-    final phone = TextEditingController();
-    final password = TextEditingController();
-    bool obscure = true;
-    final credentials = await showDialog<Map<String, String>>(
-      context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
-          title: const Text('Driver sign in'),
-          content: Column(mainAxisSize: MainAxisSize.min, children: [
-            TextField(controller: phone, keyboardType: TextInputType.phone,
-              onChanged: (_) => setDialogState(() {}),
-              decoration: const InputDecoration(labelText: 'Phone number', hintText: '+250 78...')),
-            const SizedBox(height: 12),
-            TextField(controller: password, obscureText: obscure,
-              onChanged: (_) => setDialogState(() {}),
-              decoration: InputDecoration(labelText: 'Password',
-                suffixIcon: IconButton(icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
-                  onPressed: () => setDialogState(() => obscure = !obscure)))),
-          ]),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-            FilledButton(
-              onPressed: phone.text.trim().isEmpty || password.text.isEmpty ? null : () => Navigator.pop(dialogContext, {'phone': phone.text.trim(), 'password': password.text}),
-              child: const Text('Continue'),
-            ),
-          ],
-        ),
-      ),
-    );
-    phone.dispose();
-    password.dispose();
-    if (credentials == null || !mounted) return;
-    setState(() => _submitting = true);
-    try {
-      final name = await AuthService.loginDriver(phone: credentials['phone']!, password: credentials['password']!);
-      if (!mounted) return;
-      Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
-        builder: (_) => DriverDashboardScreen(driverName: name),
-      ));
-    } on AuthException catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
-    } finally {
-      if (mounted) setState(() => _submitting = false);
-    }
-  }
-
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _submitting = true);
 
+    final identifier = _emailController.text.trim();
+    final isDriver = !identifier.contains('@');
+
     try {
-      final name = await AuthService.login(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
+      final name = isDriver
+          ? await AuthService.loginDriver(
+              phone: identifier,
+              password: _passwordController.text,
+            )
+          : await AuthService.login(
+              email: identifier,
+              password: _passwordController.text,
+            );
       if (!mounted) return;
       setState(() {
         _submitting = false;
         _succeeded = true;
       });
-      await Future<void>.delayed(const Duration(milliseconds: 650));
+      await Future<void>.delayed(const Duration(milliseconds: 450));
       if (!mounted) return;
+
+      final Widget destination = isDriver
+          ? DriverDashboardScreen(driverName: name)
+          : HomeScreen(userName: name);
       Navigator.of(context).pushReplacement(
         PageRouteBuilder<void>(
           transitionDuration: const Duration(milliseconds: 450),
-          pageBuilder: (_, _, _) => HomeScreen(userName: name),
+          pageBuilder: (_, _, _) => destination,
           transitionsBuilder: (_, animation, _, child) {
             final curved = CurvedAnimation(
               parent: animation,
@@ -117,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
             return FadeTransition(
               opacity: curved,
               child: ScaleTransition(
-                scale: Tween(begin: 0.94, end: 1.0).animate(curved),
+                scale: Tween(begin: 0.96, end: 1.0).animate(curved),
                 child: child,
               ),
             );
@@ -252,10 +217,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: _emailController,
                             focusNode: _emailFocus,
-                            keyboardType: TextInputType.emailAddress,
+                            keyboardType: TextInputType.text,
                             textInputAction: TextInputAction.next,
                             decoration: const InputDecoration(
-                              hintText: 'you@example.com',
+                              hintText: 'you@example.com or +250 78…',
                               prefixIcon: Icon(
                                 Icons.alternate_email_rounded,
                                 color: AppColors.primary,
@@ -266,8 +231,271 @@ class _LoginScreenState extends State<LoginScreen> {
                             validator: (v) {
                               final value = v?.trim() ?? '';
                               if (value.isEmpty) return 'Email is required';
-                              if (!value.contains('@') || !value.contains('.')) {
-                                return 'Enter a valid email';
+                              if (value.contains('@')) {
+                                if (!value.contains('.') || value.startsWith('@')) {
+                                  return 'Enter a valid email address';
+                                }
+                              } else if (!RegExp(r'^\\+?[0-9\\s()-]{7,20}
+                            },
+                          ),
+                          const SizedBox(height: 20),
+
+                          const Text(
+                            'Password',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textDark,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextFormField(
+                            controller: _passwordController,
+                            focusNode: _passwordFocus,
+                            obscureText: _obscurePassword,
+                            decoration: InputDecoration(
+                              hintText: '••••••••',
+                              prefixIcon: const Icon(
+                                Icons.lock_rounded,
+                                color: AppColors.primary,
+                              ),
+                              suffixIcon: IconButton(
+                                onPressed: () => setState(() =>
+                                    _obscurePassword = !_obscurePassword),
+                                icon: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 250),
+                                  transitionBuilder: (child, anim) =>
+                                      ScaleTransition(
+                                          scale: anim, child: child),
+                                  child: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_off_rounded
+                                        : Icons.visibility_rounded,
+                                    key: ValueKey(_obscurePassword),
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            validator: (v) {
+                              if ((v ?? '').isEmpty) {
+                                return 'Password is required';
+                              }
+                              if ((v ?? '').length < 6) {
+                                return 'At least 6 characters';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: () {},
+                              child: const Text('Forgot password?'),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+
+                          _AnimatedSubmitButton(
+                            submitting: _submitting,
+                            succeeded: _succeeded,
+                            onPressed: _submit,
+                          ),
+                          const SizedBox(height: 18),
+
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 26),
+
+                FadeSlideIn(
+                  delay: const Duration(milliseconds: 560),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text(
+                        "Don't have an account? ",
+                        style: TextStyle(color: AppColors.textMuted),
+                      ),
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const SignupScreen())),
+                        child: const Text(
+                          'Sign up',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Button that morphs between "Sign in", the spinner and a success check.
+class _AnimatedSubmitButton extends StatelessWidget {
+  const _AnimatedSubmitButton({
+    required this.submitting,
+    required this.succeeded,
+    required this.onPressed,
+  });
+
+  final bool submitting;
+  final bool succeeded;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = succeeded
+        ? _ButtonState.success
+        : submitting
+            ? _ButtonState.loading
+            : _ButtonState.idle;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+      height: 54,
+      decoration: BoxDecoration(
+        gradient: state == _ButtonState.idle
+            ? AppColors.heroGradient
+            : null,
+        color: state == _ButtonState.idle
+            ? null
+            : state == _ButtonState.loading
+                ? AppColors.primary.withValues(alpha: 0.7)
+                : AppColors.success,
+        borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
+        boxShadow: [
+          BoxShadow(
+            color: (state == _ButtonState.success
+                    ? AppColors.success
+                    : AppColors.primary)
+                .withValues(alpha: 0.35),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: submitting || succeeded ? null : onPressed,
+          borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
+          child: Center(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: switch (state) {
+                _ButtonState.loading => const SizedBox(
+                    width: 26,
+                    height: 26,
+                    key: ValueKey('loading'),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.6,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(AppColors.white),
+                    ),
+                  ),
+                _ButtonState.success => const Icon(
+                    Icons.check_rounded,
+                    color: AppColors.white,
+                    key: ValueKey('done'),
+                  ),
+                _ => const Text(
+                    'Sign in',
+                    key: ValueKey('idle'),
+                    style: TextStyle(
+                      color: AppColors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+enum _ButtonState { idle, loading, success }
+
+/// Decorative blurred-ish circle used as a background blob.
+class _Blob extends StatelessWidget {
+  const _Blob({required this.diameter, required this.opacity});
+
+  final double diameter;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: diameter,
+      height: diameter,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.white.withValues(alpha: opacity),
+      ),
+    );
+  }
+}
+
+/// Logo badge that gently bobs up and down forever.
+class _FloatingLogo extends StatefulWidget {
+  const _FloatingLogo();
+
+  @override
+  State<_FloatingLogo> createState() => __FloatingLogoState();
+}
+
+class __FloatingLogoState extends State<_FloatingLogo>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2200),
+  )..repeat(reverse: true);
+
+  late final Animation<double> _offset = CurvedAnimation(
+    parent: _controller,
+    curve: Curves.easeInOut,
+  );
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, 12 * (_offset.value - 0.5)),
+          child: child,
+        );
+      },
+      child: const BrandLogo(size: 92, onLight: true),
+    );
+  }
+}
+).hasMatch(value)) {
+                                return 'Enter a valid phone number';
                               }
                               return null;
                             },
