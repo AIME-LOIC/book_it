@@ -12,7 +12,7 @@ const migration = fs.readFileSync(path.join(root, 'src/database/migrations/20261
 
 test('operator bus updates cannot overwrite ownership or scheduler-only fields', () => {
   assert.match(service, /allowedFields = \['route_id', 'plate_number', 'driver_name', 'capacity', 'departure_time', 'amenities', 'is_active'\]/);
-  const allowed = service.match(/const allowedFields = \\[([^\\]]+)\\]/)?.[1] || '';
+  const allowed = service.split('const allowedFields = [')[1]?.split(']')[0] || '';
   assert.doesNotMatch(allowed, /operator_id|is_manually_disabled/);
 });
 
