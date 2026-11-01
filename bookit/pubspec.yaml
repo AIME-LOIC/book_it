@@ -48,6 +48,10 @@ dependencies:
   pdf: ^3.11.3
   printing: ^5.14.3
 
+# Keep the zlib decoder API compatible with image 4.11.x.
+dependency_overrides:
+  archive: ^4.5.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
