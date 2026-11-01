@@ -19,7 +19,10 @@ test('only retry-safe frequent jobs are exposed to the scheduled endpoint', () =
   assert.match(cronRoute, /checkDepartedBuses/);
   assert.match(cronRoute, /checkPendingTicketHolds/);
   assert.match(cronRoute, /notifyUpcomingDepartures/);
-  assert.doesNotMatch(cronRoute, /archiveOldTickets|checkMidnightReactivation|checkPromoCodeGeneration/);
+  assert.match(cronRoute, /archiveOldTickets/);
+  assert.match(cronRoute, /checkPromoCodeGeneration/);
+  assert.match(cronRoute, /cleanupOldNotifications/);
+  assert.doesNotMatch(cronRoute, /checkMidnightReactivation/);
 });
 
 test('scheduled workflow uses repository secrets and checks HTTP failures', () => {
@@ -32,4 +35,12 @@ test('migration runner tracks applied files and refuses non-Postgres databases',
   assert.match(migrationRunner, /bookit_schema_migrations/);
   assert.match(migrationRunner, /applied/);
   assert.match(migrationRunner, /getDialect\(\) !== 'postgres'/);
+});
+
+import { getRwandaDateKey, getRwandaTimeParts } from '../src/utils/rwanda-time.util.js';
+
+test('scheduler date and time calculations use Rwanda local time', () => {
+  const afterRwandaMidnight = new Date('2026-10-31T22:30:00.000Z');
+  assert.equal(getRwandaDateKey(afterRwandaMidnight), '2026-11-01');
+  assert.deepEqual(getRwandaTimeParts(afterRwandaMidnight), { hour: 0, minute: 30 });
 });
