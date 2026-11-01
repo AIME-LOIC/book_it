@@ -127,8 +127,15 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       }
       const settings = LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 20,
+        distanceFilter: 10,
       );
+      if (mounted) setState(() {
+        _tripDistanceMeters = 0;
+        _maxSpeedKmh = 0;
+        _previousPosition = null;
+        _locationServerSynced = false;
+        _locationSyncError = null;
+      });
       final first = await Geolocator.getCurrentPosition(
         locationSettings: settings,
       );
@@ -534,7 +541,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   Widget _liveTelemetryCard() {
     final p = _position;
     final speed = p == null || !p.speed.isFinite
-        ? 0.0 : (p.speed * 3.6).clamp(0.0, 300.0);
+        ? null : (p.speed * 3.6).clamp(0.0, 300.0);
     final heading = p == null ? '—' : _headingName(p.heading);
     return Container(
       padding: const EdgeInsets.all(16),
@@ -545,7 +552,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         Row(children: [
           Expanded(child: _telemetryValue(
             Icons.speed_rounded, 'Current speed',
-            '${speed.toStringAsFixed(0)} km/h', const Color(0xFF1688D4))),
+            speed == null ? '—' : '${speed.toStringAsFixed(0)} km/h',
+            const Color(0xFF1688D4))),
           const SizedBox(width: 10),
           Expanded(child: _telemetryValue(
             Icons.explore_outlined, 'Direction', heading,
