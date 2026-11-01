@@ -1,0 +1,30 @@
+name: BookIt scheduled backend jobs
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: bookit-scheduled-backend-jobs
+  cancel-in-progress: false
+
+jobs:
+  run-scheduler:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Invoke protected BookIt scheduler
+        env:
+          BOOKIT_API_URL: ${{ secrets.BOOKIT_API_URL }}
+          BOOKIT_CRON_SECRET: ${{ secrets.BOOKIT_CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          if [ -z "$BOOKIT_API_URL" ] || [ -z "$BOOKIT_CRON_SECRET" ]; then
+            echo "BOOKIT_API_URL and BOOKIT_CRON_SECRET repository secrets are required."
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --header "Authorization: Bearer $BOOKIT_CRON_SECRET" \
+            "$BOOKIT_API_URL/rw/v1/bk/internal/cron/run"

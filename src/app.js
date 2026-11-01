@@ -12,6 +12,7 @@ import driverRoutes from './routes/driver.routes.js';
 import ticketRoutes from './routes/ticket.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import promoRoutes from './routes/promo.routes.js';
+import internalRoutes from './routes/internal.routes.js';
 import cors from 'cors';
 import sequelize from './config/sequelize.js';
 
@@ -149,6 +150,7 @@ app.use(`${P}/drivers`, driverRoutes);
 app.use(`${P}/tickets`, ticketRoutes);
 app.use(`${P}/notifications`, notificationRoutes);
 app.use(`${P}/promos`, promoRoutes);
+app.use(`${P}/internal/cron`, internalRoutes);
 
 // Catch unmatched routes in the actual API prefix
 app.use(`${P}/*any`, (req, res) => res.status(404).json({ message: 'API endpoint not found' }));

@@ -14,9 +14,8 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 // (Static imports below are all dynamic inside the tests so this env var is
 // guaranteed to be set first.)
 process.env.DOTENV_CONFIG_PATH = path.join(dirname, '.env.test');
-if (!existsSync(process.env.DOTENV_CONFIG_PATH)) {
-  console.error('tests/.env.test missing — test DB config unavailable');
-}
+const hasTestDb = existsSync(process.env.DOTENV_CONFIG_PATH);
+if (!hasTestDb) console.warn('Skipping booking integration tests: tests/.env.test is not configured.');
 
 const { default: sequelize } = await import('../src/config/sequelize.js');
 
@@ -24,7 +23,7 @@ const { default: sequelize } = await import('../src/config/sequelize.js');
 let User, Operator, Location, Route, RouteStop, Bus, Ticket;
 let bookTicket, validateByNumber, generateQRToken;
 
-test('setup: isolated test DB schema + fixtures', async () => {
+test('setup: isolated test DB schema + fixtures', { skip: !hasTestDb }, async () => {
   ({ default: User } = await import('../src/database/models/user.js'));
   ({ default: Operator } = await import('../src/database/models/operator.js'));
   ({ default: Location } = await import('../src/database/models/location.js'));
@@ -59,7 +58,7 @@ test('setup: isolated test DB schema + fixtures', async () => {
 });
 
 // ── C2: concurrent booking of same seat/segment → exactly one winner ──
-test('C2: two concurrent bookings for the same seat + segment → exactly one succeeds', async () => {
+test('C2: two concurrent bookings for the same seat + segment → exactly one succeeds', { skip: !hasTestDb }, async () => {
   const f = global.__raceFixtures;
   const base = {
     bus_id: f.bus.id,
@@ -80,7 +79,7 @@ test('C2: two concurrent bookings for the same seat + segment → exactly one su
 });
 
 // ── C2: overlapping-segment check, not bus-level coarse check ──
-test('C2: non-overlapping segments on the same seat can both be booked', async () => {
+test('C2: non-overlapping segments on the same seat can both be booked', { skip: !hasTestDb }, async () => {
   const f = global.__raceFixtures;
   // seat 9: (stop1→stop2) is inside check window only when overlapping.
   // first book stop1→stop3 then try stop1→stop3 again — should fail,
@@ -94,7 +93,7 @@ test('C2: non-overlapping segments on the same seat can both be booked', async (
 });
 
 // ── C3: concurrent redemption of the same ticket → exactly one valid ──
-test('C3: simultaneous ticket-number scans → exactly one redemption', async () => {
+test('C3: simultaneous ticket-number scans → exactly one redemption', { skip: !hasTestDb }, async () => {
   const f = global.__raceFixtures;
   const t = await bookTicket(f.u1.id, { bus_id: f.bus.id, boarding_stop_id: f.stop1.id, dropoff_stop_id: f.stop2.id, travel_date: f.tomorrow, seat_number: 5 });
   // Redeemable tickets are for today — the service (correctly) denies travel on a future date.
@@ -119,7 +118,7 @@ test('C3: simultaneous ticket-number scans → exactly one redemption', async ()
 });
 
 // ── QR token path: valid signed token redeems; garbage is rejected ──
-test('C3: QR endpoint rejects invalid payloads and redeems signed tokens once', async () => {
+test('C3: QR endpoint rejects invalid payloads and redeems signed tokens once', { skip: !hasTestDb }, async () => {
   const f = global.__raceFixtures;
   const { validateByQR } = await import('../src/services/ticket.service.js');
 
@@ -147,6 +146,6 @@ test('C3: QR endpoint rejects invalid payloads and redeems signed tokens once', 
 });
 
 // ── teardown ──────────────────────────────────────────────────────
-test('teardown: close DB connection', async () => {
+test('teardown: close DB connection', { skip: !hasTestDb }, async () => {
   await sequelize.close();
 });

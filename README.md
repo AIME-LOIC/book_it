@@ -109,3 +109,36 @@ Checklist before production migration
 - Monitor logs and have rollback SQL ready
 
 If you want, I can scaffold a `migrations/` folder and add a safe migration file for the `last_lat/last_lng/amenities` changes and a brief `migrate:prod` command that runs SQL against `DATABASE_URL`.
+
+## Backend operations
+
+### Scheduled jobs
+
+Production scheduled work is invoked through the protected endpoint
+`POST /rw/v1/bk/internal/cron/run`. The repository workflow
+`.github/workflows/bookit-scheduler.yml` calls it every five minutes.
+Configure these GitHub repository Actions secrets before enabling the workflow:
+
+- `BOOKIT_API_URL`: the production origin, e.g. `https://bookit.1percent.rw`
+- `BOOKIT_CRON_SECRET`: a long random secret, identical to Vercel's `CRON_SECRET`
+
+Set `CRON_SECRET` in the Vercel production environment and redeploy. The
+endpoint requires a Bearer token and rejects missing or invalid secrets. It
+runs departed-bus checks, unpaid reservation expiry, departure reminders,
+ticket archiving, daily loyalty promos, and notification retention. Daily
+operations are designed to be safe to retry. The midnight bus-reactivation
+job is intentionally not exposed to serverless scheduling until bus
+availability distinguishes operator-disabled buses from daily departures.
+
+### Database migrations
+
+The checked-in SQL migrations target PostgreSQL. Back up production and test
+against a staging database before applying them. Run:
+
+```bash
+npm run db:migrate
+```
+
+The runner records successfully applied SQL files in
+`bookit_schema_migrations`, skips recorded files, and refuses to run against
+MySQL. Do not use `sequelize.sync({ alter: true })` in production.
