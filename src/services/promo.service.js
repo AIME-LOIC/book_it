@@ -5,6 +5,7 @@ import PromoCode from '../database/models/promo_code.js';
 import Ticket from '../database/models/ticket.js';
 import User from '../database/models/user.js';
 import { createNotification } from './notification.service.js';
+import { getRwandaDateKey } from '../utils/rwanda-time.util.js';
 
 export const buildPromoCodeValue = (issuedAt = new Date()) => {
   const stamp = `${issuedAt.getUTCFullYear()}${String(issuedAt.getUTCMonth() + 1).padStart(2, '0')}${String(issuedAt.getUTCDate()).padStart(2, '0')}-${String(issuedAt.getUTCHours()).padStart(2, '0')}${String(issuedAt.getUTCMinutes()).padStart(2, '0')}`;
@@ -35,7 +36,7 @@ export const generateDailyLoyaltyPromo = async (issuedAt = new Date()) => {
     order: [['generated_at', 'DESC']],
   });
 
-  const todayKey = issuedAt.toISOString().split('T')[0];
+  const todayKey = getRwandaDateKey(issuedAt);
   if (existingCode?.metadata?.day_key === todayKey) return existingCode;
 
   const codeValue = buildPromoCodeValue(issuedAt);
