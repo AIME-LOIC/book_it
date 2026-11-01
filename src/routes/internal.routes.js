@@ -7,6 +7,7 @@ import {
   archiveOldTickets,
   checkPromoCodeGeneration,
   cleanupOldNotifications,
+  checkMidnightReactivation,
 } from '../services/scheduler.service.js';
 
 const router = Router();
@@ -19,8 +20,8 @@ const safeSecretMatch = (provided, expected) => {
 };
 
 // Called by a trusted scheduler (e.g. GitHub Actions) every five minutes.
-// Exposes retry-safe frequent and daily maintenance jobs. The midnight
-// reactivation job is excluded because it cannot distinguish manual disables.
+// Exposes frequent and daily maintenance jobs. Manual operator disables are
+// protected by a separate database flag before midnight reactivation runs.
 router.post('/run', async (req, res) => {
   const expected = process.env.CRON_SECRET;
   const authorization = req.get('authorization') || '';
@@ -38,6 +39,7 @@ router.post('/run', async (req, res) => {
     ['ticket-archive', archiveOldTickets],
     ['daily-loyalty-promo', checkPromoCodeGeneration],
     ['notification-retention', cleanupOldNotifications],
+    ['midnight-bus-reactivation', checkMidnightReactivation],
   ];
 
   for (const [name, run] of jobs) {
