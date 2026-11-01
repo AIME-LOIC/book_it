@@ -100,8 +100,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   void dispose() {
     _search.dispose();
     _positionSubscription?.cancel();
-    if (_scannerSupported) _scanner.stop();
-    _scanner.dispose();
+    if (_scannerSupported) {
+      unawaited(_disposeScannerSafely());
+    } else {
+      unawaited(_scanner.dispose());
+    }
     super.dispose();
   }
 
@@ -276,6 +279,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       // Local tracking is stopped even if the server is unreachable.
     }
     _show('Live tracking stopped.');
+  }
+
+  Future<void> _disposeScannerSafely() async {
+    try { await _scanner.stop(); } catch (_) {}
+    try { await _scanner.dispose(); } catch (_) {}
   }
 
   Future<void> _startScanner() async {
