@@ -13,7 +13,15 @@ try {
   }
 
   await sequelize.authenticate();
-  await sequelize.query(`CREATE TABLE IF NOT EXISTS bookit_schema_migrations (\n    name VARCHAR(255) PRIMARY KEY,\n    applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP\n  )`);\n\n  const appliedRows = await sequelize.query(\n    'SELECT name FROM bookit_schema_migrations',\n    { type: QueryTypes.SELECT },\n  );
+  await sequelize.query(`CREATE TABLE IF NOT EXISTS bookit_schema_migrations (
+    name VARCHAR(255) PRIMARY KEY,
+    applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  const appliedRows = await sequelize.query(
+    'SELECT name FROM bookit_schema_migrations',
+    { type: QueryTypes.SELECT },
+  );
   const applied = new Set(appliedRows.map((row) => row.name));
   const files = (await fs.readdir(migrationsDir))
     .filter((name) => name.endsWith('.sql'))
