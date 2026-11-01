@@ -22,7 +22,7 @@ test('only retry-safe frequent jobs are exposed to the scheduled endpoint', () =
   assert.match(cronRoute, /archiveOldTickets/);
   assert.match(cronRoute, /checkPromoCodeGeneration/);
   assert.match(cronRoute, /cleanupOldNotifications/);
-  assert.doesNotMatch(cronRoute, /checkMidnightReactivation/);
+  assert.match(cronRoute, /checkMidnightReactivation/);
 });
 
 test('scheduled workflow uses repository secrets and checks HTTP failures', () => {
