@@ -231,7 +231,7 @@ let ticketArchiveTableReady = false;
 // Archive only completed/cancelled trips after 365 days. The full ticket row
 // is copied to ticket_archives inside the same transaction before deletion.
 export const archiveOldTickets = async () => {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getRwandaDateKey();
   if (lastTicketArchiveDate === today) return;
   lastTicketArchiveDate = today;
 
@@ -340,7 +340,7 @@ export const checkMidnightReactivation = async () => {
   lastReactivationDate = today;
 
   const inactiveBuses = await Bus.findAll({
-    where: { is_active: false },
+    where: { is_active: false, is_manually_disabled: false },
   });
 
   for (const bus of inactiveBuses) {
