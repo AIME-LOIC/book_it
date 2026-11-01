@@ -36,7 +36,7 @@ export const updateLocation = async (req, res) => {
     const { last_lat, last_lng } = req.body;
     const id = req.params.id;
     // permission: drivers can only update their assigned bus
-    if (req.user && req.user.role === 'driver' && Number(req.user.bus_id) !== Number(id)) {
+    if (req.user && req.user.role === 'driver' && String(req.user.bus_id) !== String(id)) {
       return res.status(403).json({ message: 'Not allowed to update this bus' });
     }
     const updated = await svc.updateBusLocation(id, { last_lat, last_lng });
