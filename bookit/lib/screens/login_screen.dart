@@ -230,12 +230,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                 _passwordFocus.requestFocus(),
                             validator: (v) {
                               final value = v?.trim() ?? '';
-                              if (value.isEmpty) return 'Email or phone number is required';
+                              if (value.isEmpty) {
+                                return 'Email or phone number is required';
+                              }
                               if (value.contains('@')) {
                                 if (!value.contains('.') || value.startsWith('@')) {
                                   return 'Enter a valid email address';
                                 }
-                              } else if (!RegExp(r'^\\+?[0-9\\s()-]{7,20}
+                              } else if (!RegExp(r'^\+?[0-9\s()-]{7,20}$').hasMatch(value)) {
+                                return 'Enter a valid phone number';
+                              }
+                              return null;
                             },
                           ),
                           const SizedBox(height: 20),
