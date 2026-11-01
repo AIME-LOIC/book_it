@@ -11,10 +11,12 @@ import PromoCode from '../database/models/promo_code.js';
 import TicketArchive from '../database/models/ticket_archive.js';
 import Notification from '../database/models/notification.js';
 import { checkPaymentStatus } from './ticket.service.js';
+import { getRwandaDateKey, getRwandaMinutesOfDay, getRwandaTimeParts } from '../utils/rwanda-time.util.js';
 
 // ── DEACTIVATE DEPARTED BUSES (runs every 60s) ────────────────
 export const checkDepartedBuses = async () => {
   const now = new Date();
+  const nowMinutes = getRwandaMinutesOfDay(now);
 
   const activeBuses = await Bus.findAll({
     where: { is_active: true },
@@ -32,10 +34,9 @@ export const checkDepartedBuses = async () => {
 
   for (const bus of activeBuses) {
     const [h, m] = String(bus.departure_time).split(':').map(Number);
-    const dep = new Date();
-    dep.setHours(h, m, 0, 0);
+    const departureMinutes = h * 60 + m;
 
-    if (now >= dep) {
+    if (nowMinutes >= departureMinutes) {
       await bus.update({ is_active: false });
 
       const from = bus.route?.fromLocation?.name || '?';
@@ -51,7 +52,7 @@ export const checkDepartedBuses = async () => {
 
       // Notify passengers with paid tickets for this bus on today's service.
       // The bus is deactivated above, so this block runs only once per service day.
-      const today = now.toISOString().split('T')[0];
+      const today = getRwandaDateKey(now);
       const passengers = await Ticket.findAll({
         where: { bus_id: bus.id, travel_date: today, status: 'paid' },
         attributes: ['id', 'user_id', 'seat_number', 'travel_date'],
@@ -159,7 +160,7 @@ export const checkPendingTicketHolds = async () => {
 // ── DEPARTURE REMINDERS: 30, 15 AND 5 MINUTES BEFORE ───────────
 export const notifyUpcomingDepartures = async () => {
   const now = new Date();
-  const today = now.toISOString().slice(0, 10);
+  const today = getRwandaDateKey(now);
   const tickets = await Ticket.findAll({
     where: { status: 'paid', travel_date: today },
     include: [{ model: Bus, as: 'bus', attributes: ['id', 'plate_number', 'departure_time'] }],
@@ -185,10 +186,9 @@ export const notifyUpcomingDepartures = async () => {
   for (const ticket of tickets) {
     if (!ticket.bus?.departure_time) continue;
     const [hours, minutes] = String(ticket.bus.departure_time).split(':').map(Number);
-    const departure = new Date(now);
-    departure.setHours(hours, minutes, 0, 0);
-    const remainingMs = departure.getTime() - now.getTime();
-    if (remainingMs <= 0) continue;
+    const remainingMinutes = hours * 60 + minutes - getRwandaMinutesOfDay(now);
+    if (remainingMinutes <= 0) continue;
+    const remainingMs = remainingMinutes * 60 * 1000;
     for (const target of [30, 15, 5]) {
       if (remainingMs <= target * 60000 && remainingMs > (target - 1) * 60000 &&
           !alreadySent.has(`${ticket.id}:${target}`)) {
@@ -207,7 +207,7 @@ export const notifyUpcomingDepartures = async () => {
 
 // Permanently remove notifications older than 60 days.
 export const cleanupOldNotifications = async () => {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getRwandaDateKey();
   if (lastNotificationCleanupDate === today) return;
   lastNotificationCleanupDate = today;
   try {
@@ -235,7 +235,9 @@ export const archiveOldTickets = async () => {
   lastTicketArchiveDate = today;
 
   const retentionDays = Math.max(365, Number.parseInt(process.env.BOOKIT_TICKET_RETENTION_DAYS || '365', 10) || 365);
-  const cutoff = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const cutoffDate = new Date();
+  cutoffDate.setUTCDate(cutoffDate.getUTCDate() - retentionDays);
+  const cutoff = getRwandaDateKey(cutoffDate);
 
   try {
     // The API listener can start before the server bootstrap's database check;
@@ -326,10 +328,11 @@ export const archiveOldTickets = async () => {
 
 export const checkMidnightReactivation = async () => {
   const now   = new Date();
-  const today = now.toISOString().split('T')[0];
+  const today = getRwandaDateKey(now);
+  const { hour, minute } = getRwandaTimeParts(now);
 
-  // only run once per day, between 00:00 and 00:01
-  if (now.getHours() !== 0 || now.getMinutes() > 1) return;
+  // only run once per day, between 00:00 and 00:01 in Rwanda
+  if (hour !== 0 || minute > 1) return;
   if (lastReactivationDate === today) return;
 
   lastReactivationDate = today;
@@ -350,7 +353,7 @@ export const checkMidnightReactivation = async () => {
 
 export const checkPromoCodeGeneration = async () => {
   const now = new Date();
-  const today = now.toISOString().split('T')[0];
+  const today = getRwandaDateKey(now);
   if (lastPromoGenerationDate === today) return;
   lastPromoGenerationDate = today;
 
