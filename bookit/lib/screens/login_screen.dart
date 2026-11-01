@@ -45,7 +45,6 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _driverSignIn() async {
     final phone = TextEditingController();
     final password = TextEditingController();
-    bool busy = false;
     bool obscure = true;
     final credentials = await showDialog<Map<String, String>>(
       context: context,
@@ -54,17 +53,19 @@ class _LoginScreenState extends State<LoginScreen> {
           title: const Text('Driver sign in'),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
             TextField(controller: phone, keyboardType: TextInputType.phone,
+              onChanged: (_) => setDialogState(() {}),
               decoration: const InputDecoration(labelText: 'Phone number', hintText: '+250 78...')),
             const SizedBox(height: 12),
             TextField(controller: password, obscureText: obscure,
+              onChanged: (_) => setDialogState(() {}),
               decoration: InputDecoration(labelText: 'Password',
                 suffixIcon: IconButton(icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
                   onPressed: () => setDialogState(() => obscure = !obscure)))),
           ]),
           actions: [
-            TextButton(onPressed: busy ? null : () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
             FilledButton(
-              onPressed: busy || phone.text.trim().isEmpty || password.text.isEmpty ? null : () => Navigator.pop(dialogContext, {'phone': phone.text.trim(), 'password': password.text}),
+              onPressed: phone.text.trim().isEmpty || password.text.isEmpty ? null : () => Navigator.pop(dialogContext, {'phone': phone.text.trim(), 'password': password.text}),
               child: const Text('Continue'),
             ),
           ],
