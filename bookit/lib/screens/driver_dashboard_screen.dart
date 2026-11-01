@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
@@ -26,6 +27,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   String? _error;
   bool _tracking = false;
   bool _sendingLocation = false;
+  bool _locationServerSynced = false;
+  String? _locationSyncError;
+  double _tripDistanceMeters = 0;
+  double _maxSpeedKmh = 0;
+  Position? _previousPosition;
   bool _scanBusy = false;
   String? _lastScan;
   Position? _position;
@@ -61,28 +67,40 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
   Future<void> _refresh() async {
     if (mounted) setState(() { _loading = true; _error = null; });
+    // Load each resource independently. A passenger endpoint failure must not
+    // prevent the driver profile/vehicle data from rendering, and vice versa.
+    String? profileError;
+    String? passengerError;
     try {
-      final results = await Future.wait([
-        ApiClient.get('drivers/me', auth: true),
-        ApiClient.get('drivers/passengers', auth: true),
-      ]);
-      if (!mounted) return;
-      final raw = results[0] is Map && results[0]['driver'] is Map
-          ? results[0]['driver'] : results[0];
-      final rows = results[1] is List ? results[1]
-          : (results[1] is Map && results[1]['passengers'] is List
-              ? results[1]['passengers'] : const []);
-      setState(() {
-        _driver = raw is Map ? Map<String, dynamic>.from(raw) : {};
-        _passengers = rows.whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e)).toList();
-        _loading = false;
-      });
+      final response = await ApiClient.get('drivers/me', auth: true);
+      final raw = response is Map && response['driver'] is Map
+          ? response['driver'] : response;
+      if (mounted && raw is Map) {
+        setState(() => _driver = Map<String, dynamic>.from(raw));
+      }
     } on ApiException catch (e) {
-      if (mounted) setState(() { _error = e.message; _loading = false; });
+      profileError = e.message;
     } catch (_) {
-      if (mounted) setState(() {
-        _error = 'Unable to load your driver dashboard. Check your connection.';
+      profileError = 'Could not load driver and vehicle details.';
+    }
+    try {
+      final response = await ApiClient.get('drivers/passengers', auth: true);
+      final rows = response is List ? response
+          : (response is Map && response['passengers'] is List
+              ? response['passengers'] : const []);
+      if (mounted) {
+        setState(() => _passengers = rows.whereType<Map>()
+            .map((e) => Map<String, dynamic>.from(e)).toList());
+      }
+    } on ApiException catch (e) {
+      passengerError = e.message;
+    } catch (_) {
+      passengerError = 'Could not load passenger tickets.';
+    }
+    if (mounted) {
+      setState(() {
+        _error = [profileError, passengerError].whereType<String>().join(' • ');
+        if (_error!.isEmpty) _error = null;
         _loading = false;
       });
     }
@@ -119,13 +137,31 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       _positionSubscription = Geolocator.getPositionStream(
         locationSettings: settings,
       ).listen((position) {
-        if (mounted) setState(() => _position = position);
+        if (mounted) {
+          final previous = _previousPosition;
+          setState(() {
+            _position = position;
+            if (previous != null && position.accuracy < 60 &&
+                previous.accuracy < 60) {
+              final delta = Geolocator.distanceBetween(
+                previous.latitude, previous.longitude,
+                position.latitude, position.longitude,
+              );
+              if (delta > 2 && delta < 2000) _tripDistanceMeters += delta;
+            }
+            final speed = position.speed.isFinite ? position.speed * 3.6 : 0.0;
+            if (speed > _maxSpeedKmh) _maxSpeedKmh = speed;
+            _previousPosition = position;
+          });
+        }
         _sendPosition(position);
       }, onError: (_) {
         if (mounted) _show('Location updates paused. Check location permissions.');
       });
       if (mounted) setState(() => _tracking = true);
-      _show('Live location tracking started.');
+      _show(_locationServerSynced
+          ? 'Live GPS tracking started and location sent to BookIt.'
+          : 'GPS tracking started on this phone. Server sync is not confirmed.');
     } catch (e) {
       _show('Could not start live tracking: $e');
     }
@@ -144,10 +180,18 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         'heading': position.heading,
         'recorded_at': DateTime.now().toUtc().toIso8601String(),
       });
-      if (mounted) setState(() => _position = position);
-    } catch (_) {
+      if (mounted) setState(() {
+        _position = position;
+        _locationServerSynced = true;
+        _locationSyncError = null;
+      });
+    } catch (e) {
+      if (mounted) setState(() {
+        _locationServerSynced = false;
+        _locationSyncError = e is ApiException ? e.message : 'Server sync failed';
+      });
       if (mounted && _tracking) {
-        _show('GPS is active, but the server did not accept the location update.');
+        _show('GPS is active on this phone, but BookIt server sync failed.');
       }
     } finally {
       _sendingLocation = false;
@@ -157,7 +201,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   Future<void> _stopTracking() async {
     await _positionSubscription?.cancel();
     _positionSubscription = null;
-    if (mounted) setState(() => _tracking = false);
+    if (mounted) setState(() {
+      _tracking = false;
+      _locationServerSynced = false;
+    });
     try {
       await ApiClient.post('drivers/location/stop', auth: true);
     } catch (_) {
@@ -320,6 +367,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           _heading('Live bus tracking', 'Share your bus location during a trip'),
           const SizedBox(height: 10),
           _trackingCard(),
+          const SizedBox(height: 14),
+          _liveTelemetryCard(),
           const SizedBox(height: 22),
           _heading('Your assignment', 'Vehicle and shift information'),
           const SizedBox(height: 10),
@@ -423,12 +472,17 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           const Text('Location sharing', style: TextStyle(fontWeight: FontWeight.w800)),
           const SizedBox(height: 3),
-          Text(_tracking ? 'Your live GPS is being shared' : 'Not currently sharing location',
+          Text(!_tracking
+              ? 'Tracking is off'
+              : _locationServerSynced
+                  ? 'GPS active • synced with BookIt'
+                  : 'GPS active on phone • server not synced',
               style: TextStyle(fontSize: 11,
                   color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ])),
         Container(width: 9, height: 9, decoration: BoxDecoration(
-          color: _tracking ? const Color(0xFF16A36A) : Colors.grey,
+          color: !_tracking ? Colors.grey
+              : _locationServerSynced ? const Color(0xFF16A36A) : Colors.orange,
           shape: BoxShape.circle)),
       ]),
       if (_position != null) ...[
@@ -437,6 +491,20 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
         Text('Accuracy ±${_position!.accuracy.toStringAsFixed(0)} m',
             style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+        if (_locationSyncError != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text('Sync issue: $_locationSyncError',
+              style: const TextStyle(fontSize: 10, color: Color(0xFFCB7A16))),
+          ),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(
+            onPressed: _openCurrentLocation,
+            icon: const Icon(Icons.map_outlined, size: 16),
+            label: const Text('Open current location in map'),
+          ),
+        ),
       ],
       const SizedBox(height: 14),
       SizedBox(width: double.infinity, child: FilledButton.icon(
@@ -453,6 +521,95 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
     ]),
   );
+
+  Future<void> _openCurrentLocation() async {
+    final p = _position;
+    if (p == null) return;
+    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=${p.latitude},${p.longitude}');
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      _show('Could not open maps on this device.');
+    }
+  }
+
+  Widget _liveTelemetryCard() {
+    final p = _position;
+    final speed = p == null || !p.speed.isFinite
+        ? 0.0 : (p.speed * 3.6).clamp(0.0, 300.0);
+    final heading = p == null ? '—' : _headingName(p.heading);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: _surfaceDecoration(),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _heading('Live vehicle telemetry', 'Updates from your phone GPS'),
+        const SizedBox(height: 13),
+        Row(children: [
+          Expanded(child: _telemetryValue(
+            Icons.speed_rounded, 'Current speed',
+            '${speed.toStringAsFixed(0)} km/h', const Color(0xFF1688D4))),
+          const SizedBox(width: 10),
+          Expanded(child: _telemetryValue(
+            Icons.explore_outlined, 'Direction', heading,
+            const Color(0xFF8B5CF6))),
+        ]),
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(child: _telemetryValue(
+            Icons.route_rounded, 'Trip distance',
+            '${(_tripDistanceMeters / 1000).toStringAsFixed(2)} km',
+            const Color(0xFF15966B))),
+          const SizedBox(width: 10),
+          Expanded(child: _telemetryValue(
+            Icons.trending_up_rounded, 'Max speed',
+            '${_maxSpeedKmh.toStringAsFixed(0)} km/h',
+            const Color(0xFFCB7A16))),
+        ]),
+        if (p == null)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: Text('Start live tracking to view speed, direction and GPS position.',
+              style: TextStyle(fontSize: 11,
+                color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Text('Altitude ${p.altitude.toStringAsFixed(0)} m  •  GPS accuracy ±${p.accuracy.toStringAsFixed(0)} m',
+              style: TextStyle(fontSize: 10,
+                color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ),
+      ]),
+    );
+  }
+
+  String _headingName(double degrees) {
+    if (!degrees.isFinite) return '—';
+    const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    return directions[((degrees % 360) / 45).round() % 8];
+  }
+
+  Widget _telemetryValue(IconData icon, String label, String value, Color color) =>
+      Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: .08),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(children: [
+          Icon(icon, size: 19, color: color),
+          const SizedBox(width: 9),
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 2),
+              Text(label, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontSize: 9,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
+            ],
+          )),
+        ]),
+      );
 
   Widget _scanTab() => Column(children: [
     Padding(
