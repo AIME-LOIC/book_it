@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
@@ -33,6 +35,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   double _maxSpeedKmh = 0;
   Position? _previousPosition;
   bool _scanBusy = false;
+  bool _scannerStarting = false;
+  bool _scannerReady = false;
+  String? _scannerError;
+  late final bool _scannerSupported;
   String? _lastScan;
   Position? _position;
   String _savedIdentifier = '';
@@ -40,12 +46,14 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   bool _checkingSavedSession = false;
   StreamSubscription<Position>? _positionSubscription;
   final MobileScannerController _scanner = MobileScannerController(
+    autoStart: false,
     detectionSpeed: DetectionSpeed.noDuplicates,
   );
 
   @override
   void initState() {
     super.initState();
+    _scannerSupported = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
     _loadSavedProfile();
     _refresh();
   }
@@ -91,6 +99,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   void dispose() {
     _search.dispose();
     _positionSubscription?.cancel();
+    if (_scannerSupported) _scanner.stop();
     _scanner.dispose();
     super.dispose();
   }
@@ -261,6 +270,44 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     _show('Live tracking stopped.');
   }
 
+  Future<void> _startScanner() async {
+    if (!_scannerSupported || _scannerReady || _scannerStarting || !mounted) return;
+    setState(() { _scannerStarting = true; _scannerError = null; });
+    try {
+      await _scanner.start();
+      if (mounted) setState(() { _scannerReady = true; _scannerStarting = false; });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _scannerReady = false;
+        _scannerStarting = false;
+        _scannerError = 'Camera could not start. Rebuild and reinstall the Android/iOS app, then check camera permission.';
+      });
+    }
+  }
+
+  Future<void> _stopScanner() async {
+    if (!_scannerSupported || (!_scannerReady && !_scannerStarting)) return;
+    try {
+      await _scanner.stop();
+    } catch (_) {
+      // The plugin may not be registered in desktop/debug runtimes.
+    }
+    if (mounted) setState(() { _scannerReady = false; _scannerStarting = false; });
+  }
+
+  Future<void> _toggleFlash() async {
+    if (!_scannerReady) return;
+    try { await _scanner.toggleTorch(); }
+    catch (_) { _show('Flash is not available on this camera.'); }
+  }
+
+  Future<void> _flipCamera() async {
+    if (!_scannerReady) return;
+    try { await _scanner.switchCamera(); }
+    catch (_) { _show('Could not switch camera.'); }
+  }
+
   Future<void> _handleScan(BarcodeCapture capture) async {
     if (_scanBusy || capture.barcodes.isEmpty) return;
     final code = capture.barcodes.first.rawValue?.trim();
@@ -351,9 +398,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         ],
       ),
       body: SafeArea(
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : IndexedStack(index: _tab, children: [
+        child: IndexedStack(index: _tab, children: [
                 _homeTab(),
                 _scanTab(),
                 _ticketsTab(),
@@ -363,8 +408,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         onDestinationSelected: (index) {
-          if (index == 1) _scanner.start();
-          setState(() => _tab = index);
+          if (index == 1) {
+            setState(() => _tab = index);
+            _startScanner();
+          } else {
+            if (_tab == 1) _stopScanner();
+            setState(() => _tab = index);
+          }
         },
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined),
@@ -664,53 +714,99 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
         ]),
       );
 
-  Widget _scanTab() => Column(children: [
-    Padding(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
-      child: _heading('Scan passenger ticket', 'Point the camera at the ticket QR code'),
-    ),
-    Expanded(child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(22),
-        child: Stack(fit: StackFit.expand, children: [
-          MobileScanner(controller: _scanner, onDetect: _handleScan),
-          IgnorePointer(child: Center(child: Container(
-            width: 235, height: 235,
-            decoration: BoxDecoration(
-              border: Border.all(color: Colors.white, width: 3),
-              borderRadius: BorderRadius.circular(24),
-            ),
-          ))),
-          if (_scanBusy) Container(
-            color: Colors.black54,
-            child: const Center(child: CircularProgressIndicator(color: Colors.white)),
-          ),
-        ]),
+  Widget _scanTab() {
+    if (!_scannerSupported) {
+      return _emptyCard(
+        'QR scanning requires a phone',
+        'Install and run BookIt on Android or iOS to use the camera scanner. Linux desktop and web camera scanning are not supported by this scanner plugin.',
+      );
+    }
+    return Column(children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
+        child: _heading('Scan passenger ticket', 'Point the camera at the ticket QR code'),
       ),
-    )),
-    Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
-      child: Column(children: [
-        Text(_lastScan == null ? 'Ready to scan' : 'Last code: $_lastScan',
+      Expanded(child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(22),
+          child: Stack(fit: StackFit.expand, children: [
+            if (_scannerReady)
+              MobileScanner(
+                controller: _scanner,
+                onDetect: _handleScan,
+                errorBuilder: (context, error) => _scannerFailure(error.errorCode.name),
+              )
+            else
+              Container(
+                color: Colors.black,
+                child: Center(child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.qr_code_scanner_rounded, size: 52, color: Colors.white70),
+                    const SizedBox(height: 12),
+                    Text(_scannerError ?? (_scannerStarting
+                        ? 'Starting camera…' : 'Camera is not active'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white)),
+                    const SizedBox(height: 12),
+                    if (!_scannerStarting)
+                      OutlinedButton(
+                        onPressed: _startScanner,
+                        child: const Text('Start camera'),
+                      ),
+                    if (_scannerStarting)
+                      const CircularProgressIndicator(color: Colors.white),
+                  ],
+                )),
+              ),
+            IgnorePointer(child: Center(child: Container(
+              width: 235, height: 235,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white, width: 3),
+                borderRadius: BorderRadius.circular(24),
+              ),
+            ))),
+            if (_scanBusy) Container(
+              color: Colors.black54,
+              child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+            ),
+          ]),
+        ),
+      )),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
+        child: Column(children: [
+          Text(_lastScan == null ? 'Ready to scan' : 'Last code: $_lastScan',
             maxLines: 2, overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: const TextStyle(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        Row(children: [
-          Expanded(child: OutlinedButton.icon(
-            onPressed: () => _scanner.toggleTorch(),
-            icon: const Icon(Icons.flash_on_rounded), label: const Text('Flash'),
-          )),
-          const SizedBox(width: 10),
-          Expanded(child: OutlinedButton.icon(
-            onPressed: () => _scanner.switchCamera(),
-            icon: const Icon(Icons.cameraswitch_rounded), label: const Text('Flip camera'),
-          )),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(child: OutlinedButton.icon(
+              onPressed: _scannerReady ? _toggleFlash : null,
+              icon: const Icon(Icons.flash_on_rounded), label: const Text('Flash'),
+            )),
+            const SizedBox(width: 10),
+            Expanded(child: OutlinedButton.icon(
+              onPressed: _scannerReady ? _flipCamera : null,
+              icon: const Icon(Icons.cameraswitch_rounded), label: const Text('Flip camera'),
+            )),
+          ]),
         ]),
-      ]),
-    ),
-  ]);
+      ),
+    ]);
+  }
+
+  Widget _scannerFailure(String code) => Container(
+    color: Colors.black,
+    padding: const EdgeInsets.all(22),
+    child: Center(child: Text(
+      'Camera error: $code. Check camera permission and restart the app.',
+      textAlign: TextAlign.center,
+      style: const TextStyle(color: Colors.white),
+    )),
+  );
 
   Widget _ticketsTab() {
     final query = _search.text.toLowerCase().trim();
