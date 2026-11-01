@@ -86,7 +86,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: _loading
-          ? const ListView(children: [SizedBox(height: 260, child: Center(child: CircularProgressIndicator()))])
+          ? ListView(children: const [SizedBox(height: 260, child: Center(child: CircularProgressIndicator()))])
           : ListView(padding: const EdgeInsets.fromLTRB(16, 12, 16, 28), children: [
               if (_error != null) Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(children: [
                 Text(_error!, textAlign: TextAlign.center),
