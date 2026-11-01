@@ -32,7 +32,7 @@ export const generateDailyLoyaltyPromo = async (issuedAt = new Date()) => {
   if (!topBuyer?.user_id) return null;
 
   const existingCode = await PromoCode.findOne({
-    where: { recipient_id: topBuyer.user_id, status: 'active' },
+    where: { recipient_id: topBuyer.user_id },
     order: [['generated_at', 'DESC']],
   });
 
