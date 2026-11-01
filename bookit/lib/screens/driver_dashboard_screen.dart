@@ -313,7 +313,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final titles = ['Home', 'Scan QR', 'Tickets', 'Profile'];
+    final titles = ['Home', 'Scan QR', 'Tickets', 'Profiles'];
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
@@ -374,7 +374,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           NavigationDestination(icon: Icon(Icons.confirmation_number_outlined),
               selectedIcon: Icon(Icons.confirmation_number_rounded), label: 'Tickets'),
           NavigationDestination(icon: Icon(Icons.person_outline_rounded),
-              selectedIcon: Icon(Icons.person_rounded), label: 'Profile'),
+              selectedIcon: Icon(Icons.person_rounded), label: 'Profiles'),
         ],
       ),
     );
