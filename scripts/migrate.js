@@ -1,12 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DataTypes, QueryTypes } from 'sequelize';
+import { QueryTypes } from 'sequelize';
 import sequelize from '../src/config/sequelize.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const migrationsDir = path.join(root, '..', 'src', 'database', 'migrations');
-const queryInterface = sequelize.getQueryInterface();
 
 try {
   if (sequelize.getDialect() !== 'postgres') {
