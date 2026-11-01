@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import 'home_screen.dart';
+import 'driver_dashboard_screen.dart';
 import 'signup_screen.dart';
 
 /// Animated login screen.
@@ -38,6 +39,54 @@ class _LoginScreenState extends State<LoginScreen> {
     _emailFocus.dispose();
     _passwordFocus.dispose();
     super.dispose();
+  }
+
+
+  Future<void> _driverSignIn() async {
+    final phone = TextEditingController();
+    final password = TextEditingController();
+    bool obscure = true;
+    final credentials = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Driver sign in'),
+          content: Column(mainAxisSize: MainAxisSize.min, children: [
+            TextField(controller: phone, keyboardType: TextInputType.phone,
+              onChanged: (_) => setDialogState(() {}),
+              decoration: const InputDecoration(labelText: 'Phone number', hintText: '+250 78...')),
+            const SizedBox(height: 12),
+            TextField(controller: password, obscureText: obscure,
+              onChanged: (_) => setDialogState(() {}),
+              decoration: InputDecoration(labelText: 'Password',
+                suffixIcon: IconButton(icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () => setDialogState(() => obscure = !obscure)))),
+          ]),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: phone.text.trim().isEmpty || password.text.isEmpty ? null : () => Navigator.pop(dialogContext, {'phone': phone.text.trim(), 'password': password.text}),
+              child: const Text('Continue'),
+            ),
+          ],
+        ),
+      ),
+    );
+    phone.dispose();
+    password.dispose();
+    if (credentials == null || !mounted) return;
+    setState(() => _submitting = true);
+    try {
+      final name = await AuthService.loginDriver(phone: credentials['phone']!, password: credentials['password']!);
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(MaterialPageRoute<void>(
+        builder: (_) => DriverDashboardScreen(driverName: name),
+      ));
+    } on AuthException catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   Future<void> _submit() async {
@@ -325,6 +374,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             icon: const Icon(Icons.admin_panel_settings_rounded,
                                 size: 20),
                             label: const Text('Sign in with admin key'),
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: _driverSignIn,
+                            icon: const Icon(Icons.directions_bus_filled_rounded),
+                            label: const Text('Driver sign in'),
                           ),
                         ],
                       ),

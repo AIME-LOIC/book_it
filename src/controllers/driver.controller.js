@@ -25,7 +25,7 @@ export const login            = async (req, res) => {
   try {
     const { token, driver } = await svc.loginDriver(req.body);
     res.cookie('bookit_token', token, authCookieOptions);
-    res.status(200).json({ driver });
+    res.status(200).json({ token, driver });
   }
   catch (err) { res.status(401).json({ message: clientMessage(err) }); }
 };

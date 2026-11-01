@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../services/auth_service.dart';
 import 'home_screen.dart';
+import 'driver_dashboard_screen.dart';
 import 'login_screen.dart';
 
 /// Animated splash / loading screen.
@@ -73,7 +74,7 @@ class _LoadingScreenState extends State<LoadingScreen>
     if (!mounted) return;
     final Widget destination = restoredName == null
         ? const LoginScreen()
-        : HomeScreen(userName: restoredName);
+        : (AuthService.isDriverSession ? DriverDashboardScreen(driverName: restoredName) : HomeScreen(userName: restoredName));
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
         transitionDuration: const Duration(milliseconds: 450),
