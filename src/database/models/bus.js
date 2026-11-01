@@ -16,6 +16,8 @@ const Bus = sequelize.define('Bus', {
   // Use JSON (portable) and allow null to avoid unsupported DDL on older MySQL versions.
   amenities: { type: DataTypes.JSON, allowNull: true, defaultValue: null },
   is_active: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+  // Distinguishes operator-disabled buses from buses hidden after their daily departure.
+  is_manually_disabled: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
 }, { tableName: 'buses', timestamps: false });
 
 Bus.belongsTo(Operator, { foreignKey: 'operator_id', as: 'operator' });
