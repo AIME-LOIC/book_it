@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { DataTypes, QueryTypes } from 'sequelize';
 import sequelize from '../src/config/sequelize.js';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -13,15 +14,7 @@ try {
   }
 
   await sequelize.authenticate();
-  await queryInterface.createTable('bookit_schema_migrations', {
-    name: { type: (await import('sequelize')).DataTypes.STRING(255), allowNull: false, primaryKey: true },
-    applied_at: { type: (await import('sequelize')).DataTypes.DATE, allowNull: false, defaultValue: (await import('sequelize')).DataTypes.NOW },
-  });
-
-  const appliedRows = await sequelize.query(
-    'SELECT name FROM bookit_schema_migrations',
-    { type: (await import('sequelize')).QueryTypes.SELECT },
-  );
+  await sequelize.query(`CREATE TABLE IF NOT EXISTS bookit_schema_migrations (\n    name VARCHAR(255) PRIMARY KEY,\n    applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP\n  )`);\n\n  const appliedRows = await sequelize.query(\n    'SELECT name FROM bookit_schema_migrations',\n    { type: QueryTypes.SELECT },\n  );
   const applied = new Set(appliedRows.map((row) => row.name));
   const files = (await fs.readdir(migrationsDir))
     .filter((name) => name.endsWith('.sql'))
