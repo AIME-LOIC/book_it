@@ -136,9 +136,16 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     }
     try {
       final response = await ApiClient.get('drivers/passengers', auth: true);
-      final rows = response is List ? response
-          : (response is Map && response['passengers'] is List
-              ? response['passengers'] : const []);
+      // Accept common API response envelopes without assuming a single shape.
+      final payload = response is Map && response['data'] != null
+          ? response['data'] : response;
+      final rows = payload is List ? payload
+          : (payload is Map && payload['passengers'] is List
+              ? payload['passengers']
+              : payload is Map && payload['tickets'] is List
+                  ? payload['tickets']
+                  : payload is Map && payload['data'] is List
+                      ? payload['data'] : const []);
       if (mounted) {
         setState(() => _passengers = rows.whereType<Map>()
             .map((e) => Map<String, dynamic>.from(e)).toList());
@@ -277,6 +284,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     try {
       await _scanner.start();
       if (mounted) setState(() { _scannerReady = true; _scannerStarting = false; });
+      if (mounted && _tab != 1) await _stopScanner();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -288,7 +296,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   }
 
   Future<void> _stopScanner() async {
-    if (!_scannerSupported || (!_scannerReady && !_scannerStarting)) return;
+    if (!_scannerSupported || _scannerStarting || !_scannerReady) return;
     try {
       await _scanner.stop();
     } catch (_) {
