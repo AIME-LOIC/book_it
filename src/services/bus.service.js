@@ -42,7 +42,27 @@ export const getBusById = async (id) => {
 export const updateBus = async (operator_id, id, data) => {
   const bus = await Bus.findOne({ where: { id, operator_id } });
   if (!bus) throw new Error('Bus not found or not yours');
-  return await bus.update(data);
+  const allowedFields = ['route_id', 'plate_number', 'driver_name', 'capacity', 'departure_time', 'amenities', 'is_active'];
+  const updates = Object.fromEntries(
+    Object.entries(data || {}).filter(([key]) => allowedFields.includes(key)),
+  );
+
+  if (Object.hasOwn(updates, 'route_id')) {
+    const route = await Route.findOne({ where: { id: updates.route_id, operator_id } });
+    if (!route) throw new Error('Route not found or not yours');
+  }
+
+  if (Object.hasOwn(updates, 'plate_number') && updates.plate_number !== bus.plate_number) {
+    const duplicate = await Bus.findOne({ where: { plate_number: updates.plate_number } });
+    if (duplicate) throw new Error('Plate number already exists');
+  }
+
+  if (Object.hasOwn(updates, 'is_active')) {
+    if (typeof updates.is_active !== 'boolean') throw new Error('is_active must be a boolean');
+    updates.is_manually_disabled = updates.is_active === false;
+  }
+
+  return await bus.update(updates);
 };
 
 export const updateBusLocation = async (id, { last_lat, last_lng }) => {
