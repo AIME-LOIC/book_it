@@ -27,6 +27,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   final _search = TextEditingController();
   bool _loading = true;
   String? _error;
+  String? _passengerError;
   bool _tracking = false;
   bool _sendingLocation = false;
   bool _locationServerSynced = false;
@@ -149,8 +150,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     }
     if (mounted) {
       setState(() {
-        _error = [profileError, passengerError].whereType<String>().join(' • ');
-        if (_error!.isEmpty) _error = null;
+        _error = profileError;
+        _passengerError = passengerError;
         _loading = false;
       });
     }
@@ -435,8 +436,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     final foreground = theme.colorScheme.onSurface;
     final muted = theme.colorScheme.onSurfaceVariant;
     final checkedIn = _passengers.where((p) =>
-      ['checked_in', 'boarded', 'checked-in'].contains(
-        _value(p['status'], '').toLowerCase())).length;
+      ['checked_in', 'boarded', 'checked-in'].contains(_value(p['status'], '').toLowerCase())).length;
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView(
@@ -446,55 +446,101 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           if (_error != null) _errorCard(_error!),
           Text('Good to see you,', style: TextStyle(color: muted, fontSize: 13)),
           const SizedBox(height: 3),
-          Text(_driverName, style: TextStyle(
-            color: foreground, fontSize: 27, fontWeight: FontWeight.w900,
-          )),
+          Text(_driverName, style: TextStyle(color: foreground, fontSize: 27, fontWeight: FontWeight.w900)),
           const SizedBox(height: 4),
-          Text('$_company  •  $_plate',
-              style: TextStyle(color: muted, fontSize: 12)),
+          Text('$_company  •  $_plate', style: TextStyle(color: muted, fontSize: 12)),
           const SizedBox(height: 18),
           _heroCard(),
           const SizedBox(height: 16),
           Row(children: [
-            Expanded(child: _statCard('Passengers', '${_passengers.length}',
-                Icons.people_alt_rounded, const Color(0xFF1688D4))),
+            Expanded(child: _statCard('Passengers', _passengers.length.toString(), Icons.people_alt_rounded, const Color(0xFF1688D4))),
             const SizedBox(width: 10),
-            Expanded(child: _statCard('Checked in', '$checkedIn',
-                Icons.verified_rounded, const Color(0xFF15966B))),
+            Expanded(child: _statCard('Checked in', checkedIn.toString(), Icons.verified_rounded, const Color(0xFF15966B))),
             const SizedBox(width: 10),
-            Expanded(child: _statCard('Capacity', _value(_bus['capacity']),
-                Icons.event_seat_rounded, const Color(0xFF8B5CF6))),
+            Expanded(child: _statCard('Capacity', _value(_bus['capacity']), Icons.event_seat_rounded, const Color(0xFF8B5CF6))),
           ]),
-          const SizedBox(height: 22),
-          _heading('Live bus tracking', 'Share your bus location during a trip'),
+          const SizedBox(height: 20),
+          _heading('Your trip', 'Manage your route and vehicle operations'),
           const SizedBox(height: 10),
-          _trackingCard(),
-          const SizedBox(height: 14),
-          _liveTelemetryCard(),
-          const SizedBox(height: 22),
-          _heading('Your assignment', 'Vehicle and shift information'),
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: _surfaceDecoration(),
+            child: Column(children: [
+              Row(children: [
+                Container(width: 42, height: 42,
+                  decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(13)),
+                  child: const Icon(Icons.route_rounded, color: AppColors.primary)),
+                const SizedBox(width: 11),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('Live tracking & trip details', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
+                  const SizedBox(height: 3),
+                  Text(_tracking ? 'Tracking is active' : 'Tracking is currently off', style: TextStyle(fontSize: 10, color: muted)),
+                ])),
+                Icon(_tracking ? Icons.radio_button_checked : Icons.radio_button_unchecked, color: _tracking ? const Color(0xFF15966B) : muted, size: 17),
+              ]),
+              const SizedBox(height: 12),
+              SizedBox(width: double.infinity, child: FilledButton.tonalIcon(
+                onPressed: _openTripDetails,
+                icon: const Icon(Icons.open_in_new_rounded, size: 17),
+                label: const Text('Open trip controls'),
+              )),
+            ]),
+          ),
+          const SizedBox(height: 18),
+          _heading('Passenger manifest', 'Ticket and boarding management'),
           const SizedBox(height: 10),
-          _infoCard([
-            _infoRow(Icons.directions_bus_rounded, 'Vehicle', _plate),
-            _infoRow(Icons.business_rounded, 'Operator', _company),
-            _infoRow(Icons.schedule_rounded, 'Departure', _value(_bus['departure_time'])),
-            _infoRow(Icons.phone_outlined, 'Contact', _value(_driver['phone'])),
-          ]),
-          const SizedBox(height: 22),
-          Row(children: [
-            Expanded(child: _heading('Recent passengers', 'Latest assigned tickets')),
-            TextButton(onPressed: () => setState(() => _tab = 2),
-                child: const Text('View all')),
-          ]),
-          const SizedBox(height: 8),
-          if (_passengers.isEmpty)
-            _emptyCard('No passenger tickets yet',
-                'Passenger bookings will appear here when assigned.')
-          else
-            ..._passengers.take(4).map(_passengerTile),
+          Container(
+            padding: const EdgeInsets.all(15),
+            decoration: _surfaceDecoration(),
+            child: Row(children: [
+              const Icon(Icons.confirmation_number_outlined, color: AppColors.primary, size: 25),
+              const SizedBox(width: 11),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(_passengers.length.toString() + ' passenger tickets', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
+                Text(_passengerError ?? (checkedIn.toString() + ' passengers checked in'), maxLines: 2, overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 10, color: _passengerError == null ? muted : const Color(0xFFB93838))),
+              ])),
+              TextButton(onPressed: () => setState(() => _tab = 2), child: const Text('View tickets')),
+            ]),
+          ),
+          if (_passengerError != null) ...[
+            const SizedBox(height: 8),
+            Align(alignment: Alignment.centerLeft, child: TextButton.icon(
+              onPressed: _loading ? null : _refresh,
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: const Text('Retry passenger loading'),
+            )),
+          ],
         ],
       ),
     );
+  }
+
+  Future<void> _openTripDetails() async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => Scaffold(
+        appBar: AppBar(title: const Text('Trip controls')),
+        body: SafeArea(child: ListView(
+          padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
+          children: [
+            _heading('Live bus tracking', 'Share your bus location during a trip'),
+            const SizedBox(height: 10),
+            _trackingCard(),
+            const SizedBox(height: 14),
+            _liveTelemetryCard(),
+            const SizedBox(height: 20),
+            _heading('Vehicle assignment', 'Your current shift information'),
+            const SizedBox(height: 10),
+            _infoCard([
+              _infoRow(Icons.directions_bus_rounded, 'Vehicle', _plate),
+              _infoRow(Icons.business_rounded, 'Operator', _company),
+              _infoRow(Icons.schedule_rounded, 'Departure', _value(_bus['departure_time'])),
+              _infoRow(Icons.phone_outlined, 'Contact', _value(_driver['phone'])),
+            ]),
+          ],
+        )),
+      ),
+    ));
   }
 
   Widget _heroCard() => Container(
@@ -834,8 +880,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           ),
         ]),
       ),
+      if (_passengerError != null)
+        Padding(padding: const EdgeInsets.symmetric(horizontal: 18), child: _errorCard(_passengerError!)),
       Expanded(child: rows.isEmpty
-          ? _emptyCard('No matching tickets', 'Try another passenger name, seat or ticket code.')
+          ? _emptyCard(_passengerError == null ? 'No matching tickets' : 'Tickets could not be loaded', _passengerError == null ? 'Try another passenger name, seat or ticket code.' : 'Check your connection or passenger API endpoint, then retry.')
           : RefreshIndicator(
               onRefresh: _refresh,
               child: ListView.separated(
