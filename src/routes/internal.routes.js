@@ -4,6 +4,9 @@ import {
   checkDepartedBuses,
   checkPendingTicketHolds,
   notifyUpcomingDepartures,
+  archiveOldTickets,
+  checkPromoCodeGeneration,
+  cleanupOldNotifications,
 } from '../services/scheduler.service.js';
 
 const router = Router();
@@ -32,6 +35,9 @@ router.post('/run', async (req, res) => {
     ['departed-buses', checkDepartedBuses],
     ['pending-ticket-holds', checkPendingTicketHolds],
     ['upcoming-departure-reminders', notifyUpcomingDepartures],
+    ['ticket-archive', archiveOldTickets],
+    ['daily-loyalty-promo', checkPromoCodeGeneration],
+    ['notification-retention', cleanupOldNotifications],
   ];
 
   for (const [name, run] of jobs) {
