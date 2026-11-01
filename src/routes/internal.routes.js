@@ -19,8 +19,8 @@ const safeSecretMatch = (provided, expected) => {
 };
 
 // Called by a trusted scheduler (e.g. GitHub Actions) every five minutes.
-// Only frequent, retry-safe jobs are exposed here; daily destructive jobs are
-// deliberately excluded until they have database-backed distributed locks.
+// Exposes retry-safe frequent and daily maintenance jobs. The midnight
+// reactivation job is excluded because it cannot distinguish manual disables.
 router.post('/run', async (req, res) => {
   const expected = process.env.CRON_SECRET;
   const authorization = req.get('authorization') || '';
