@@ -16,7 +16,8 @@
     "migrate:local-to-supabase": "node --dns-result-order=ipv4first scripts/migrate-local-to-supabase.js",
     "build:api": "node scripts/build-api.js",
     "db:sync": "node --dns-result-order=ipv4first src/database/sync.js",
-    "db:seed": "node --dns-result-order=ipv4first src/database/seed.js"
+    "db:seed": "node --dns-result-order=ipv4first src/database/seed.js",
+    "db:migrate": "node --dns-result-order=ipv4first scripts/migrate.js"
   },
   "keywords": [],
   "author": "",
