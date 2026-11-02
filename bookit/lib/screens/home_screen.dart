@@ -41,6 +41,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _paymentPollTimer;
   List<Map<String,dynamic>> _locations=[],_buses=[],_tickets=[],_notifications=[],_tripReminders=[];
   Map<String,dynamic> _profileData={};
+
+  /// Inline profile editor: fields live on the Profile tab and persist via the
+  /// 'Save profile' button instead of only through the edit dialog.
+  final TextEditingController _profileNameCtrl=TextEditingController(),_profilePhoneCtrl=TextEditingController();
+  final FocusNode _profileNameFocus=FocusNode(),_profilePhoneFocus=FocusNode();
+  bool _savingProfile=false;
   int? _weatherCode;
   double? _temperature;
   List<Map<String,dynamic>> _dailyForecast=[];
@@ -50,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer; DateTime? _holdExpiresAt;
   final _phone=TextEditingController(); String _network='mtn'; bool _phoneManuallyEdited=false; String? _detectedNetwork;
   @override void initState(){super.initState();_loadHistoryLanguage();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
-  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_notificationTimer?.cancel();_paymentPollTimer?.cancel();_phone.dispose();super.dispose();}
+  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_notificationTimer?.cancel();_paymentPollTimer?.cancel();_phone.dispose();_profileNameCtrl.dispose();_profilePhoneCtrl.dispose();_profileNameFocus.dispose();_profilePhoneFocus.dispose();super.dispose();}
 
 
   Future<void> _loadTripReminders() async {
@@ -278,7 +284,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if(mounted)setState(()=>_loadingProfile=true);
     try {
       final r=await ApiClient.get('auth/me',auth:true);
-      if(mounted){final raw=r is Map&&r['user'] is Map?r['user']:r;final profile=raw is Map?Map<String,dynamic>.from(raw):<String,dynamic>{};final registeredPhone=(profile['phone']??profile['phone_number']??profile['mobile']??'').toString().trim();setState(()=>_profileData=profile);if(!_phoneManuallyEdited&&registeredPhone.isNotEmpty){_phone.value=TextEditingValue(text:registeredPhone,selection:TextSelection.collapsed(offset:registeredPhone.length));_detectPaymentNetwork(registeredPhone);}}
+      if(mounted){final raw=r is Map&&r['user'] is Map?r['user']:r;final profile=raw is Map?Map<String,dynamic>.from(raw):<String,dynamic>{};final registeredPhone=(profile['phone']??profile['phone_number']??profile['mobile']??'').toString().trim();setState(()=>_profileData=profile);if(!_profileNameFocus.hasFocus)_profileNameCtrl.text=profile['name']?.toString()??widget.userName;if(!_profilePhoneFocus.hasFocus)_profilePhoneCtrl.text=profile['phone']?.toString()??'';if(!_phoneManuallyEdited&&registeredPhone.isNotEmpty){_phone.value=TextEditingValue(text:registeredPhone,selection:TextSelection.collapsed(offset:registeredPhone.length));_detectPaymentNetwork(registeredPhone);}}
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
     finally { if(mounted)setState(()=>_loadingProfile=false); }
   }
@@ -433,8 +439,27 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _saveProfile({required String name,required String phone}) async {
     try {
       final r=await ApiClient.patch('auth/me',auth:true,body:{'name':name.trim(),'phone':phone.trim()});
-      if(mounted){setState(()=>_profileData=r is Map?Map<String,dynamic>.from(r):_profileData);_msg('Profile updated.');}
+      if(mounted){
+        final raw=r is Map&&r['user'] is Map?r['user']:r;
+        setState(()=>_profileData=raw is Map?Map<String,dynamic>.from(raw):_profileData);
+        if(!_profileNameFocus.hasFocus)_profileNameCtrl.text=name.trim();
+        if(!_profilePhoneFocus.hasFocus)_profilePhoneCtrl.text=phone.trim();
+        _msg('Profile updated.');
+      }
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
+  }
+
+  /// Saves directly from the Profile tab's inline fields.
+  Future<void> _submitInlineProfile() async {
+    final name=_profileNameCtrl.text.trim();
+    final phone=_profilePhoneCtrl.text.trim();
+    if(name.isEmpty){ _msg('Enter your full name.'); return; }
+    if(phone.length<9){ _msg('Enter a valid phone number.'); return; }
+    if(mounted)setState(()=>_savingProfile=true);
+    try {
+      await _saveProfile(name:name,phone:phone);
+      if(mounted)FocusScope.of(context).unfocus();
+    } finally { if(mounted)setState(()=>_savingProfile=false); }
   }
   Future<void> _editProfile() async {
     final name=TextEditingController(text:(_profileData['name']??widget.userName).toString());
@@ -1735,13 +1760,14 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
     Padding(padding:const EdgeInsets.fromLTRB(18,20,18,28),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     if(_loadingProfile)const Padding(padding:EdgeInsets.all(18),child:Center(child:CircularProgressIndicator())),
     const SizedBox(height:20),Text('Personal information',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
-    Card(child:Column(children:[
-      _profileRow(Icons.person_outline,'Full name',(_profileData['name']??widget.userName).toString()),const Divider(height:1,indent:56),
+    Card(child:Padding(padding:const EdgeInsets.symmetric(vertical:4),child:Column(children:[
+      Padding(padding:const EdgeInsets.fromLTRB(16,8,16,8),child:TextField(controller:_profileNameCtrl,focusNode:_profileNameFocus,decoration:const InputDecoration(labelText:'Full name',prefixIcon:Icon(Icons.person_outline)))),const Divider(height:1,indent:56),
+      Padding(padding:const EdgeInsets.fromLTRB(16,8,16,8),child:TextField(controller:_profilePhoneCtrl,focusNode:_profilePhoneFocus,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'Phone number',prefixIcon:Icon(Icons.phone_outlined)))),const Divider(height:1,indent:56),
       _profileRow(Icons.email_outlined,'Email',(_profileData['email']??'Not provided').toString()),const Divider(height:1,indent:56),
-      _profileRow(Icons.phone_outlined,'Phone',(_profileData['phone']??'Not provided').toString()),const Divider(height:1,indent:56),
       _profileRow(Icons.calendar_today_outlined,'Member since',(_profileData['createdAt']??'—').toString().split('T').first),
     ])),
-    const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit profile'))),
+    const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_submitInlineProfile,icon:_savingProfile?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):const Icon(Icons.check_rounded),label:const Text('Save profile'))),
+    const SizedBox(height:10),SizedBox(width:double.infinity,child:OutlinedButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit in a form'))),
     const SizedBox(height:22),Text(_historyText('Preferences','Ibyifuzo'),style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
     Card(child:Padding(padding:const EdgeInsets.symmetric(horizontal:16,vertical:12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
       Row(children:[const Icon(Icons.language_rounded,color:AppColors.primary),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[

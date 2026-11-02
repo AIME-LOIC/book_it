@@ -1,0 +1,11 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_A16ZW4t5UwDsRyOtpgWlJ8qP80bg",
+      "name": "book-it",
+      "directory": ".",
+      "orgId": "team_OwXRelw85PNcUX4R6fnh1bY1"
+    }
+  ]
+}
