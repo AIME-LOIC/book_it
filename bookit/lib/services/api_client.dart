@@ -7,6 +7,11 @@ class ApiClient {
   ApiClient._();
   static String? _token;
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+
+  /// Test-only hook: widget tests can stub POST responses without network.
+  /// Production code leaves this null, in which case `post` behaves normally.
+  static Future<dynamic> Function(String path, {Map<String,dynamic>? body, bool auth})? postOverride;
+
   static bool get hasToken => _token != null && _token!.isNotEmpty;
   static void setToken(String? token) => _token = token;
   static Future<void> saveToken(String token) async {
@@ -25,7 +30,10 @@ class ApiClient {
     if(auth && _token != null) 'Authorization':'Bearer $_token',
   };
   static Future<dynamic> get(String path,{Map<String,String>? query,bool auth=false}) => _send('GET',path,query:query,auth:auth);
-  static Future<dynamic> post(String path,{Map<String,dynamic>? body,bool auth=false}) => _send('POST',path,body:body,auth:auth);
+  static Future<dynamic> post(String path,{Map<String,dynamic>? body,bool auth=false}) {
+    if (postOverride != null) return postOverride!(path, body: body, auth: auth);
+    return _send('POST',path,body:body,auth:auth);
+  }
   static Future<dynamic> patch(String path,{Map<String,dynamic>? body,bool auth=false}) => _send('PATCH',path,body:body,auth:auth);
   static Future<dynamic> _send(String method,String path,{Map<String,String>? query,Map<String,dynamic>? body,bool auth=false}) async {
     var uri=Uri.parse(ApiConfig.endpoint(path));

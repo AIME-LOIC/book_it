@@ -4,6 +4,7 @@ import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
+import 'ticket_scanner_screen.dart';
 
 class DriverDashboardScreen extends StatefulWidget {
   const DriverDashboardScreen({super.key, required this.driverName});
@@ -57,6 +58,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     } on ApiException catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
     }
+  }
+
+  Future<void> _openScanner() async {
+    final redeemed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(builder: (_) => const TicketScannerScreen()));
+    // A redeemed ticket changes today's manifest (is_used) — reload it.
+    if (redeemed == true) _refresh();
   }
 
   Future<void> _signOut() async {
@@ -164,6 +172,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                 ])));
               }),
               const SizedBox(height: 12),
+              SizedBox(width: double.infinity, child: FilledButton.icon(
+                style: FilledButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                onPressed: _openScanner,
+                icon: const Icon(Icons.qr_code_scanner_rounded),
+                label: const Text('Scan ticket'))),
+              const SizedBox(height: 8),
               OutlinedButton.icon(onPressed: _refresh, icon: const Icon(Icons.sync_rounded), label: const Text('Refresh dashboard')),
               const SizedBox(height: 8),
               const Center(child: Text('Demo company and driver records are created by the opt-in seed script.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.textMuted, fontSize: 11))),

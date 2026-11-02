@@ -16,6 +16,8 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>bookit</string>
+	<key>NSCameraUsageDescription</key>
+	<string>BookIt uses the camera to scan passenger tickets.</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
