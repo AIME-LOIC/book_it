@@ -1177,118 +1177,261 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   );
 
   Widget _profileTab() => ListView(
-    padding: const EdgeInsets.fromLTRB(18, 22, 18, 28),
+    padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
     children: [
-      Center(child: Column(children: [
-        CircleAvatar(radius: 42,
-          backgroundColor: AppColors.primary.withValues(alpha: .12),
-          child: const Icon(Icons.person_rounded, size: 42, color: AppColors.primary)),
-        const SizedBox(height: 12),
-        Text(_driverName, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 3),
-        Text('Driver account', style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 12)),
-      ])),
-      const SizedBox(height: 24),
-      _heading('Saved profile', 'Your secure sign-in is stored on this device'),
-      const SizedBox(height: 10),
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: _surfaceDecoration(),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Container(width: 42, height: 42,
-              decoration: BoxDecoration(
-                color: const Color(0xFF15966B).withValues(alpha: .10),
-                borderRadius: BorderRadius.circular(13)),
-              child: const Icon(Icons.verified_user_rounded,
-                color: Color(0xFF15966B))),
-            const SizedBox(width: 11),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('BookIt session saved',
-                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13)),
-              const SizedBox(height: 3),
-              Text(_savedDateLabel(),
-                style: TextStyle(fontSize: 10,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant)),
-            ])),
-            const Icon(Icons.lock_rounded, color: Color(0xFF15966B), size: 18),
-          ]),
-          const SizedBox(height: 13),
-          Text('Signed in as',
-            style: TextStyle(fontSize: 10,
-              color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 3),
-          Text(_savedIdentifier.isEmpty ? _driverName : _savedIdentifier,
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 5),
-          Text('Your access token is kept in secure device storage. BookIt can restore this profile when you reopen the app. Your password is never saved.',
-            style: TextStyle(fontSize: 10,
-              color: Theme.of(context).colorScheme.onSurfaceVariant)),
-          const SizedBox(height: 18),
-          _heading('Preferences', 'Customize your BookIt experience'),
-          const SizedBox(height: 9),
-          Card(child: ListTile(
-            leading: const Icon(Icons.palette_outlined, color: AppColors.primary),
-            title: const Text('Appearance'),
-            subtitle: Text(ThemeController.mode.value == 'device'
-                ? 'Use device theme'
-                : ThemeController.mode.value == 'blue_dark'
-                    ? 'Blue dark'
-                    : 'Blue light'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: _chooseTheme,
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text('My profile', style: TextStyle(
+            fontSize: 25, fontWeight: FontWeight.w900, letterSpacing: -.5,
           )),
-          const SizedBox(height: 12),
-          SizedBox(width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _checkingSavedSession ? null : _verifySavedSession,
-              icon: _checkingSavedSession
-                  ? const SizedBox(width: 16, height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.sync_rounded),
-              label: Text(_checkingSavedSession
-                  ? 'Checking saved profile…' : 'Use saved profile / sync now'),
-            )),
-        ]),
+          IconButton(
+            tooltip: 'Refresh profile',
+            onPressed: _refresh,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
       ),
-      const SizedBox(height: 20),
+      const SizedBox(height: 12),
+      Container(
+        padding: const EdgeInsets.all(19),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: Theme.of(context).brightness == Brightness.dark
+                ? const [Color(0xFF173A59), Color(0xFF142333)]
+                : [AppColors.primary, const Color(0xFF174A83)],
+          ),
+          borderRadius: BorderRadius.circular(23),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: .18),
+              blurRadius: 22,
+              offset: const Offset(0, 9),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Container(
+                width: 66,
+                height: 66,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .16),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.white.withValues(alpha: .25)),
+                ),
+                child: Center(child: Text(
+                  _driverName.trim().isEmpty
+                      ? 'D'
+                      : _driverName.trim().split(RegExp(r'\\s+'))
+                          .take(2).map((part) => part.isNotEmpty
+                              ? part[0].toUpperCase() : '').join(),
+                  style: const TextStyle(
+                    color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900,
+                  ),
+                )),
+              ),
+              const SizedBox(width: 14),
+              Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(_driverName, maxLines: 2, overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white, fontSize: 19, fontWeight: FontWeight.w900,
+                    )),
+                  const SizedBox(height: 5),
+                  Text(_company, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .78), fontSize: 12,
+                    )),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .15),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(Icons.verified_rounded, color: Colors.white, size: 13),
+                      SizedBox(width: 5),
+                      Text('DRIVER ACCOUNT', style: TextStyle(
+                        color: Colors.white, fontSize: 9,
+                        fontWeight: FontWeight.w900, letterSpacing: .7,
+                      )),
+                    ]),
+                  ),
+                ],
+              )),
+            ]),
+            const SizedBox(height: 19),
+            Divider(color: Colors.white.withValues(alpha: .22), height: 1),
+            const SizedBox(height: 13),
+            Row(children: [
+              Expanded(child: _profileHeroMetric(
+                'VEHICLE', _plate, Icons.directions_bus_rounded,
+              )),
+              Container(width: 1, height: 36,
+                color: Colors.white.withValues(alpha: .22)),
+              Expanded(child: _profileHeroMetric(
+                'ASSIGNMENT', _bus.isEmpty ? 'Not assigned' : 'Assigned',
+                Icons.assignment_ind_rounded,
+              )),
+            ]),
+          ],
+        ),
+      ),
+      const SizedBox(height: 22),
       _heading('Personal information', 'Your registered driver details'),
       const SizedBox(height: 10),
       _infoCard([
         _infoRow(Icons.person_outline_rounded, 'Full name', _driverName),
         _infoRow(Icons.phone_outlined, 'Phone', _value(_driver['phone'])),
         _infoRow(Icons.badge_outlined, 'Driver ID', _value(_driver['id'])),
+        _infoRow(Icons.email_outlined, 'Email', _value(_driver['email'])),
       ]),
       const SizedBox(height: 20),
-      _heading('Work details', 'Your operator and assigned vehicle'),
+      _heading('Work & vehicle', 'Your operator and assigned vehicle'),
       const SizedBox(height: 10),
       _infoCard([
         _infoRow(Icons.business_outlined, 'Company', _company),
         _infoRow(Icons.directions_bus_outlined, 'Vehicle', _plate),
         _infoRow(Icons.event_seat_outlined, 'Capacity', _value(_bus['capacity'])),
+        _infoRow(Icons.route_outlined, 'Assigned route',
+            _routeTo.isEmpty ? _routeFrom : '$_routeFrom → $_routeTo'),
+        _infoRow(Icons.power_settings_new_rounded, 'Vehicle status', _busActiveLabel),
       ]),
       const SizedBox(height: 20),
-      SwitchListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 15),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        tileColor: Theme.of(context).colorScheme.surface,
-        value: _tracking,
-        onChanged: (value) => value ? _startTracking() : _stopTracking(),
-        title: const Text('Live location sharing', style: TextStyle(fontWeight: FontWeight.w700)),
-        subtitle: const Text('Share your bus GPS position while on duty'),
+      _heading('Preferences', 'Make BookIt work the way you like'),
+      const SizedBox(height: 10),
+      Container(
+        decoration: _surfaceDecoration(),
+        child: Column(children: [
+          ListTile(
+            leading: _profileActionIcon(Icons.palette_outlined),
+            title: const Text('Appearance', style: TextStyle(fontWeight: FontWeight.w800)),
+            subtitle: Text(ThemeController.mode.value == 'device'
+                ? 'Use device theme'
+                : ThemeController.mode.value == 'blue_dark'
+                    ? 'Blue dark' : 'Blue light'),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: _chooseTheme,
+          ),
+          Divider(height: 1,
+            color: Theme.of(context).dividerColor.withValues(alpha: .35)),
+          SwitchListTile(
+            secondary: _profileActionIcon(Icons.my_location_rounded),
+            value: _tracking,
+            onChanged: (value) => value ? _startTracking() : _stopTracking(),
+            title: const Text('Live location sharing',
+              style: TextStyle(fontWeight: FontWeight.w800)),
+            subtitle: Text(_tracking
+                ? 'Your location is being shared while on duty'
+                : 'Share your bus GPS position while on duty'),
+          ),
+        ]),
       ),
-      const SizedBox(height: 18),
-      OutlinedButton.icon(
+      const SizedBox(height: 20),
+      _heading('Account security', 'Your sign-in and device session'),
+      const SizedBox(height: 10),
+      Container(
+        padding: const EdgeInsets.all(15),
+        decoration: _surfaceDecoration(),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            _profileActionIcon(Icons.verified_user_outlined, color: const Color(0xFF15966B)),
+            const SizedBox(width: 11),
+            Expanded(child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Secure session saved',
+                  style: TextStyle(fontWeight: FontWeight.w900)),
+                const SizedBox(height: 3),
+                Text(_savedDateLabel(), style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                )),
+              ],
+            )),
+            const Icon(Icons.lock_rounded, color: Color(0xFF15966B), size: 18),
+          ]),
+          const SizedBox(height: 12),
+          Text('Signed in as',
+            style: TextStyle(fontSize: 11,
+              color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 3),
+          Text(_savedIdentifier.isEmpty ? _driverName : _savedIdentifier,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 6),
+          Text('Your access token is stored securely on this device. Your password is never saved.',
+            style: TextStyle(fontSize: 11,
+              color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 14),
+          SizedBox(width: double.infinity, child: OutlinedButton.icon(
+            onPressed: _checkingSavedSession ? null : _verifySavedSession,
+            icon: _checkingSavedSession
+                ? const SizedBox(width: 16, height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.sync_rounded),
+            label: Text(_checkingSavedSession
+                ? 'Checking session…' : 'Verify saved session'),
+          )),
+        ]),
+      ),
+      const SizedBox(height: 22),
+      SizedBox(width: double.infinity, child: OutlinedButton.icon(
         onPressed: _signOut,
         icon: const Icon(Icons.logout_rounded),
         label: const Text('Sign out'),
         style: OutlinedButton.styleFrom(
           foregroundColor: const Color(0xFFCB4335),
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          side: const BorderSide(color: Color(0xFFCB4335)),
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
-      ),
+      )),
+      const SizedBox(height: 12),
+      Center(child: Text('BOOKIT DRIVER • YOUR JOURNEY, YOUR RESPONSIBILITY',
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 9, letterSpacing: .7,
+          color: Theme.of(context).colorScheme.onSurfaceVariant))),
     ],
+  );
+
+  Widget _profileHeroMetric(String label, String value, IconData icon) =>
+      Padding(
+        padding: const EdgeInsets.only(right: 8),
+        child: Row(children: [
+          Icon(icon, color: Colors.white.withValues(alpha: .85), size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: TextStyle(
+                color: Colors.white.withValues(alpha: .7),
+                fontSize: 8, fontWeight: FontWeight.w900, letterSpacing: .7,
+              )),
+              const SizedBox(height: 3),
+              Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800,
+                )),
+            ],
+          )),
+        ]),
+      );
+
+  Widget _profileActionIcon(IconData icon, {Color? color}) => Container(
+    width: 40,
+    height: 40,
+    decoration: BoxDecoration(
+      color: (color ?? AppColors.primary).withValues(alpha: .10),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Icon(icon, color: color ?? AppColors.primary, size: 20),
   );
 
   Widget _heading(String title, String subtitle) => Column(
