@@ -710,13 +710,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           child: const Icon(Icons.my_location_rounded, color: AppColors.primary)),
         const SizedBox(width: 11),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Location sharing', style: TextStyle(fontWeight: FontWeight.w800)),
+          const Text('Trip control', style: TextStyle(fontWeight: FontWeight.w800)),
           const SizedBox(height: 3),
           Text(!_tracking
-              ? 'Tracking is off'
+              ? 'Trip has not started'
               : _locationServerSynced
-                  ? 'GPS active • synced with BookIt'
-                  : 'GPS active on phone • server not synced',
+                  ? 'Trip in progress • live location synced'
+                  : 'Trip in progress • waiting for server sync',
               style: TextStyle(fontSize: 11,
                   color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ])),
@@ -749,15 +749,19 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       const SizedBox(height: 14),
       SizedBox(width: double.infinity, child: FilledButton.icon(
         onPressed: _tracking ? _stopTracking : _startTracking,
-        icon: Icon(_tracking ? Icons.stop_circle_outlined : Icons.play_arrow_rounded),
-        label: Text(_tracking ? 'Stop live tracking' : 'Configure & start live tracking'),
+        icon: Icon(_tracking ? Icons.stop_rounded : Icons.play_arrow_rounded),
+        label: Text(_tracking ? 'End trip' : 'Start trip'),
         style: FilledButton.styleFrom(
-          backgroundColor: _tracking ? const Color(0xFFB93838) : AppColors.primary,
-          padding: const EdgeInsets.symmetric(vertical: 13),
+          backgroundColor: _tracking ? const Color(0xFFB93838) : const Color(0xFF15966B),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
         ),
       )),
       const SizedBox(height: 7),
-      Text('Tracking uses your phone GPS and mobile data. Keep BookIt open during the trip.',
+      Text(_tracking
+          ? 'Your GPS position is being shared with BookIt. Live speed and trip distance appear below.'
+          : 'Press Start trip when you are ready to depart. BookIt will share your GPS location and show live speed below.',
           style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
     ]),
   );
@@ -780,7 +784,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       padding: const EdgeInsets.all(16),
       decoration: _surfaceDecoration(),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _heading('Live vehicle telemetry', 'Updates from your phone GPS'),
+        _heading('Live trip speed', _tracking
+            ? 'Live readings from your phone GPS'
+            : 'Speed appears here after you start the trip'),
         const SizedBox(height: 13),
         Row(children: [
           Expanded(child: _telemetryValue(
