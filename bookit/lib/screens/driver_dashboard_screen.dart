@@ -141,7 +141,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       profileError = 'Could not load driver and vehicle details.';
     }
     try {
-      final response = await ApiClient.get('drivers/passengers', auth: true);
+      // Ask for tickets using the device's local calendar day. The server
+      // defaults to UTC "today", which lags Rwanda (UTC+2) by up to two
+      // hours and emptied the early-morning manifest.
+      final now = DateTime.now();
+      final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final response = await ApiClient.get('drivers/passengers', query: {'date': today}, auth: true);
       // Accept common API response envelopes without assuming a single shape.
       final payload = response is Map && response['data'] != null
           ? response['data'] : response;
@@ -920,7 +925,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       if (_passengerError != null)
         Padding(padding: const EdgeInsets.symmetric(horizontal: 18), child: _errorCard(_passengerError!)),
       Expanded(child: rows.isEmpty
-          ? _emptyCard(_passengerError == null ? 'No matching tickets' : 'Tickets could not be loaded', _passengerError == null ? 'Try another passenger name, seat or ticket code.' : 'Check your connection or passenger API endpoint, then retry.')
+          ? (_passengerError == null
+              ? _emptyCard('No matching tickets', 'Try another passenger name, seat or ticket code.')
+              : _errorCard('Tickets could not be loaded: $_passengerError'))
           : RefreshIndicator(
               onRefresh: _refresh,
               child: ListView.separated(
