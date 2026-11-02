@@ -57,3 +57,14 @@ test('notification and loyalty-promo tables are provisioned for production', () 
   assert.match(migration, /metadata JSON/);
   assert.match(migration, /CREATE INDEX IF NOT EXISTS/);
 });
+
+
+test('scheduler notification enum includes reminder and loyalty-promo values', () => {
+  const migration = fs.readFileSync(
+    path.join(root, 'src/database/migrations/20261102_add_scheduler_notification_types.sql'),
+    'utf8',
+  );
+  assert.match(migration, /trip_departure_reminder/);
+  assert.match(migration, /promo_code_generated/);
+  assert.match(migration, /ADD VALUE IF NOT EXISTS/);
+});
