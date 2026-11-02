@@ -63,8 +63,20 @@ export const remove           = async (req, res) => {
 };
 
 export const getMyPassengers  = async (req, res) => {
+  // isDriver middleware reloads the driver from the database and attaches the
+  // current bus assignment. Never query a manifest for an unassigned driver.
+  if (!req.user.bus_id) {
+    return res.status(409).json({ message: 'No bus is assigned to this driver yet.' });
+  }
+
+  const requestedDate = req.query.date;
+  if (requestedDate != null &&
+      (typeof requestedDate !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(requestedDate))) {
+    return res.status(400).json({ message: 'Date must use YYYY-MM-DD format.' });
+  }
+
   try {
-    res.status(200).json(await ticketSvc.getBusPassengers(req.user.bus_id, req.query.date));
+    res.status(200).json(await ticketSvc.getBusPassengers(req.user.bus_id, requestedDate));
   } catch (err) { res.status(500).json({ message: clientMessage(err) }); }
 };
 
