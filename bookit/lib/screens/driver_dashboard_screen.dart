@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
+import '../theme/theme_controller.dart';
 import 'login_screen.dart';
 import 'profiles_screen.dart';
 
@@ -1117,6 +1118,64 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     );
   }
 
+  Future<void> _chooseTheme() async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 4, 18, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Appearance', style: TextStyle(
+                fontSize: 22, fontWeight: FontWeight.w800,
+              )),
+              const SizedBox(height: 5),
+              const Text('Choose how BookIt looks across the entire app.'),
+              const SizedBox(height: 14),
+              _themeChoice(sheetContext, 'white', 'Blue light',
+                  Icons.light_mode_outlined, Colors.white, AppColors.primary),
+              _themeChoice(sheetContext, 'blue_dark', 'Blue dark',
+                  Icons.dark_mode_outlined, const Color(0xFF151A20),
+                  const Color(0xFF64B5F6)),
+              _themeChoice(sheetContext, 'device', 'Use device theme',
+                  Icons.settings_brightness_outlined,
+                  const Color(0xFF151A20), const Color(0xFF64B5F6)),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected != null) await ThemeController.setMode(selected);
+  }
+
+  Widget _themeChoice(
+    BuildContext sheetContext,
+    String mode,
+    String label,
+    IconData icon,
+    Color swatch,
+    Color accent,
+  ) => ListTile(
+    leading: Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: swatch,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(sheetContext).dividerColor),
+      ),
+      child: Icon(icon, color: accent),
+    ),
+    title: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+    trailing: ThemeController.mode.value == mode
+        ? const Icon(Icons.check_circle_rounded, color: AppColors.success)
+        : const Icon(Icons.radio_button_unchecked),
+    onTap: () => Navigator.pop(sheetContext, mode),
+  );
+
   Widget _profileTab() => ListView(
     padding: const EdgeInsets.fromLTRB(18, 22, 18, 28),
     children: [
@@ -1166,6 +1225,20 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           Text('Your access token is kept in secure device storage. BookIt can restore this profile when you reopen the app. Your password is never saved.',
             style: TextStyle(fontSize: 10,
               color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          const SizedBox(height: 18),
+          _heading('Preferences', 'Customize your BookIt experience'),
+          const SizedBox(height: 9),
+          Card(child: ListTile(
+            leading: const Icon(Icons.palette_outlined, color: AppColors.primary),
+            title: const Text('Appearance'),
+            subtitle: Text(ThemeController.mode.value == 'device'
+                ? 'Use device theme'
+                : ThemeController.mode.value == 'blue_dark'
+                    ? 'Blue dark'
+                    : 'Blue light'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: _chooseTheme,
+          )),
           const SizedBox(height: 12),
           SizedBox(width: double.infinity,
             child: OutlinedButton.icon(
