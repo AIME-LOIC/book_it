@@ -71,7 +71,7 @@ export const getMyPassengers  = async (req, res) => {
 
   const requestedDate = req.query.date;
   if (requestedDate != null &&
-      (typeof requestedDate !== 'string' || !/^\\d{4}-\\d{2}-\\d{2}$/.test(requestedDate))) {
+      (typeof requestedDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(requestedDate))) {
     return res.status(400).json({ message: 'Date must use YYYY-MM-DD format.' });
   }
 
