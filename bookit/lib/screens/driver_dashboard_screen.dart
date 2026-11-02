@@ -168,9 +168,23 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
                   ? payload['tickets']
                   : payload is Map && payload['data'] is List
                       ? payload['data'] : const []);
+      // Decode JSON arrays explicitly. jsonDecode returns List<dynamic>;
+      // never assign that raw list (or a raw Map list) to the strongly typed
+      // passenger collection.
+      final normalizedRows = <Map<String, dynamic>>[];
+      if (rows is Iterable) {
+        for (final row in rows) {
+          if (row is Map) {
+            normalizedRows.add(
+              row.map<String, dynamic>(
+                (key, value) => MapEntry(key.toString(), value),
+              ),
+            );
+          }
+        }
+      }
       if (mounted) {
-        setState(() => _passengers = rows.whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e)).toList());
+        setState(() => _passengers = normalizedRows);
       }
     } on ApiException catch (e) {
       passengerError = e.message;
