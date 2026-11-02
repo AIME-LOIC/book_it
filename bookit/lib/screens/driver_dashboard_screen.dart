@@ -118,6 +118,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       _driver['bus'] is Map ? Map<String, dynamic>.from(_driver['bus']) : {};
   Map<String, dynamic> get _operator =>
       _driver['operator'] is Map ? Map<String, dynamic>.from(_driver['operator']) : {};
+  Map<String, dynamic> get _route =>
+      _bus['route'] is Map ? Map<String, dynamic>.from(_bus['route']) : {};
+  String get _routeFrom => _value(_route['fromLocation'] is Map
+      ? (_route['fromLocation'] as Map)['name'] : null, 'Route not set');
+  String get _routeTo => _value(_route['toLocation'] is Map
+      ? (_route['toLocation'] as Map)['name'] : null, '');
+  String get _busActiveLabel => _bus['is_active'] == true ? 'Active' : 'Disabled';
   String get _driverName => _value(_driver['name'], widget.driverName);
   String get _company => _value(_operator['company_name'], 'Transport operator');
   String get _plate => _value(_bus['plate_number'], 'No bus assigned');
@@ -572,6 +579,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             const SizedBox(height: 10),
             _infoCard([
               _infoRow(Icons.directions_bus_rounded, 'Vehicle', _plate),
+              _infoRow(Icons.route_rounded, 'Route',
+                  _routeTo.isEmpty ? _routeFrom : '$_routeFrom → $_routeTo'),
+              _infoRow(Icons.payments_rounded, 'Trip price', _value(_route['price'], '—')),
+              _infoRow(Icons.verified_rounded, 'Bus status', _busActiveLabel),
               _infoRow(Icons.business_rounded, 'Operator', _company),
               _infoRow(Icons.schedule_rounded, 'Departure', _value(_bus['departure_time'])),
               _infoRow(Icons.phone_outlined, 'Contact', _value(_driver['phone'])),
@@ -617,11 +628,30 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       Container(height: 1, color: Colors.white.withValues(alpha: .18)),
       const SizedBox(height: 13),
       Row(children: [
+        const Icon(Icons.route_rounded, color: Colors.white70, size: 17),
+        const SizedBox(width: 7),
+        const Text('Route', style: TextStyle(color: Colors.white70, fontSize: 11)),
+        const Spacer(),
+        Expanded(child: Text(_routeTo.isEmpty ? _routeFrom : '$_routeFrom  →  $_routeTo',
+          textAlign: TextAlign.right, style: const TextStyle(
+            color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13))),
+      ]),
+      const SizedBox(height: 8),
+      Row(children: [
         const Icon(Icons.schedule_rounded, color: Colors.white70, size: 17),
         const SizedBox(width: 7),
         const Text('Departure', style: TextStyle(color: Colors.white70, fontSize: 11)),
         const Spacer(),
         Text(_value(_bus['departure_time']), style: const TextStyle(
+          color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
+      ]),
+      const SizedBox(height: 8),
+      Row(children: [
+        const Icon(Icons.payments_rounded, color: Colors.white70, size: 17),
+        const SizedBox(width: 7),
+        const Text('Trip price', style: TextStyle(color: Colors.white70, fontSize: 11)),
+        const Spacer(),
+        Text(_value(_route['price'], '—'), style: const TextStyle(
           color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13)),
       ]),
     ]),

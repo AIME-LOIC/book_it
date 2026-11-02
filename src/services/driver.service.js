@@ -4,11 +4,21 @@ import crypto   from 'crypto';
 import Driver   from '../database/models/driver.js';
 import Bus      from '../database/models/bus.js';
 import Operator from '../database/models/operator.js';
+import Route    from '../database/models/route.js';
+import Location from '../database/models/location.js';
 import { encryptPassword } from '../utils/crypto.utils.js';
 
 const driverIncludes = [
   { model: Operator, as: 'operator', attributes: ['id', 'company_name'] },
-  { model: Bus,      as: 'bus',      attributes: ['id', 'plate_number', 'departure_time'] },
+  { model: Bus,      as: 'bus',      attributes: ['id', 'plate_number', 'departure_time', 'capacity', 'is_active'],
+    include: [{
+      model: Route, as: 'route', attributes: ['id', 'price'],
+      include: [
+        { model: Location, as: 'fromLocation', attributes: ['id', 'name'] },
+        { model: Location, as: 'toLocation',   attributes: ['id', 'name'] },
+      ],
+    }],
+  },
 ];
 
 export const getDriverMe = async (driver_id) => {
