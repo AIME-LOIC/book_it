@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { timingSafeEqual } from 'node:crypto';
+import Notification from '../database/models/notification.js';
+import PromoCode from '../database/models/promo_code.js';
 import {
   checkDepartedBuses,
   checkPendingTicketHolds,
@@ -11,6 +13,17 @@ import {
 } from '../services/scheduler.service.js';
 
 const router = Router();
+let schedulerSchemaReady = false;
+
+// Production databases may predate these Sequelize models. Create only missing
+// tables (never alter or drop existing production data) before scheduled jobs
+// query them. Cache the successful check for the lifetime of this function.
+const ensureSchedulerTables = async () => {
+  if (schedulerSchemaReady) return;
+  await Notification.sync();
+  await PromoCode.sync();
+  schedulerSchemaReady = true;
+};
 
 const safeSecretMatch = (provided, expected) => {
   if (!provided || !expected) return false;
@@ -29,6 +42,13 @@ router.post('/run', async (req, res) => {
 
   if (!safeSecretMatch(token, expected)) {
     return res.status(401).json({ message: 'Unauthorized scheduler request' });
+  }
+
+  try {
+    await ensureSchedulerTables();
+  } catch (error) {
+    console.error('[Cron] Scheduler database setup failed:', error?.stack || error);
+    return res.status(500).json({ message: 'Scheduler database setup failed' });
   }
 
   const results = [];
