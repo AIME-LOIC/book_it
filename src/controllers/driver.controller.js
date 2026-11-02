@@ -76,8 +76,16 @@ export const getMyPassengers  = async (req, res) => {
   }
 
   try {
-    res.status(200).json(await ticketSvc.getBusPassengers(req.user.bus_id, requestedDate));
-  } catch (err) { res.status(500).json({ message: clientMessage(err) }); }
+    const passengers = await ticketSvc.getBusPassengers(req.user.bus_id, requestedDate);
+    res.set('Cache-Control', 'no-store');
+    res.status(200).json(passengers);
+  } catch (err) {
+    console.error('[DRIVER PASSENGERS] Manifest query failed:', err?.stack || err);
+    res.status(500).json({
+      message: 'Could not load passenger manifest.',
+      ...(process.env.NODE_ENV !== 'production' ? { detail: err.message } : {}),
+    });
+  }
 };
 
 export const notifyExit       = async (req, res) => {
