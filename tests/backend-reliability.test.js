@@ -44,3 +44,16 @@ test('scheduler date and time calculations use Rwanda local time', () => {
   assert.equal(getRwandaDateKey(afterRwandaMidnight), '2026-11-01');
   assert.deepEqual(getRwandaTimeParts(afterRwandaMidnight), { hour: 0, minute: 30 });
 });
+
+
+test('notification and loyalty-promo tables are provisioned for production', () => {
+  const migration = fs.readFileSync(
+    path.join(root, 'src/database/migrations/20261102_create_scheduler_tables.sql'),
+    'utf8',
+  );
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.notifications/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS public\.promo_codes/);
+  assert.match(migration, /recipient_id UUID NOT NULL/);
+  assert.match(migration, /metadata JSON/);
+  assert.match(migration, /CREATE INDEX IF NOT EXISTS/);
+});
