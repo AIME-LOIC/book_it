@@ -130,7 +130,11 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   String get _plate => _value(_bus['plate_number'], 'No bus assigned');
 
   Future<void> _refresh() async {
-    if (mounted) setState(() { _loading = true; _error = null; });
+    if (mounted) setState(() {
+      _loading = true;
+      _error = null;
+      _passengerError = null;
+    });
     // Load each resource independently. A passenger endpoint failure must not
     // prevent the driver profile/vehicle data from rendering, and vice versa.
     String? profileError;
@@ -170,8 +174,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       }
     } on ApiException catch (e) {
       passengerError = e.message;
-    } catch (_) {
-      passengerError = 'Could not load passenger tickets.';
+    } catch (error, stackTrace) {
+      // Keep the underlying runtime/parsing failure visible instead of hiding
+      // it behind a generic message. This also makes Linux refresh failures
+      // diagnosable without requiring a debugger.
+      debugPrint('[DRIVER PASSENGERS] ${error}');
+      debugPrintStack(stackTrace: stackTrace);
+      passengerError = 'Passenger loading failed (${error.runtimeType}): ${error}';
     }
     if (mounted) {
       setState(() {
