@@ -11,6 +11,7 @@ import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import 'login_screen.dart';
+import 'profiles_screen.dart';
 
 class DriverDashboardScreen extends StatefulWidget {
   const DriverDashboardScreen({super.key, required this.driverName});
@@ -382,8 +383,13 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     await prefs.remove('bookit_saved_profile_at');
     AuthService.isDriverSession = false;
     if (!mounted) return;
+    // The account stays on the device (profiles screen), so go to it when
+    // at least one saved account exists; otherwise fall back to the form.
+    final accounts = await AuthService.savedAccounts();
+    if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute<void>(builder: (_) => const LoginScreen()), (_) => false,
+      MaterialPageRoute<void>(builder: (_) =>
+          accounts.isNotEmpty ? const ProfilesScreen() : const LoginScreen()), (_) => false,
     );
   }
 

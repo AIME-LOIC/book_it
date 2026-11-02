@@ -145,7 +145,7 @@ class _ProfilesScreenState extends State<ProfilesScreen> {
                         MaterialPageRoute<void>(builder: (_) => const LoginScreen()),
                       ),
                       icon: const Icon(Icons.person_add_alt_rounded),
-                      label: const Text('Use another account'),
+                      label: const Text('Log in with another account'),
                     ),
                   ),
                 ]),
