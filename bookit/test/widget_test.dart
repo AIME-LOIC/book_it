@@ -51,7 +51,7 @@ void main() {
     await reachLogin(tester);
 
     expect(find.text('Welcome back 👋'), findsOneWidget);
-    expect(find.text('Email address'), findsOneWidget);
+    expect(find.text('Email or phone number'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);
   });
 
@@ -66,7 +66,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     // Validation runs client-side before any AuthService.login round-trip.
-    expect(find.text('Email is required'), findsOneWidget);
+    expect(find.text('Email or phone number is required'), findsOneWidget);
     expect(find.text('Password is required'), findsOneWidget);
     // The button still reads "Sign in": no spinner or success state fired.
     expect(find.text('Sign in'), findsOneWidget);

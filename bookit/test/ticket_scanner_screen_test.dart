@@ -14,7 +14,8 @@ void main() {
         .setMockMethodCallHandler(
       const MethodChannel('dev.steenbakker.mobile_scanner/scanner/method'),
       (call) async => switch (call.method) {
-        'state' => 3, // MobileScannerAuthorizationState.authorized
+        'state' => 1, // MobileScannerAuthorizationState.authorized (raw value)
+
         'request' => true,
         'start' => <String, Object?>{'textureId': 1, 'cameraDirection': 1, 'currentTorchState': 0},
         _ => null,
