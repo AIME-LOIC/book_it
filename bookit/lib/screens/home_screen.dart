@@ -1765,7 +1765,7 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
       Padding(padding:const EdgeInsets.fromLTRB(16,8,16,8),child:TextField(controller:_profilePhoneCtrl,focusNode:_profilePhoneFocus,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'Phone number',prefixIcon:Icon(Icons.phone_outlined)))),const Divider(height:1,indent:56),
       _profileRow(Icons.email_outlined,'Email',(_profileData['email']??'Not provided').toString()),const Divider(height:1,indent:56),
       _profileRow(Icons.calendar_today_outlined,'Member since',(_profileData['createdAt']??'—').toString().split('T').first),
-    ])),
+    ]))),
     const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_submitInlineProfile,icon:_savingProfile?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):const Icon(Icons.check_rounded),label:const Text('Save profile'))),
     const SizedBox(height:10),SizedBox(width:double.infinity,child:OutlinedButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit in a form'))),
     const SizedBox(height:22),Text(_historyText('Preferences','Ibyifuzo'),style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
