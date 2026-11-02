@@ -1,8 +1,105 @@
 import 'api_client.dart';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 class AuthService {
   AuthService._();
   static bool isDriverSession = false;
+
+  /// Saved accounts for the post-splash profiles page: most recently used
+  /// first, capped so the list stays readable. Tokens live outside this list
+  /// (per-account, in secure storage) and are never persisted in prefs.
+  static const String _accountsKey = 'bookit_saved_accounts';
+  static const int _maxAccounts = 5;
+  static String accountTokenKey(String identifier) {
+    final slug = identifier.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+    return 'bookit_token_$slug';
+  }
+
+  static Future<List<Map<String, String>>> savedAccounts() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_accountsKey);
+      if (raw == null) return [];
+      final list = jsonDecode(raw) as List;
+      return list
+          .whereType<Map>()
+          .map((m) => {
+                'name': m['name']?.toString() ?? '',
+                'identifier': m['identifier']?.toString() ?? '',
+                'type': m['type']?.toString() ?? 'customer',
+                'at': m['at']?.toString() ?? '0',
+              })
+          .where((a) => a['identifier']!.trim().isNotEmpty)
+          .toList();
+    } catch (_) { return []; }
+  }
+
+  static Future<void> removeAccount(String identifier) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final accounts = await savedAccounts();
+      accounts.removeWhere((a) => a['identifier'] == identifier);
+      await prefs.setString(_accountsKey, jsonEncode(accounts));
+      final stale = prefs.getString('bookit_saved_profile_identifier') == identifier;
+      await prefs.remove('bookit_saved_profile_name');
+      await prefs.remove('bookit_saved_profile_identifier');
+      await prefs.remove('bookit_saved_profile_type');
+      await prefs.remove('bookit_saved_profile_at');
+      if (stale) {} // single-profile prefs cleared for cleanliness.
+      await ApiClient.deleteTokenFor(accountTokenKey(identifier));
+    } catch (_) {}
+  }
+
+  static Future<void> _recordAccount({required String name, required String identifier, required String type, required String token}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final accounts = await savedAccounts();
+      accounts.removeWhere((a) => a['identifier'] == identifier);
+      accounts.insert(0, {
+        'name': name,
+        'identifier': identifier,
+        'type': type,
+        'at': DateTime.now().millisecondsSinceEpoch.toString(),
+      });
+      while (accounts.length > _maxAccounts) {
+        accounts.removeLast();
+      }
+      await prefs.setString(_accountsKey, jsonEncode(accounts));
+      await ApiClient.saveTokenFor(accountTokenKey(identifier), token);
+    } catch (_) {}
+  }
+
+  /// Activates a saved account: loads its token, validates it with the API
+  /// (401/403 invalidates and removes the account; network errors keep the
+  /// session, matching [restoreSession]'s resilience), updates the active
+  /// prefs, and returns the display name — or null if the account is unusable.
+  static Future<String?> activateAccount(String identifier) async {
+    final prefs = await SharedPreferences.getInstance();
+    final accounts = await savedAccounts();
+    final account = accounts.where((a) => a['identifier'] == identifier).firstOrNull;
+    if (account == null) return null;
+    final isDriver = account['type'] == 'driver';
+    final token = await ApiClient.loadTokenFor(accountTokenKey(identifier));
+    if (token == null || token.isEmpty) return null;
+    ApiClient.setToken(token);
+    try {
+      await ApiClient.get(isDriver ? 'drivers/me' : 'auth/me', auth: true);
+    } on ApiException catch (e) {
+      if (e.message.contains('HTTP 401') || e.message.contains('HTTP 403')) {
+        await removeAccount(identifier);
+        return null;
+      }
+      // Server or connectivity hiccup: use the stored profile anyway.
+    } catch (_) {}
+    isDriverSession = isDriver;
+    await prefs.setBool('bookit_driver_session', isDriver);
+    await prefs.setString('bookit_saved_profile_name', account['name']!);
+    await prefs.setString('bookit_saved_profile_identifier', identifier);
+    await prefs.setString('bookit_saved_profile_type', account['type']!);
+    await prefs.setInt('bookit_saved_profile_at', int.tryParse(account['at'] ?? '') ?? DateTime.now().millisecondsSinceEpoch);
+    return account['name'];
+  }
+
   static Future<String> login({required String email,required String password}) async {
     try {
       final res=await ApiClient.post('auth/login',body:{'email':email.trim(),'password':password});
@@ -19,6 +116,7 @@ class AuthService {
       await prefs.setString('bookit_saved_profile_identifier', email.trim());
       await prefs.setString('bookit_saved_profile_type', 'customer');
       await prefs.setInt('bookit_saved_profile_at', DateTime.now().millisecondsSinceEpoch);
+      await _recordAccount(name: name, identifier: email.trim(), type: 'customer', token: res['token'].toString());
       return name;
     } on ApiException catch(e) { throw AuthException(e.message); }
   }
@@ -81,6 +179,7 @@ class AuthService {
       await prefs.setString('bookit_saved_profile_identifier', phone.trim());
       await prefs.setString('bookit_saved_profile_type', 'driver');
       await prefs.setInt('bookit_saved_profile_at', DateTime.now().millisecondsSinceEpoch);
+      await _recordAccount(name: name, identifier: phone.trim(), type: 'driver', token: res['token'].toString());
       return name;
     } on ApiException catch (e) { throw AuthException(e.message); }
   }

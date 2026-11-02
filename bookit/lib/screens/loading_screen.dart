@@ -8,6 +8,7 @@ import '../services/auth_service.dart';
 import 'home_screen.dart';
 import 'driver_dashboard_screen.dart';
 import 'login_screen.dart';
+import 'profiles_screen.dart';
 
 /// Animated splash / loading screen.
 ///
@@ -72,8 +73,11 @@ class _LoadingScreenState extends State<LoadingScreen>
     _master.removeStatusListener(_onDone);
     final restoredName = await AuthService.restoreSession();
     if (!mounted) return;
+    // No saved token: show saved account profiles when available, otherwise
+    // fall straight through to the sign-in form.
+    final accounts = restoredName == null ? await AuthService.savedAccounts() : const <Map<String, String>>[];
     final Widget destination = restoredName == null
-        ? const LoginScreen()
+        ? (accounts.isEmpty ? const LoginScreen() : const ProfilesScreen())
         : (AuthService.isDriverSession ? DriverDashboardScreen(driverName: restoredName) : HomeScreen(userName: restoredName));
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(

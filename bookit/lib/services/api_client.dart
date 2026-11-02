@@ -25,6 +25,13 @@ class ApiClient {
     _token = null;
     await _secureStorage.delete(key: 'bookit_access_token');
   }
+
+  /// Per-account token vault (keyed by identifier) so the profiles page can
+  /// switch between recently used accounts without re-entering passwords.
+  static Future<void> saveTokenFor(String key, String token) =>
+      _secureStorage.write(key: key, value: token);
+  static Future<String?> loadTokenFor(String key) => _secureStorage.read(key: key);
+  static Future<void> deleteTokenFor(String key) => _secureStorage.delete(key: key);
   static Map<String,String> _headers(bool auth) => {
     'Accept':'application/json','Content-Type':'application/json',
     if(auth && _token != null) 'Authorization':'Bearer $_token',
