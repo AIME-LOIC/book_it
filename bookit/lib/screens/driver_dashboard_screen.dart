@@ -999,16 +999,97 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
     ]);
   }
 
+  Future<void> _showPassengerTicketDetails(
+      Map<String, dynamic> ticket) async {
+    final user = ticket['user'] is Map
+        ? Map<String, dynamic>.from(ticket['user'])
+        : <String, dynamic>{};
+    final routeLabel = _routeTo.isEmpty
+        ? _routeFrom
+        : '$_routeFrom → $_routeTo';
+
+    Widget detailRow(String label, String value, {bool emphasize = false}) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 9),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(
+            width: 112,
+            child: Text(label, style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            )),
+          ),
+          Expanded(child: Text(value, style: TextStyle(
+            fontSize: 13,
+            fontWeight: emphasize ? FontWeight.w900 : FontWeight.w600,
+          ))),
+        ]),
+      );
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            20, 8, 20, 24 + MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: SingleChildScrollView(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Ticket details', style: TextStyle(
+                fontSize: 20, fontWeight: FontWeight.w900,
+              )),
+              const SizedBox(height: 4),
+              Text(_value(ticket['ticket_number'], 'Booking'),
+                style: TextStyle(
+                  color: Theme.of(sheetContext).colorScheme.onSurfaceVariant,
+                  fontSize: 12,
+                )),
+              const Divider(height: 24),
+              detailRow('Passenger', _value(user['name'], 'Ticket holder'),
+                  emphasize: true),
+              detailRow('Phone', _value(user['phone'])),
+              detailRow('Email', _value(user['email'])),
+              detailRow('Ticket number', _value(ticket['ticket_number'])),
+              detailRow('Seat', _value(ticket['seat_number'])),
+              detailRow('Status', _value(ticket['status'], 'Booked').toUpperCase()),
+              detailRow('Price', ticket['price'] == null
+                  ? '—' : '${ticket['price']} RWF', emphasize: true),
+              detailRow('Travel date', _value(ticket['travel_date'])),
+              detailRow('Route', routeLabel),
+              detailRow('Bus', _plate),
+              detailRow('Ticket ID', _value(ticket['id'])),
+              const SizedBox(height: 12),
+              SizedBox(width: double.infinity, child: FilledButton(
+                onPressed: () => Navigator.of(sheetContext).pop(),
+                child: const Text('Close'),
+              )),
+            ],
+          )),
+        ),
+      ),
+    );
+  }
+
   Widget _passengerTile(Map<String, dynamic> ticket) {
     final user = ticket['user'] is Map ? Map<String, dynamic>.from(ticket['user']) : {};
     final name = _value(user['name'], 'Ticket holder');
     final seat = _value(ticket['seat_number']);
     final code = _value(ticket['ticket_number'], 'Booking');
     final status = _value(ticket['status'], 'Booked').replaceAll('_', ' ');
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
-      decoration: _surfaceDecoration(),
-      child: Row(children: [
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _showPassengerTicketDetails(ticket),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+          decoration: _surfaceDecoration(),
+          child: Row(children: [
         CircleAvatar(
           backgroundColor: AppColors.primary.withValues(alpha: .10),
           child: Text(name[0].toUpperCase(), style: const TextStyle(
@@ -1030,7 +1111,9 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           onPressed: () => _notifyPassenger(ticket),
           icon: const Icon(Icons.notifications_active_outlined, size: 18),
         ),
-      ]),
+          ]),
+        ),
+      ),
     );
   }
 
