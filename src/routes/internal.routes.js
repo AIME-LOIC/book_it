@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { timingSafeEqual } from 'node:crypto';
 import Notification from '../database/models/notification.js';
 import PromoCode from '../database/models/promo_code.js';
+import sequelize from '../config/sequelize.js';
 import {
   checkDepartedBuses,
   checkPendingTicketHolds,
@@ -22,6 +23,15 @@ const ensureSchedulerTables = async () => {
   if (schedulerSchemaReady) return;
   await Notification.sync();
   await PromoCode.sync();
+  // The deployed notifications table uses a PostgreSQL ENUM even though the
+  // current Sequelize model declares STRING. Extend it for newly introduced
+  // scheduler notification types without rebuilding or replacing the enum.
+  await sequelize.query(
+    "ALTER TYPE public.notification_type ADD VALUE IF NOT EXISTS 'trip_departure_reminder'",
+  );
+  await sequelize.query(
+    "ALTER TYPE public.notification_type ADD VALUE IF NOT EXISTS 'promo_code_generated'",
+  );
   schedulerSchemaReady = true;
 };
 
