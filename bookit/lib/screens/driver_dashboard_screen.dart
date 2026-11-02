@@ -32,6 +32,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   bool _sendingLocation = false;
   bool _locationServerSynced = false;
   String? _locationSyncError;
+  DateTime? _lastLocationSync;
+  Position? _lastSyncedPosition;
   double _tripDistanceMeters = 0;
   double _maxSpeedKmh = 0;
   Position? _previousPosition;
@@ -237,22 +239,33 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
   Future<void> _sendPosition(Position position) async {
     if (_sendingLocation) return;
+    // The server accepts at most 10 updates / 30s (rate limit) and only needs
+    // a moving fix, so throttle: at most one sync every 15s or ~25m of drift.
+    final now = DateTime.now();
+    final last = _lastLocationSync;
+    if (last != null) {
+      final meters = _lastSyncedPosition == null ? double.infinity : Geolocator.distanceBetween(
+        _lastSyncedPosition!.latitude, _lastSyncedPosition!.longitude,
+        position.latitude, position.longitude,
+      );
+      if (now.difference(last) < const Duration(seconds: 15) && meters < 25) return;
+    }
     _sendingLocation = true;
     try {
-      // The mobile app sends GPS coordinates to the driver location API.
-      await ApiClient.post('drivers/location', auth: true, body: {
-        'latitude': position.latitude,
-        'longitude': position.longitude,
-        'accuracy': position.accuracy,
-        'speed': position.speed,
-        'heading': position.heading,
-        'recorded_at': DateTime.now().toUtc().toIso8601String(),
+      // Contract: PATCH /drivers/location with last_lat/last_lng (validated).
+      // Extra GPS fields are deliberately omitted — the API validates only
+      // these two and older deployments reject unexpected shapes.
+      await ApiClient.patch('drivers/location', auth: true, body: {
+        'last_lat': position.latitude,
+        'last_lng': position.longitude,
       });
       if (mounted) setState(() {
         _position = position;
         _locationServerSynced = true;
         _locationSyncError = null;
       });
+      _lastLocationSync = now;
+      _lastSyncedPosition = position;
     } catch (e) {
       if (mounted) setState(() {
         _locationServerSynced = false;
@@ -273,11 +286,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       _tracking = false;
       _locationServerSynced = false;
     });
-    try {
-      await ApiClient.post('drivers/location/stop', auth: true);
-    } catch (_) {
-      // Local tracking is stopped even if the server is unreachable.
-    }
+    // There is no server-side "stop" endpoint: cancelling the GPS stream is
+    // what stops the location updates from being sent.
+    _lastLocationSync = null;
+    _lastSyncedPosition = null;
     _show('Live tracking stopped.');
   }
 
