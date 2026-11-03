@@ -41,17 +41,10 @@ export const loginOperator = async ({ company_name, password }) => {
   return { token, operator: { id: operator.id, company_name: operator.company_name } };
 };
 
-// ── VERIFY PASSWORD (locker — 3 attempts, 10 min lock) ────────────
-const lockerAttempts = new Map();
-const LOCKER_MAX = 3;
-const LOCKER_MS = 10 * 60 * 1000;
+// ── VERIFY PASSWORD ──────────────────────────────────────────────
+// Attempt throttling is enforced after authentication by auth.routes.js.
 export const verifyPassword = async (user, password) => {
   if (!password) throw new Error('Password required');
-  const key = `locker:${user.id}`;
-  const record = lockerAttempts.get(key);
-  if (record?.lockedUntil && Date.now() < record.lockedUntil) {
-    throw new Error('Too many attempts. Please try again later.');
-  }
   let valid = false;
   if (user.role === 'operator') {
     const op = await Operator.findByPk(user.id);
@@ -60,16 +53,7 @@ export const verifyPassword = async (user, password) => {
     const u = await User.findByPk(user.id);
     valid = !!(u && await bcrypt.compare(password, u.password_hash));
   }
-  if (!valid) {
-    const next = { count: (record?.count || 0) + 1 };
-    if (next.count >= LOCKER_MAX) {
-      next.lockedUntil = Date.now() + LOCKER_MS;
-      next.count = 0;
-    }
-    lockerAttempts.set(key, next);
-    throw new Error('Password verification failed.');
-  }
-  lockerAttempts.delete(key);
+  if (!valid) throw new Error('Password verification failed.');
   return { verified: true };
 };
 
