@@ -4,7 +4,7 @@ set -euo pipefail
 OWNER="AIME-LOIC"
 REPO="book_it"
 API_URL="https://api.github.com/repos/${OWNER}/${REPO}/releases/latest"
-APP_ROOT="${XDG_DATA_HOME:-$HOME/.local/share}/../opt/bookit"
+APP_ROOT="$HOME/.local/opt/bookit"
 APP_ROOT="$(mkdir -p "$APP_ROOT" && cd "$APP_ROOT" && pwd -P)"
 RELEASES_DIR="$APP_ROOT/releases"
 BIN_DIR="${HOME}/.local/bin"
@@ -87,6 +87,7 @@ printf '%s\n' "$VERSION" > "$VERSION_DIR/.bookit-version"
 install -m 0644 "$TMP_DIR/extracted/bookit-icon.png" "$ICON_DIR/bookit.png"
 
 # Atomically switch the launcher target only after the new version is complete.
+rm -f "$APP_ROOT/current.new"
 ln -s "$VERSION_DIR" "$APP_ROOT/current.new"
 mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
 
