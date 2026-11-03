@@ -25,6 +25,7 @@ cp -a "$BUNDLE_DIR/." "$VERSION_DIR/"
 printf '%s\n' "local" > "$VERSION_DIR/.bookit-version"
 install -m 0644 "$PROJECT_DIR/assets/icon.png" "$ICON_DIR/bookit.png"
 
+rm -f "$APP_ROOT/current.new"
 ln -s "$VERSION_DIR" "$APP_ROOT/current.new"
 mv -Tf "$APP_ROOT/current.new" "$APP_ROOT/current"
 
