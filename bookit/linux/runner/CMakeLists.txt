@@ -28,9 +28,9 @@ target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
 # Install the BookIt icon and desktop launcher so Kali/GNOME/XFCE can
 # discover the application icon from the standard hicolor icon theme.
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../assets/icon.png"
-  DESTINATION "${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/256x256/apps"
+  DESTINATION "share/icons/hicolor/256x256/apps"
   RENAME bookit.png
   COMPONENT Runtime)
 install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../bookit.desktop"
-  DESTINATION "${CMAKE_INSTALL_PREFIX}/share/applications"
+  DESTINATION "share/applications"
   COMPONENT Runtime)
