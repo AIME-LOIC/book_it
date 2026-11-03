@@ -27,7 +27,7 @@ export const login            = async (req, res) => {
     res.cookie('bookit_token', token, authCookieOptions);
     res.status(200).json({ token, driver });
   }
-  catch (err) { res.status(401).json({ message: clientMessage(err) }); }
+  catch { res.status(401).json({ message: 'Invalid credentials or account unavailable.' }); }
 };
 
 export const updateProfile    = async (req, res) => {
