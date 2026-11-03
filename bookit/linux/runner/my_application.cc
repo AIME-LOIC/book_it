@@ -45,11 +45,13 @@ static void my_application_activate(GApplication* application) {
   if (use_header_bar) {
     GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
     gtk_widget_show(GTK_WIDGET(header_bar));
-    gtk_header_bar_set_title(header_bar, "bookit");
+    gtk_header_bar_set_title(header_bar, "BookIt");
+    gtk_window_set_icon_name(window, "bookit");
     gtk_header_bar_set_show_close_button(header_bar, TRUE);
     gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
   } else {
-    gtk_window_set_title(window, "bookit");
+    gtk_window_set_title(window, "BookIt");
+    gtk_window_set_icon_name(window, "bookit");
   }
 
   // Open in a phone-sized portrait window by default (Flutter logical pixels).
