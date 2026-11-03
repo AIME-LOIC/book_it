@@ -131,8 +131,8 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
 endif()
 
 
-// Install the BookIt launcher metadata and icon into the Linux bundle.
-// The bundle can then be integrated with desktop environments such as Kali XFCE.
+# Install the BookIt launcher metadata and icon into the Linux bundle.
+# The bundle can then be integrated with desktop environments such as Kali XFCE.
 set(BOOKIT_DESKTOP_DIR "${CMAKE_INSTALL_PREFIX}/share/applications")
 set(BOOKIT_ICON_DIR "${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/512x512/apps")
 
