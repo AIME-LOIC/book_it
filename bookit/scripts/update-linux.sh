@@ -3,6 +3,7 @@ set -euo pipefail
 
 OWNER="AIME-LOIC"
 REPO="book_it"
+SCRIPT_SOURCE="$(readlink -f "${BASH_SOURCE[0]}")"
 API_URL="https://api.github.com/repos/${OWNER}/${REPO}/releases/latest"
 APP_ROOT="$HOME/.local/opt/bookit"
 APP_ROOT="$(mkdir -p "$APP_ROOT" && cd "$APP_ROOT" && pwd -P)"
@@ -105,6 +106,10 @@ StartupNotify=true
 StartupWMClass=rw.onepercent.bookit
 EOF
 chmod 0644 "$DESKTOP_DIR/bookit.desktop"
+
+if [[ "$SCRIPT_SOURCE" != "$APP_ROOT/update-linux.sh" ]]; then
+  install -m 0755 "$SCRIPT_SOURCE" "$APP_ROOT/update-linux.sh"
+fi
 
 cat > "$BIN_DIR/bookit-update" <<EOF
 #!/usr/bin/env bash
