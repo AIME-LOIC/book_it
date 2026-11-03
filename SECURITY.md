@@ -13,7 +13,7 @@ npm run db:migrate
 Run this command with the production `DATABASE_URL` configured in a secure environment. The migration creates `security_rate_limits`; do not paste database credentials into GitHub or commit an environment file.
 
 Current limits:
-- General API: 100 requests per IP per minute.
+- General API: 100 requests per IP per minute (per-instance; this is a coarse abuse guard, not the primary authentication defense).
 - Login: 30 requests per IP and 5 attempts per account per 15 minutes, shared across passenger, operator, and driver login routes.
 - Ticket validation: 20 requests per IP per minute.
 - Locker password verification: 3 attempts per authenticated user per 10 minutes.
