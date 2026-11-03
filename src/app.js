@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import { createPersistentRateLimiter } from './middleware/persistent-rate-limit.js';
 import helmet from 'helmet';
 import authRoutes from './routes/auth.routes.js';
 import locationRoutes from './routes/location.routes.js';
@@ -82,31 +83,23 @@ app.use(cors({
 }));
 
 // ── RATE LIMITING ─────────────────────────────────────────────
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10,                   // max 10 attempts per IP
-  message: { message: 'Too many login attempts. Please try again in 15 minutes.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Production uses atomic PostgreSQL counters shared by all serverless instances.
+// Local development retains the in-memory limiter so it works with MySQL too.
+const persistent = process.env.NODE_ENV === 'production';
+const makeLimiter = (name, windowMs, max, key) => persistent
+  ? createPersistentRateLimiter({ name, windowMs, max, key })
+  : rateLimit({ windowMs, max, standardHeaders: true, legacyHeaders: false,
+      message: { message: 'Too many requests. Please try again later.' } });
 
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000,  // 1 minute
-  max: 100,             // max 100 requests per IP per minute
-  message: { message: 'Too many requests. Please slow down.' },
-  standardHeaders: true,
-  legacyHeaders: false,
+const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false,
+  message: { message: 'Too many requests. Please try again later.' } });
+const loginIpLimiter = makeLimiter('login-ip', 15 * 60 * 1000, 30, (req) => req.ip);
+const loginAccountLimiter = makeLimiter('login-account', 15 * 60 * 1000, 5, (req) => {
+  const body = req.body || {};
+  const identifier = body.email || body.company_name || body.phone || 'unknown';
+  return String(identifier).trim().toLowerCase();
 });
-
-// Ticket redemption brute-force guard: ticket numbers follow BK-####-XX,
-// so without a limiter a client could enumerate the whole ~590k space.
-const ticketValidateLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 20, // 20 scans per minute per IP is far above manual throughput
-  message: { message: 'Too many validation attempts. Please slow down.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+const ticketValidateLimiter = makeLimiter('ticket-validate', 60 * 1000, 20, (req) => req.ip);
 
 const P = '/rw/v1/bk'; // obscure API prefix
 
@@ -135,9 +128,9 @@ app.use(P, async (req, res, next) => {
 });
 
 app.use(`${P}/`, apiLimiter);
-app.use(`${P}/auth/login`, loginLimiter);
-app.use(`${P}/auth/operator/login`, loginLimiter);
-app.use(`${P}/drivers/login`, loginLimiter);
+app.use(`${P}/auth/login`, loginIpLimiter, loginAccountLimiter);
+app.use(`${P}/auth/operator/login`, loginIpLimiter, loginAccountLimiter);
+app.use(`${P}/drivers/login`, loginIpLimiter, loginAccountLimiter);
 app.use(`${P}/tickets/validate`, ticketValidateLimiter);
 
 app.use(`${P}/auth`, authRoutes);

@@ -3267,12 +3267,10 @@ set('agree-terms-link', t('termsLink'));
                   <div style="text-align:right;"><div style="font-size:11px;color:var(--text-muted);">Price</div><strong>${Number(t.price).toLocaleString()} RWF</strong></div>
                 </div>
               </div>
-              ${t.bus?.last_lat && t.bus?.last_lng ? `
-                <div style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                  <button class="btn btn-ghost btn-sm" onclick="openMapModal('${esc(t.id)}')"><i class="fa fa-map-marker-alt"></i> Track Bus</button>
-                  <div style="display:flex; gap:8px;">${amenitiesHtml}</div>
-                </div>
-              ` : ''}
+              <div style="padding:16px 24px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <span style="font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--text-muted);"><i class="fa fa-map-marker-alt"></i> LIVE MAP · COMING SOON</span>
+                <div style="display:flex; gap:8px;">${amenitiesHtml}</div>
+              </div>
 
               <div class="ticket-footer">
                 ${effectiveStatus === 'pending' ? `
