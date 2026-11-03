@@ -66,3 +66,36 @@ flutter pub get
 flutter analyze   # static analysis
 flutter test      # widget tests (splash, login form, validation)
 ```
+
+
+## Linux installation and updates
+
+Linux desktop releases are published from Git tags. To create a new Linux release:
+
+1. Update `version:` in `pubspec.yaml` (for example, `1.0.1+2`).
+2. Commit and push the change to `main`.
+3. Create and push the matching version tag:
+
+   ```bash
+   git tag v1.0.1
+   git push origin v1.0.1
+   ```
+
+GitHub Actions builds the Linux x86_64 bundle and publishes these release assets:
+- `bookit-linux-x86_64.tar.gz`
+- `bookit-linux-x86_64.tar.gz.sha256`
+
+On Kali/Linux, the initial local installation is:
+
+```bash
+cd bookit
+bash scripts/install-linux-desktop.sh
+```
+
+That installs the app under `~/.local/opt/bookit` and creates a `bookit-update` command under `~/.local/bin`. After a GitHub Release is published, users can install it with:
+
+```bash
+~/.local/bin/bookit-update
+```
+
+The updater downloads the latest published release, verifies its SHA-256 checksum before installation, and switches the desktop launcher to the new version only after extraction succeeds. Close and reopen BookIt after updating. The old version remains available under `~/.local/opt/bookit/releases` for recovery.
