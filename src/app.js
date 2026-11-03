@@ -91,7 +91,8 @@ const makeLimiter = (name, windowMs, max, key) => persistent
   : rateLimit({ windowMs, max, standardHeaders: true, legacyHeaders: false,
       message: { message: 'Too many requests. Please try again later.' } });
 
-const apiLimiter = makeLimiter('api', 60 * 1000, 100, (req) => req.ip);
+const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false,
+  message: { message: 'Too many requests. Please try again later.' } });
 const loginIpLimiter = makeLimiter('login-ip', 15 * 60 * 1000, 30, (req) => req.ip);
 const loginAccountLimiter = makeLimiter('login-account', 15 * 60 * 1000, 5, (req) => {
   const body = req.body || {};
