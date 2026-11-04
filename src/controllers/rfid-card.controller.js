@@ -57,8 +57,8 @@ export const getRegistrationStatus = async (req, res) => {
   try {
     const rows = await sequelize.query(
       `SELECT id, status, card_uid AS "cardUid", expires_at AS "expiresAt"
-       FROM rfid_registration_sessions WHERE id = :id AND user_id = :userId LIMIT 1`,
-      { replacements: { id: req.params.id, userId: req.user.id }, type: QueryTypes.SELECT },
+       FROM rfid_registration_sessions WHERE id = :id AND (user_id = :userId OR :isAdmin = TRUE) LIMIT 1`,
+      { replacements: { id: req.params.id, userId: req.user.id, isAdmin: req.user.role === 'admin' }, type: QueryTypes.SELECT },
     );
     if (!rows.length) return res.status(404).json({ message: 'Registration session not found.' });
     const session = rows[0];

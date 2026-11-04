@@ -50,6 +50,7 @@ class ApiClient {
       late http.Response res;
       if(method=='GET') { res=await http.get(uri,headers:h).timeout(const Duration(seconds:20)); }
       else if(method=='POST') { res=await http.post(uri,headers:h,body:jsonEncode(body??{})).timeout(const Duration(seconds:25)); }
+      else if(method=='DELETE') { res=await http.delete(uri,headers:h).timeout(const Duration(seconds:20)); }
       else { res=await http.patch(uri,headers:h,body:jsonEncode(body??{})).timeout(const Duration(seconds:25)); }
       dynamic data;
       try { data=res.body.isEmpty?<String,dynamic>{}:jsonDecode(res.body); } catch (_) { data={'message':res.body}; }

@@ -17,7 +17,8 @@
  * - MFRC522 by GithubCommunity
  * - ArduinoJson (7.x)
  *
- * Configure WIFI_SSID, WIFI_PASSWORD, DEVICE_ID, DEVICE_TOKEN and API_URL.
+ * Copy secrets.example.h to secrets.h and configure credentials locally.
+ * secrets.h is ignored by Git and must never be committed.
  *
  * IMPORTANT:
  * - This is a prototype client. The API endpoint must be implemented on the
@@ -35,14 +36,15 @@
 #include <SPI.h>
 #include <MFRC522.h>
 #include <ArduinoJson.h>
+#include "secrets.h"
 
 static const uint8_t RFID_SS_PIN = D2;
 static const uint8_t RFID_RST_PIN = D1;
 
-static const char WIFI_SSID[] = "YOUR_WIFI_NAME";
-static const char WIFI_PASSWORD[] = "YOUR_WIFI_PASSWORD";
-static const char DEVICE_ID[] = "bookit-bus-reader-001";
-static const char DEVICE_TOKEN[] = "REPLACE_WITH_DEVICE_TOKEN";
+static const char WIFI_SSID[] = BOOKIT_WIFI_SSID;
+static const char WIFI_PASSWORD[] = BOOKIT_WIFI_PASSWORD;
+static const char DEVICE_ID[] = BOOKIT_RFID_DEVICE_ID;
+static const char DEVICE_TOKEN[] = BOOKIT_RFID_DEVICE_TOKEN;
 static const char API_URL[] =
     "https://bookit.1percent.rw/rw/v1/bk/hardware/rfid/scan";
 
