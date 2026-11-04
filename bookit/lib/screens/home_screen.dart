@@ -20,6 +20,7 @@ import 'nearby_stations_screen.dart';
 import 'weather_forecast_screen.dart';
 import 'login_screen.dart';
 import 'profiles_screen.dart';
+import 'rfid_cards_screen.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 
@@ -1772,6 +1773,8 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
     ]))),
     const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_submitInlineProfile,icon:_savingProfile?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):const Icon(Icons.check_rounded),label:const Text('Save profile'))),
     const SizedBox(height:10),SizedBox(width:double.infinity,child:OutlinedButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit in a form'))),
+    const SizedBox(height:22),Text('Settings',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
+    Card(child:ListTile(leading:const Icon(Icons.credit_card_rounded,color:AppColors.primary),title:const Text('RFID cards'),subtitle:const Text('Register and manage your BookIt boarding cards'),trailing:const Icon(Icons.chevron_right),onTap:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>const RfidCardsScreen())))),
     const SizedBox(height:22),Text(_historyText('Preferences','Ibyifuzo'),style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
     Card(child:Padding(padding:const EdgeInsets.symmetric(horizontal:16,vertical:12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
       Row(children:[const Icon(Icons.language_rounded,color:AppColors.primary),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
