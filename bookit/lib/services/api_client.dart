@@ -42,6 +42,7 @@ class ApiClient {
     return _send('POST',path,body:body,auth:auth);
   }
   static Future<dynamic> patch(String path,{Map<String,dynamic>? body,bool auth=false}) => _send('PATCH',path,body:body,auth:auth);
+  static Future<dynamic> delete(String path,{bool auth=false}) => _send('DELETE',path,auth:auth);
   static Future<dynamic> _send(String method,String path,{Map<String,String>? query,Map<String,dynamic>? body,bool auth=false}) async {
     var uri=Uri.parse(ApiConfig.endpoint(path));
     if(query!=null) uri=uri.replace(queryParameters:query);
