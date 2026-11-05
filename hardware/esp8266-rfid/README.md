@@ -37,14 +37,17 @@ Use the same ID and token in local secrets.h. Rotate any token exposed in chat, 
 
 ## Passenger and admin flow
 
-Passenger: Profile → Settings → RFID cards → Add my card. The API opens a two-minute session. Tap the card on the reader; the app polls for completion.
+Passenger with an NFC-equipped Android phone: Profile → Settings → RFID cards → Scan with this phone. BookIt reads the card UID and registers it through the authenticated phone-registration API. See [phone NFC registration](../../docs/mobile-nfc-registration.md) for compatibility and build instructions.
 
-Admin: open RFID cards, search the passenger, and use the card icon beside their account. The server checks the signed-in account's admin role.
+Passenger using the external reader: choose Use a BookIt reader instead. The API opens a two-minute session. Tap the card on the reader; the app polls for completion.
+
+Admin: open RFID cards, search the passenger, and use the card icon beside their account. The server checks the signed-in account's admin role; this admin flow currently uses the external reader.
 
 ## API
 
 - GET /rw/v1/bk/rfid-cards — list the current user's cards.
 - POST /rw/v1/bk/rfid-cards/registration-sessions — start own registration.
+- POST /rw/v1/bk/rfid-cards/phone-registration — register a card UID read by the signed-in Android phone.
 - GET /rw/v1/bk/rfid-cards/registration-sessions/:id — poll a session.
 - DELETE /rw/v1/bk/rfid-cards/:id — unlink own card.
 - GET /rw/v1/bk/rfid-cards/admin/users?search= — admin passenger search.
