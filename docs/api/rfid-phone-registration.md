@@ -4,7 +4,7 @@
 
 `POST /rw/v1/bk/rfid-cards/phone-registration`
 
-Authentication: required. Send the user's existing BookIt access token as a bearer token.
+Authentication: required. Send the user's existing BookIt access token as a bearer token. The authenticated account must have the passenger (`user`) or administrator (`admin`) role.
 
 The endpoint is intended for a UID read locally by the signed-in Android phone. It does not accept a reader device token and does not create a hardware registration session.
 
