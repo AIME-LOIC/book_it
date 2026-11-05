@@ -1,0 +1,58 @@
+name: Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'bookit/**'
+      - '.github/workflows/android-apk.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'bookit/**'
+      - '.github/workflows/android-apk.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-debug-apk:
+    name: Test and build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+          cache-dependency-path: bookit/pubspec.lock
+
+      - name: Resolve Flutter dependencies
+        working-directory: bookit
+        run: flutter pub get
+
+      - name: Run NFC UID tests
+        working-directory: bookit
+        run: flutter test test/services/nfc_card_reader_test.dart
+
+      - name: Build debug APK
+        working-directory: bookit
+        run: flutter build apk --debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bookit-android-debug-apk
+          path: bookit/build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
