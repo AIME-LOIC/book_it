@@ -140,6 +140,10 @@ export const startAdminRegistration = async (req, res) => {
 };
 
 export const registerFromPhone = async (req, res) => {
+  if (!req.user?.id || !['user', 'admin'].includes(req.user.role)) {
+    return res.status(403).json({ message: 'Passenger account access is required to register a card.' });
+  }
+
   const uid = normalizeRfidUid(req.body?.cardUid ?? req.body?.uid);
   if (!isValidRfidUid(uid)) {
     return res.status(400).json({ message: 'Invalid RFID card UID.' });
