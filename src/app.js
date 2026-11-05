@@ -102,6 +102,7 @@ const loginAccountLimiter = makeLimiter('login-account', 15 * 60 * 1000, 5, (req
   return String(identifier).trim().toLowerCase();
 });
 const ticketValidateLimiter = makeLimiter('ticket-validate', 60 * 1000, 20, (req) => req.ip);
+const rfidPhoneRegistrationLimiter = makeLimiter('rfid-phone-registration', 15 * 60 * 1000, 10, (req) => req.ip);
 
 const P = '/rw/v1/bk'; // obscure API prefix
 
@@ -130,6 +131,7 @@ app.use(P, async (req, res, next) => {
 });
 
 app.use(`${P}/`, apiLimiter);
+app.use(`${P}/rfid-cards/phone-registration`, rfidPhoneRegistrationLimiter);
 app.use(`${P}/auth/login`, loginIpLimiter, loginAccountLimiter);
 app.use(`${P}/auth/operator/login`, loginIpLimiter, loginAccountLimiter);
 app.use(`${P}/drivers/login`, loginIpLimiter, loginAccountLimiter);
