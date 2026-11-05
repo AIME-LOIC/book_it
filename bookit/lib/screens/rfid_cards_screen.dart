@@ -46,8 +46,14 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
       final message = response is Map
           ? response['message']?.toString()
           : null;
+      final registeredUid = response is Map && response['card'] is Map
+          ? response['card']['cardUid']?.toString()
+          : null;
+      final confirmation = message ?? 'NFC card registration completed.';
       if (mounted) {
-        setState(() => _message = message ?? 'NFC card registration completed.');
+        setState(() => _message = registeredUid == null
+            ? confirmation
+            : '$confirmation\nCard UID: $registeredUid');
       }
       await _load();
     } on UnsupportedError catch (error) {
