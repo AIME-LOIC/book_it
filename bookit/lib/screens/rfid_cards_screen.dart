@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/api_client.dart';
+import '../services/nfc_card_reader.dart';
 import '../theme/app_theme.dart';
 
 class RfidCardsScreen extends StatefulWidget {
@@ -28,6 +29,38 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
       if (!mounted) return;
       setState(() { _admin = role == 'admin'; _cards = cards; _loading = false; });
     } catch (e) { if (mounted) setState(() { _loading = false; _message = e.toString(); }); }
+  }
+
+  Future<void> _scanWithPhone() async {
+    if (_starting) return;
+    setState(() { _starting = true; _message = 'Hold your phone near the RFID card.'; });
+    try {
+      final uid = await NfcCardReader.readCardUid();
+      if (!mounted) return;
+      setState(() => _message = 'Card detected. Registering it to your BookIt account...');
+      final response = await ApiClient.post(
+        'rfid-cards/phone-registration',
+        body: {'cardUid': uid},
+        auth: true,
+      );
+      final message = response is Map
+          ? response['message']?.toString()
+          : null;
+      if (mounted) {
+        setState(() => _message = message ?? 'NFC card registration completed.');
+      }
+      await _load();
+    } on UnsupportedError catch (error) {
+      if (mounted) setState(() => _message = error.message);
+    } on StateError catch (error) {
+      if (mounted) setState(() => _message = error.message);
+    } on TimeoutException catch (error) {
+      if (mounted) setState(() => _message = error.message ?? 'NFC scan timed out.');
+    } catch (error) {
+      if (mounted) setState(() => _message = error.toString());
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
   }
 
   Future<void> _start({String? userId}) async {
@@ -94,9 +127,11 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
           Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment:CrossAxisAlignment.start, children: [
             const Row(children:[Icon(Icons.contactless_rounded,color:AppColors.primary),SizedBox(width:10),Expanded(child:Text('Register a boarding card',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800)))]),
             const SizedBox(height:8),
-            const Text('Start a short registration session, then tap your RFID card on the BookIt RC522 reader. The card UID is linked to your account.'),
+            const Text('If your Android phone has NFC, scan your card directly with this phone. You can also register it at a BookIt RC522 reader.'),
             const SizedBox(height:14),
-            SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_starting || _sessionId != null ? null : ()=>_start(),icon:_starting?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):const Icon(Icons.add_card_rounded),label:const Text('Add my card'))),
+            SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_starting || _sessionId != null ? null : _scanWithPhone,icon:_starting?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):const Icon(Icons.nfc_rounded),label:const Text('Scan with this phone'))),
+            const SizedBox(height:8),
+            SizedBox(width:double.infinity,child:OutlinedButton.icon(onPressed:_starting || _sessionId != null ? null : ()=>_start(),icon:const Icon(Icons.contactless_rounded),label:const Text('Use a BookIt reader instead'))),
           ]))),
           if (_sessionId != null) const Card(child:ListTile(leading:CircularProgressIndicator(),title:Text('Waiting for card tap'),subtitle:Text('Keep this screen open. The session expires after 2 minutes.'))),
           if (_message.isNotEmpty) Padding(padding:const EdgeInsets.symmetric(vertical:8),child:Text(_message,style:TextStyle(color:_message.toLowerCase().contains('success')||_message.toLowerCase().contains('registered')?Colors.green:Theme.of(context).colorScheme.error))),
