@@ -1,9 +1,9 @@
 import { QueryTypes } from 'sequelize';
 import sequelize from '../config/sequelize.js';
+import { isValidRfidUid, normalizeRfidUid } from '../utils/rfid-uid.js';
 
 const DEFAULT_DEVICE_ID = 'bookit-bus-reader-001';
 const SESSION_MINUTES = 2;
-const normalizeUid = (value) => String(value || '').replace(/[^a-fA-F0-9]/g, '').toUpperCase();
 const requireAdmin = (req, res) => {
   if (req.user?.role !== 'admin') { res.status(403).json({ message: 'Administrator access required.' }); return false; }
   return true;
@@ -139,9 +139,77 @@ export const startAdminRegistration = async (req, res) => {
   }
 };
 
+export const registerFromPhone = async (req, res) => {
+  const uid = normalizeRfidUid(req.body?.cardUid ?? req.body?.uid);
+  if (!isValidRfidUid(uid)) {
+    return res.status(400).json({ message: 'Invalid RFID card UID.' });
+  }
+
+  try {
+    const result = await sequelize.transaction(async (transaction) => {
+      const existing = await sequelize.query(
+        `SELECT id, user_id, card_uid AS "cardUid", status, registered_at AS "registeredAt"
+         FROM rfid_cards WHERE card_uid = :uid LIMIT 1 FOR UPDATE`,
+        { replacements: { uid }, type: QueryTypes.SELECT, transaction },
+      );
+
+      if (existing.length && existing[0].status === 'active') {
+        if (String(existing[0].user_id) !== String(req.user.id)) {
+          return { kind: 'duplicate' };
+        }
+        return { kind: 'already-owned', card: existing[0] };
+      }
+
+      let cards;
+      if (existing.length) {
+        cards = await sequelize.query(
+          `UPDATE rfid_cards
+           SET user_id = :userId, status = 'active',
+               registered_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+           WHERE id = :id
+           RETURNING id, card_uid AS "cardUid", status, registered_at AS "registeredAt"`,
+          {
+            replacements: { userId: req.user.id, id: existing[0].id },
+            type: QueryTypes.SELECT,
+            transaction,
+          },
+        );
+      } else {
+        cards = await sequelize.query(
+          `INSERT INTO rfid_cards (user_id, card_uid, status)
+           VALUES (:userId, :uid, 'active')
+           RETURNING id, card_uid AS "cardUid", status, registered_at AS "registeredAt"`,
+          {
+            replacements: { userId: req.user.id, uid },
+            type: QueryTypes.SELECT,
+            transaction,
+          },
+        );
+      }
+      return { kind: 'registered', card: cards[0] };
+    });
+
+    if (result.kind === 'duplicate') {
+      return res.status(409).json({ message: 'This card is already linked to another passenger.' });
+    }
+    return res.status(200).json({
+      message: result.kind === 'already-owned'
+        ? 'This card is already linked to your BookIt account.'
+        : 'NFC card registered successfully.',
+      card: result.card,
+    });
+  } catch (error) {
+    if (error.original?.code === '23505' || error.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({ message: 'This card is already linked to another passenger.' });
+    }
+    console.error('[RFID] phone registration:', error.message);
+    return res.status(500).json({ message: 'Could not register this NFC card.' });
+  }
+};
+
 export const scanFromReader = async (req, res) => {
-  const uid = normalizeUid(req.body?.uid);
-  if (uid.length < 8 || uid.length > 40 || uid.length % 2 !== 0) {
+  const uid = normalizeRfidUid(req.body?.uid);
+  if (!isValidRfidUid(uid)) {
     return res.status(400).json({ approved: false, message: 'Invalid RFID card UID.' });
   }
   try {
