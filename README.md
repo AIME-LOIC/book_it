@@ -15,6 +15,7 @@ The production project is deployed on **Vercel** from the `main` branch of this 
 - Choose seats and create reservations.
 - View tickets and QR codes for boarding.
 - Receive trip and booking notifications.
+- Register a compatible contactless boarding-card UID using NFC on an NFC-equipped Android phone, or use the external BookIt RFID reader.
 - Start MTN Mobile Money or Airtel Money payments through the Flutterwave integration, where live provider credentials and account approval are configured.
 - Redeem one-time promotional codes.
 
@@ -27,6 +28,10 @@ The production project is deployed on **Vercel** from the `main` branch of this 
 - View assigned trips and passenger manifests.
 - Scan QR tickets and validate ticket numbers.
 - Update the assigned bus location from the driver application.
+
+## RFID card registration
+
+Passengers can link a compatible 13.56 MHz contactless card to their BookIt account from **Profile → Settings → RFID cards**. Android phones with NFC can scan supported cards directly; the external ESP8266/RC522 reader remains available as an alternative. Card registration links a UID only and does not itself validate payment or authorize boarding. See [phone NFC setup and limitations](docs/mobile-nfc-registration.md).
 
 ## Payment status and scope
 
