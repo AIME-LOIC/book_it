@@ -48,7 +48,12 @@ for name in sys.argv[2:]:
 print(tag)
 PY
 )
-
+if [[ ${#RELEASE_INFO[@]} -lt 3 ]]; then
+  echo "ERROR: Release assets are missing or invalid."
+  echo "Expected: bookit-linux-x86_64.tar.gz and its .sha256 checksum."
+  echo "Check the GitHub Linux release workflow."
+  exit 1
+fi
 ARCHIVE_URL="${RELEASE_INFO[0]}"
 CHECKSUM_URL="${RELEASE_INFO[1]}"
 VERSION="${RELEASE_INFO[2]}"
