@@ -6,7 +6,7 @@ import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../services/auth_service.dart';
 import '../services/app_update_service.dart';
-import '../services/push_notification_service.dart';
+import '../app_navigator.dart';
 import 'home_screen.dart';
 import 'driver_dashboard_screen.dart';
 import 'login_screen.dart';
@@ -74,13 +74,6 @@ class _LoadingScreenState extends State<LoadingScreen>
     if (status != AnimationStatus.completed) return;
     _master.removeStatusListener(_onDone);
     final restoredName = await AuthService.restoreSession();
-    if (restoredName != null) {
-      await PushNotificationService.registerDevice();
-    }
-    final update = await AppUpdateService.checkForUpdate();
-    if (update != null && mounted) {
-      await AppUpdateService.showUpdatePrompt(context, update);
-    }
     if (!mounted) return;
     // No saved token: show saved account profiles when available, otherwise
     // fall straight through to the sign-in form.
@@ -98,6 +91,14 @@ class _LoadingScreenState extends State<LoadingScreen>
         ),
       ),
     );
+    // Check in the background so a slow or unavailable GitHub API never delays sign-in.
+    AppUpdateService.checkForUpdate().then((update) {
+      if (update == null) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final appContext = AppNavigator.key.currentContext;
+        if (appContext != null) AppUpdateService.showUpdatePrompt(appContext, update);
+      });
+    });
   }
 
   @override
