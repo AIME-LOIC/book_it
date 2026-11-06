@@ -17,6 +17,9 @@ class PushNotificationService {
   static final StreamController<Map<String, dynamic>> _opened = StreamController<Map<String, dynamic>>.broadcast();
   static Stream<Map<String, dynamic>> get openedMessages => _opened.stream;
   static bool _initialized = false;
+  static Map<String, dynamic>? _pendingOpen;
+  static Map<String, dynamic>? takePendingMessage() { final value = _pendingOpen; _pendingOpen = null; return value; }
+  static void _emitOpen(Map<String, dynamic> data) { if (_opened.hasListener) { _opened.add(data); } else { _pendingOpen = data; } }
   static bool _initializing = false;
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'bookit_updates',
@@ -45,16 +48,16 @@ class PushNotificationService {
             if (raw == null || raw.isEmpty) return;
             try {
               final decoded = jsonDecode(raw);
-              if (decoded is Map) _opened.add(Map<String, dynamic>.from(decoded));
+              if (decoded is Map) _emitOpen(Map<String, dynamic>.from(decoded));
             } catch (_) {}
           },
         );
         final android = _local.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
         await android?.createNotificationChannel(_channel);
         FirebaseMessaging.onMessage.listen(_showForegroundNotification);
-        FirebaseMessaging.onMessageOpenedApp.listen((message) => _opened.add(message.data));
+        FirebaseMessaging.onMessageOpenedApp.listen((message) => _emitOpen(message.data));
         final initial = await FirebaseMessaging.instance.getInitialMessage();
-        if (initial != null) _opened.add(initial.data);
+        if (initial != null) _emitOpen(initial.data);
         FirebaseMessaging.instance.onTokenRefresh.listen((token) => _sendToken(token));
         _initialized = true;
       }
