@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
+import '../services/push_notification_service.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_controller.dart';
 import 'login_screen.dart';
@@ -58,6 +59,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   @override
   void initState() {
     super.initState();
+    PushNotificationService.registerDevice();
     _scannerSupported = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
     _loadSavedProfile();
     _refresh();
