@@ -22,6 +22,8 @@ import 'login_screen.dart';
 import 'profiles_screen.dart';
 import 'rfid_cards_screen.dart';
 import '../services/auth_service.dart';
+import '../services/push_notification_service.dart';
+import 'policy_screen.dart';
 import '../theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -33,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _tab=0; bool _loadingLocations=true,_searching=false,_loadingTickets=false,_loadingProfile=false,_loadingNotifications=false,_showingSearchResults=false;
   int _unreadNotifications=0;
   Timer? _notificationTimer;
+  StreamSubscription<Map<String, dynamic>>? _pushOpenSubscription;
   String? _searchError;
   String _ticketSearchQuery='',_ticketSort='newest',_historySearchQuery='';
   bool _historyKinyarwanda=false,_usingOfflineTickets=false;
@@ -57,8 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _fromId,_toId,_activeTicketId,_selectedHistoryRoute; DateTime _date=DateTime.now().add(const Duration(days:1));
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer; DateTime? _holdExpiresAt;
   final _phone=TextEditingController(); String _network='mtn'; bool _phoneManuallyEdited=false; String? _detectedNetwork;
-  @override void initState(){super.initState();_loadHistoryLanguage();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
-  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_notificationTimer?.cancel();_paymentPollTimer?.cancel();_phone.dispose();_profileNameCtrl.dispose();_profilePhoneCtrl.dispose();_profileNameFocus.dispose();_profilePhoneFocus.dispose();super.dispose();}
+  @override void initState(){super.initState();PushNotificationService.registerDevice();_pushOpenSubscription=PushNotificationService.openedMessages.listen((data){_loadNotifications();if(data.isNotEmpty)_handleNotificationTap({'meta':data});});_loadHistoryLanguage();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
+  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_notificationTimer?.cancel();_pushOpenSubscription?.cancel();_paymentPollTimer?.cancel();_phone.dispose();_profileNameCtrl.dispose();_profilePhoneCtrl.dispose();_profileNameFocus.dispose();_profilePhoneFocus.dispose();super.dispose();}
 
 
   Future<void> _loadTripReminders() async {
