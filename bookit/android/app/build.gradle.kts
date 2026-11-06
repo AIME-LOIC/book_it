@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -8,7 +10,7 @@ plugins {
 // Release signing reads from android/key.properties. If the file (or any of its
 // keys) is absent we fall back to debug signing so local `flutter run --release`
 // builds keep working without a keystore.
-val keystoreProperties = java.util.Properties()
+val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
 val hasReleaseKeystore = keystorePropertiesFile.isFile && try {
     keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
