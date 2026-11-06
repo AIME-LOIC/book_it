@@ -45,3 +45,4 @@ server.log
 # Local ESP8266 secrets (never commit device credentials)
 hardware/esp8266-rfid/secrets.h
 **/.kotlin/
+bookit/android/app/google-services.json
