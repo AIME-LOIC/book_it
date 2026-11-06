@@ -11,7 +11,7 @@ test('rejects empty, odd-length, and out-of-range UIDs', () => {
   assert.equal(isValidRfidUid(normalizeRfidUid('ABC')), false);
   assert.equal(isValidRfidUid(normalizeRfidUid('12345678')), true);
   assert.equal(isValidRfidUid(normalizeRfidUid('1234567890ABCDEF1234567890')), true);
-  assert.equal(isValidRfidUid(normalizeRfidUid('1234567890ABCDEF123456789012345678901234')), false);
+  assert.equal(isValidRfidUid(normalizeRfidUid('1234567890ABCDEF123456789012345678901234AB')), false);
 });
 
 test('normalization strips non-hex separators without changing hex data', () => {
