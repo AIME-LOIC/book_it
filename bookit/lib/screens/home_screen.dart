@@ -983,6 +983,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(children:[
           const Expanded(child:Text('BookIt',style:TextStyle(color:Colors.white,fontSize:21,fontWeight:FontWeight.w800))),
           IconButton(onPressed:_openNearbyStations,tooltip:'Find nearby bus stations',icon:const Icon(Icons.location_searching_rounded,color:AppColors.white,size:25)),
+          IconButton(onPressed:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>const PolicyScreen())),tooltip:'Terms and Privacy Policy',icon:const Icon(Icons.policy_outlined,color:AppColors.white,size:24)),
           IconButton(
             onPressed:_openNotifications,
             tooltip:_unreadNotifications==0?'Notifications':'Notifications, $_unreadNotifications unread',
