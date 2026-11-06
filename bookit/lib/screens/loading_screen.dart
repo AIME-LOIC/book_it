@@ -5,6 +5,8 @@ import '../config/api_config.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../services/auth_service.dart';
+import '../services/app_update_service.dart';
+import '../app_navigator.dart';
 import 'home_screen.dart';
 import 'driver_dashboard_screen.dart';
 import 'login_screen.dart';
@@ -89,6 +91,14 @@ class _LoadingScreenState extends State<LoadingScreen>
         ),
       ),
     );
+    // Check in the background so a slow or unavailable GitHub API never delays sign-in.
+    AppUpdateService.checkForUpdate().then((update) {
+      if (update == null) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final appContext = AppNavigator.key.currentContext;
+        if (appContext != null) AppUpdateService.showUpdatePrompt(appContext, update);
+      });
+    });
   }
 
   @override

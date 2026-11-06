@@ -22,6 +22,8 @@ import 'login_screen.dart';
 import 'profiles_screen.dart';
 import 'rfid_cards_screen.dart';
 import '../services/auth_service.dart';
+import '../services/push_notification_service.dart';
+import 'policy_screen.dart';
 import '../theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -33,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _tab=0; bool _loadingLocations=true,_searching=false,_loadingTickets=false,_loadingProfile=false,_loadingNotifications=false,_showingSearchResults=false;
   int _unreadNotifications=0;
   Timer? _notificationTimer;
+  StreamSubscription<Map<String, dynamic>>? _pushOpenSubscription;
   String? _searchError;
   String _ticketSearchQuery='',_ticketSort='newest',_historySearchQuery='';
   bool _historyKinyarwanda=false,_usingOfflineTickets=false;
@@ -57,8 +60,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _fromId,_toId,_activeTicketId,_selectedHistoryRoute; DateTime _date=DateTime.now().add(const Duration(days:1));
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer; DateTime? _holdExpiresAt;
   final _phone=TextEditingController(); String _network='mtn'; bool _phoneManuallyEdited=false; String? _detectedNetwork;
-  @override void initState(){super.initState();_loadHistoryLanguage();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
-  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_notificationTimer?.cancel();_paymentPollTimer?.cancel();_phone.dispose();_profileNameCtrl.dispose();_profilePhoneCtrl.dispose();_profileNameFocus.dispose();_profilePhoneFocus.dispose();super.dispose();}
+  @override void initState(){super.initState();PushNotificationService.registerDevice();_pushOpenSubscription=PushNotificationService.openedMessages.listen((data){_loadNotifications();if(data.isNotEmpty)_handleNotificationTap({'meta':data});});final pendingPush=PushNotificationService.takePendingMessage();if(pendingPush!=null){WidgetsBinding.instance.addPostFrameCallback((_) {if(mounted)_handleNotificationTap({'meta':pendingPush});});}_loadHistoryLanguage();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
+  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_notificationTimer?.cancel();_pushOpenSubscription?.cancel();_paymentPollTimer?.cancel();_phone.dispose();_profileNameCtrl.dispose();_profilePhoneCtrl.dispose();_profileNameFocus.dispose();_profilePhoneFocus.dispose();super.dispose();}
 
 
   Future<void> _loadTripReminders() async {
@@ -980,6 +983,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(children:[
           const Expanded(child:Text('BookIt',style:TextStyle(color:Colors.white,fontSize:21,fontWeight:FontWeight.w800))),
           IconButton(onPressed:_openNearbyStations,tooltip:'Find nearby bus stations',icon:const Icon(Icons.location_searching_rounded,color:AppColors.white,size:25)),
+          IconButton(onPressed:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>const PolicyScreen())),tooltip:'Terms and Privacy Policy',icon:const Icon(Icons.policy_outlined,color:AppColors.white,size:24)),
           IconButton(
             onPressed:_openNotifications,
             tooltip:_unreadNotifications==0?'Notifications':'Notifications, $_unreadNotifications unread',
@@ -1797,7 +1801,7 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
       const Divider(height:1,indent:56),
       ListTile(leading:const Icon(Icons.privacy_tip_outlined,color:AppColors.primary),title:const Text('Privacy Policy'),subtitle:const Text('How information is handled'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Privacy Policy',_privacyText)),
     ])),
-    const SizedBox(height:20),OutlinedButton.icon(onPressed:()async{try{await ApiClient.post('auth/logout',auth:true);}catch(_){}try{await ApiClient.clearToken();}catch(_){ApiClient.setToken(null);}if(!mounted)return;final accounts=await AuthService.savedAccounts();if(!mounted)return;Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute<void>(builder:(_)=>accounts.isNotEmpty?const ProfilesScreen():const LoginScreen(),),(route)=>false);},icon:const Icon(Icons.logout),label:const Text('Sign out')),
+    const SizedBox(height:20),OutlinedButton.icon(onPressed:()async{await PushNotificationService.unregisterDevice();try{await ApiClient.post('auth/logout',auth:true);}catch(_){}try{await ApiClient.clearToken();}catch(_){ApiClient.setToken(null);}if(!mounted)return;final accounts=await AuthService.savedAccounts();if(!mounted)return;Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute<void>(builder:(_)=>accounts.isNotEmpty?const ProfilesScreen():const LoginScreen(),),(route)=>false);},icon:const Icon(Icons.logout),label:const Text('Sign out')),
     ])),
   ]));
   Widget _profileRow(IconData icon,String label,String value)=>ListTile(leading:Icon(icon,color:AppColors.primary),title:Text(label,style:TextStyle(fontSize:12,color:Theme.of(context).colorScheme.onSurfaceVariant)),subtitle:Text(value,style:const TextStyle(fontWeight:FontWeight.w600)),dense:true);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'theme/theme_controller.dart';
+import 'app_navigator.dart';
 
 import 'screens/loading_screen.dart';
 import 'theme/app_theme.dart';
@@ -18,6 +19,7 @@ class BookItApp extends StatelessWidget {
     return ValueListenableBuilder<String>(
       valueListenable: ThemeController.mode,
       builder: (context, mode, _) => MaterialApp(
+        navigatorKey: AppNavigator.key,
         title: 'BookIt',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.themeFor('white'),
