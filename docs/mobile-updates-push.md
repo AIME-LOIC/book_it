@@ -32,6 +32,24 @@ flutter run \
 
 For iOS, also pass `FIREBASE_IOS_APP_ID` and `FIREBASE_IOS_BUNDLE_ID`. Enable the Push Notifications capability and Background Modes / Remote notifications in the iOS target, and configure an APNs authentication key in Firebase. The Firebase project must have Cloud Messaging enabled.
 
+## GitHub Actions release signing and Firebase client variables
+
+To attach an installable Android update APK to each tagged GitHub Release, configure these repository **Actions secrets**:
+
+- `ANDROID_KEYSTORE_BASE64`: base64-encoded release keystore file
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
+
+Also configure these repository **Actions variables** for the Android release build:
+
+- `FIREBASE_API_KEY`
+- `FIREBASE_ANDROID_APP_ID`
+- `FIREBASE_MESSAGING_SENDER_ID` (Firebase project number)
+- `FIREBASE_PROJECT_ID`
+
+The Android APK release step is deliberately skipped when the signing secrets are missing. A debug-signed APK must not be shipped as an update because it cannot reliably update an already installed production app. Without the signed APK asset, the in-app update button opens the GitHub release page instead.
+
 ## Firebase Admin server setup
 
 1. In Firebase Console, create a **service account** for the server-side Firebase Admin integration. Grant only the Firebase Cloud Messaging permissions needed to send messages.
