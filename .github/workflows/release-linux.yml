@@ -87,6 +87,19 @@ jobs:
           EOF
           echo "configured=true" >> "$GITHUB_OUTPUT"
 
+      - name: Restore Firebase configuration
+        if: steps.android-signing.outputs.configured == 'true'
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$GOOGLE_SERVICES_JSON_BASE64" ]]; then
+            echo "::error::Missing repository secret GOOGLE_SERVICES_JSON_BASE64. Add it in Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > bookit/android/app/google-services.json
+          test -s bookit/android/app/google-services.json
+
       - name: Set up Java for Android
         if: steps.android-signing.outputs.configured == 'true'
         uses: actions/setup-java@v4
