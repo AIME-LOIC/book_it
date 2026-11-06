@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/push_notification_service.dart';
+import 'policy_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_controller.dart';
 import 'login_screen.dart';
@@ -412,6 +413,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
   Future<void> _signOut() async {
     await _stopTracking();
+    await PushNotificationService.unregisterDevice();
     await ApiClient.clearToken();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('bookit_driver_session', false);
@@ -463,8 +465,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           IconButton(tooltip: 'Refresh', onPressed: _loading ? null : _refresh,
               icon: const Icon(Icons.refresh_rounded)),
           PopupMenuButton<String>(
-            onSelected: (v) { if (v == 'logout') _signOut(); },
+            onSelected: (v) {
+              if (v == 'logout') _signOut();
+              if (v == 'policy') Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PolicyScreen()));
+            },
             itemBuilder: (_) => const [
+              PopupMenuItem(value: 'policy', child: Text('Terms & Privacy')),
               PopupMenuItem(value: 'logout', child: Text('Sign out')),
             ],
           ),
