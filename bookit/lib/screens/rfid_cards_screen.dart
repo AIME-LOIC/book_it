@@ -57,9 +57,9 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
       }
       await _load();
     } on UnsupportedError catch (error) {
-      if (mounted) setState(() => _message = error.message);
+      if (mounted) setState(() => _message = error.message ?? error.toString());
     } on StateError catch (error) {
-      if (mounted) setState(() => _message = error.message);
+      if (mounted) setState(() => _message = error.message ?? error.toString());
     } on TimeoutException catch (error) {
       if (mounted) setState(() => _message = error.message ?? 'NFC scan timed out.');
     } catch (error) {
