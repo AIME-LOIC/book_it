@@ -71,6 +71,18 @@ class PushNotificationService {
     }
   }
 
+  static Future<void> unregisterDevice() async {
+    if (kIsWeb || (!Platform.isAndroid && !Platform.isIOS) || !Firebase.apps.isNotEmpty) return;
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null && token.isNotEmpty && ApiClient.hasToken) {
+        await ApiClient.delete('notifications/devices', auth: true, body: {'token': token});
+      }
+    } catch (error) {
+      debugPrint('[Push] Could not unregister device token: $error');
+    }
+  }
+
   static Future<void> _sendToken(String token) async {
     if (!ApiClient.hasToken) return;
     try {
