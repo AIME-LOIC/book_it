@@ -11,11 +11,17 @@ class DefaultFirebaseOptions {
   static const _projectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
   static const _iosBundleId = String.fromEnvironment('FIREBASE_IOS_BUNDLE_ID');
 
-  static bool get isConfigured =>
-      _apiKey.isNotEmpty &&
-      _messagingSenderId.isNotEmpty &&
-      _projectId.isNotEmpty &&
-      (_appIdAndroid.isNotEmpty || _appIdIos.isNotEmpty);
+  static bool get isConfigured {
+    if (_apiKey.isEmpty || _messagingSenderId.isEmpty || _projectId.isEmpty) return false;
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return _appIdAndroid.isNotEmpty;
+      case TargetPlatform.iOS:
+        return _appIdIos.isNotEmpty;
+      default:
+        return false;
+    }
+  }
 
   static FirebaseOptions get currentPlatform {
     switch (defaultTargetPlatform) {
