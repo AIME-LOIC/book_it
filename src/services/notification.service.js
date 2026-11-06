@@ -1,13 +1,33 @@
 import Notification from '../database/models/notification.js';
+import DevicePushToken from '../database/models/device_push_token.js';
+import { sendPushToTokens } from './fcm.service.js';
+
+const deliverPush = async (notification) => {
+  try {
+    const devices = await DevicePushToken.findAll({ where: { recipient_id: notification.recipient_id, recipient_type: notification.recipient_type } });
+    await sendPushToTokens(devices, {
+      title: String(notification.type || 'BookIt update').replaceAll('_', ' '),
+      body: notification.message,
+      data: { notification_id: notification.id, ...(notification.meta || {}) },
+    });
+  } catch (error) {
+    // Persisted in-app notifications remain available even if FCM is temporarily unavailable.
+    console.error('[Push] Notification delivery failed:', error.message);
+  }
+};
 
 // Create a notification
 export const createNotification = async ({ recipient_id, recipient_type, type, message, meta = null }) => {
-  return await Notification.create({ recipient_id, recipient_type, type, message, meta });
+  const notification = await Notification.create({ recipient_id, recipient_type, type, message, meta });
+  await deliverPush(notification);
+  return notification;
 };
 
 // Create multiple notifications at once
 export const createMany = async (notifications) => {
-  return await Notification.bulkCreate(notifications);
+  const created = await Notification.bulkCreate(notifications);
+  await Promise.all(created.map(deliverPush));
+  return created;
 };
 
 // Get all notifications for a recipient
