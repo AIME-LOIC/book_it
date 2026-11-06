@@ -1,153 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms & Privacy Policy — BookIt</title>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        :root {
-            --primary: #059669;
-            --bg-main: #f0f4f8;
-            --card: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #475569;
-            --border: #e2e8f0;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-main: #0a0f1e;
-                --card: #111827;
-                --text-main: #f9fafb;
-                --text-muted: #9ca3af;
-                --border: #1f2937;
-            }
-        }
-
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: var(--bg-main);
-            color: var(--text-main);
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
-        .policy-card {
-            background: var(--card);
-            border: 1px solid var(--border);
-            padding: 40px;
-            border-radius: 24px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-        }
-
-        h1 {
-            font-size: 32px;
-            font-weight: 900;
-            margin-bottom: 24px;
-            color: var(--primary);
-            text-align: center;
-        }
-
-        h2 {
-            font-size: 22px;
-            font-weight: 800;
-            margin-top: 32px;
-            margin-bottom: 16px;
-            border-bottom: 2px solid var(--primary);
-            display: inline-block;
-        }
-
-        p {
-            margin-bottom: 16px;
-            color: var(--text-muted);
-        }
-
-        ul {
-            margin-bottom: 16px;
-            padding-left: 20px;
-            list-style-type: disc;
-            color: var(--text-muted);
-        }
-
-        li {
-            margin-bottom: 8px;
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--primary);
-            text-decoration: none;
-            font-weight: 700;
-            margin-bottom: 20px;
-            transition: 0.2s;
-        }
-
-        .back-link:hover {
-            opacity: 0.8;
-            transform: translateX(-4px);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="BookIt Terms of Service and Privacy Policy, operated by 1percent Rwanda.">
+  <meta name="theme-color" content="#059669">
+  <title>Terms of Service & Privacy Policy — BookIt</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--primary:#059669;--bg:#f3f7f8;--card:#fff;--ink:#10212b;--muted:#52616b;--line:#dce6e8}
+    @media(prefers-color-scheme:dark){:root{--bg:#0b1420;--card:#111e2b;--ink:#eef5f6;--muted:#b0bec5;--line:#263747}}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 'Plus Jakarta Sans',sans-serif}
+    .container{max-width:920px;margin:auto;padding:32px 18px 64px}
+    .back{display:inline-block;margin:0 0 20px;color:var(--primary);font-weight:700;text-decoration:none}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:clamp(22px,5vw,48px);box-shadow:0 12px 36px #0000000b}
+    h1{font-size:clamp(27px,5vw,38px);line-height:1.2;text-align:center;margin:4px 0 10px}
+    .intro{text-align:center;color:var(--muted);margin:0 auto 24px;max-width:700px}
+    .meta{text-align:center;font-size:13px;color:var(--muted);margin-bottom:28px}
+    nav{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:14px;margin:0 0 28px;border:1px solid var(--line);border-radius:14px}
+    nav a{color:var(--primary);font-size:14px;font-weight:700;text-decoration:none}
+    h2{font-size:22px;line-height:1.35;margin:38px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+    h3{font-size:17px;margin:22px 0 6px}
+    p,li{color:var(--muted)}
+    ul{padding-left:22px}
+    li{margin:0 0 8px}
+    a{color:var(--primary)}
+    .notice{background:color-mix(in srgb,var(--primary) 8%,var(--card));border-left:4px solid var(--primary);padding:14px 18px;border-radius:8px;margin:18px 0}
+    .footer{border-top:1px solid var(--line);margin-top:40px;padding-top:22px;text-align:center;color:var(--muted);font-size:14px}
+    @media print{body{background:#fff;color:#111}.card{box-shadow:none;border:0}.back,nav{display:none}p,li{color:#333}}
+  </style>
 </head>
-
 <body>
-    <div class="container">
-        <a href="/" class="back-link"><i class="fa fa-arrow-left"></i> Back to Home</a>
-        <div class="policy-card">
-            <h1>Terms & Policy</h1>
-            <p style="text-align: center; font-size: 14px;">Last Updated: June 2024</p>
+  <main class="container">
+    <a class="back" href="/">← Back to BookIt</a>
+    <article class="card">
+      <h1>BookIt Terms of Service & Privacy Policy</h1>
+      <p class="intro">These terms explain how BookIt works, the responsibilities of passengers and transport operators, and how personal information is handled.</p>
+      <p class="meta">Effective date: 6 November 2026 · Last updated: 6 November 2026</p>
+      <nav aria-label="Policy sections">
+        <a href="#terms">Terms of Service</a>
+        <a href="#bookings">Bookings & Payments</a>
+        <a href="#cancellations">Cancellations & Refunds</a>
+        <a href="#privacy">Privacy Policy</a>
+        <a href="#rights">Your Privacy Rights</a>
+        <a href="#contact">Contact</a>
+      </nav>
 
-            <h2>1. Terms of Service</h2>
-            <p>By using BookIt, you agree to the following conditions:</p>
-            <ul>
-                <li><strong>Booking Responsibility:</strong> Users are responsible for providing accurate information
-                    (name, phone) during booking.</li>
-                <li><strong>Ticket Validity:</strong> A ticket is only valid for the specific bus, date, and seat number
-                    indicated.</li>
-                <li><strong>Cancellations:</strong> Tickets can be cancelled up to 2 hours before departure. Refunds are
-                    processed according to operator policies.</li>
-                <li><strong>User Conduct:</strong> You agree not to use the platform for any fraudulent or unauthorized
-                    activities.</li>
-            </ul>
+      <div class="notice"><strong>Who operates BookIt?</strong> BookIt is a digital bus-booking and passenger information platform operated under the 1percent Rwanda name (“1percent Rwanda”, “BookIt”, “we”, “us” or “our”). 1percent Rwanda has informed users that it has not yet registered as a business. References to 1percent Rwanda in this policy identify the project and its operating team; they are not a representation that it is an incorporated company or other registered legal entity. Bus transportation is provided by the transport company shown for the selected trip. That transport company is responsible for operating the bus service.</div>
 
-            <h2>2. Privacy Policy</h2>
-            <p>Your privacy is important to us. Here is how we handle your data:</p>
-            <ul>
-                <li><strong>Data Collection:</strong> We collect your name, email, and phone number to facilitate
-                    bookings and notifications.</li>
-                <li><strong>Location Data:</strong> We may use your location to show nearby bus stops and track live bus
-                    positions for your convenience.</li>
-                <li><strong>Security:</strong> All payments are handled through secure gateways. We do not store your
-                    PINs or full credit card details.</li>
-                <li><strong>Third Parties:</strong> Your contact information is shared with the specific bus operator
-                    you booked with to ensure your travel manifest is complete.</li>
-            </ul>
+      <h2 id="terms">Part A — Terms of Service</h2>
+      <h3>1. Agreement and scope</h3>
+      <p>By accessing or using the BookIt website, mobile application or related services, you agree to these Terms and the Privacy Policy below. If you do not agree, do not use BookIt. These terms apply to passengers, account holders and other people using BookIt. Additional terms displayed by a transport operator or payment provider may also apply to the service they provide.</p>
 
-            <h2>3. Refund & Support</h2>
-            <p>If you encounter issues with your booking or payment:</p>
-            <ul>
-                <li>Contact our support team via the settings menu in the app.</li>
-                <li>Refunds for cancelled trips are typically credited back to your MRT Wallet or original payment
-                    method within 24-48 hours.</li>
-            </ul>
+      <h3>2. BookIt's role</h3>
+      <p>BookIt provides technology that may allow users to discover routes and trips, view availability and fares, make or manage reservations, receive electronic or downloadable tickets, and receive service notifications. Unless a trip listing expressly says otherwise, 1percent Rwanda is the platform operator and is not the carrier providing the bus journey. The relevant transport operator is responsible for its vehicles, drivers, staff, route operations, passenger handling, safety, schedules and performance of the journey.</p>
+      <p>Trip information is supplied by transport operators or other service sources. We take reasonable steps to display it accurately, but schedules, seat availability, fares, stops, vehicle details and journey times may change. The transport operator should be contacted about the actual operation of a trip.</p>
 
-            <div style="margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--border); text-align: center;">
-                <p style="font-size: 14px;">Questions? Email us at <a href="mailto:support@bookit.rw"
-                        style="color: var(--primary); font-weight: 700;">support@bookit.rw</a></p>
-            </div>
-        </div>
-    </div>
+      <h3>3. Accounts and accurate information</h3>
+      <ul>
+        <li>You must provide information that is accurate, current and complete when creating an account or booking a trip.</li>
+        <li>You are responsible for keeping your password, sign-in links, device and account credentials secure and for activity carried out through your account.</li>
+        <li>Notify us promptly through the available support channel if you suspect unauthorised access or an incorrect booking.</li>
+        <li>Do not impersonate another person, create fraudulent bookings, interfere with the service, attempt unauthorised access, or misuse another passenger's ticket or personal information.</li>
+        <li>If you book for another passenger, you must have authority to provide that passenger's information and must share relevant ticket and journey details with them.</li>
+      </ul>
+
+      <h3 id="bookings">4. Reservations, fares and tickets</h3>
+      <ul>
+        <li>A booking is confirmed only when BookIt displays a confirmed status or issues a valid ticket/booking reference after the required booking and payment steps.</li>
+        <li>A payment initiation, pending payment screen, screenshot or bank/mobile-money debit by itself may not mean that a booking is confirmed. Check the booking status in BookIt and contact support if the status and payment record disagree.</li>
+        <li>Before paying, review the operator, route, departure date and time, boarding point, destination, passenger details, seat (where applicable), fare, fees and other conditions shown at checkout.</li>
+        <li>Your ticket is for the passenger, trip, date, route and seat (if assigned) stated on it. It is not transferable unless BookIt or the transport operator expressly permits a change.</li>
+        <li>Present the ticket or booking reference and any identification required by the operator when boarding. A downloaded or offline ticket is a convenient copy; it does not override a cancellation, failed payment or changed booking status recorded by the service or operator.</li>
+        <li>Arrive at the boarding point sufficiently early and follow the operator's boarding instructions. Missing departure because you arrived late may be treated under the operator's applicable conditions.</li>
+      </ul>
+
+      <h3>5. Payments</h3>
+      <p>Payments may be handled by mobile-money, bank, card or other payment providers made available at checkout. Those providers process transactions under their own terms and privacy notices. BookIt may receive transaction references, payment status and information needed to reconcile a booking. Do not send passwords, PINs, one-time passcodes or full payment credentials to BookIt support.</p>
+      <p>Displayed prices and fees should be reviewed before confirmation. If you believe you were charged incorrectly, paid more than once, or were charged without receiving a confirmed booking, contact support with the booking reference and transaction reference. Do not include your PIN or full card details.</p>
+
+      <h3 id="cancellations">6. Changes, cancellations and refunds</h3>
+      <p>Cancellation, rescheduling, missed-departure and refund conditions can differ by transport operator, route, fare type and payment method. The applicable conditions shown at booking or communicated by the transport operator govern, subject to mandatory rights under applicable law.</p>
+      <ul>
+        <li>Check the cancellation and change conditions before completing payment. Where a deadline, fee or restriction applies, it should be shown by BookIt or provided by the operator.</li>
+        <li>Do not assume that every ticket can be cancelled, that a universal two-hour cancellation window applies, or that every refund is immediate.</li>
+        <li>Where cancellation or a refund is permitted, BookIt may help transmit or track the request. The transport operator and/or payment provider may need to approve or process the relevant part of the refund.</li>
+        <li>Refund amount, deductions and timing depend on the applicable fare conditions, reason for cancellation, operator decision where relevant, payment provider and applicable law. We will not represent an unverified processing period as guaranteed.</li>
+        <li>If the operator cancels or materially changes a trip, contact the operator or BookIt support promptly for the available rebooking or refund options.</li>
+        <li>For a payment error or suspected duplicate charge, provide the booking and transaction references so the payment can be investigated.</li>
+      </ul>
+      <p>Nothing in this section removes a right to a refund, remedy or other protection that cannot lawfully be excluded.</p>
+
+      <h3>7. Passenger responsibilities and operator rules</h3>
+      <p>Passengers must comply with applicable laws, boarding instructions, luggage limits, safety requirements and reasonable rules communicated by the transport operator. The operator may refuse carriage where required or permitted by law or its disclosed conditions. Any such decision and its consequences should be addressed with the operator, without limiting any rights you may have under applicable law.</p>
+
+      <h3>8. Service availability and technology</h3>
+      <p>We aim to keep BookIt available and secure, but the service may occasionally be unavailable due to maintenance, connectivity, power, third-party provider failures, security events or circumstances beyond our reasonable control. Some features, including live location, notifications, payment status updates and offline ticket access, depend on device settings, network access, permissions and third-party systems. We do not guarantee uninterrupted availability or continuous real-time accuracy.</p>
+
+      <h3>9. Intellectual property and acceptable use</h3>
+      <p>BookIt software, branding, design and content are owned by or licensed to 1percent Rwanda or the relevant rights holders. You may use the service for lawful personal booking and travel purposes. You must not copy, resell, reverse engineer, disrupt, scrape, or exploit the service except where applicable law permits or we have given written permission.</p>
+
+      <h3>10. Liability</h3>
+      <p>To the extent permitted by applicable law, 1percent Rwanda is responsible for the platform services it operates, while the transport operator remains responsible for the bus journey and transport services it provides. We are not the carrier and do not control the operator's vehicles, drivers, route decisions or on-road conduct. Nothing in these terms excludes or limits liability, consumer rights or remedies where such exclusion or limitation is prohibited by law, including liability that cannot legally be excluded.</p>
+      <p>We are not responsible for delays or failures caused by events outside our reasonable control, but this does not remove any non-excludable legal obligations. Where a problem concerns a specific journey, we may direct you to the relevant operator and assist with communication where reasonably possible.</p>
+
+      <h3>11. Suspension or termination</h3>
+      <p>We may restrict or suspend access where reasonably necessary to protect users, investigate suspected fraud or security incidents, comply with law, or address misuse of BookIt. Where appropriate and lawful, we will provide an explanation and a way to contact support. You may stop using BookIt and request account closure, subject to records we must retain for legal, security, accounting or dispute-resolution purposes.</p>
+
+      <h3>12. Changes to these terms</h3>
+      <p>We may update these terms to reflect changes to BookIt, operator arrangements, payment methods or legal requirements. We will update the effective date and, where a change materially affects users, take reasonable steps to provide notice. Continued use after an updated version takes effect constitutes acceptance where permitted by law. If you do not agree, stop using the affected service.</p>
+
+      <h2 id="privacy">Part B — Privacy Policy</h2>
+      <h3>13. Who is responsible for your information?</h3>
+      <p>BookIt is operated under the 1percent Rwanda name by its project team. 1percent Rwanda has not yet registered as a business. This policy identifies the team responsible for the BookIt service; it does not claim that 1percent Rwanda is an incorporated or registered legal entity. The person or entity legally responsible for personal-data processing must be confirmed in light of the actual operating arrangements and applicable law before public launch. A transport operator may separately determine how it uses passenger information for its own transport operations and legal obligations. Payment providers and technology vendors may process information under their own roles and notices.</p>
+      <p>This policy is intended to be read consistently with Rwanda's Law No. 058/2021 of 13 October 2021 relating to the Protection of Personal Data and Privacy and other applicable laws.</p>
+
+      <h3>14. Information we may collect</h3>
+      <ul>
+        <li><strong>Account and contact information:</strong> name, phone number, email address, account identifiers and sign-in/security information you provide.</li>
+        <li><strong>Booking and journey information:</strong> passenger details, selected routes, stops, travel dates, seat selections, booking references, ticket/QR data and booking history.</li>
+        <li><strong>Payment and transaction information:</strong> payment method type, transaction reference, amount, timestamps, reconciliation details and payment status. Payment credentials may be collected directly by the payment provider.</li>
+        <li><strong>Location information:</strong> device location when you enable a location-based feature and grant the relevant permission, such as finding nearby stations. Driver or vehicle location may be processed for trip operations or tracking features when enabled by the relevant user/operator.</li>
+        <li><strong>Device and technical information:</strong> device type, operating system, app version, IP address, diagnostic events, security logs and information needed to keep the service reliable.</li>
+        <li><strong>Support communications:</strong> messages, attachments and details you choose to provide when asking for help or reporting a problem.</li>
+        <li><strong>Preferences and notifications:</strong> notification tokens, delivery status and settings needed to send service-related alerts you have enabled or that are necessary for a booking.</li>
+      </ul>
+      <p>We aim to collect information that is relevant and necessary for the purposes described here. Please do not submit sensitive personal information unless it is genuinely required and requested through an appropriate secure process.</p>
+
+      <h3>15. Why we use information</h3>
+      <ul>
+        <li>Create and secure accounts and authenticate users.</li>
+        <li>Search routes and trips, reserve seats, issue tickets and manage bookings.</li>
+        <li>Process or reconcile payments, prevent fraud and investigate disputed transactions.</li>
+        <li>Send booking confirmations, ticket updates, schedule changes, safety/service notices and support responses.</li>
+        <li>Share relevant passenger and booking details with the selected transport operator so it can provide the booked journey.</li>
+        <li>Provide location-dependent features when enabled, including nearby stations or trip/vehicle tracking.</li>
+        <li>Maintain, troubleshoot, protect and improve BookIt, including auditing and diagnosing errors.</li>
+        <li>Meet legal, regulatory, accounting and dispute-resolution obligations.</li>
+      </ul>
+
+      <h3>16. Legal grounds for processing</h3>
+      <p>Depending on the activity and applicable law, we process personal information where it is necessary to perform a contract or take steps you request before booking; to comply with a legal obligation; based on your valid consent (for example, optional device location or optional communications); to protect vital interests; to perform a task in the public interest where applicable; or for legitimate interests such as platform security and service reliability, where those interests are not overridden by your rights. Where processing relies on consent, you may withdraw it, without affecting processing lawfully carried out before withdrawal.</p>
+
+      <h3>17. When information is shared</h3>
+      <ul>
+        <li><strong>Selected transport operator:</strong> relevant passenger, contact and booking details needed to confirm and provide your journey, handle boarding and respond to trip issues.</li>
+        <li><strong>Payment providers:</strong> information needed to initiate, verify, settle, reconcile or refund a transaction.</li>
+        <li><strong>Technology and service providers:</strong> hosting, database, communications, notification, security, analytics or support providers engaged to help operate BookIt. They should receive only information needed for their assigned services and be subject to appropriate safeguards and contractual obligations.</li>
+        <li><strong>Authorities and legal recipients:</strong> where disclosure is required by law, lawful order, or necessary to establish, exercise or defend legal claims or protect users and the service.</li>
+        <li><strong>Business changes:</strong> in connection with a genuine restructuring or transfer of the service, subject to applicable law and appropriate safeguards.</li>
+      </ul>
+      <p>We do not sell personal information as a business model. We do not share information with unrelated parties for their independent marketing without an appropriate lawful basis or your consent where required.</p>
+
+      <h3>18. International transfers and storage</h3>
+      <p>BookIt may use infrastructure or service providers located outside Rwanda. Where personal information is transferred or accessed across borders, we will do so only as permitted by applicable law and with the required safeguards, authorisations or other legal basis. The exact location and provider may depend on the infrastructure used to operate the service.</p>
+
+      <h3>19. How long information is kept</h3>
+      <p>We retain personal information only for as long as reasonably necessary for the purposes for which it was collected, including account and booking administration, customer support, security, legal compliance, accounting and the establishment or defence of claims. Retention periods may differ by data category and legal requirement. When information is no longer required, we will take reasonable steps to delete, anonymise or securely dispose of it, subject to lawful retention obligations and backup cycles.</p>
+
+      <h3>20. Security</h3>
+      <p>We use reasonable technical and organisational measures designed to protect personal information against unauthorised access, loss, alteration or disclosure. No internet transmission, device or storage system can be guaranteed completely secure. You should protect your device and account credentials, sign out on shared devices and report suspected compromise promptly.</p>
+
+      <h3>21. Location, offline tickets and device permissions</h3>
+      <p>Location permission is used only for features that need it, and you can manage permission through your device settings. Disabling location may limit nearby-station or tracking features but should not affect unrelated booking functions. If you save a ticket for offline access or export a ticket/PDF, a copy may be stored on your device. Anyone with access to that device or file may be able to view it; protect it and delete it when no longer needed. Offline copies may not reflect later booking changes until the device reconnects.</p>
+
+      <h3 id="rights">22. Your privacy rights and choices</h3>
+      <p>Subject to the conditions and exceptions in applicable law, you may request to:</p>
+      <ul>
+        <li>know whether we process your personal information and obtain information about that processing;</li>
+        <li>access a copy of personal information we hold about you;</li>
+        <li>correct inaccurate or incomplete information;</li>
+        <li>request erasure where the legal conditions for erasure are met;</li>
+        <li>request restriction of processing or object where the law provides that right;</li>
+        <li>withdraw consent where processing is based on consent; and</li>
+        <li>raise a complaint with the competent supervisory authority if you believe your rights have not been respected.</li>
+      </ul>
+      <p>To protect your information, we may need to verify your identity before acting on a request. Some information may need to be retained where required by law or necessary for legal claims, security or transaction records. We will respond within the period required by applicable law.</p>
+
+      <h3>23. Children and bookings for another person</h3>
+      <p>BookIt accounts should be created and managed by people legally able to do so. An adult making a booking for a child or another passenger is responsible for ensuring they have authority to provide the passenger information and for communicating the relevant journey details. Where applicable law requires parent or guardian involvement or consent, it must be obtained.</p>
+
+      <h3>24. Third-party services and links</h3>
+      <p>BookIt may link to or integrate with transport operators, payment providers, map services, app stores or other third-party services. Those services may have separate terms and privacy notices. We encourage you to review them. We are not responsible for independent services that we do not operate.</p>
+
+      <h2 id="contact">Part C — Questions, requests and complaints</h2>
+      <p>For booking assistance, account issues, privacy requests or complaints, contact BookIt through the support option available in the website or application. Contact the BookIt team at <a href="mailto:1percentrwanda@gmail.com">1percentrwanda@gmail.com</a>. Please include your booking reference where relevant, but never send your password, PIN, one-time passcode or full payment-card credentials.</p>
+      <p>For privacy matters, identify your request as a “Privacy Request” so it can be routed to the person responsible for data protection at 1percent Rwanda. If you are not satisfied with the handling of your personal data, you may also contact Rwanda's competent data protection supervisory authority.</p>
+
+      <div class="notice"><strong>Important:</strong> This page is a general statement of BookIt's intended service and privacy practices. Specific operator fare rules and payment-provider conditions may apply to individual transactions. Nothing here limits mandatory rights under Rwandan law.</div>
+      <footer class="footer">
+        <p><strong>BookIt</strong> · Operated under the 1percent Rwanda name</p>
+        <p>© 2026 1percent Rwanda. All rights reserved.</p>
+      </footer>
+    </article>
+  </main>
 </body>
-
 </html>
