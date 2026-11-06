@@ -63,6 +63,54 @@ jobs:
           cd "$RUNNER_TEMP"
           sha256sum bookit-linux-x86_64.tar.gz > bookit-linux-x86_64.tar.gz.sha256
 
+      - name: Configure Android release signing
+        id: android-signing
+        shell: bash
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$KEYSTORE_BASE64" || -z "$KEYSTORE_PASSWORD" || -z "$KEY_ALIAS" || -z "$KEY_PASSWORD" ]]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Android APK will not be attached: configure the four ANDROID_KEYSTORE_* GitHub Actions secrets to enable signed updates."
+            exit 0
+          fi
+          echo "$KEYSTORE_BASE64" | base64 --decode > bookit/android/app/upload-keystore.jks
+          cat > bookit/android/key.properties <<EOF
+          storeFile=../app/upload-keystore.jks
+          storePassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Java for Android
+        if: steps.android-signing.outputs.configured == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build signed Android APK
+        if: steps.android-signing.outputs.configured == 'true'
+        working-directory: bookit
+        env:
+          FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY }}
+          FIREBASE_ANDROID_APP_ID: ${{ vars.FIREBASE_ANDROID_APP_ID }}
+          FIREBASE_MESSAGING_SENDER_ID: ${{ vars.FIREBASE_MESSAGING_SENDER_ID }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID }}
+        run: |
+          flutter build apk --release \
+            --build-name "${{ steps.version.outputs.value }}" \
+            --build-number "${{ github.run_number }}" \
+            --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" \
+            --dart-define=FIREBASE_ANDROID_APP_ID="$FIREBASE_ANDROID_APP_ID" \
+            --dart-define=FIREBASE_MESSAGING_SENDER_ID="$FIREBASE_MESSAGING_SENDER_ID" \
+            --dart-define=FIREBASE_PROJECT_ID="$FIREBASE_PROJECT_ID"
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -70,3 +118,9 @@ jobs:
           files: |
             ${{ runner.temp }}/bookit-linux-x86_64.tar.gz
             ${{ runner.temp }}/bookit-linux-x86_64.tar.gz.sha256
+
+      - name: Attach signed Android APK to GitHub Release
+        if: steps.android-signing.outputs.configured == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bookit/build/app/outputs/flutter-apk/app-release.apk
