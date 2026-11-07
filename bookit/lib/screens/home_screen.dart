@@ -1001,7 +1001,7 @@ class _HomeScreenState extends State<HomeScreen> {
   LinearGradient get _weatherGradient {
     final code=_weatherCode;
     if(code==null)return AppColors.heroGradient;
-    if((code==0||code==1)&&!_isDay)return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF0F172A),Color(0xFF1E3A8A),Color(0xFF334155)]);
+    if(!_isDay)return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF0F172A),Color(0xFF1E3A8A),Color(0xFF334155)]);
     if(code==0)return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF075985),Color(0xFF0288D1),Color(0xFF38BDF8)]);
     if(code<=3)return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF334155),Color(0xFF64748B),Color(0xFF94A3B8)]);
     if((code>=51&&code<=67)||(code>=80&&code<=82)||code>=95)return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF172554),Color(0xFF1D4ED8),Color(0xFF64748B)]);
@@ -1819,7 +1819,7 @@ class _WeatherBackdropState extends State<_WeatherBackdrop> with SingleTickerPro
     final clear=code==0;
     return IgnorePointer(child:AnimatedBuilder(animation:_animation,builder:(context,_)=>Stack(clipBehavior:Clip.none,children:[
       if(clear&&widget.isDay)Positioned(right:18,top:35,child:Icon(Icons.wb_sunny_rounded,size:78,color:Colors.white.withValues(alpha:.35))),
-      if(clear&&!widget.isDay)Positioned(right:18,top:35,child:Icon(Icons.nights_stay_rounded,size:78,color:Colors.white.withValues(alpha:.42))),
+      if(!widget.isDay&&!rainy&&!foggy)Positioned(right:18,top:35,child:Icon(Icons.nights_stay_rounded,size:78,color:Colors.white.withValues(alpha:.42))),
       if(!clear)Positioned(right:0,top:34,child:Icon(foggy?Icons.cloud_queue_rounded:Icons.cloud_rounded,size:94,color:Colors.white.withValues(alpha:.35))),
       if(rainy)...List.generate(9,(i){final x=8.0+(i*17.0)%135;final progress=(_animation.value+(i*.13))%1;return Positioned(left:x,top:82+progress*80,child:Transform.rotate(angle:.22,child:Container(width:2,height:14,decoration:BoxDecoration(color:Colors.white.withValues(alpha:.15+(.25*(1-progress))),borderRadius:BorderRadius.circular(2)))));}),
       if(foggy)...List.generate(3,(i)=>Positioned(right:8+i*5.0,top:95+i*17.0,child:Container(width:95-i*12.0,height:3,decoration:BoxDecoration(color:Colors.white.withValues(alpha:.25),borderRadius:BorderRadius.circular(8))))),
