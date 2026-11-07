@@ -120,11 +120,19 @@ class AppUpdateService {
     if (!supportsInAppLinuxUpdate) return false;
     final home = Platform.environment['HOME'];
     if (home == null || home.isEmpty) return false;
-    final script = '$home/.local/opt/bookit/update-linux.sh';
-    if (!await File(script).exists()) return false;
-
+    final appDir = Directory('$home/.local/opt/bookit');
+    final scriptFile = File('${appDir.path}/update-linux.sh');
     try {
-      await Process.start('/bin/bash', [script], mode: ProcessStartMode.detached);
+      await appDir.create(recursive: true);
+      if (!await scriptFile.exists()) {
+        final response = await http.get(Uri.parse(
+          'https://raw.githubusercontent.com/AIME-LOIC/book_it/main/bookit/scripts/update-linux.sh',
+        )).timeout(const Duration(seconds: 20));
+        if (response.statusCode != 200 || response.body.isEmpty) return false;
+        await scriptFile.writeAsString(response.body, flush: true);
+      }
+      await Process.run('chmod', ['0755', scriptFile.path]);
+      await Process.start('/bin/bash', [scriptFile.path], mode: ProcessStartMode.detached);
       // The updater atomically switches the installed release after this app exits.
       exit(0);
     } catch (_) {
