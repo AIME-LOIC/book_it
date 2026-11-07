@@ -36,6 +36,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tab=0; bool _loadingLocations=true,_searching=false,_loadingTickets=false,_loadingProfile=false,_loadingNotifications=false,_showingSearchResults=false;
   int _unreadNotifications=0;
+  bool _showingUpdatePrompt=false;
   Timer? _notificationTimer;
   StreamSubscription<Map<String, dynamic>>? _pushOpenSubscription;
   String? _searchError;
@@ -300,8 +301,12 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _openNearbyStations() async { await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const NearbyStationsScreen())); }
 
   Future<void> _checkForAppUpdate() async {
-    final update = await AppUpdateService.checkForUpdate(ignoreSkipped: true);
-    if (update == null || !mounted) return;
+    final update = await AppUpdateService.checkForUpdate();
+    if (update == null || !mounted || _showingUpdatePrompt) return;
+    _showingUpdatePrompt = true;
+    await AppUpdateService.showUpdatePrompt(context, update);
+    _showingUpdatePrompt = false;
+    if (!mounted) return;
     try {
       await ApiClient.post('notifications/app-update', auth: true, body: {
         'version': update.version,
