@@ -24,6 +24,7 @@ import 'rfid_cards_screen.dart';
 import '../services/auth_service.dart';
 import '../services/push_notification_service.dart';
 import 'app_update_screen.dart';
+import 'legal_document_screen.dart';
 import '../services/app_update_service.dart';
 import '../theme/app_theme.dart';
 
@@ -1704,67 +1705,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }:null,
     )));
   }
-  static const String _termsText = '''1. Acceptance of Terms
-By accessing or using the services provided by 1% Digital Solutions ("the Company"), including our website, training programmes, and software development services, you agree to be bound by these Terms of Service. If you do not agree, do not use our services.
-
-2. Services
-1% Digital Solutions provides the following services from Kigali, Rwanda:
-• Full-stack software development (web, mobile, AI, IoT)
-• The 1% Expert developer training programme
-• Cybersecurity consulting and penetration testing
-• UI/UX design and consulting services
-
-3. Training Programme
-Enrolment in the 1% Expert Programme requires acceptance of these terms. Students must:
-• Be at least 16 years of age
-• Complete assigned coursework and projects
-• Adhere to the code of conduct
-• Not redistribute course materials
-
-4. Intellectual Property
-All course materials, software, and content created by 1% Digital Solutions remain the intellectual property of the Company unless otherwise stated. Students retain ownership of their original project work.
-
-5. Limitation of Liability
-1% Digital Solutions shall not be liable for any indirect, incidental, or consequential damages. Our total liability shall not exceed the amount paid for the specific service in question.
-
-6. Governing Law
-These terms are governed by the laws of the Republic of Rwanda. Any disputes shall be resolved in the courts of Kigali.
-
-7. Changes
-We reserve the right to modify these terms at any material time. Continued use of our services constitutes acceptance of updated terms.''';
-
-  static const String _privacyText = '''1. Information We Collect
-When you use our services, we may collect:
-• Name and email address (when you sign up or contact us)
-• Account credentials (managed securely via Supabase Auth)
-• Course progress and completion data
-• Service inquiry details (project requirements, budget)
-• Cookie and usage data
-
-2. How We Use Your Information
-• To provide and improve our training and development services
-• To track your learning progress and issue certifications
-• To communicate about courses, services, and updates
-• To process service inquiries and project proposals
-• To comply with legal obligations
-
-3. Data Storage & Security
-Your data is stored securely using Supabase (hosted on AWS infrastructure). We implement industry-standard encryption, access controls, and regular security audits.
-
-4. Data Sharing
-We do not sell your personal data. We may share data with:
-• Service providers essential to our operations (hosting, email)
-• Law enforcement when legally required
-
-5. Your Rights
-You have the right to access, correct, or delete your personal data. Contact us at 1percentrwanda@gmail.com to exercise these rights.
-
-6. Cookies
-We use essential cookies for site functionality and optional analytics cookies. You can manage preferences through the cookie consent banner.
-
-7. Contact
-For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions, Kigali, Rwanda.''';
-
   Future<void> _showInfo(String title,String body) async {
     await showDialog<void>(context:context,builder:(c)=>Dialog(
       child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:480,maxHeight:720),child:Padding(
@@ -1821,9 +1761,9 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
     Card(child:Column(children:[
       ListTile(leading:const Icon(Icons.support_agent_outlined,color:AppColors.primary),title:const Text('Support'),subtitle:const Text('Booking and account help'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Support','For help with BookIt, contact 1% Digital Solutions through your existing support channel. Keep your booking reference, route, travel date and payment reference ready when requesting help.')),
       const Divider(height:1,indent:56),
-      ListTile(leading:const Icon(Icons.description_outlined,color:AppColors.primary),title:const Text('Terms of Service'),subtitle:const Text('Read the service terms'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Terms of Service',_termsText)),
+      ListTile(leading:const Icon(Icons.description_outlined,color:AppColors.primary),title:const Text('Terms of Service'),subtitle:const Text('Read the service terms'),trailing:const Icon(Icons.chevron_right),onTap:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>const LegalDocumentScreen(document:LegalDocument.terms)))),
       const Divider(height:1,indent:56),
-      ListTile(leading:const Icon(Icons.privacy_tip_outlined,color:AppColors.primary),title:const Text('Privacy Policy'),subtitle:const Text('How information is handled'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Privacy Policy',_privacyText)),
+      ListTile(leading:const Icon(Icons.privacy_tip_outlined,color:AppColors.primary),title:const Text('Privacy Policy'),subtitle:const Text('How information is handled'),trailing:const Icon(Icons.chevron_right),onTap:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>const LegalDocumentScreen(document:LegalDocument.privacy)))),
     ])),
     const SizedBox(height:20),OutlinedButton.icon(onPressed:()async{await PushNotificationService.unregisterDevice();try{await ApiClient.post('auth/logout',auth:true);}catch(_){}try{await ApiClient.clearToken();}catch(_){ApiClient.setToken(null);}if(!mounted)return;final accounts=await AuthService.savedAccounts();if(!mounted)return;Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute<void>(builder:(_)=>accounts.isNotEmpty?const ProfilesScreen():const LoginScreen(),),(route)=>false);},icon:const Icon(Icons.logout),label:const Text('Sign out')),
     ])),
