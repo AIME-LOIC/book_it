@@ -70,7 +70,15 @@ void main() {
 
     final signInButton = find.text('Sign in');
     expect(signInButton, findsOneWidget);
-    await tester.ensureVisible(signInButton);
+
+    // The full login form is taller than the default 800x600 test viewport.
+    // Scroll the real ListView until the button is on-screen before tapping.
+    await tester.scrollUntilVisible(
+      signInButton,
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pump();
     await tester.tap(signInButton);
     await tester.pump();
 
