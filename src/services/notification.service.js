@@ -30,6 +30,23 @@ export const createMany = async (notifications) => {
   return created;
 };
 
+// Persist one update notice per recipient and version, then send it through FCM.
+export const createAppUpdateNotice = async ({ recipient_id, recipient_type, version }) => {
+  const existing = await Notification.findAll({
+    where: { recipient_id, recipient_type, type: 'app_update_available' },
+    order: [['createdAt', 'DESC']],
+    limit: 20,
+  });
+  if (existing.some((item) => String(item.meta?.version || '') === version)) return null;
+  return createNotification({
+    recipient_id,
+    recipient_type,
+    type: 'app_update_available',
+    message: `BookIt version ${version} is available. Open Profile → App updates to install it.`,
+    meta: { version, action: 'app_update' },
+  });
+};
+
 // Get all notifications for a recipient
 export const getMyNotifications = async (recipient_id, recipient_type) => {
   return await Notification.findAll({
