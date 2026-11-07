@@ -7,7 +7,7 @@ project(runner LANGUAGES CXX)
 set(BINARY_NAME "bookit")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "com.example.bookit")
+set(APPLICATION_ID "rw.onepercent.bookit")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
@@ -129,3 +129,18 @@ if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
   install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
     COMPONENT Runtime)
 endif()
+
+
+# Install the BookIt launcher metadata and icon into the Linux bundle.
+# The bundle can then be integrated with desktop environments such as Kali XFCE.
+set(BOOKIT_DESKTOP_DIR "${CMAKE_INSTALL_PREFIX}/share/applications")
+set(BOOKIT_ICON_DIR "${CMAKE_INSTALL_PREFIX}/share/icons/hicolor/512x512/apps")
+
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/bookit.desktop"
+  DESTINATION "${BOOKIT_DESKTOP_DIR}"
+  COMPONENT Runtime)
+
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../assets/icon.png"
+  DESTINATION "${BOOKIT_ICON_DIR}"
+  RENAME "bookit.png"
+  COMPONENT Runtime)

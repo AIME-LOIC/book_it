@@ -916,9 +916,25 @@ export const getAllTickets = async () => {
 // ── DRIVER ────────────────────────────────────────────
 export const getBusPassengers = async (bus_id, travel_date) => {
   const date = travel_date || new Date().toISOString().split('T')[0];
+
+  // The driver manifest only needs passenger identity and ticket fields.
+  // Avoid the full ticketIncludes graph here: joining bus, route, operator,
+  // locations and both route stops can make the entire manifest fail when an
+  // unrelated association/schema is unavailable. Keep this query small and
+  // deterministic so paid tickets still load for the assigned bus.
   return await Ticket.findAll({
     where: { bus_id, travel_date: date, status: 'paid' },
-    include: ticketIncludes,
+    attributes: [
+      'id', 'user_id', 'bus_id', 'seat_number', 'travel_date',
+      'price', 'status', 'ticket_number', 'is_used', 'departed_at',
+      'createdAt', 'updatedAt',
+    ],
+    include: [{
+      model: User,
+      as: 'user',
+      attributes: ['id', 'name', 'email', 'phone'],
+      required: false,
+    }],
     order: [['seat_number', 'ASC']],
   });
 };

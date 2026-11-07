@@ -1,0 +1,11 @@
+Launching lib/main.dart on Linux in debug mode...
+ERROR: lib/screens/rfid_cards_screen.dart:60:52: Error: A value of type 'String?' can't be assigned to a variable of type 'String'.
+ERROR:       if (mounted) setState(() => _message = error.message);
+ERROR:                                                    ^
+ERROR: Target kernel_snapshot_program failed: Exception
+Building Linux application...                                           
+Error: Build process failed
+                                                                                                                                                                                                   
+┌──(aime㉿kali)-[~/bookit/bookit]
+└─$ 
+

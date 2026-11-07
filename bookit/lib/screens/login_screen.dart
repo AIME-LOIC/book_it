@@ -4,6 +4,7 @@ import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import 'home_screen.dart';
+import 'driver_dashboard_screen.dart';
 import 'signup_screen.dart';
 
 /// Animated login screen.
@@ -40,26 +41,39 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _submitting = true);
 
+    final identifier = _emailController.text.trim();
+    final isDriver = !identifier.contains('@');
+
     try {
-      final name = await AuthService.login(
-        email: _emailController.text,
-        password: _passwordController.text,
-      );
+      final name = isDriver
+          ? await AuthService.loginDriver(
+              phone: identifier,
+              password: _passwordController.text,
+            )
+          : await AuthService.login(
+              email: identifier,
+              password: _passwordController.text,
+            );
       if (!mounted) return;
       setState(() {
         _submitting = false;
         _succeeded = true;
       });
-      await Future<void>.delayed(const Duration(milliseconds: 650));
+      await Future<void>.delayed(const Duration(milliseconds: 450));
       if (!mounted) return;
+
+      final Widget destination = isDriver
+          ? DriverDashboardScreen(driverName: name)
+          : HomeScreen(userName: name);
       Navigator.of(context).pushReplacement(
         PageRouteBuilder<void>(
           transitionDuration: const Duration(milliseconds: 450),
-          pageBuilder: (_, _, _) => HomeScreen(userName: name),
+          pageBuilder: (_, _, _) => destination,
           transitionsBuilder: (_, animation, _, child) {
             final curved = CurvedAnimation(
               parent: animation,
@@ -68,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
             return FadeTransition(
               opacity: curved,
               child: ScaleTransition(
-                scale: Tween(begin: 0.94, end: 1.0).animate(curved),
+                scale: Tween(begin: 0.96, end: 1.0).animate(curved),
                 child: child,
               ),
             );
@@ -192,7 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           const Text(
-                            'Email address',
+                            'Email or phone number',
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
@@ -203,10 +217,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: _emailController,
                             focusNode: _emailFocus,
-                            keyboardType: TextInputType.emailAddress,
+                            keyboardType: TextInputType.text,
                             textInputAction: TextInputAction.next,
                             decoration: const InputDecoration(
-                              hintText: 'you@example.com',
+                              hintText: 'you@example.com or +250 78…',
                               prefixIcon: Icon(
                                 Icons.alternate_email_rounded,
                                 color: AppColors.primary,
@@ -216,9 +230,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                 _passwordFocus.requestFocus(),
                             validator: (v) {
                               final value = v?.trim() ?? '';
-                              if (value.isEmpty) return 'Email is required';
-                              if (!value.contains('@') || !value.contains('.')) {
-                                return 'Enter a valid email';
+                              if (value.isEmpty) {
+                                return 'Email or phone number is required';
+                              }
+                              if (value.contains('@')) {
+                                if (!value.contains('.') || value.startsWith('@')) {
+                                  return 'Enter a valid email address';
+                                }
+                              } else if (!RegExp(r'^\+?[0-9\s()-]{7,20}$').hasMatch(value)) {
+                                return 'Enter a valid phone number';
                               }
                               return null;
                             },
@@ -290,42 +310,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           const SizedBox(height: 18),
 
-                          // Divider "or".
-                          Row(
-                            children: [
-                              const Expanded(
-                                child: Divider(
-                                  color: Color(0xFFDCEEFB),
-                                  thickness: 1,
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12),
-                                child: Text(
-                                  'or',
-                                  style: TextStyle(
-                                    color: AppColors.textMuted,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                              const Expanded(
-                                child: Divider(
-                                  color: Color(0xFFDCEEFB),
-                                  thickness: 1,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-
-                          OutlinedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.admin_panel_settings_rounded,
-                                size: 20),
-                            label: const Text('Sign in with admin key'),
-                          ),
                         ],
                       ),
                     ),
@@ -515,3 +499,4 @@ class __FloatingLogoState extends State<_FloatingLogo>
     );
   }
 }
+

@@ -16,8 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
-
+version: 1.0.1+2
 environment:
   sdk: ^3.11.0-296.3.beta
 
@@ -42,11 +41,22 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   qr_flutter: ^4.1.0
   url_launcher: ^6.3.2
+  mobile_scanner: ^7.4.3
+  nfc_manager: ^4.2.1
   flutter_map: ^8.3.2
   latlong2: ^0.9.1
   geolocator: ^14.0.2
   pdf: ^3.11.3
   printing: ^5.14.3
+  package_info_plus: ^8.3.1
+  firebase_core: ^3.15.2
+  firebase_messaging: ^15.2.10
+  flutter_local_notifications: ^19.4.2
+  webview_flutter: ^4.13.0
+
+# Keep the zlib decoder API compatible with image 4.11.x.
+dependency_overrides:
+  archive: ^4.5.2
 
 dev_dependencies:
   flutter_test:
@@ -58,6 +68,18 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+
+  # Generates the Android/iOS launcher icons from assets/icon.png.
+  # Run: dart run flutter_launcher_icons
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  image_path: "assets/icon.png"
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

@@ -7,6 +7,12 @@ class ApiClient {
   ApiClient._();
   static String? _token;
   static const FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+
+  /// Test-only hook: widget tests can stub POST responses without network.
+  /// Production code leaves this null, in which case `post` behaves normally.
+  static Future<dynamic> Function(String path, {Map<String,dynamic>? body, bool auth})? postOverride;
+  static Future<dynamic> Function(String path, {Map<String,String>? query, bool auth})? getOverride;
+
   static bool get hasToken => _token != null && _token!.isNotEmpty;
   static void setToken(String? token) => _token = token;
   static Future<void> saveToken(String token) async {
@@ -20,13 +26,27 @@ class ApiClient {
     _token = null;
     await _secureStorage.delete(key: 'bookit_access_token');
   }
+
+  /// Per-account token vault (keyed by identifier) so the profiles page can
+  /// switch between recently used accounts without re-entering passwords.
+  static Future<void> saveTokenFor(String key, String token) =>
+      _secureStorage.write(key: key, value: token);
+  static Future<String?> loadTokenFor(String key) => _secureStorage.read(key: key);
+  static Future<void> deleteTokenFor(String key) => _secureStorage.delete(key: key);
   static Map<String,String> _headers(bool auth) => {
     'Accept':'application/json','Content-Type':'application/json',
     if(auth && _token != null) 'Authorization':'Bearer $_token',
   };
-  static Future<dynamic> get(String path,{Map<String,String>? query,bool auth=false}) => _send('GET',path,query:query,auth:auth);
-  static Future<dynamic> post(String path,{Map<String,dynamic>? body,bool auth=false}) => _send('POST',path,body:body,auth:auth);
+  static Future<dynamic> get(String path,{Map<String,String>? query,bool auth=false}) {
+    if (getOverride != null) return getOverride!(path, query: query, auth: auth);
+    return _send('GET',path,query:query,auth:auth);
+  }
+  static Future<dynamic> post(String path,{Map<String,dynamic>? body,bool auth=false}) {
+    if (postOverride != null) return postOverride!(path, body: body, auth: auth);
+    return _send('POST',path,body:body,auth:auth);
+  }
   static Future<dynamic> patch(String path,{Map<String,dynamic>? body,bool auth=false}) => _send('PATCH',path,body:body,auth:auth);
+  static Future<dynamic> delete(String path,{Map<String,dynamic>? body,bool auth=false}) => _send('DELETE',path,body:body,auth:auth);
   static Future<dynamic> _send(String method,String path,{Map<String,String>? query,Map<String,dynamic>? body,bool auth=false}) async {
     var uri=Uri.parse(ApiConfig.endpoint(path));
     if(query!=null) uri=uri.replace(queryParameters:query);
@@ -35,6 +55,7 @@ class ApiClient {
       late http.Response res;
       if(method=='GET') { res=await http.get(uri,headers:h).timeout(const Duration(seconds:20)); }
       else if(method=='POST') { res=await http.post(uri,headers:h,body:jsonEncode(body??{})).timeout(const Duration(seconds:25)); }
+      else if(method=='DELETE') { res=await http.delete(uri,headers:h,body:body==null?null:jsonEncode(body)).timeout(const Duration(seconds:20)); }
       else { res=await http.patch(uri,headers:h,body:jsonEncode(body??{})).timeout(const Duration(seconds:25)); }
       dynamic data;
       try { data=res.body.isEmpty?<String,dynamic>{}:jsonDecode(res.body); } catch (_) { data={'message':res.body}; }

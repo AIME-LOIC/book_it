@@ -1,0 +1,4 @@
+BookIt 1.2.2
+
+What's new:
+• night weather and app self updates

@@ -19,6 +19,13 @@ import 'route_map_screen.dart';
 import 'nearby_stations_screen.dart';
 import 'weather_forecast_screen.dart';
 import 'login_screen.dart';
+import 'profiles_screen.dart';
+import 'rfid_cards_screen.dart';
+import '../services/auth_service.dart';
+import '../services/push_notification_service.dart';
+import 'app_update_screen.dart';
+import 'legal_document_screen.dart';
+import '../services/app_update_service.dart';
 import '../theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -29,7 +36,9 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tab=0; bool _loadingLocations=true,_searching=false,_loadingTickets=false,_loadingProfile=false,_loadingNotifications=false,_showingSearchResults=false;
   int _unreadNotifications=0;
+  bool _showingUpdatePrompt=false;
   Timer? _notificationTimer;
+  StreamSubscription<Map<String, dynamic>>? _pushOpenSubscription;
   String? _searchError;
   String _ticketSearchQuery='',_ticketSort='newest',_historySearchQuery='';
   bool _historyKinyarwanda=false,_usingOfflineTickets=false;
@@ -39,6 +48,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Timer? _paymentPollTimer;
   List<Map<String,dynamic>> _locations=[],_buses=[],_tickets=[],_notifications=[],_tripReminders=[];
   Map<String,dynamic> _profileData={};
+
+  /// Inline profile editor: fields live on the Profile tab and persist via the
+  /// 'Save profile' button instead of only through the edit dialog.
+  final TextEditingController _profileNameCtrl=TextEditingController(),_profilePhoneCtrl=TextEditingController();
+  final FocusNode _profileNameFocus=FocusNode(),_profilePhoneFocus=FocusNode();
+  bool _savingProfile=false;
+  bool _isDay = DateTime.now().hour < 17 || (DateTime.now().hour == 17 && DateTime.now().minute < 30);
+  Timer? _dayNightTimer;
   int? _weatherCode;
   double? _temperature;
   List<Map<String,dynamic>> _dailyForecast=[];
@@ -47,8 +64,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _fromId,_toId,_activeTicketId,_selectedHistoryRoute; DateTime _date=DateTime.now().add(const Duration(days:1));
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer; DateTime? _holdExpiresAt;
   final _phone=TextEditingController(); String _network='mtn'; bool _phoneManuallyEdited=false; String? _detectedNetwork;
-  @override void initState(){super.initState();_loadHistoryLanguage();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
-  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_notificationTimer?.cancel();_paymentPollTimer?.cancel();_phone.dispose();super.dispose();}
+  @override void initState(){super.initState();PushNotificationService.registerDevice();_pushOpenSubscription=PushNotificationService.openedMessages.listen((data){_loadNotifications();if(data.isNotEmpty)_handleNotificationTap({'meta':data});});final pendingPush=PushNotificationService.takePendingMessage();if(pendingPush!=null){WidgetsBinding.instance.addPostFrameCallback((_) {if(mounted)_handleNotificationTap({'meta':pendingPush});});}_loadHistoryLanguage();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_checkForAppUpdate();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());_dayNightTimer=Timer.periodic(const Duration(minutes:1),(_){final now=DateTime.now();final isDay=now.hour<17||(now.hour==17&&now.minute<30);if(mounted&&_isDay!=isDay)setState(()=>_isDay=isDay);});}
+  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_dayNightTimer?.cancel();_notificationTimer?.cancel();_pushOpenSubscription?.cancel();_paymentPollTimer?.cancel();_phone.dispose();_profileNameCtrl.dispose();_profilePhoneCtrl.dispose();_profileNameFocus.dispose();_profilePhoneFocus.dispose();super.dispose();}
 
 
   Future<void> _loadTripReminders() async {
@@ -193,6 +210,10 @@ class _HomeScreenState extends State<HomeScreen> {
       if(current==null)return;
       final code=(current['weather_code'] as num?)?.toInt();
       final temp=(current['temperature_2m'] as num?)?.toDouble();
+      // BookIt switches to its night presentation at 5:30 PM Kigali time,
+      // regardless of the weather provider's broader sunrise/sunset flag.
+      final now=DateTime.now();
+      final isDay=now.hour<17||(now.hour==17&&now.minute<30);
       final daily=data['daily'] as Map<String,dynamic>?;
       final dates=(daily?['time'] as List?)??const [];
       final codes=(daily?['weather_code'] as List?)??const [];
@@ -206,7 +227,7 @@ class _HomeScreenState extends State<HomeScreen> {
         forecast.add({'date':dates[i],'weather_code':i<codes.length?codes[i]:null,'high':i<highs.length?highs[i]:null,'low':i<lows.length?lows[i]:null,'rain_probability':i<rain.length?rain[i]:null,'sunrise':i<sunrise.length?sunrise[i]:null,'sunset':i<sunset.length?sunset[i]:null});
       }
       if(!mounted)return;
-      setState((){_weatherCode=code;_temperature=temp;_weatherLabel=_weatherDescription(code);_dailyForecast=forecast;});
+      setState((){_weatherCode=code;_isDay=isDay;_temperature=temp;_weatherLabel=_weatherDescription(code);_dailyForecast=forecast;});
     } catch (_) { if(mounted&&_weatherCode==null)setState(()=>_weatherLabel='Kigali weather unavailable'); }
   }
 
@@ -226,7 +247,8 @@ class _HomeScreenState extends State<HomeScreen> {
   IconData get _weatherIcon {
     final code=_weatherCode;
     if(code==null)return Icons.cloud_outlined;
-    if(code==0)return Icons.wb_sunny_rounded;
+    if(code==0)return _isDay?Icons.wb_sunny_rounded:Icons.nights_stay_rounded;
+    if(code==1&&!_isDay)return Icons.nights_stay_rounded;
     if(code<=3)return Icons.cloud_rounded;
     if(code==45||code==48)return Icons.cloud_queue_rounded;
     if((code>=51&&code<=67)||(code>=80&&code<=82)||code>=95)return Icons.thunderstorm_rounded;
@@ -276,11 +298,29 @@ class _HomeScreenState extends State<HomeScreen> {
     if(mounted)setState(()=>_loadingProfile=true);
     try {
       final r=await ApiClient.get('auth/me',auth:true);
-      if(mounted){final raw=r is Map&&r['user'] is Map?r['user']:r;final profile=raw is Map?Map<String,dynamic>.from(raw):<String,dynamic>{};final registeredPhone=(profile['phone']??profile['phone_number']??profile['mobile']??'').toString().trim();setState(()=>_profileData=profile);if(!_phoneManuallyEdited&&registeredPhone.isNotEmpty){_phone.value=TextEditingValue(text:registeredPhone,selection:TextSelection.collapsed(offset:registeredPhone.length));_detectPaymentNetwork(registeredPhone);}}
+      if(mounted){final raw=r is Map&&r['user'] is Map?r['user']:r;final profile=raw is Map?Map<String,dynamic>.from(raw):<String,dynamic>{};final registeredPhone=(profile['phone']??profile['phone_number']??profile['mobile']??'').toString().trim();setState(()=>_profileData=profile);if(!_profileNameFocus.hasFocus)_profileNameCtrl.text=profile['name']?.toString()??widget.userName;if(!_profilePhoneFocus.hasFocus)_profilePhoneCtrl.text=profile['phone']?.toString()??'';if(!_phoneManuallyEdited&&registeredPhone.isNotEmpty){_phone.value=TextEditingValue(text:registeredPhone,selection:TextSelection.collapsed(offset:registeredPhone.length));_detectPaymentNetwork(registeredPhone);}}
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
     finally { if(mounted)setState(()=>_loadingProfile=false); }
   }
   Future<void> _openNearbyStations() async { await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const NearbyStationsScreen())); }
+
+  Future<void> _checkForAppUpdate() async {
+    final update = await AppUpdateService.checkForUpdate();
+    if (update == null || !mounted || _showingUpdatePrompt) return;
+    _showingUpdatePrompt = true;
+    await AppUpdateService.showUpdatePrompt(context, update);
+    _showingUpdatePrompt = false;
+    if (!mounted) return;
+    try {
+      await ApiClient.post('notifications/app-update', auth: true, body: {
+        'version': update.version,
+      });
+      await _loadUnreadCount();
+      await _loadNotifications();
+    } on ApiException {
+      // The update remains available from Profile even if notification sync fails.
+    }
+  }
 
   Future<void> _loadUnreadCount() async {
     try {
@@ -358,6 +398,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _handleNotificationTap(Map<String,dynamic> notification) async {
     final meta = notification['meta'] is Map ? Map<String,dynamic>.from(notification['meta']) : <String,dynamic>{};
+    final type = (notification['type'] ?? '').toString();
+    if (type == 'app_update_available' || meta['action'] == 'app_update') {
+      if (!mounted) return;
+      await Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => const AppUpdateScreen(),
+      ));
+      return;
+    }
     final id = (meta['ticket_id'] ?? meta['ticketId'])?.toString();
     if (id == null || id.isEmpty) return;
     try {
@@ -431,8 +479,27 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _saveProfile({required String name,required String phone}) async {
     try {
       final r=await ApiClient.patch('auth/me',auth:true,body:{'name':name.trim(),'phone':phone.trim()});
-      if(mounted){setState(()=>_profileData=r is Map?Map<String,dynamic>.from(r):_profileData);_msg('Profile updated.');}
+      if(mounted){
+        final raw=r is Map&&r['user'] is Map?r['user']:r;
+        setState(()=>_profileData=raw is Map?Map<String,dynamic>.from(raw):_profileData);
+        if(!_profileNameFocus.hasFocus)_profileNameCtrl.text=name.trim();
+        if(!_profilePhoneFocus.hasFocus)_profilePhoneCtrl.text=phone.trim();
+        _msg('Profile updated.');
+      }
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
+  }
+
+  /// Saves directly from the Profile tab's inline fields.
+  Future<void> _submitInlineProfile() async {
+    final name=_profileNameCtrl.text.trim();
+    final phone=_profilePhoneCtrl.text.trim();
+    if(name.isEmpty){ _msg('Enter your full name.'); return; }
+    if(phone.length<9){ _msg('Enter a valid phone number.'); return; }
+    if(mounted)setState(()=>_savingProfile=true);
+    try {
+      await _saveProfile(name:name,phone:phone);
+      if(mounted)FocusScope.of(context).unfocus();
+    } finally { if(mounted)setState(()=>_savingProfile=false); }
   }
   Future<void> _editProfile() async {
     final name=TextEditingController(text:(_profileData['name']??widget.userName).toString());
@@ -934,6 +1001,7 @@ class _HomeScreenState extends State<HomeScreen> {
   LinearGradient get _weatherGradient {
     final code=_weatherCode;
     if(code==null)return AppColors.heroGradient;
+    if(!_isDay)return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF0F172A),Color(0xFF1E3A8A),Color(0xFF334155)]);
     if(code==0)return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF075985),Color(0xFF0288D1),Color(0xFF38BDF8)]);
     if(code<=3)return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF334155),Color(0xFF64748B),Color(0xFF94A3B8)]);
     if((code>=51&&code<=67)||(code>=80&&code<=82)||code>=95)return const LinearGradient(begin:Alignment.topLeft,end:Alignment.bottomRight,colors:[Color(0xFF172554),Color(0xFF1D4ED8),Color(0xFF64748B)]);
@@ -943,7 +1011,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _home()=>_showCheckout&&_selectedBus!=null?_paymentPanel():RefreshIndicator(onRefresh:()async{await _loadLocations();if(_fromId!=null&&_toId!=null&&_fromId!=_toId){await _search();}else{await _loadAvailableBuses();}},child:ListView(padding:EdgeInsets.zero,children:[
     Container(clipBehavior:Clip.antiAlias,padding:const EdgeInsets.all(22),decoration:BoxDecoration(gradient:_weatherGradient,borderRadius:const BorderRadius.only(bottomLeft:Radius.circular(24),bottomRight:Radius.circular(24))),child:Stack(children:[
-      Positioned(right:-12,top:-16,bottom:-16,width:155,child:_WeatherBackdrop(code:_weatherCode)),
+      Positioned(right:-12,top:-16,bottom:-16,width:155,child:_WeatherBackdrop(code:_weatherCode,isDay:_isDay)),
       Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Row(children:[
           const Expanded(child:Text('BookIt',style:TextStyle(color:Colors.white,fontSize:21,fontWeight:FontWeight.w800))),
@@ -1646,67 +1714,6 @@ class _HomeScreenState extends State<HomeScreen> {
       }:null,
     )));
   }
-  static const String _termsText = '''1. Acceptance of Terms
-By accessing or using the services provided by 1% Digital Solutions ("the Company"), including our website, training programmes, and software development services, you agree to be bound by these Terms of Service. If you do not agree, do not use our services.
-
-2. Services
-1% Digital Solutions provides the following services from Kigali, Rwanda:
-• Full-stack software development (web, mobile, AI, IoT)
-• The 1% Expert developer training programme
-• Cybersecurity consulting and penetration testing
-• UI/UX design and consulting services
-
-3. Training Programme
-Enrolment in the 1% Expert Programme requires acceptance of these terms. Students must:
-• Be at least 16 years of age
-• Complete assigned coursework and projects
-• Adhere to the code of conduct
-• Not redistribute course materials
-
-4. Intellectual Property
-All course materials, software, and content created by 1% Digital Solutions remain the intellectual property of the Company unless otherwise stated. Students retain ownership of their original project work.
-
-5. Limitation of Liability
-1% Digital Solutions shall not be liable for any indirect, incidental, or consequential damages. Our total liability shall not exceed the amount paid for the specific service in question.
-
-6. Governing Law
-These terms are governed by the laws of the Republic of Rwanda. Any disputes shall be resolved in the courts of Kigali.
-
-7. Changes
-We reserve the right to modify these terms at any material time. Continued use of our services constitutes acceptance of updated terms.''';
-
-  static const String _privacyText = '''1. Information We Collect
-When you use our services, we may collect:
-• Name and email address (when you sign up or contact us)
-• Account credentials (managed securely via Supabase Auth)
-• Course progress and completion data
-• Service inquiry details (project requirements, budget)
-• Cookie and usage data
-
-2. How We Use Your Information
-• To provide and improve our training and development services
-• To track your learning progress and issue certifications
-• To communicate about courses, services, and updates
-• To process service inquiries and project proposals
-• To comply with legal obligations
-
-3. Data Storage & Security
-Your data is stored securely using Supabase (hosted on AWS infrastructure). We implement industry-standard encryption, access controls, and regular security audits.
-
-4. Data Sharing
-We do not sell your personal data. We may share data with:
-• Service providers essential to our operations (hosting, email)
-• Law enforcement when legally required
-
-5. Your Rights
-You have the right to access, correct, or delete your personal data. Contact us at 1percentrwanda@gmail.com to exercise these rights.
-
-6. Cookies
-We use essential cookies for site functionality and optional analytics cookies. You can manage preferences through the cookie consent banner.
-
-7. Contact
-For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions, Kigali, Rwanda.''';
-
   Future<void> _showInfo(String title,String body) async {
     await showDialog<void>(context:context,builder:(c)=>Dialog(
       child:ConstrainedBox(constraints:const BoxConstraints(maxWidth:480,maxHeight:720),child:Padding(
@@ -1733,13 +1740,18 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
     Padding(padding:const EdgeInsets.fromLTRB(18,20,18,28),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
     if(_loadingProfile)const Padding(padding:EdgeInsets.all(18),child:Center(child:CircularProgressIndicator())),
     const SizedBox(height:20),Text('Personal information',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
-    Card(child:Column(children:[
-      _profileRow(Icons.person_outline,'Full name',(_profileData['name']??widget.userName).toString()),const Divider(height:1,indent:56),
+    Card(child:Padding(padding:const EdgeInsets.symmetric(vertical:4),child:Column(children:[
+      Padding(padding:const EdgeInsets.fromLTRB(16,8,16,8),child:TextField(controller:_profileNameCtrl,focusNode:_profileNameFocus,decoration:const InputDecoration(labelText:'Full name',prefixIcon:Icon(Icons.person_outline)))),const Divider(height:1,indent:56),
+      Padding(padding:const EdgeInsets.fromLTRB(16,8,16,8),child:TextField(controller:_profilePhoneCtrl,focusNode:_profilePhoneFocus,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'Phone number',prefixIcon:Icon(Icons.phone_outlined)))),const Divider(height:1,indent:56),
       _profileRow(Icons.email_outlined,'Email',(_profileData['email']??'Not provided').toString()),const Divider(height:1,indent:56),
-      _profileRow(Icons.phone_outlined,'Phone',(_profileData['phone']??'Not provided').toString()),const Divider(height:1,indent:56),
       _profileRow(Icons.calendar_today_outlined,'Member since',(_profileData['createdAt']??'—').toString().split('T').first),
-    ])),
-    const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit profile'))),
+    ]))),
+    const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_submitInlineProfile,icon:_savingProfile?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):const Icon(Icons.check_rounded),label:const Text('Save profile'))),
+    const SizedBox(height:10),SizedBox(width:double.infinity,child:OutlinedButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit in a form'))),
+    const SizedBox(height:22),Text('Settings',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
+    Card(child:ListTile(leading:const Icon(Icons.system_update_alt_rounded,color:AppColors.primary),title:const Text('App updates'),subtitle:const Text('Check, download and install the latest BookIt version'),trailing:const Icon(Icons.chevron_right),onTap:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>const AppUpdateScreen())))),
+    const SizedBox(height:10),
+    Card(child:ListTile(leading:const Icon(Icons.credit_card_rounded,color:AppColors.primary),title:const Text('RFID cards'),subtitle:const Text('Register and manage your BookIt boarding cards'),trailing:const Icon(Icons.chevron_right),onTap:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>const RfidCardsScreen())))),
     const SizedBox(height:22),Text(_historyText('Preferences','Ibyifuzo'),style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
     Card(child:Padding(padding:const EdgeInsets.symmetric(horizontal:16,vertical:12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
       Row(children:[const Icon(Icons.language_rounded,color:AppColors.primary),const SizedBox(width:12),Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
@@ -1758,11 +1770,11 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
     Card(child:Column(children:[
       ListTile(leading:const Icon(Icons.support_agent_outlined,color:AppColors.primary),title:const Text('Support'),subtitle:const Text('Booking and account help'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Support','For help with BookIt, contact 1% Digital Solutions through your existing support channel. Keep your booking reference, route, travel date and payment reference ready when requesting help.')),
       const Divider(height:1,indent:56),
-      ListTile(leading:const Icon(Icons.description_outlined,color:AppColors.primary),title:const Text('Terms of Service'),subtitle:const Text('Read the service terms'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Terms of Service',_termsText)),
+      ListTile(leading:const Icon(Icons.description_outlined,color:AppColors.primary),title:const Text('Terms of Service'),subtitle:const Text('Read the service terms'),trailing:const Icon(Icons.chevron_right),onTap:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>const LegalDocumentScreen(document:LegalDocument.terms)))),
       const Divider(height:1,indent:56),
-      ListTile(leading:const Icon(Icons.privacy_tip_outlined,color:AppColors.primary),title:const Text('Privacy Policy'),subtitle:const Text('How information is handled'),trailing:const Icon(Icons.chevron_right),onTap:()=>_showInfo('Privacy Policy',_privacyText)),
+      ListTile(leading:const Icon(Icons.privacy_tip_outlined,color:AppColors.primary),title:const Text('Privacy Policy'),subtitle:const Text('How information is handled'),trailing:const Icon(Icons.chevron_right),onTap:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>const LegalDocumentScreen(document:LegalDocument.privacy)))),
     ])),
-    const SizedBox(height:20),OutlinedButton.icon(onPressed:()async{try{await ApiClient.post('auth/logout',auth:true);}catch(_){}try{await ApiClient.clearToken();}catch(_){ApiClient.setToken(null);}if(!mounted)return;Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute<void>(builder:(_)=>const LoginScreen()),(route)=>false);},icon:const Icon(Icons.logout),label:const Text('Sign out')),
+    const SizedBox(height:20),OutlinedButton.icon(onPressed:()async{await PushNotificationService.unregisterDevice();try{await ApiClient.post('auth/logout',auth:true);}catch(_){}try{await ApiClient.clearToken();}catch(_){ApiClient.setToken(null);}if(!mounted)return;final accounts=await AuthService.savedAccounts();if(!mounted)return;Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute<void>(builder:(_)=>accounts.isNotEmpty?const ProfilesScreen():const LoginScreen(),),(route)=>false);},icon:const Icon(Icons.logout),label:const Text('Sign out')),
     ])),
   ]));
   Widget _profileRow(IconData icon,String label,String value)=>ListTile(leading:Icon(icon,color:AppColors.primary),title:Text(label,style:TextStyle(fontSize:12,color:Theme.of(context).colorScheme.onSurfaceVariant)),subtitle:Text(value,style:const TextStyle(fontWeight:FontWeight.w600)),dense:true);
@@ -1791,8 +1803,9 @@ class _SeatLegend extends StatelessWidget {
 
 
 class _WeatherBackdrop extends StatefulWidget {
-  const _WeatherBackdrop({required this.code});
+  const _WeatherBackdrop({required this.code,required this.isDay});
   final int? code;
+  final bool isDay;
   @override State<_WeatherBackdrop> createState()=>_WeatherBackdropState();
 }
 
@@ -1805,7 +1818,8 @@ class _WeatherBackdropState extends State<_WeatherBackdrop> with SingleTickerPro
     final foggy=code==45||code==48;
     final clear=code==0;
     return IgnorePointer(child:AnimatedBuilder(animation:_animation,builder:(context,_)=>Stack(clipBehavior:Clip.none,children:[
-      if(clear)Positioned(right:18,top:35,child:Icon(Icons.wb_sunny_rounded,size:78,color:Colors.white.withValues(alpha:.35))),
+      if(clear&&widget.isDay)Positioned(right:18,top:35,child:Icon(Icons.wb_sunny_rounded,size:78,color:Colors.white.withValues(alpha:.35))),
+      if(!widget.isDay&&!rainy&&!foggy)Positioned(right:18,top:35,child:Icon(Icons.nights_stay_rounded,size:78,color:Colors.white.withValues(alpha:.42))),
       if(!clear)Positioned(right:0,top:34,child:Icon(foggy?Icons.cloud_queue_rounded:Icons.cloud_rounded,size:94,color:Colors.white.withValues(alpha:.35))),
       if(rainy)...List.generate(9,(i){final x=8.0+(i*17.0)%135;final progress=(_animation.value+(i*.13))%1;return Positioned(left:x,top:82+progress*80,child:Transform.rotate(angle:.22,child:Container(width:2,height:14,decoration:BoxDecoration(color:Colors.white.withValues(alpha:.15+(.25*(1-progress))),borderRadius:BorderRadius.circular(2)))));}),
       if(foggy)...List.generate(3,(i)=>Positioned(right:8+i*5.0,top:95+i*17.0,child:Container(width:95-i*12.0,height:3,decoration:BoxDecoration(color:Colors.white.withValues(alpha:.25),borderRadius:BorderRadius.circular(8))))),
