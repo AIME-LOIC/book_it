@@ -1,17 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bookit/main.dart';
 
+const MethodChannel _secureStorageChannel =
+    MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+
 void main() {
-  // The current splash runs for 4.2 seconds, then restores a session before
-  // replacing the route. Avoid pumpAndSettle because the login logo animates
-  // continuously and the splash pulse may also be active during the route.
+  setUpAll(() {
+    // Widget tests have no native secure-storage implementation. Return no
+    // saved token so the splash follows the signed-out path deterministically.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_secureStorageChannel, (call) async => null);
+  });
+
+  tearDownAll(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_secureStorageChannel, null);
+  });
+
   Future<void> reachLogin(WidgetTester tester) async {
     await tester.pumpWidget(const BookItApp());
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 4300));
-    await tester.pump(const Duration(milliseconds: 600));
+
+    // The splash animation runs for 4.2 seconds. Session restoration then
+    // completes asynchronously before the 450ms route transition begins.
+    for (var i = 0; i < 60 && find.text('Welcome back 👋').evaluate().isEmpty; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.pump(const Duration(milliseconds: 500));
   }
 
   testWidgets('splash displays current BookIt branding', (WidgetTester tester) async {
@@ -51,8 +68,10 @@ void main() {
       (WidgetTester tester) async {
     await reachLogin(tester);
 
-    await tester.ensureVisible(find.text('Sign in'));
-    await tester.tap(find.text('Sign in'));
+    final signInButton = find.text('Sign in');
+    expect(signInButton, findsOneWidget);
+    await tester.ensureVisible(signInButton);
+    await tester.tap(signInButton);
     await tester.pump();
 
     expect(find.text('Email is required'), findsOneWidget);
