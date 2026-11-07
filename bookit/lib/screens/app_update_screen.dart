@@ -30,7 +30,7 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
     setState(() { _checking = true; _error = null; });
     try {
       final info = await PackageInfo.fromPlatform();
-      final update = await AppUpdateService.checkForUpdate(ignoreSkipped: true);
+      final update = await AppUpdateService.checkForUpdate();
       if (!mounted) return;
       setState(() {
         _currentVersion = info.version;
