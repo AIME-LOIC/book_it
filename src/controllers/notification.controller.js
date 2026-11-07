@@ -4,7 +4,7 @@ import { clientMessage } from '../utils/error.util.js';
 export const createAppUpdateNotice = async (req, res) => {
   try {
     const version = String(req.body?.version || '').trim();
-    if (!/^\\d+\\.\\d+\\.\\d+$/.test(version)) {
+    if (!/^\d+\.\d+\.\d+$/.test(version)) {
       return res.status(400).json({ message: 'A valid update version is required.' });
     }
     const notification = await svc.createAppUpdateNotice({
