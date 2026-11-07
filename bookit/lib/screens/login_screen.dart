@@ -413,6 +413,7 @@ class _AnimatedSubmitButton extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          key: const ValueKey('login-submit-button'),
           onTap: submitting || succeeded ? null : onPressed,
           borderRadius: BorderRadius.circular(AppSpacing.buttonRadius),
           child: Center(

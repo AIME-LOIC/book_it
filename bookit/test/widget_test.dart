@@ -77,16 +77,15 @@ void main() {
 
     await reachLogin(tester);
 
-    final signInButton = find.text('Sign in');
-    expect(signInButton, findsOneWidget);
-    await tester.ensureVisible(signInButton);
+    // Target the actual InkWell rather than its animated text child. The
+    // label's transformed render position can fall outside the hit-test path.
+    final submitButton = find.byKey(const ValueKey('login-submit-button'));
+    expect(submitButton, findsOneWidget);
+    await tester.ensureVisible(submitButton);
     await tester.pump();
-
-    // Confirm the visible label is actually inside the tappable button before
-    // exercising the form's real submit/validation callback.
-    expect(tester.hitTestOnBinding(tester.getCenter(signInButton)).path,
+    expect(tester.hitTestOnBinding(tester.getCenter(submitButton)).path,
         isNotEmpty);
-    await tester.tap(signInButton);
+    await tester.tap(submitButton);
     await tester.pump();
 
     expect(find.text('Email is required'), findsOneWidget);
