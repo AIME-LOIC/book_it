@@ -83,10 +83,10 @@ class AppUpdateService {
       ).timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         final content = response.body.trim();
-        final firstLine = content.split(RegExp(r'\\r?\\n')).first.trim();
-        final publishedVersion = firstLine.replaceFirst(RegExp(r'^BookIt\\s+', caseSensitive: false), '').trim();
+        final firstLine = content.split(RegExp(r'\r?\n')).first.trim();
+        final publishedVersion = firstLine.replaceFirst(RegExp(r'^BookIt\s+', caseSensitive: false), '').trim();
         if (publishedVersion == version && content.isNotEmpty) {
-          return _cleanReleaseNotes(content.split(RegExp(r'\\r?\\n')).skip(1).join('\\n'));
+          return _cleanReleaseNotes(content.split(RegExp(r'\r?\n')).skip(1).join('\n'));
         }
       }
     } catch (_) {
