@@ -96,25 +96,37 @@ class AppUpdateService {
   }
 
   static String _cleanReleaseNotes(String raw) {
-    var value = raw
+    final value = raw
         .replaceAll(RegExp(r'<[^>]*>'), '')
-        .replaceAllMapped(RegExp(r'\[([^\]]+)\]\((https?://[^)]+)\)'), (m) => m[1] ?? '')
-        .replaceAll(RegExp(r'https?://\S+', caseSensitive: false), '')
-        .replaceAll(RegExp(r'(?m)^\s*#{1,6}\s*'), '')
-        .replaceAll(RegExp(r'(?m)^\s*[-*+]\s+'), '• ')
-        .replaceAll(RegExp(r'\*\*(.*?)\*\*'), r'$1')
+        .replaceAllMapped(
+          RegExp(r'\\[([^\\]]+)\\]\\((https?://[^)]+)\\)'),
+          (match) => match[1] ?? '',
+        )
+        .replaceAll(RegExp(r'https?://\\S+', caseSensitive: false), '')
+        .replaceAll(RegExp(r'(?m)^\\s*#{1,6}\\s*'), '')
+        .replaceAll(RegExp(r'(?m)^\\s*[-*+]\\s+'), '• ')
+        .replaceAll(RegExp(r'\\*\\*(.*?)\\*\\*'), r'$1')
         .replaceAll(RegExp(r'__(.*?)__'), r'$1')
-        .replaceAll(RegExp(r'\*(.*?)\*'), r'$1')
+        .replaceAll(RegExp(r'\\*(.*?)\\*'), r'$1')
         .replaceAll(RegExp(r'_(.*?)_'), r'$1');
 
     final lines = value
-        .split(RegExp(r'\r?\n'))
+        .split(RegExp(r'\\r?\\n'))
         .map((line) => line.trim())
         .where((line) => line.isNotEmpty)
-        .where((line) => !RegExp(r'^(full )?changelog\s*:?
-    final cleaned = lines.join('\n').trim();
-    if (cleaned.isEmpty) return 'Release notes were not provided for this version.';
-    return cleaned.length > 1400 ? '${cleaned.substring(0, 1397)}…' : cleaned;
+        .where((line) => !RegExp(
+              r'^(full )?changelog\\s*:?$',
+              caseSensitive: false,
+            ).hasMatch(line))
+        .toList();
+
+    final cleaned = lines.join('\\n').trim();
+    if (cleaned.isEmpty) {
+      return 'Release notes were not provided for this version.';
+    }
+    return cleaned.length > 1400
+        ? '${cleaned.substring(0, 1397)}…'
+        : cleaned;
   }
 
   static Map? _assetForPlatform(List<Map> assets) {
