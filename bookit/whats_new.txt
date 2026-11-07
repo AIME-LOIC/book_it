@@ -1,9 +1,4 @@
-BookIt 1.2.1
+BookIt 1.2.2
 
 What's new:
-• Added a dedicated App Updates screen so you can check the installed and latest versions.
-• Added in-app update notices and notification support.
-• Improved profile navigation with an easier way to access app updates.
-• Added dedicated Terms of Service and Privacy Policy screens.
-• Improved Android release builds and Firebase configuration security.
-• Included the Linux desktop release package.
+• night weather and app self updates
