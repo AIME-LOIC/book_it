@@ -91,7 +91,7 @@ class AppUpdateService {
         .split(RegExp(r'\r?\n'))
         .map((line) => line.trim())
         .where((line) => line.isNotEmpty)
-        .where((line) => !RegExp(r'^(full )?changelog\\s*:?
+        .where((line) => !RegExp(r'^(full )?changelog\s*:?
     final cleaned = lines.join('\n').trim();
     if (cleaned.isEmpty) return 'Release notes were not provided for this version.';
     return cleaned.length > 1400 ? '${cleaned.substring(0, 1397)}…' : cleaned;
