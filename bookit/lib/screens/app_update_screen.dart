@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -17,7 +19,7 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
   AppUpdate? _update;
   String _currentVersion = '—';
   bool _checking = true;
-  bool _openingDownload = false;
+  bool _installing = false;
   String? _error;
 
   @override
@@ -42,27 +44,46 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
     }
   }
 
-  Future<void> _startUpdate() async {
+  Future<void> _installUpdate() async {
     final update = _update;
-    if (update == null) return;
-    setState(() => _openingDownload = true);
-    final opened = await launchUrl(update.downloadUrl, mode: LaunchMode.externalApplication);
+    if (update == null || !update.hasPlatformAsset) return;
+    setState(() => _installing = true);
+
+    if (!kIsWeb && Platform.isLinux) {
+      final started = await AppUpdateService.runLinuxUpdater();
+      if (!started && mounted) {
+        setState(() => _installing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not start the BookIt updater. Please try again.')),
+        );
+      }
+      return;
+    }
+
+    final url = update.downloadUrl;
+    if (url == null) {
+      if (mounted) setState(() => _installing = false);
+      return;
+    }
+    final opened = await launchUrl(url, mode: LaunchMode.externalApplication);
     if (!mounted) return;
-    setState(() => _openingDownload = false);
+    setState(() => _installing = false);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(opened
-          ? 'Download opened. Complete the installation, then reopen BookIt.'
-          : 'Could not open the download. Try the release page instead.'),
-      action: opened ? null : SnackBarAction(
-        label: 'Release page',
-        onPressed: () => launchUrl(update.releaseUrl, mode: LaunchMode.externalApplication),
-      ),
+          ? 'The APK download has started. Android will ask you to approve installation.'
+          : 'Could not open the update download. Please try again.'),
     ));
+  }
+
+  Future<void> _openReleaseDetails() async {
+    final url = _update?.releaseUrl;
+    if (url != null) await launchUrl(url, mode: LaunchMode.externalApplication);
   }
 
   @override
   Widget build(BuildContext context) {
     final update = _update;
+    final linux = !kIsWeb && Platform.isLinux;
     return Scaffold(
       appBar: AppBar(title: const Text('App updates')),
       body: SafeArea(
@@ -85,8 +106,7 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
                   const SizedBox(height: 8),
-                  Text('Installed version: $_currentVersion',
-                    style: Theme.of(context).textTheme.bodyMedium),
+                  Text('Installed version: $_currentVersion', style: Theme.of(context).textTheme.bodyMedium),
                   if (update != null) ...[
                     const SizedBox(height: 4),
                     Text('Available version: ${update.version}',
@@ -95,11 +115,11 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
                 ],
               ),
             ),
-            if (_checking || _openingDownload) ...[
+            if (_checking || _installing) ...[
               const SizedBox(height: 22),
               const LinearProgressIndicator(),
               const SizedBox(height: 8),
-              Text(_openingDownload ? 'Opening the official download…' : 'Checking the latest release…',
+              Text(_installing ? 'Preparing the BookIt update…' : 'Checking the latest release…',
                 textAlign: TextAlign.center),
             ],
             if (_error != null) Padding(
@@ -108,30 +128,44 @@ class _AppUpdateScreenState extends State<AppUpdateScreen> {
             ),
             if (update != null) ...[
               const SizedBox(height: 22),
-              if (update.notes.trim().isNotEmpty)
-                Card(child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    const Text('What’s new', style: TextStyle(fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 8),
-                    Text(update.notes, maxLines: 12, overflow: TextOverflow.ellipsis),
-                  ]),
-                )),
+              Card(child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  const Text('What’s new', style: TextStyle(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 10),
+                  Text(update.notes, style: Theme.of(context).textTheme.bodyMedium),
+                ]),
+              )),
               const SizedBox(height: 14),
               SizedBox(width: double.infinity, child: FilledButton.icon(
-                onPressed: _openingDownload ? null : _startUpdate,
-                icon: _openingDownload
+                onPressed: _installing || !update.hasPlatformAsset ? null : _installUpdate,
+                icon: _installing
                     ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Icon(Icons.download_rounded),
-                label: Text(_openingDownload ? 'Opening download…' : 'Download update'),
+                    : Icon(linux ? Icons.system_update_alt_rounded : Icons.download_rounded),
+                label: Text(_installing
+                    ? 'Preparing update…'
+                    : !update.hasPlatformAsset
+                        ? 'No update package for this device'
+                        : linux ? 'Install update and restart' : 'Download and install update'),
               )),
               const SizedBox(height: 8),
-              const Text('BookIt will open the official release download. Your device will ask you to confirm installation; the app cannot silently install itself.',
-                textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
+              Text(
+                linux
+                    ? 'BookIt will download and verify the update, then restart using the new version. No terminal commands are needed.'
+                    : 'BookIt will download the APK. Android will ask you to confirm installation; Android does not allow ordinary apps to install APKs silently.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 12),
+              ),
+              const SizedBox(height: 8),
+              TextButton.icon(
+                onPressed: _openReleaseDetails,
+                icon: const Icon(Icons.open_in_new_rounded, size: 16),
+                label: const Text('View full release details'),
+              ),
             ],
             const SizedBox(height: 20),
             OutlinedButton.icon(
-              onPressed: _checking ? null : _check,
+              onPressed: _checking || _installing ? null : _check,
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Check again'),
             ),
