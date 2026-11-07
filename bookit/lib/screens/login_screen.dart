@@ -187,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     child: Form(
-                      key: _formKey,
+                      key: const ValueKey('login-validation-form'),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
