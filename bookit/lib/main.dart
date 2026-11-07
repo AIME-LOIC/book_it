@@ -26,6 +26,10 @@ class BookItApp extends StatelessWidget {
         darkTheme: AppTheme.themeFor('blue_dark'),
         themeMode: mode == 'device' ? ThemeMode.system : (mode == 'blue_dark' ? ThemeMode.dark : ThemeMode.light),
         home: const LoadingScreen(),
+        builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+          value: AppTheme.statusBarOverlayStyle,
+          child: child ?? const SizedBox.shrink(),
+        ),
       ),
     );
   }
