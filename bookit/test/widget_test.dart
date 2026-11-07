@@ -28,7 +28,9 @@ void main() {
     for (var i = 0; i < 60 && find.text('Welcome back 👋').evaluate().isEmpty; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
-    await tester.pump(const Duration(milliseconds: 500));
+    // Allow the login route and staggered form entrance animations to finish.
+    // The floating logo loops forever, so use a bounded pump instead of pumpAndSettle.
+    await tester.pump(const Duration(milliseconds: 1200));
   }
 
   testWidgets('splash displays current BookIt branding', (WidgetTester tester) async {
