@@ -60,7 +60,7 @@ class AppUpdateService {
           .toList();
       final asset = _assetForPlatform(assets);
       final assetUrl = Uri.tryParse((asset?['browser_download_url'] ?? '').toString());
-      final notes = _cleanReleaseNotes((release['body'] ?? '').toString());
+      final notes = await _fetchPlainTextNotes(tag, (release['body'] ?? '').toString());
 
       return AppUpdate(
         version: tag,
@@ -73,6 +73,26 @@ class AppUpdateService {
       // An update check must never prevent a passenger from opening BookIt.
       return null;
     }
+  }
+
+  static Future<String> _fetchPlainTextNotes(String version, String releaseBody) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://raw.githubusercontent.com/$_repo/main/bookit/whats_new.txt'),
+        headers: const {'Cache-Control': 'no-cache'},
+      ).timeout(const Duration(seconds: 8));
+      if (response.statusCode == 200) {
+        final content = response.body.trim();
+        final firstLine = content.split(RegExp(r'\\r?\\n')).first.trim();
+        final publishedVersion = firstLine.replaceFirst(RegExp(r'^BookIt\\s+', caseSensitive: false), '').trim();
+        if (publishedVersion == version && content.isNotEmpty) {
+          return _cleanReleaseNotes(content.split(RegExp(r'\\r?\\n')).skip(1).join('\\n'));
+        }
+      }
+    } catch (_) {
+      // Fall back to release metadata if the plain-text notes endpoint is unavailable.
+    }
+    return _cleanReleaseNotes(releaseBody);
   }
 
   static String _cleanReleaseNotes(String raw) {
