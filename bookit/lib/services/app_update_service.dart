@@ -22,7 +22,7 @@ class AppUpdateService {
   static const _repo = 'AIME-LOIC/book_it';
   static const _skippedVersionKey = 'bookit_skipped_update_version';
 
-  static Future<AppUpdate?> checkForUpdate() async {
+  static Future<AppUpdate?> checkForUpdate({bool ignoreSkipped = false}) async {
     try {
       final info = await PackageInfo.fromPlatform();
       final response = await http.get(
@@ -35,7 +35,7 @@ class AppUpdateService {
       final tag = (release['tag_name'] ?? '').toString().replaceFirst(RegExp(r'^[vV]'), '');
       if (tag.isEmpty || !_isNewer(tag, info.version)) return null;
       final prefs = await SharedPreferences.getInstance();
-      if (prefs.getString(_skippedVersionKey) == tag) return null;
+      if (!ignoreSkipped && prefs.getString(_skippedVersionKey) == tag) return null;
       final releaseUrl = Uri.tryParse((release['html_url'] ?? '').toString());
       if (releaseUrl == null || !releaseUrl.hasScheme) return null;
       final assets = (release['assets'] is List ? release['assets'] as List : const [])
