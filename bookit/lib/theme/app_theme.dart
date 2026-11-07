@@ -43,6 +43,14 @@ abstract final class AppSpacing {
 class AppTheme {
   const AppTheme._();
 
+  /// Keep the Android/iOS status area aligned with BookIt's blue hero header
+  /// in both light and dark app themes.
+  static const SystemUiOverlayStyle statusBarOverlayStyle = SystemUiOverlayStyle(
+    statusBarColor: AppColors.primaryDark,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+  );
+
   static ThemeData get theme => themeFor('white');
 
   static ThemeData themeFor(String mode) {
@@ -73,11 +81,7 @@ class AppTheme {
         backgroundColor: surface,
         foregroundColor: foreground,
         surfaceTintColor: Colors.transparent,
-        systemOverlayStyle: SystemUiOverlayStyle(
-          statusBarColor: Colors.transparent,
-          statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
-          statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
-        ),
+        systemOverlayStyle: AppTheme.statusBarOverlayStyle,
       ),
       textTheme: _textTheme,
       cardTheme: CardThemeData(
