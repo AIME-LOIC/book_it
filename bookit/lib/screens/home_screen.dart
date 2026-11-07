@@ -23,7 +23,8 @@ import 'profiles_screen.dart';
 import 'rfid_cards_screen.dart';
 import '../services/auth_service.dart';
 import '../services/push_notification_service.dart';
-import 'policy_screen.dart';
+import 'app_update_screen.dart';
+import '../services/app_update_service.dart';
 import '../theme/app_theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -60,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _fromId,_toId,_activeTicketId,_selectedHistoryRoute; DateTime _date=DateTime.now().add(const Duration(days:1));
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer; DateTime? _holdExpiresAt;
   final _phone=TextEditingController(); String _network='mtn'; bool _phoneManuallyEdited=false; String? _detectedNetwork;
-  @override void initState(){super.initState();PushNotificationService.registerDevice();_pushOpenSubscription=PushNotificationService.openedMessages.listen((data){_loadNotifications();if(data.isNotEmpty)_handleNotificationTap({'meta':data});});final pendingPush=PushNotificationService.takePendingMessage();if(pendingPush!=null){WidgetsBinding.instance.addPostFrameCallback((_) {if(mounted)_handleNotificationTap({'meta':pendingPush});});}_loadHistoryLanguage();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
+  @override void initState(){super.initState();PushNotificationService.registerDevice();_pushOpenSubscription=PushNotificationService.openedMessages.listen((data){_loadNotifications();if(data.isNotEmpty)_handleNotificationTap({'meta':data});});final pendingPush=PushNotificationService.takePendingMessage();if(pendingPush!=null){WidgetsBinding.instance.addPostFrameCallback((_) {if(mounted)_handleNotificationTap({'meta':pendingPush});});}_loadHistoryLanguage();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_checkForAppUpdate();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());}
   @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_notificationTimer?.cancel();_pushOpenSubscription?.cancel();_paymentPollTimer?.cancel();_phone.dispose();_profileNameCtrl.dispose();_profilePhoneCtrl.dispose();_profileNameFocus.dispose();_profilePhoneFocus.dispose();super.dispose();}
 
 
@@ -297,6 +298,20 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   Future<void> _openNearbyStations() async { await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const NearbyStationsScreen())); }
 
+  Future<void> _checkForAppUpdate() async {
+    final update = await AppUpdateService.checkForUpdate(ignoreSkipped: true);
+    if (update == null || !mounted) return;
+    try {
+      await ApiClient.post('notifications/app-update', auth: true, body: {
+        'version': update.version,
+      });
+      await _loadUnreadCount();
+      await _loadNotifications();
+    } on ApiException {
+      // The update remains available from Profile even if notification sync fails.
+    }
+  }
+
   Future<void> _loadUnreadCount() async {
     try {
       final r=await ApiClient.get('notifications/unread',auth:true);
@@ -373,6 +388,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _handleNotificationTap(Map<String,dynamic> notification) async {
     final meta = notification['meta'] is Map ? Map<String,dynamic>.from(notification['meta']) : <String,dynamic>{};
+    final type = (notification['type'] ?? '').toString();
+    if (type == 'app_update_available' || meta['action'] == 'app_update') {
+      if (!mounted) return;
+      await Navigator.of(context).push(MaterialPageRoute<void>(
+        builder: (_) => const AppUpdateScreen(),
+      ));
+      return;
+    }
     final id = (meta['ticket_id'] ?? meta['ticketId'])?.toString();
     if (id == null || id.isEmpty) return;
     try {
@@ -1778,6 +1801,8 @@ For privacy concerns, contact: 1percentrwanda@gmail.com — 1% Digital Solutions
     const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_submitInlineProfile,icon:_savingProfile?const SizedBox(width:18,height:18,child:CircularProgressIndicator(strokeWidth:2,color:Colors.white)):const Icon(Icons.check_rounded),label:const Text('Save profile'))),
     const SizedBox(height:10),SizedBox(width:double.infinity,child:OutlinedButton.icon(onPressed:_editProfile,icon:const Icon(Icons.edit_outlined),label:const Text('Edit in a form'))),
     const SizedBox(height:22),Text('Settings',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
+    Card(child:ListTile(leading:const Icon(Icons.system_update_alt_rounded,color:AppColors.primary),title:const Text('App updates'),subtitle:const Text('Check, download and install the latest BookIt version'),trailing:const Icon(Icons.chevron_right),onTap:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>const AppUpdateScreen())))),
+    const SizedBox(height:10),
     Card(child:ListTile(leading:const Icon(Icons.credit_card_rounded,color:AppColors.primary),title:const Text('RFID cards'),subtitle:const Text('Register and manage your BookIt boarding cards'),trailing:const Icon(Icons.chevron_right),onTap:()=>Navigator.of(context).push(MaterialPageRoute<void>(builder:(_)=>const RfidCardsScreen())))),
     const SizedBox(height:22),Text(_historyText('Preferences','Ibyifuzo'),style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
     Card(child:Padding(padding:const EdgeInsets.symmetric(horizontal:16,vertical:12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
