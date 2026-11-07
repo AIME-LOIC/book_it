@@ -81,6 +81,7 @@ class AppUpdateService {
   }
 
   static Future<void> showUpdatePrompt(BuildContext context, AppUpdate update) async {
+    if (!context.mounted) return;
     final later = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
