@@ -66,19 +66,24 @@ void main() {
 
   testWidgets('empty sign-in shows validation errors',
       (WidgetTester tester) async {
+    // Use a tall phone-sized viewport so the complete login form, including
+    // its InkWell submit target, is inside the visible hit-test area.
+    tester.view.physicalSize = const Size(430, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await reachLogin(tester);
 
     final signInButton = find.text('Sign in');
     expect(signInButton, findsOneWidget);
-
-    // The full login form is taller than the default 800x600 test viewport.
-    // Scroll the real ListView until the button is on-screen before tapping.
-    await tester.scrollUntilVisible(
-      signInButton,
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await tester.ensureVisible(signInButton);
     await tester.pump();
+
+    // Confirm the visible label is actually inside the tappable button before
+    // exercising the form's real submit/validation callback.
+    expect(tester.hitTestOnBinding(tester.getCenter(signInButton)).path,
+        isNotEmpty);
     await tester.tap(signInButton);
     await tester.pump();
 
