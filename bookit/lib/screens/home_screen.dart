@@ -54,8 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _profileNameCtrl=TextEditingController(),_profilePhoneCtrl=TextEditingController();
   final FocusNode _profileNameFocus=FocusNode(),_profilePhoneFocus=FocusNode();
   bool _savingProfile=false;
-  bool _isDay = DateTime.now().hour < 17 || (DateTime.now().hour == 17 && DateTime.now().minute < 30);
-  Timer? _dayNightTimer;
+  bool _isDay = DateTime.now().hour >= 6 && DateTime.now().hour < 18;
   int? _weatherCode;
   double? _temperature;
   List<Map<String,dynamic>> _dailyForecast=[];
@@ -64,8 +63,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _fromId,_toId,_activeTicketId,_selectedHistoryRoute; DateTime _date=DateTime.now().add(const Duration(days:1));
   Map<String,dynamic>? _selectedBus; int? _seat; int _seconds=300; Timer? _timer; DateTime? _holdExpiresAt;
   final _phone=TextEditingController(); String _network='mtn'; bool _phoneManuallyEdited=false; String? _detectedNetwork;
-  @override void initState(){super.initState();PushNotificationService.registerDevice();_pushOpenSubscription=PushNotificationService.openedMessages.listen((data){_loadNotifications();if(data.isNotEmpty)_handleNotificationTap({'meta':data});});final pendingPush=PushNotificationService.takePendingMessage();if(pendingPush!=null){WidgetsBinding.instance.addPostFrameCallback((_) {if(mounted)_handleNotificationTap({'meta':pendingPush});});}_loadHistoryLanguage();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_checkForAppUpdate();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:30),(_)=>_loadWeather());_dayNightTimer=Timer.periodic(const Duration(minutes:1),(_){final now=DateTime.now();final isDay=now.hour<17||(now.hour==17&&now.minute<30);if(mounted&&_isDay!=isDay)setState(()=>_isDay=isDay);});}
-  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_dayNightTimer?.cancel();_notificationTimer?.cancel();_pushOpenSubscription?.cancel();_paymentPollTimer?.cancel();_phone.dispose();_profileNameCtrl.dispose();_profilePhoneCtrl.dispose();_profileNameFocus.dispose();_profilePhoneFocus.dispose();super.dispose();}
+  @override void initState(){super.initState();PushNotificationService.registerDevice();_pushOpenSubscription=PushNotificationService.openedMessages.listen((data){_loadNotifications();if(data.isNotEmpty)_handleNotificationTap({'meta':data});});final pendingPush=PushNotificationService.takePendingMessage();if(pendingPush!=null){WidgetsBinding.instance.addPostFrameCallback((_) {if(mounted)_handleNotificationTap({'meta':pendingPush});});}_loadHistoryLanguage();_loadLocations();_loadTickets();_loadAvailableBuses();_loadProfile();_loadTripReminders();_loadWeather();_loadUnreadCount();_checkForAppUpdate();_notificationTimer=Timer.periodic(const Duration(seconds:30),(_)=>_loadUnreadCount());_weatherTimer=Timer.periodic(const Duration(minutes:10),(_)=>_loadWeather());}
+  @override void dispose(){_timer?.cancel();_weatherTimer?.cancel();_notificationTimer?.cancel();_pushOpenSubscription?.cancel();_paymentPollTimer?.cancel();_phone.dispose();_profileNameCtrl.dispose();_profilePhoneCtrl.dispose();_profileNameFocus.dispose();_profilePhoneFocus.dispose();super.dispose();}
 
 
   Future<void> _loadTripReminders() async {
@@ -210,10 +209,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if(current==null)return;
       final code=(current['weather_code'] as num?)?.toInt();
       final temp=(current['temperature_2m'] as num?)?.toDouble();
-      // BookIt switches to its night presentation at 5:30 PM Kigali time,
-      // regardless of the weather provider's broader sunrise/sunset flag.
       final now=DateTime.now();
-      final isDay=now.hour<17||(now.hour==17&&now.minute<30);
+      final providerIsDay=(current['is_day'] as num?)?.toInt();
       final daily=data['daily'] as Map<String,dynamic>?;
       final dates=(daily?['time'] as List?)??const [];
       final codes=(daily?['weather_code'] as List?)??const [];
@@ -222,6 +219,13 @@ class _HomeScreenState extends State<HomeScreen> {
       final rain=(daily?['precipitation_probability_max'] as List?)??const [];
       final sunrise=(daily?['sunrise'] as List?)??const [];
       final sunset=(daily?['sunset'] as List?)??const [];
+      final sunriseToday=sunrise.isNotEmpty?DateTime.tryParse(sunrise.first.toString()):null;
+      final sunsetToday=sunset.isNotEmpty?DateTime.tryParse(sunset.first.toString()):null;
+      final isDay=providerIsDay!=null
+          ? providerIsDay==1
+          : sunriseToday!=null&&sunsetToday!=null
+              ? now.isAfter(sunriseToday)&&now.isBefore(sunsetToday)
+              : now.hour>=6&&now.hour<18;
       final forecast=<Map<String,dynamic>>[];
       for(var i=0;i<dates.length;i++){
         forecast.add({'date':dates[i],'weather_code':i<codes.length?codes[i]:null,'high':i<highs.length?highs[i]:null,'low':i<lows.length?lows[i]:null,'rain_probability':i<rain.length?rain[i]:null,'sunrise':i<sunrise.length?sunrise[i]:null,'sunset':i<sunset.length?sunset[i]:null});
