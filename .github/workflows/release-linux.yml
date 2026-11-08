@@ -4,12 +4,18 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "New release tag to publish from this branch (for example v1.2.4)"
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 concurrency:
-  group: linux-release-${{ github.ref }}
+  group: linux-release-${{ github.event.inputs.release_tag || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -19,6 +25,8 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.ref }}
 
       - name: Install Linux build dependencies
         run: |
@@ -34,12 +42,17 @@ jobs:
       - name: Validate release tag
         id: version
         shell: bash
+        env:
+          REQUESTED_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
         run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Tag must look like v1.2.3." >&2
+          set -euo pipefail
+          TAG="$REQUESTED_TAG"
+          VERSION="${TAG#v}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tag must look like v1.2.4."
             exit 1
           fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "value=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Install Dart dependencies
@@ -50,18 +63,26 @@ jobs:
         working-directory: bookit
         run: flutter build linux --release --build-name "${{ steps.version.outputs.value }}"
 
-      - name: Package application and checksum
+      - name: Package application and verify checksum
         working-directory: bookit
         shell: bash
         run: |
           set -euo pipefail
+          BUNDLE="build/linux/x64/release/bundle"
+          test -x "$BUNDLE/bookit"
+          test -f assets/icon.png
           STAGE="$RUNNER_TEMP/bookit-release"
           mkdir -p "$STAGE/bookit"
-          cp -a build/linux/x64/release/bundle/. "$STAGE/bookit/"
+          cp -a "$BUNDLE/." "$STAGE/bookit/"
           cp assets/icon.png "$STAGE/bookit-icon.png"
-          tar -czf "$RUNNER_TEMP/bookit-linux-x86_64.tar.gz" -C "$STAGE" bookit bookit-icon.png
+          ARCHIVE="$RUNNER_TEMP/bookit-linux-x86_64.tar.gz"
+          CHECKSUM="$ARCHIVE.sha256"
+          tar -czf "$ARCHIVE" -C "$STAGE" bookit bookit-icon.png
+          test -s "$ARCHIVE"
+          tar -tzf "$ARCHIVE" >/dev/null
           cd "$RUNNER_TEMP"
-          sha256sum bookit-linux-x86_64.tar.gz > bookit-linux-x86_64.tar.gz.sha256
+          sha256sum "$(basename "$ARCHIVE")" > "$(basename "$CHECKSUM")"
+          sha256sum --check "$(basename "$CHECKSUM")"
 
       - name: Configure Android release signing
         id: android-signing
@@ -127,7 +148,10 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          target_commitish: main
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: |
             ${{ runner.temp }}/bookit-linux-x86_64.tar.gz
             ${{ runner.temp }}/bookit-linux-x86_64.tar.gz.sha256
@@ -136,4 +160,6 @@ jobs:
         if: steps.android-signing.outputs.configured == 'true'
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          fail_on_unmatched_files: true
           files: bookit/build/app/outputs/flutter-apk/app-release.apk
