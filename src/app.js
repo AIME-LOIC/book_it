@@ -26,6 +26,7 @@ dotenv.config();
 // and establish a reusable database connection before reaching controllers.
 
 const app = express();
+const PUBLIC_DIR = `${process.cwd()}/public`;
 app.set('trust proxy', 1);
 // ── SECURITY HEADERS ─────────────────────────────────────────────
 app.use(helmet({
@@ -159,7 +160,7 @@ const RELEASE_ASSETS = {
 };
 app.get('/downloads/:asset', async (req, res, next) => {
   const asset = RELEASE_ASSETS[req.params.asset];
-  if (!asset) return res.status(404).sendFile('404.html', { root: 'public' });
+  if (!asset) return res.status(404).sendFile('404.html', { root: PUBLIC_DIR });
   try {
     const upstream = await fetch(`https://github.com/AIME-LOIC/book_it/releases/latest/download/${asset.path}`, {
       headers: { 'User-Agent': 'BookIt-Download-Service' },
@@ -167,7 +168,7 @@ app.get('/downloads/:asset', async (req, res, next) => {
     });
     if (!upstream.ok || !upstream.body) {
       console.error('[DOWNLOAD] Release asset unavailable:', asset.path, upstream.status);
-      return res.status(503).sendFile('503.html', { root: 'public' });
+      return res.status(503).sendFile('503.html', { root: PUBLIC_DIR });
     }
     res.setHeader('Content-Type', asset.type);
     res.setHeader('Content-Disposition', `attachment; filename="${asset.name}"`);
@@ -192,12 +193,13 @@ const sendStatusPage = (req, res, status) => {
     return res.status(status).json({ status, message: status === 500 ? 'Something went wrong. Please try again.' : 'The request could not be completed.' });
   }
   const page = ERROR_PAGES.has(status) ? `${status}.html` : '500.html';
-  return res.status(status).sendFile(page, { root: 'public' });
+  return res.status(status).sendFile(page, { root: PUBLIC_DIR });
 };
 
 // ── GLOBAL ERROR MIDDLEWARE ─────────────────────────────────────────────
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
   console.error('[ERROR]', err.message);
   if (process.env.NODE_ENV !== 'production') console.error(err.stack);
   const status = Number(err.status || err.statusCode || 500);
