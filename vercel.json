@@ -34,6 +34,10 @@
       "destination": "/policy.html"
     },
     {
+      "source": "/faq",
+      "destination": "/faq.html"
+    },
+    {
       "source": "/docs",
       "destination": "/docs.html"
     },
@@ -41,16 +45,49 @@
       "source": "/download",
       "destination": "/download.html"
     },
-    { "source": "/thanks", "destination": "/thanks.html" },
-    { "source": "/400", "destination": "/400.html" },
-    { "source": "/401", "destination": "/401.html" },
-    { "source": "/403", "destination": "/403.html" },
-    { "source": "/404", "destination": "/404.html" },
-    { "source": "/409", "destination": "/409.html" },
-    { "source": "/422", "destination": "/422.html" },
-    { "source": "/429", "destination": "/429.html" },
-    { "source": "/500", "destination": "/500.html" },
-    { "source": "/502", "destination": "/502.html" },
-    { "source": "/503", "destination": "/503.html" }
+    {
+      "source": "/thanks",
+      "destination": "/thanks.html"
+    },
+    {
+      "source": "/400",
+      "destination": "/400.html"
+    },
+    {
+      "source": "/401",
+      "destination": "/401.html"
+    },
+    {
+      "source": "/403",
+      "destination": "/403.html"
+    },
+    {
+      "source": "/404",
+      "destination": "/404.html"
+    },
+    {
+      "source": "/409",
+      "destination": "/409.html"
+    },
+    {
+      "source": "/422",
+      "destination": "/422.html"
+    },
+    {
+      "source": "/429",
+      "destination": "/429.html"
+    },
+    {
+      "source": "/500",
+      "destination": "/500.html"
+    },
+    {
+      "source": "/502",
+      "destination": "/502.html"
+    },
+    {
+      "source": "/503",
+      "destination": "/503.html"
+    }
   ]
 }
