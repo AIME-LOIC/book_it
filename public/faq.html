@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Answers to common questions about booking bus tickets, payments, boarding and BookIt accounts in Rwanda.">
+  <title>Help & FAQs — BookIt</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box}body{font-family:'Plus Jakarta Sans',sans-serif;background:#f4f8f5;color:#153328}
+    .faq-item{background:#fff;border:1px solid #e1ebe5;border-radius:16px;overflow:hidden}
+    .faq-item summary{list-style:none;cursor:pointer;padding:19px 21px;font-weight:700;display:flex;gap:16px;align-items:center;justify-content:space-between}
+    .faq-item summary::-webkit-details-marker{display:none}.faq-item[open] summary{color:#087f5b}
+    .faq-answer{padding:0 21px 20px;color:#60736a;font-size:14px;line-height:1.8}
+    .faq-item summary:focus-visible{outline:3px solid #86d5b2;outline-offset:-3px}
+  </style>
+</head>
+<body>
+<header class="bg-white/90 border-b border-emerald-100 sticky top-0 z-10 backdrop-blur">
+  <nav class="max-w-6xl mx-auto h-16 px-5 flex items-center justify-between">
+    <a href="/" class="font-extrabold text-2xl text-emerald-700">BookIt <span class="text-xs font-semibold text-slate-500">HELP CENTRE</span></a>
+    <a href="/book" class="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800">Book a trip</a>
+  </nav>
+</header>
+<main class="max-w-4xl mx-auto px-5 py-12 md:py-16">
+  <p class="text-xs font-extrabold tracking-[.18em] text-emerald-700">WE'RE HERE TO HELP</p>
+  <h1 class="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight">Frequently asked questions</h1>
+  <p class="mt-4 max-w-2xl text-slate-600 leading-7">Clear answers about finding a bus, booking a seat, paying for a ticket and getting ready to travel.</p>
+  <label class="block mt-8"><span class="sr-only">Search frequently asked questions</span><input id="faq-search" type="search" placeholder="Search a question…" class="w-full rounded-2xl border border-emerald-100 bg-white px-5 py-4 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"></label>
+  <div class="mt-9 space-y-3" id="faq-list">
+    <details class="faq-item"><summary>How do I find a bus? <span>＋</span></summary><p class="faq-answer">Sign in to BookIt, open Explore, select your departure location and destination, choose your travel date and optionally set a departure time. Select Find Buses to view trips available in the system for that journey.</p></details>
+    <details class="faq-item"><summary>How do I reserve a seat? <span>＋</span></summary><p class="faq-answer">Choose a listed trip to open its seat selection. Select an available seat and follow the on-screen booking steps. Check the route, departure details and fare before confirming.</p></details>
+    <details class="faq-item"><summary>Which payment methods can I use? <span>＋</span></summary><p class="faq-answer">BookIt supports payment initiation for MTN Mobile Money and Airtel Money through its Flutterwave integration where the relevant live provider credentials and approvals are configured. The payment options shown at checkout are the options currently available for that booking. Do not share your mobile-money PIN with anyone.</p></details>
+    <details class="faq-item"><summary>When is my ticket confirmed? <span>＋</span></summary><p class="faq-answer">Follow the payment status shown in BookIt. A payment request being initiated does not by itself mean payment has succeeded. Open My Tickets and check the ticket's latest status before travelling.</p></details>
+    <details class="faq-item"><summary>Where can I find my ticket and QR code? <span>＋</span></summary><p class="faq-answer">After signing in, open My Tickets and select the relevant booking. Your ticket details and QR code are displayed there when available. Keep your ticket number accessible as an additional reference.</p></details>
+    <details class="faq-item"><summary>What should I show when boarding? <span>＋</span></summary><p class="faq-answer">Show the ticket QR code to the driver for validation. Keep your ticket number available in case the QR code cannot be scanned. Follow any additional instructions from the bus operator.</p></details>
+    <details class="faq-item"><summary>Can I cancel a ticket or get a refund? <span>＋</span></summary><p class="faq-answer">Cancellation and refund eligibility depend on the ticket status and the bus operator's applicable policy. Check the available actions on the ticket and contact BookIt support or the operator for help. A refund is not guaranteed by submitting a support request.</p></details>
+    <details class="faq-item"><summary>What if my phone battery dies? <span>＋</span></summary><p class="faq-answer">Keep your ticket number somewhere accessible before travelling. Ask the driver or operator to look up the booking using the information they are authorized to use. You may be asked to provide identification. Boarding remains subject to ticket validation.</p></details>
+    <details class="faq-item"><summary>Does BookIt show live bus GPS tracking? <span>＋</span></summary><p class="faq-answer">Passenger-facing live bus tracking is currently coming soon and should not be relied on for real-time location or arrival estimates. Use the trip details and contact the operator for current travel information.</p></details>
+
+    <details class="faq-item"><summary>How do I contact support? <span>＋</span></summary><p class="faq-answer">Email <a class="font-bold text-emerald-700 underline" href="mailto:kingaime132@gmail.com">kingaime132@gmail.com</a> or call <a class="font-bold text-emerald-700 underline" href="tel:+250791749219">+250 791 749 219</a>. Include your ticket number where relevant, but never send your password, PIN or payment credentials.</p></details>
+  </div>
+  <p id="faq-empty" class="hidden mt-8 rounded-xl bg-white p-6 text-slate-500">No matching questions. Try another search or contact support.</p>
+  <div class="mt-12 rounded-2xl bg-emerald-950 p-7 text-white md:p-9"><h2 class="text-2xl font-extrabold">Still need a hand?</h2><p class="mt-2 text-emerald-100">Our support team can help you with booking and account questions.</p><a class="inline-flex mt-5 rounded-xl bg-white px-5 py-3 font-bold text-emerald-800" href="mailto:kingaime132@gmail.com">Contact support</a></div>
+</main>
+<footer class="border-t border-emerald-100 bg-white py-7 text-center text-sm text-slate-500">© 2026 BookIt · Simplifying transport in Rwanda</footer>
+<script>
+  const search=document.getElementById('faq-search'), items=[...document.querySelectorAll('.faq-item')], empty=document.getElementById('faq-empty');
+  search.addEventListener('input',()=>{const q=search.value.trim().toLowerCase();let count=0;items.forEach(item=>{const show=item.textContent.toLowerCase().includes(q);item.hidden=!show;if(show)count++;});empty.classList.toggle('hidden',count>0);});
+  items.forEach(item=>item.addEventListener('toggle',()=>{if(item.open)items.filter(other=>other!==item).forEach(other=>other.open=false);}));
+</script>
+</body></html>

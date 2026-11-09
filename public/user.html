@@ -1813,6 +1813,110 @@
       font-weight: 900;
       border: 2px solid var(--bg-card);
     }
+  
+    /* BookIt booking experience refresh — presentation only; booking logic and IDs stay intact. */
+    :root {
+      --bg-main: #f4f7f6;
+      --bg-card: #ffffff;
+      --text-main: #10251f;
+      --text-muted: #64756f;
+      --border: #e2ebe7;
+      --glass: rgba(255,255,255,.94);
+      --primary: #087f5b;
+      --secondary: #087f5b;
+      --secondary-hover: #06694b;
+    }
+    body { background: #f4f7f6; color: #10251f; }
+    body:not(.light) { --bg-main:#f4f7f6; --bg-card:#fff; --text-main:#10251f; --text-muted:#64756f; --border:#e2ebe7; --glass:rgba(255,255,255,.94); }
+    #dashboard { background:#f4f7f6; }
+    .layout { max-width:1600px; margin:0 auto; background:#f4f7f6; }
+    .sidebar {
+      width:252px; padding:30px 18px 24px; background:#fff;
+      border-right:1px solid #e7efeb; box-shadow:8px 0 28px rgba(16,37,31,.025);
+    }
+    .sidebar > div:first-child { margin-bottom:34px !important; padding:0 12px !important; }
+    .sidebar .nav-item {
+      min-height:48px; padding:13px 15px; margin-bottom:5px; border-radius:13px;
+      color:#64756f; font-size:14px; font-weight:700; transition:background .18s,color .18s,transform .18s;
+    }
+    .sidebar .nav-item i { font-size:17px; }
+    .sidebar .nav-item:hover { background:#f1f8f4; color:#087f5b; transform:translateX(2px); }
+    .sidebar .nav-item.active { background:#e9f6ef; color:#087f5b; }
+    .main-content { margin-left:252px; min-width:0; padding-bottom:80px; }
+    .hero-section {
+      position:relative; top:auto; padding:36px clamp(20px,4vw,64px) 28px;
+      background:linear-gradient(135deg,#edf8f1 0%,#f4f7f6 60%,#eef6f3 100%);
+      border:0; border-bottom:1px solid #e4eee8;
+    }
+    .search-card {
+      max-width:1240px; margin:0 auto; padding:clamp(22px,3vw,38px);
+      background:#fff; border:1px solid #e3ece7; border-radius:24px;
+      box-shadow:0 18px 50px rgba(18,55,40,.075);
+    }
+    .booking-intro { margin:0 0 27px; }
+    .booking-kicker { display:flex; align-items:center; gap:9px; color:#087f5b; font-size:11px; font-weight:800; letter-spacing:.14em; }
+    .booking-kicker-dot { width:8px; height:8px; border-radius:50%; background:#13a36f; box-shadow:0 0 0 4px #e5f5ec; }
+    .booking-intro h1 { margin:13px 0 7px; color:#10251f; font-size:clamp(26px,3vw,38px); line-height:1.15; font-weight:800; letter-spacing:-.045em; }
+    .booking-intro h1 span { color:#087f5b; }
+    .booking-intro p { color:#64756f; font-size:14px; line-height:1.65; max-width:610px; }
+    .booking-shortcuts { display:flex; gap:18px; flex-wrap:wrap; margin-top:14px; }
+    .booking-shortcuts a { color:#087f5b; text-decoration:none; font-size:12px; font-weight:700; display:inline-flex; align-items:center; gap:7px; }
+    .booking-shortcuts a:hover { color:#055c42; text-decoration:underline; }
+    .search-grid { grid-template-columns:repeat(2,minmax(0,1fr)) 150px 140px 160px; gap:13px; align-items:end; }
+    .input-group label { display:block; margin-bottom:8px; color:#40564e; font-size:11px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; }
+    .custom-select-trigger, .search-grid input {
+      height:54px !important; border-radius:12px !important; border:1px solid #dce8e1 !important;
+      background:#f9fbfa !important; color:#19352a !important; font-size:14px !important;
+    }
+    .custom-select-trigger { padding:0 15px; }
+    .custom-select-trigger:hover,.custom-select-trigger.open { border-color:#0b9468 !important; box-shadow:0 0 0 3px rgba(8,127,91,.09) !important; }
+    .search-grid input:focus { border-color:#0b9468 !important; background:#fff !important; }
+    .btn.btn-primary { background:#087f5b; border:1px solid #087f5b; border-radius:12px; box-shadow:0 7px 16px rgba(8,127,91,.17); font-weight:800; }
+    .btn.btn-primary:hover { background:#06694b; transform:translateY(-1px); }
+    .quick-chips { display:flex; gap:8px; flex-wrap:wrap; margin-top:19px; }
+    .chip { padding:8px 12px; border:1px solid #e1ebe5; border-radius:999px; background:#f7faf8; color:#476157; font-size:11px; font-weight:700; }
+    .chip:hover { background:#087f5b; color:#fff; border-color:#087f5b; }
+    .results-container { max-width:1240px; margin:0 auto; padding:25px clamp(20px,4vw,64px); }
+    #sec-search > div:nth-child(2) { max-width:1240px; margin:0 auto; padding:25px clamp(20px,4vw,64px) 0; }
+    #sec-search h2 { color:#17352a; }
+    .bus-card { border:1px solid #e4ece7; border-radius:18px; box-shadow:0 4px 16px rgba(16,37,31,.045); }
+    .bus-card:hover { border-color:#9dd8bd; box-shadow:0 12px 28px rgba(8,127,91,.09); }
+    #sec-tickets,#sec-history,#sec-settings { padding:clamp(22px,4vw,54px) !important; }
+    #sec-tickets h2,#sec-history h2,#sec-settings h2 { color:#17352a; letter-spacing:-.035em; }
+    .auth-screen { background:radial-gradient(circle at 12% 12%,rgba(8,127,91,.13),transparent 32%),linear-gradient(135deg,#eef7f1,#f7faf8) !important; }
+    .auth-card { background:#fff; border:1px solid #e3ece7; border-radius:22px; box-shadow:0 24px 70px rgba(16,37,31,.12); }
+    .tabs { background:#f1f6f3; }
+    .tab.active { color:#087f5b; }
+    .float-group input, .auth-card input:not([type=checkbox]) { color:#18372b; background:#f9fbfa; border-color:#dce8e1; }
+    .float-group label { color:#718078; }
+    .notif-panel,.pay-modal,.confirm-box { border-radius:20px; }
+    @media(max-width:1100px) {
+      .sidebar { width:220px; }
+      .main-content { margin-left:220px; }
+      .search-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .search-grid .btn { min-height:54px; }
+    }
+    @media(max-width:760px) {
+      .layout { display:block; }
+      .sidebar { display:none; }
+      .main-content { margin-left:0; padding-bottom:90px; }
+      .hero-section { padding:18px 14px 20px; }
+      .search-card { padding:21px 16px; border-radius:19px; }
+      .booking-intro { margin-bottom:20px; }
+      .booking-intro h1 { font-size:27px; }
+      .search-grid { grid-template-columns:1fr 1fr; gap:11px; }
+      .search-grid .input-group:nth-child(1),.search-grid .input-group:nth-child(2) { grid-column:span 2; }
+      .search-grid .btn { grid-column:span 2; }
+      .results-container { padding:18px 14px; }
+      #sec-search > div:nth-child(2) { padding:18px 14px 0; }
+      #sec-tickets,#sec-history,#sec-settings { padding:22px 14px 36px !important; }
+      .auth-screen { padding:14px; }
+      .auth-card { padding:26px 20px; }
+    }
+    @media(prefers-reduced-motion:reduce) {
+      *,*::before,*::after { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; }
+    }
+
   </style>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -1977,6 +2081,15 @@
         <div id="sec-search" class="section active">
           <div class="hero-section">
             <div class="search-card">
+              <div class="booking-intro">
+                <div class="booking-kicker"><span class="booking-kicker-dot"></span> RWANDA • INTERCITY TRAVEL</div>
+                <h1>Where would you like to <span>go next?</span></h1>
+                <p>Compare available trips, choose your seat and keep your ticket close — all in one place.</p>
+                <div class="booking-shortcuts">
+                  <a href="/docs"><i class="fa-regular fa-circle-question"></i> How booking works</a>
+                  <a href="/faq"><i class="fa-regular fa-comments"></i> FAQs</a>
+                </div>
+              </div>
               <div class="search-grid">
                 <div class="input-group">
                   <label><i class="fa fa-map-marker-alt" style="color:white;"></i> From</label>
