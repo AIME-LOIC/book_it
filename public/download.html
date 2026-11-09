@@ -3,78 +3,106 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#071715">
+  <meta name="theme-color" content="#f9fafb">
   <meta name="description" content="Download BookIt for Android or Linux. Book bus tickets in Rwanda with the official BookIt app.">
   <title>Download BookIt</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
   <style>
-    body{background:#071715;color:#ecfdf5;font-family:Inter,system-ui,sans-serif}
-    .panel{background:linear-gradient(145deg,rgba(16,45,39,.96),rgba(8,25,23,.98));border:1px solid rgba(110,231,183,.15)}
-    .download-btn{background:#059669;color:white;transition:.2s}
+    body{background:#f9fafb;color:#111827;font-family:Inter,system-ui,sans-serif}
+    .download-btn{background:#059669;color:#fff;transition:background .2s,transform .2s}
     .download-btn:hover{background:#047857;transform:translateY(-1px)}
-    .muted{color:#a7f3d0}
+    .muted{color:#6b7280}
+    .platform-card{background:#fff;border:1px solid #e5e7eb}
   </style>
 </head>
-<body class="min-h-screen">
-  <header class="border-b border-emerald-900/60">
-    <div class="max-w-5xl mx-auto px-5 py-5 flex items-center justify-between">
-      <a href="/" class="flex items-center gap-3 text-xl font-extrabold text-emerald-300"><i class="fa-solid fa-bus-simple"></i> BookIt</a>
-      <a href="/" class="text-sm muted hover:text-white"><i class="fa-solid fa-arrow-left mr-2"></i>Back to home</a>
+<body class="min-h-screen bg-gray-50 text-gray-900">
+  <header class="sticky top-0 z-20 border-b border-gray-200 bg-white shadow-sm">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+      <a href="/" class="flex items-center gap-3 text-xl font-extrabold tracking-tight text-primary-green">
+        <i class="fa-solid fa-bus-simple"></i><span>BookIt</span>
+      </a>
+      <a href="/" class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-100 hover:text-emerald-700">
+        <i class="fa-solid fa-arrow-left"></i> Back to home
+      </a>
     </div>
   </header>
-  <main class="max-w-5xl mx-auto px-5 py-12">
-    <div class="text-center max-w-2xl mx-auto mb-10">
-      <span class="inline-flex items-center gap-2 rounded-full bg-emerald-950 px-4 py-2 text-xs font-semibold tracking-wide text-emerald-300"><i class="fa-solid fa-download"></i> OFFICIAL APP DOWNLOADS</span>
-      <h1 class="mt-5 text-4xl sm:text-5xl font-black tracking-tight">Take BookIt with you.</h1>
-      <p class="mt-4 muted text-lg">We’ll identify your device and recommend the right app. You can also choose a download manually.</p>
+
+  <main class="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+    <div class="mx-auto mb-9 max-w-2xl text-center">
+      <span class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-xs font-bold tracking-wide text-emerald-700">
+        <i class="fa-solid fa-download"></i> OFFICIAL APP DOWNLOADS
+      </span>
+      <h1 class="mt-5 text-4xl font-black tracking-tight text-gray-900 sm:text-5xl">Take BookIt with you.</h1>
+      <p class="mt-4 text-lg text-gray-600">We’ll identify your device and recommend the right app. You can also choose a download manually.</p>
     </div>
 
-    <section class="panel rounded-3xl p-6 sm:p-9 shadow-2xl">
-      <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-        <div class="w-14 h-14 rounded-2xl bg-emerald-900/70 flex items-center justify-center text-2xl text-emerald-300"><i class="fa-solid fa-laptop-mobile"></i></div>
-        <div class="flex-1">
-          <p class="text-xs uppercase tracking-widest muted font-bold">Your device</p>
-          <h2 id="device-name" class="text-2xl font-bold mt-1">Checking your device…</h2>
-          <p id="device-detail" class="muted text-sm mt-1" aria-live="polite">Choosing the correct BookIt download.</p>
+    <section class="rounded-3xl border border-gray-200 bg-white p-5 shadow-lg sm:p-9">
+      <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-2xl text-emerald-700">
+          <i class="fa-solid fa-laptop-mobile"></i>
         </div>
-        <span id="device-badge" class="hidden rounded-full bg-emerald-950 px-3 py-2 text-xs font-bold text-emerald-300"></span>
+        <div class="min-w-0 flex-1">
+          <p class="text-xs font-bold uppercase tracking-widest text-gray-500">Your device</p>
+          <h2 id="device-name" class="mt-1 text-2xl font-bold text-gray-900">Checking your device…</h2>
+          <p id="device-detail" class="mt-1 text-sm text-gray-600" aria-live="polite">Choosing the correct BookIt download.</p>
+        </div>
+        <span id="device-badge" class="hidden self-start rounded-full bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 sm:self-center"></span>
       </div>
 
-      <div id="recommended" class="mt-8 rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-5 sm:p-6">
-        <div class="flex items-center gap-2 text-emerald-300 text-sm font-bold"><i class="fa-solid fa-check-circle"></i> RECOMMENDED FOR YOUR DEVICE</div>
-        <div class="mt-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+      <div id="recommended" class="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-5 sm:p-6">
+        <div class="flex items-center gap-2 text-sm font-bold text-emerald-800"><i class="fa-solid fa-circle-check"></i> RECOMMENDED FOR YOUR DEVICE</div>
+        <div class="mt-3 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 id="recommended-title" class="text-2xl font-extrabold">BookIt</h3>
-            <p id="recommended-copy" class="muted mt-1 text-sm">Checking available downloads…</p>
+            <h3 id="recommended-title" class="text-2xl font-extrabold text-gray-900">BookIt</h3>
+            <p id="recommended-copy" class="mt-1 text-sm text-gray-600">Checking available downloads…</p>
           </div>
-          <a id="recommended-link" href="https://github.com/AIME-LOIC/book_it/releases/latest" class="download-btn inline-flex justify-center items-center gap-3 rounded-xl px-6 py-4 font-bold">
+          <a id="recommended-link" href="https://github.com/AIME-LOIC/book_it/releases/latest" class="download-btn inline-flex shrink-0 items-center justify-center gap-3 rounded-xl px-6 py-4 font-bold shadow-sm">
             <i class="fa-solid fa-download"></i> <span id="recommended-label">View latest release</span>
           </a>
         </div>
       </div>
 
       <div class="mt-9">
-        <h3 class="text-lg font-bold">Or choose your platform</h3>
-        <div class="grid sm:grid-cols-2 gap-4 mt-4">
-          <article class="rounded-2xl border border-emerald-900 bg-black/20 p-5">
-            <div class="flex items-center gap-3"><i class="fa-brands fa-android text-3xl text-emerald-300"></i><div><h4 class="font-bold text-lg">Android</h4><p class="muted text-xs">APK installer</p></div></div>
-            <p class="muted text-sm mt-4">For Android phones and tablets. Allow installation from this source if Android asks.</p>
-            <a href="https://github.com/AIME-LOIC/book_it/releases/latest/download/app-release.apk" class="download-btn mt-5 flex justify-center gap-2 rounded-lg py-3 font-semibold"><i class="fa-solid fa-download"></i> Download APK</a>
+        <h3 class="text-lg font-bold text-gray-900">Or choose your platform</h3>
+        <div class="mt-4 grid gap-4 sm:grid-cols-2">
+          <article class="platform-card rounded-2xl p-5 shadow-sm">
+            <div class="flex items-center gap-3">
+              <i class="fa-brands fa-android text-3xl text-emerald-700"></i>
+              <div><h4 class="text-lg font-bold text-gray-900">Android</h4><p class="text-xs text-gray-500">APK installer</p></div>
+            </div>
+            <p class="mt-4 text-sm text-gray-600">For Android phones and tablets. Allow installation from this source if Android asks.</p>
+            <a href="https://github.com/AIME-LOIC/book_it/releases/latest/download/app-release.apk" class="download-btn mt-5 flex justify-center gap-2 rounded-lg py-3 font-semibold">
+              <i class="fa-solid fa-download"></i> Download APK
+            </a>
           </article>
-          <article class="rounded-2xl border border-emerald-900 bg-black/20 p-5">
-            <div class="flex items-center gap-3"><i class="fa-brands fa-linux text-3xl text-emerald-300"></i><div><h4 class="font-bold text-lg">Linux</h4><p class="muted text-xs">64-bit desktop archive</p></div></div>
-            <p class="muted text-sm mt-4">For Linux x86_64 desktops. Extract the archive and follow the included installation instructions.</p>
-            <a href="https://github.com/AIME-LOIC/book_it/releases/latest/download/bookit-linux-x86_64.tar.gz" class="download-btn mt-5 flex justify-center gap-2 rounded-lg py-3 font-semibold"><i class="fa-solid fa-download"></i> Download Linux app</a>
-            <a href="https://github.com/AIME-LOIC/book_it/releases/latest/download/bookit-linux-x86_64.tar.gz.sha256" class="block text-center text-xs muted mt-3 hover:text-white">SHA-256 checksum</a>
+
+          <article class="platform-card rounded-2xl p-5 shadow-sm">
+            <div class="flex items-center gap-3">
+              <i class="fa-brands fa-linux text-3xl text-gray-800"></i>
+              <div><h4 class="text-lg font-bold text-gray-900">Linux</h4><p class="text-xs text-gray-500">64-bit desktop archive</p></div>
+            </div>
+            <p class="mt-4 text-sm text-gray-600">For Linux x86_64 desktops. Extract the archive and follow the included installation instructions.</p>
+            <a href="https://github.com/AIME-LOIC/book_it/releases/latest/download/bookit-linux-x86_64.tar.gz" class="download-btn mt-5 flex justify-center gap-2 rounded-lg py-3 font-semibold">
+              <i class="fa-solid fa-download"></i> Download Linux app
+            </a>
+            <a href="https://github.com/AIME-LOIC/book_it/releases/latest/download/bookit-linux-x86_64.tar.gz.sha256" class="mt-3 block text-center text-xs text-emerald-700 underline hover:text-emerald-900">SHA-256 checksum</a>
           </article>
         </div>
       </div>
-      <p class="muted text-xs mt-7 text-center">Downloads are served from the latest published BookIt GitHub Actions release. <a class="underline hover:text-white" href="https://github.com/AIME-LOIC/book_it/releases">View all releases</a>.</p>
+      <p class="mt-7 text-center text-xs text-gray-500">Downloads are served from the latest published BookIt GitHub Actions release. <a class="text-emerald-700 underline hover:text-emerald-900" href="https://github.com/AIME-LOIC/book_it/releases">View all releases</a>.</p>
     </section>
   </main>
+
+  <footer class="mt-10 border-t border-gray-200 bg-white">
+    <div class="mx-auto max-w-7xl px-4 py-6 text-center text-sm text-gray-500 sm:px-6 lg:px-8">
+      © <span id="download-year">2026</span> BookIt. All rights reserved.
+    </div>
+  </footer>
+
   <script>
-    (function () {
+    (() => {
+      document.getElementById('download-year').textContent = new Date().getFullYear();
       const ua = navigator.userAgent || '';
       const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
       const android = /Android/i.test(ua);
