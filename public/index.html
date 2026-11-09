@@ -670,7 +670,7 @@
                 <div>
                     <h3 class="text-lg font-semibold mb-4">Contact</h3>
                     <ul class="space-y-2 text-gray-400 text-sm">
-                        <li><i class="fas fa-envelope mr-2"></i> kingaime132@gmail.com</li>
+                        <li><i class="fas fa-envelope mr-2"></i> <a href="mailto:1percentrwanda@gmail.com" class="text-gray-400 hover:text-primary-green transition">1percentrwanda@gmail.com</a></li>
                         <li><i class="fas fa-phone mr-2"></i> +250 791749219</li>
                         <li><i class="fas fa-map-marker-alt mr-2"></i> Kigali, Rwanda</li>
                     </ul>
@@ -690,7 +690,7 @@
 
             <div class="mt-12 border-t border-gray-700 pt-8">
                 <p class="text-center text-gray-500 text-sm">
-                    &copy; 2025 BookIt. All rights reserved.
+                    &copy; <span id="copyright-year"></span> BookIt. All rights reserved.
                 </p>
             </div>
         </div>
@@ -731,6 +731,9 @@
 
 
     <script>
+        // Keep the footer copyright year current without annual edits.
+        document.getElementById('copyright-year').textContent = new Date().getFullYear();
+
         // Simple JavaScript to handle the mobile menu toggle
         document.getElementById('mobile-menu-button').addEventListener('click', function () {
             const menu = document.getElementById('mobile-menu');
