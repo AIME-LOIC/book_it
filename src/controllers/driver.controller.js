@@ -25,9 +25,9 @@ export const login            = async (req, res) => {
   try {
     const { token, driver } = await svc.loginDriver(req.body);
     res.cookie('bookit_token', token, authCookieOptions);
-    res.status(200).json({ driver });
+    res.status(200).json({ token, driver });
   }
-  catch (err) { res.status(401).json({ message: clientMessage(err) }); }
+  catch { res.status(401).json({ message: 'Invalid credentials or account unavailable.' }); }
 };
 
 export const updateProfile    = async (req, res) => {
@@ -63,9 +63,29 @@ export const remove           = async (req, res) => {
 };
 
 export const getMyPassengers  = async (req, res) => {
+  // isDriver middleware reloads the driver from the database and attaches the
+  // current bus assignment. Never query a manifest for an unassigned driver.
+  if (!req.user.bus_id) {
+    return res.status(409).json({ message: 'No bus is assigned to this driver yet.' });
+  }
+
+  const requestedDate = req.query.date;
+  if (requestedDate != null &&
+      (typeof requestedDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(requestedDate))) {
+    return res.status(400).json({ message: 'Date must use YYYY-MM-DD format.' });
+  }
+
   try {
-    res.status(200).json(await ticketSvc.getBusPassengers(req.user.bus_id, req.query.date));
-  } catch (err) { res.status(500).json({ message: clientMessage(err) }); }
+    const passengers = await ticketSvc.getBusPassengers(req.user.bus_id, requestedDate);
+    res.set('Cache-Control', 'no-store');
+    res.status(200).json(passengers);
+  } catch (err) {
+    console.error('[DRIVER PASSENGERS] Manifest query failed:', err?.stack || err);
+    res.status(500).json({
+      message: 'Could not load passenger manifest.',
+      ...(process.env.NODE_ENV !== 'production' ? { detail: err.message } : {}),
+    });
+  }
 };
 
 export const notifyExit       = async (req, res) => {

@@ -4,11 +4,21 @@ import crypto   from 'crypto';
 import Driver   from '../database/models/driver.js';
 import Bus      from '../database/models/bus.js';
 import Operator from '../database/models/operator.js';
+import Route    from '../database/models/route.js';
+import Location from '../database/models/location.js';
 import { encryptPassword } from '../utils/crypto.utils.js';
 
 const driverIncludes = [
   { model: Operator, as: 'operator', attributes: ['id', 'company_name'] },
-  { model: Bus,      as: 'bus',      attributes: ['id', 'plate_number', 'departure_time'] },
+  { model: Bus,      as: 'bus',      attributes: ['id', 'plate_number', 'departure_time', 'capacity', 'is_active'],
+    include: [{
+      model: Route, as: 'route', attributes: ['id', 'price'],
+      include: [
+        { model: Location, as: 'fromLocation', attributes: ['id', 'name'] },
+        { model: Location, as: 'toLocation',   attributes: ['id', 'name'] },
+      ],
+    }],
+  },
 ];
 
 export const getDriverMe = async (driver_id) => {
@@ -28,7 +38,8 @@ export const createDriver = async (operator_id, { name, phone, bus_id }) => {
     if (existing) throw new Error('Bus already has a driver assigned');
   }
 
-  const plainPassword = crypto.randomBytes(4).toString('hex').toUpperCase();
+  // 128 bits of cryptographically secure entropy for one-time credentials.
+  const plainPassword = crypto.randomBytes(16).toString('hex').toUpperCase();
   const password_hash = await bcrypt.hash(plainPassword, 10);
 
   const driver = await Driver.create({
@@ -51,19 +62,10 @@ export const createDriver = async (operator_id, { name, phone, bus_id }) => {
 };
 
 export const loginDriver = async ({ phone, password }) => {
-  const { checkLockout, recordFailure, clearFailures, MAX_ATTEMPTS, failedAttempts } = await import('./auth.service.js');
-  checkLockout(phone);
   const driver = await Driver.findOne({ where: { phone }, include: driverIncludes });
-  if (!driver || !await bcrypt.compare(password, driver.password_hash)) {
-    recordFailure(phone);
-    const record = failedAttempts.get(phone);
-    const remaining = MAX_ATTEMPTS - (record?.count || 0);
-    throw new Error(remaining > 0
-      ? `Invalid credentials. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`
-      : 'Account locked for 15 minutes.');
+  if (!driver || !driver.is_active || !await bcrypt.compare(password, driver.password_hash)) {
+    throw new Error('Invalid credentials');
   }
-  if (!driver.is_active) throw new Error('Account suspended');
-  clearFailures(phone);
 
   const token = jwt.sign(
     { id: driver.id, phone: driver.phone, role: 'driver' },

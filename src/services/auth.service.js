@@ -4,39 +4,7 @@ import User     from '../database/models/user.js';
 import Operator from '../database/models/operator.js';
 import { decryptPassword } from '../utils/crypto.utils.js';
 
-// ── LOCKOUT STORE ─────────────────────────────────────────────────
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_MS   = 15 * 60 * 1000;
-const LOCKER_MAX   = 3;
-const LOCKER_MS    = 10 * 60 * 1000;
-const failedAttempts = new Map();
-
-const checkLockout = (key) => {
-  const record = failedAttempts.get(key);
-  if (!record) return;
-  if (record.lockedUntil && Date.now() < record.lockedUntil) {
-    const mins = Math.ceil((record.lockedUntil - Date.now()) / 60000);
-    throw new Error(`Locked. Try again in ${mins} minute${mins > 1 ? 's' : ''}.`);
-  }
-  if (record.lockedUntil && Date.now() >= record.lockedUntil) {
-    failedAttempts.delete(key);
-  }
-};
-
-const recordFailure = (key, max = MAX_ATTEMPTS, lockMs = LOCKOUT_MS) => {
-  const record = failedAttempts.get(key) || { count: 0 };
-  record.count += 1;
-  if (record.count >= max) {
-    record.lockedUntil = Date.now() + lockMs;
-    record.count = 0;
-  }
-  failedAttempts.set(key, record);
-  return record;
-};
-
-const clearFailures = (key) => failedAttempts.delete(key);
-
-export { checkLockout, recordFailure, clearFailures, MAX_ATTEMPTS, failedAttempts };
+// Authentication throttling is enforced by the shared database-backed middleware in app.js.
 
 // ── REGISTER ──────────────────────────────────────────────────────
 export const register = async ({ name, email, phone, password }) => {
@@ -48,16 +16,10 @@ export const register = async ({ name, email, phone, password }) => {
 
 // ── LOGIN ─────────────────────────────────────────────────────────
 export const loginUser = async ({ email, password }) => {
-  checkLockout(email);
   const user = await User.findOne({ where: { email } });
   if (!user || !await bcrypt.compare(password, user.password_hash)) {
-    const record = recordFailure(email);
-    const remaining = MAX_ATTEMPTS - (record?.count || 0);
-    throw new Error(remaining > 0
-      ? `Invalid credentials. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`
-      : 'Account locked for 15 minutes.');
+    throw new Error('Invalid credentials');
   }
-  clearFailures(email);
   const token = jwt.sign(
     { id: user.id, email: user.email, role: user.role },
     process.env.JWT_SECRET,
@@ -67,17 +29,10 @@ export const loginUser = async ({ email, password }) => {
 };
 
 export const loginOperator = async ({ company_name, password }) => {
-  checkLockout(company_name);
   const operator = await Operator.findOne({ where: { company_name } });
-  if (!operator || !await bcrypt.compare(password, operator.password_hash)) {
-    const record = recordFailure(company_name);
-    const remaining = MAX_ATTEMPTS - (record?.count || 0);
-    throw new Error(remaining > 0
-      ? `Invalid credentials. ${remaining} attempt${remaining > 1 ? 's' : ''} remaining.`
-      : 'Account locked for 15 minutes.');
+  if (!operator || !operator.is_active || !await bcrypt.compare(password, operator.password_hash)) {
+    throw new Error('Invalid credentials');
   }
-  if (!operator.is_active) throw new Error('Account suspended');
-  clearFailures(company_name);
   const token = jwt.sign(
     { id: operator.id, company_name: operator.company_name, role: 'operator' },
     process.env.JWT_SECRET,
@@ -86,11 +41,10 @@ export const loginOperator = async ({ company_name, password }) => {
   return { token, operator: { id: operator.id, company_name: operator.company_name } };
 };
 
-// ── VERIFY PASSWORD (locker — 3 attempts, 10 min lock) ────────────
+// ── VERIFY PASSWORD ──────────────────────────────────────────────
+// Attempt throttling is enforced after authentication by auth.routes.js.
 export const verifyPassword = async (user, password) => {
   if (!password) throw new Error('Password required');
-  const lockKey = `locker:${user.id}`;
-  checkLockout(lockKey);
   let valid = false;
   if (user.role === 'operator') {
     const op = await Operator.findByPk(user.id);
@@ -99,13 +53,7 @@ export const verifyPassword = async (user, password) => {
     const u = await User.findByPk(user.id);
     valid = !!(u && await bcrypt.compare(password, u.password_hash));
   }
-  if (!valid) {
-    const record = recordFailure(lockKey, LOCKER_MAX, LOCKER_MS);
-    const remaining = LOCKER_MAX - (record?.count || 0);
-    if (remaining <= 0) throw new Error('Locker locked for 10 minutes after 3 failed attempts.');
-    throw new Error(`Incorrect password. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining before locker locks.`);
-  }
-  clearFailures(lockKey);
+  if (!valid) throw new Error('Password verification failed.');
   return { verified: true };
 };
 

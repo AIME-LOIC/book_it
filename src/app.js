@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import { createPersistentRateLimiter } from './middleware/persistent-rate-limit.js';
 import helmet from 'helmet';
 import authRoutes from './routes/auth.routes.js';
 import locationRoutes from './routes/location.routes.js';
@@ -13,6 +14,8 @@ import ticketRoutes from './routes/ticket.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import promoRoutes from './routes/promo.routes.js';
 import internalRoutes from './routes/internal.routes.js';
+import rfidCardRoutes from './routes/rfid-card.routes.js';
+import rfidHardwareRoutes from './routes/rfid-hardware.routes.js';
 import cors from 'cors';
 import sequelize from './config/sequelize.js';
 
@@ -23,6 +26,7 @@ dotenv.config();
 // and establish a reusable database connection before reaching controllers.
 
 const app = express();
+const PUBLIC_DIR = `${process.cwd()}/public`;
 app.set('trust proxy', 1);
 // ── SECURITY HEADERS ─────────────────────────────────────────────
 app.use(helmet({
@@ -82,31 +86,24 @@ app.use(cors({
 }));
 
 // ── RATE LIMITING ─────────────────────────────────────────────
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10,                   // max 10 attempts per IP
-  message: { message: 'Too many login attempts. Please try again in 15 minutes.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+// Production uses atomic PostgreSQL counters shared by all serverless instances.
+// Local development retains the in-memory limiter so it works with MySQL too.
+const persistent = process.env.NODE_ENV === 'production';
+const makeLimiter = (name, windowMs, max, key) => persistent
+  ? createPersistentRateLimiter({ name, windowMs, max, key })
+  : rateLimit({ windowMs, max, standardHeaders: true, legacyHeaders: false,
+      message: { message: 'Too many requests. Please try again later.' } });
 
-const apiLimiter = rateLimit({
-  windowMs: 60 * 1000,  // 1 minute
-  max: 100,             // max 100 requests per IP per minute
-  message: { message: 'Too many requests. Please slow down.' },
-  standardHeaders: true,
-  legacyHeaders: false,
+const apiLimiter = rateLimit({ windowMs: 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false,
+  message: { message: 'Too many requests. Please try again later.' } });
+const loginIpLimiter = makeLimiter('login-ip', 15 * 60 * 1000, 30, (req) => req.ip);
+const loginAccountLimiter = makeLimiter('login-account', 15 * 60 * 1000, 5, (req) => {
+  const body = req.body || {};
+  const identifier = body.email || body.company_name || body.phone || 'unknown';
+  return String(identifier).trim().toLowerCase();
 });
-
-// Ticket redemption brute-force guard: ticket numbers follow BK-####-XX,
-// so without a limiter a client could enumerate the whole ~590k space.
-const ticketValidateLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 20, // 20 scans per minute per IP is far above manual throughput
-  message: { message: 'Too many validation attempts. Please slow down.' },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+const ticketValidateLimiter = makeLimiter('ticket-validate', 60 * 1000, 20, (req) => req.ip);
+const rfidPhoneRegistrationLimiter = makeLimiter('rfid-phone-registration', 15 * 60 * 1000, 10, (req) => req.ip);
 
 const P = '/rw/v1/bk'; // obscure API prefix
 
@@ -135,9 +132,10 @@ app.use(P, async (req, res, next) => {
 });
 
 app.use(`${P}/`, apiLimiter);
-app.use(`${P}/auth/login`, loginLimiter);
-app.use(`${P}/auth/operator/login`, loginLimiter);
-app.use(`${P}/drivers/login`, loginLimiter);
+app.use(`${P}/rfid-cards/phone-registration`, rfidPhoneRegistrationLimiter);
+app.use(`${P}/auth/login`, loginIpLimiter, loginAccountLimiter);
+app.use(`${P}/auth/operator/login`, loginIpLimiter, loginAccountLimiter);
+app.use(`${P}/drivers/login`, loginIpLimiter, loginAccountLimiter);
 app.use(`${P}/tickets/validate`, ticketValidateLimiter);
 
 app.use(`${P}/auth`, authRoutes);
@@ -151,29 +149,65 @@ app.use(`${P}/tickets`, ticketRoutes);
 app.use(`${P}/notifications`, notificationRoutes);
 app.use(`${P}/promos`, promoRoutes);
 app.use(`${P}/internal/cron`, internalRoutes);
+app.use(`${P}/rfid-cards`, rfidCardRoutes);
+app.use(`${P}/hardware/rfid`, rfidHardwareRoutes);
 
-// Catch unmatched routes in the actual API prefix
-app.use(`${P}/*any`, (req, res) => res.status(404).json({ message: 'API endpoint not found' }));
+// Customer downloads are proxied through BookIt so passengers never leave for GitHub.
+const RELEASE_ASSETS = {
+  android: { name: 'bookit-android.apk', path: 'app-release.apk', type: 'application/vnd.android.package-archive' },
+  linux: { name: 'bookit-linux-x86_64.tar.gz', path: 'bookit-linux-x86_64.tar.gz', type: 'application/gzip' },
+  checksum: { name: 'bookit-linux-x86_64.tar.gz.sha256', path: 'bookit-linux-x86_64.tar.gz.sha256', type: 'text/plain; charset=utf-8' },
+};
+app.get('/downloads/:asset', async (req, res, next) => {
+  const asset = RELEASE_ASSETS[req.params.asset];
+  if (!asset) return res.status(404).sendFile('404.html', { root: PUBLIC_DIR });
+  try {
+    const upstream = await fetch(`https://github.com/AIME-LOIC/book_it/releases/latest/download/${asset.path}`, {
+      headers: { 'User-Agent': 'BookIt-Download-Service' },
+      redirect: 'follow',
+    });
+    if (!upstream.ok || !upstream.body) {
+      console.error('[DOWNLOAD] Release asset unavailable:', asset.path, upstream.status);
+      return res.status(503).sendFile('503.html', { root: PUBLIC_DIR });
+    }
+    res.setHeader('Content-Type', asset.type);
+    res.setHeader('Content-Disposition', `attachment; filename="${asset.name}"`);
+    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+    const length = upstream.headers.get('content-length');
+    if (length) res.setHeader('Content-Length', length);
+    const { Readable } = await import('node:stream');
+    Readable.fromWeb(upstream.body).on('error', next).pipe(res);
+  } catch (error) {
+    next(error);
+  }
+});
 
-// Confuse scanners looking for common /api paths
-app.use('/api/*any', (req, res) => res.status(404).json({ message: 'Not found' }));
+// API clients receive stable JSON errors; browser navigation receives branded pages.
+app.use(`${P}/*any`, (req, res) => res.status(404).json({ message: 'API endpoint not found', status: 404 }));
+app.use('/api/*any', (req, res) => res.status(404).json({ message: 'Not found', status: 404 }));
+
+const ERROR_PAGES = new Set([400, 401, 403, 404, 409, 422, 429, 500, 502, 503]);
+const isApiRequest = (req) => req.path.startsWith(P) || req.path.startsWith('/api/');
+const sendStatusPage = (req, res, status) => {
+  if (isApiRequest(req) || req.accepts('html') === false) {
+    return res.status(status).json({ status, message: status === 500 ? 'Something went wrong. Please try again.' : 'The request could not be completed.' });
+  }
+  const page = ERROR_PAGES.has(status) ? `${status}.html` : '500.html';
+  return res.status(status).sendFile(page, { root: PUBLIC_DIR });
+};
 
 // ── GLOBAL ERROR MIDDLEWARE ─────────────────────────────────────────────
-
-// Global error handler — catches any error thrown in routes
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
   console.error('[ERROR]', err.message);
   if (process.env.NODE_ENV !== 'production') console.error(err.stack);
-  if (err.message === 'CORS: origin not allowed') {
-    return res.status(403).json({ message: 'CORS: origin not allowed' });
-  }
-  res.status(err.status || 500).json({
-    message: process.env.NODE_ENV === 'production'
-      ? 'Something went wrong. Please try again.'
-      : err.message,
-  });
+  const status = Number(err.status || err.statusCode || 500);
+  return sendStatusPage(req, res, ERROR_PAGES.has(status) ? status : 500);
 });
+
+// Unknown website pages end at a real HTTP 404 with a branded recovery page.
+app.use((req, res) => sendStatusPage(req, res, 404));
 
 // The app is exported for Vercel's Express runtime. Local listening and
 // background schedulers are started by server.js only.

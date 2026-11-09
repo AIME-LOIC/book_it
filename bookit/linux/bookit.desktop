@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=BookIt
+Comment=BookIt bus booking and trip management
+Exec=bookit
+Icon=bookit
+Terminal=false
+Categories=Office;Utility;
+StartupNotify=true
+StartupWMClass=rw.onepercent.bookit

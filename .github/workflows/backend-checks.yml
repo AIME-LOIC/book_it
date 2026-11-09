@@ -11,6 +11,22 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
+    # Isolated MySQL used only by the booking-race and QR-redemption tests.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: testpass
+          MYSQL_DATABASE: bookit_sec_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -ptestpass"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -18,5 +34,19 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Configure test database
+        run: |
+          cat > tests/.env.test <<'ENV'
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_USER=root
+          DB_PASSWORD=testpass
+          DB_NAME=bookit_sec_test
+          NODE_ENV=test
+          JWT_SECRET=ci_jwt_secret_for_tests_only
+          QR_SECRET=ci_qr_secret_for_tests_only
+          DEFAULT_PW_SECRET=ci_default_pw_secret_for_tests_only
+          CRON_SECRET=ci_cron_secret_for_tests_only
+          ENV
       - name: Run backend tests
         run: npm test

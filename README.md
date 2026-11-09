@@ -1,145 +1,104 @@
-# 🚌 BookIt - Travel Rwanda, Book Seamlessly
+# BookIt — Rwanda Bus Booking Platform
 
-BookIt is Rwanda's premier digital platform designed to modernize bus travel. We eliminate the need for long queues at stations by providing a seamless, secure, and instant booking experience for passengers, bus operators, and drivers.
+BookIt is a digital bus-ticketing platform for Rwanda. It connects passengers, bus operators, and drivers through one booking and operations system.
 
-## ✨ Key Features
+## Official demo
 
-### For Passengers
-*   **Search & Compare:** Find buses across major Rwandan cities including Kigali, Musanze, Rubavu, and more.
-*   **Digital Reservations:** Select your preferred seat and book instantly from your phone or computer.
-*   **Secure Payments:** Integrated MRT Wallet and local digital payment support.
-*   **QR E-Tickets:** No more paper! Receive a digital ticket with a unique QR code for easy boarding.
-*   **Travel Reminders:** Get notifications about your upcoming trips and boarding status.
+**Production demo:** [https://bookit.1percent.rw](https://bookit.1percent.rw)
 
-### For Bus Operators
-*   **Fleet Management:** Manage your buses, routes, and schedules in one dashboard.
-*   **Revenue Tracking:** Monitor ticket sales and passenger manifests in real-time.
-*   **Automated Routes:** Easily generate reverse routes and manage intermediate stops.
+The production project is deployed on **Vercel** from the `main` branch of this repository. Use the custom domain above for reviews and demonstrations. Do not use old preview deployment URLs as the project demo.
 
-### For Drivers
-*   **Passenger Manifests:** View a digital list of all paid passengers for your specific trip.
-*   **QR Validation:** Use the built-in scanner to verify tickets instantly and prevent fraud.
+## What BookIt does
 
----
+### Passengers
+- Search available buses by origin, destination, and travel date.
+- Choose seats and create reservations.
+- View tickets and QR codes for boarding.
+- Receive trip and booking notifications.
+- Register a compatible contactless boarding-card UID using NFC on an NFC-equipped Android phone, or use the external BookIt RFID reader.
+- Start MTN Mobile Money or Airtel Money payments through the Flutterwave integration, where live provider credentials and account approval are configured.
+- Redeem one-time promotional codes.
 
-## 📍 Supported Locations
-We currently serve major routes connecting:
-*   Kigali
-*   Musanze
-*   Rubavu
-*   Huye
-*   Rusizi
-*   Karongi
-*   Nyagatare
-*   Rwamagana
-*   Kayonza
-*   Muhanga
-*   Nyanza
+### Bus operators
+- Manage buses, drivers, routes, and schedules.
+- Review bookings, passenger manifests, and ticket sales.
+- Manage route stops and operational availability.
 
----
+### Drivers
+- View assigned trips and passenger manifests.
+- Scan QR tickets and validate ticket numbers.
+- Update the assigned bus location from the driver application.
 
-## ⚠️ Important Note: GPS Tracking
-**Please Note:** The real-time GPS bus tracking feature (Live Map) is currently undergoing maintenance and is **not working**. While you can see the bus's last known terminal location, live movement updates on the map are currently unavailable. We apologize for any inconvenience.
+## RFID card registration
 
----
+Passengers can link a compatible 13.56 MHz contactless card to their BookIt account from **Profile → Settings → RFID cards**. Android phones with NFC can scan supported cards directly; the external ESP8266/RC522 reader remains available as an alternative. Card registration links a UID only and does not itself validate payment or authorize boarding. See [phone NFC setup and limitations](docs/mobile-nfc-registration.md).
 
-## 📖 How to Use BookIt
+## Payment status and scope
 
-1.  **Search:** Go to the [Booking Page](/book), enter your departure city, destination, and travel date.
-2.  **Select:** Choose a bus that fits your schedule and select an available seat.
-3.  **Book & Pay:** Confirm your details and pay via the digital wallet.
-4.  **Board:** On the day of travel, show your QR code to the driver. The driver will scan it, and you are ready to go!
+The codebase integrates MTN Mobile Money and Airtel Money payment initiation and payment-status handling through **Flutterwave**, including a Flutterwave webhook. Actual payment completion depends on correctly configured live Flutterwave credentials and provider approval. Promo-code redemption is a separate in-app flow.
 
----
+There is no separate MRT Wallet integration in the current application. Do not describe BookIt as having an MRT Wallet.
 
-## 📞 Support & Contact
+## Live map status
 
-If you have any questions or need assistance with your booking:
-*   **Email:** kingaime132@gmail.com
-*   **Phone:** +250 791749219
-*   **Location:** Kigali, Rwanda
+**Passenger-facing live bus map: coming soon.** It is intentionally not part of the demo while live-map reliability is being completed. Driver location updates are separate from the passenger-facing map.
 
----
-*© 2025 BookIt. Simplifing transport in Rwanda.*
+## Demo walkthrough
 
+1. Open the [BookIt production demo](https://bookit.1percent.rw).
+2. Register or sign in as a passenger.
+3. Search a route and travel date, then select a bus and seat.
+4. Review the reservation and payment options. Use a provider-approved test flow for demonstrations unless live payment credentials are confirmed.
+5. Open the driver or operator interface with the corresponding authorized account to review trip operations and ticket validation.
 
-## 🔧 Migrations & Supabase (Safe Deployment)
+## Run locally
 
-When deploying to Supabase (managed Postgres) do NOT rely on `sequelize.sync({ alter: true })` in production — altering enums or complex types automatically can fail or cause data issues. Use explicit SQL migrations or a migration tool and follow these steps:
+### Requirements
+- Node.js **22.x**
+- npm
+- A supported database connection: local MySQL using the `DB_*` settings, or PostgreSQL through `DATABASE_URL`
 
-- Backup first: use Supabase backups or `pg_dump` before applying schema changes.
-- Test on a staging database that mirrors production.
-- Apply schema changes inside a transaction when possible.
-- Avoid automatic enum casts; create enum types explicitly then alter columns with `USING` casts.
-- Disable automatic seeding on production: set `SEED_ON_START=false` in your production env.
-
-Example SQL migration (add driver/bus location columns and bus amenities):
-
-```sql
-BEGIN;
-ALTER TABLE drivers  ADD COLUMN IF NOT EXISTS last_lat DECIMAL(10,8);
-ALTER TABLE drivers  ADD COLUMN IF NOT EXISTS last_lng DECIMAL(11,8);
-ALTER TABLE buses    ADD COLUMN IF NOT EXISTS last_lat DECIMAL(10,8);
-ALTER TABLE buses    ADD COLUMN IF NOT EXISTS last_lng DECIMAL(11,8);
-ALTER TABLE buses    ADD COLUMN IF NOT EXISTS amenities JSONB DEFAULT '[]';
-COMMIT;
-```
-
-Run the SQL migration with `psql` using your `DATABASE_URL`:
+### Setup
 
 ```bash
-PGPASSWORD="$DB_PASSWORD" psql "$DATABASE_URL" <<'SQL'
-BEGIN;
-# paste SQL above or reference a .sql file
-COMMIT;
-SQL
+git clone https://github.com/AIME-LOIC/book_it.git
+cd book_it
+npm install
+cp .env.example .env
 ```
 
-Or use `sequelize-cli` / `umzug` migrations (recommended):
+Edit `.env` and configure:
+- Database connection: `DATABASE_URL` or `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD`
+- Strong, distinct values for `JWT_SECRET`, `QR_SECRET`, and `DEFAULT_PW_SECRET`
+- `ALLOWED_ORIGINS` (for local development, include the local origin you use)
+- `CRON_SECRET` for protected scheduled operations
+- Flutterwave credentials only if you are testing payment initiation and webhooks
 
-1. Install as dev dep: `npm install -D sequelize-cli`
-2. Generate a migration and add the SQL/JS `up` and `down` logic.
-3. Run migrations against production carefully: `NODE_ENV=production npx sequelize-cli db:migrate --url "$DATABASE_URL"`
-
-Checklist before production migration
-- Backup DB
-- Run on staging
-- Review enum/JSON/UUID conversions
-- Disable seeding
-- Monitor logs and have rollback SQL ready
-
-If you want, I can scaffold a `migrations/` folder and add a safe migration file for the `last_lat/last_lng/amenities` changes and a brief `migrate:prod` command that runs SQL against `DATABASE_URL`.
-
-## Backend operations
-
-### Scheduled jobs
-
-Production scheduled work is invoked through the protected endpoint
-`POST /rw/v1/bk/internal/cron/run`. The repository workflow
-`.github/workflows/bookit-scheduler.yml` calls it every five minutes.
-Configure these GitHub repository Actions secrets before enabling the workflow:
-
-- `BOOKIT_API_URL`: the production origin, e.g. `https://bookit.1percent.rw`
-- `BOOKIT_CRON_SECRET`: a long random secret, identical to Vercel's `CRON_SECRET`
-
-Set `CRON_SECRET` in the Vercel production environment and redeploy. The
-endpoint requires a Bearer token and rejects missing or invalid secrets. It
-runs departed-bus checks, unpaid reservation expiry, departure reminders,
-ticket archiving, daily loyalty promos, and notification retention. Daily
-operations are designed to be safe to retry. Midnight reactivation only restores buses marked as automatically hidden
-by the departure scheduler. Operator-disabled buses remain inactive. Existing
-inactive buses are conservatively marked as operator-disabled by the migration
-so they are not unexpectedly listed after deployment.
-
-### Database migrations
-
-The checked-in SQL migrations target PostgreSQL. Back up production and test
-against a staging database before applying them. Run:
+Run database migrations and start the server:
 
 ```bash
 npm run db:migrate
+npm start
 ```
 
-The runner records successfully applied SQL files in
-`bookit_schema_migrations`, skips recorded files, and refuses to run against
-MySQL. Do not use `sequelize.sync({ alter: true })` in production.
+The local server defaults to [http://localhost:2000](http://localhost:2000). Run the automated Node test suite with:
+
+```bash
+npm test
+```
+
+Do not commit `.env` files, production credentials, database dumps, or real customer data. Back up the database and test migrations against a staging database before applying them to production. Do not use `sequelize.sync({ alter: true })` in production.
+
+## Supported locations
+
+BookIt is designed for routes connecting Kigali, Musanze, Rubavu, Huye, Rusizi, Karongi, Nyagatare, Rwamagana, Kayonza, Muhanga, and Nyanza. Actual searchable routes depend on the locations, operators, schedules, and buses configured in the production database.
+
+## Support
+
+- **Email:** kingaime132@gmail.com
+- **Phone:** +250 791 749 219
+- **Location:** Kigali, Rwanda
+
+---
+
+© 2026 BookIt. Simplifying transport in Rwanda.

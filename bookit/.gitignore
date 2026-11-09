@@ -39,6 +39,10 @@ app.*.symbols
 # Obfuscation related
 app.*.map.json
 
+# Release signing material (never commit real keys or keystores)
+key.properties
+*.jks
+
 # API keys / env files (keep the .example template, ignore real keys)
 /config/*.env
 !/config/*.example.env

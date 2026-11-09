@@ -9,6 +9,7 @@ import './models/bus.js';
 import './models/driver.js';
 import './models/ticket.js';
 import './models/notification.js';
+import './models/device_push_token.js';
 
 await sequelize.sync({ alter: true });
 console.log('✅ All tables synced');
