@@ -85,7 +85,7 @@ class AuthService {
     try {
       await ApiClient.get(isDriver ? 'drivers/me' : 'auth/me', auth: true);
     } on ApiException catch (e) {
-      if (e.message.contains('HTTP 401') || e.message.contains('HTTP 403')) {
+      if (e.statusCode == 401 || e.statusCode == 403) {
         await removeAccount(identifier);
         return null;
       }
@@ -143,7 +143,7 @@ class AuthService {
     } on ApiException catch (e) {
       // A network/server error must not force a user to sign in again.
       // Only discard a saved token when the API explicitly rejects it.
-      if (e.message.contains('HTTP 401') || e.message.contains('HTTP 403')) {
+      if (e.statusCode == 401 || e.statusCode == 403) {
         await ApiClient.clearToken();
         await prefs.remove('bookit_saved_profile_name');
         await prefs.remove('bookit_saved_profile_identifier');

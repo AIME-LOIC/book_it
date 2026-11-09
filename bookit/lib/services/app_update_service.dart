@@ -52,21 +52,24 @@ class AppUpdateService {
       final prefs = await SharedPreferences.getInstance();
       if (!ignoreSkipped && prefs.getString(_skippedVersionKey) == tag) return null;
 
-      final releaseUrl = Uri.tryParse((release['html_url'] ?? '').toString());
-      if (releaseUrl == null || releaseUrl.scheme != 'https') return null;
+      // Keep customers on the BookIt domain; release hosting stays behind the service.
+      final releaseUrl = Uri.https('bookit.1percent.rw', '/download');
 
       final assets = (release['assets'] is List ? release['assets'] as List : const [])
           .whereType<Map>()
           .toList();
       final asset = _assetForPlatform(assets);
-      final assetUrl = Uri.tryParse((asset?['browser_download_url'] ?? '').toString());
+      final assetUrl = asset == null ? null : Uri.https(
+        'bookit.1percent.rw',
+        Platform.isLinux ? '/downloads/linux' : '/downloads/android',
+      );
       final notes = await _fetchPlainTextNotes(tag, (release['body'] ?? '').toString());
 
       return AppUpdate(
         version: tag,
         releaseUrl: releaseUrl,
-        downloadUrl: assetUrl != null && assetUrl.scheme == 'https' ? assetUrl : null,
-        hasPlatformAsset: assetUrl != null && assetUrl.scheme == 'https',
+        downloadUrl: assetUrl,
+        hasPlatformAsset: assetUrl != null,
         notes: notes,
       );
     } catch (_) {
