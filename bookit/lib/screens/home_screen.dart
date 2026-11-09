@@ -305,20 +305,32 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _openNearbyStations() async { await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const NearbyStationsScreen())); }
 
   Future<void> _checkForAppUpdate() async {
+    if (_showingUpdatePrompt || !mounted) return;
     final update = await AppUpdateService.checkForUpdate();
     if (update == null || !mounted || _showingUpdatePrompt) return;
-    _showingUpdatePrompt = true;
-    await AppUpdateService.showUpdatePrompt(context, update);
-    _showingUpdatePrompt = false;
-    if (!mounted) return;
+
+    // Register the FCM token before creating the notice so the backend can
+    // deliver the update alert to this device. Do this BEFORE opening the
+    // update dialog: tapping "Update now" may terminate the app immediately.
     try {
+      await PushNotificationService.registerDevice();
       await ApiClient.post('notifications/app-update', auth: true, body: {
         'version': update.version,
       });
       await _loadUnreadCount();
       await _loadNotifications();
     } on ApiException {
-      // The update remains available from Profile even if notification sync fails.
+      // The release prompt still works if notification sync is unavailable.
+    } catch (error) {
+      debugPrint('[Update] Could not register update notification: $error');
+    }
+
+    if (!mounted || _showingUpdatePrompt) return;
+    _showingUpdatePrompt = true;
+    try {
+      await AppUpdateService.showUpdatePrompt(context, update);
+    } finally {
+      _showingUpdatePrompt = false;
     }
   }
 
