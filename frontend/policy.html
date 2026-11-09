@@ -37,17 +37,18 @@
     <article class="card">
       <h1>BookIt Terms of Service & Privacy Policy</h1>
       <p class="intro">These terms explain how BookIt works, the responsibilities of passengers and transport operators, and how personal information is handled.</p>
-      <p class="meta">Effective date: 6 November 2026 · Last updated: 6 November 2026</p>
+      <p class="meta">Effective date: 9 November 2026 · Last updated: 9 November 2026</p>
       <nav aria-label="Policy sections">
         <a href="#terms">Terms of Service</a>
         <a href="#bookings">Bookings & Payments</a>
         <a href="#cancellations">Cancellations & Refunds</a>
         <a href="#privacy">Privacy Policy</a>
+        <a href="#cookies">Cookies & Advertising</a>
         <a href="#rights">Your Privacy Rights</a>
         <a href="#contact">Contact</a>
       </nav>
 
-      <div class="notice"><strong>Who operates BookIt?</strong> BookIt is a digital bus-booking and passenger information platform operated under the 1percent Rwanda name (“1percent Rwanda”, “BookIt”, “we”, “us” or “our”). 1percent Rwanda has informed users that it has not yet registered as a business. References to 1percent Rwanda in this policy identify the project and its operating team; they are not a representation that it is an incorporated company or other registered legal entity. Bus transportation is provided by the transport company shown for the selected trip. That transport company is responsible for operating the bus service.</div>
+      <div class="notice"><strong>Who operates BookIt?</strong> BookIt is a digital bus-booking and passenger information platform presented under the 1percent Rwanda name (“1percent Rwanda”, “BookIt”, “we”, “us” or “our”). This name identifies the service and its operating team; it does not, by itself, state the legal form or registration status of the person or entity responsible for the service. The formal data-controller identity and any applicable registration details should be confirmed and published in this notice. Bus transportation is provided by the transport company shown for the selected trip. That transport company is responsible for operating the bus service.</div>
 
       <h2 id="terms">Part A — Terms of Service</h2>
       <h3>1. Agreement and scope</h3>
@@ -113,7 +114,7 @@
 
       <h2 id="privacy">Part B — Privacy Policy</h2>
       <h3>13. Who is responsible for your information?</h3>
-      <p>BookIt is operated under the 1percent Rwanda name by its project team. 1percent Rwanda has not yet registered as a business. This policy identifies the team responsible for the BookIt service; it does not claim that 1percent Rwanda is an incorporated or registered legal entity. The person or entity legally responsible for personal-data processing must be confirmed in light of the actual operating arrangements and applicable law before public launch. A transport operator may separately determine how it uses passenger information for its own transport operations and legal obligations. Payment providers and technology vendors may process information under their own roles and notices.</p>
+      <p>BookIt is presented under the 1percent Rwanda name. The brand name alone does not establish which natural person or legal entity is the data controller under Rwanda's data-protection law. The person or entity that determines the purposes and means of processing must be formally identified, registered where required, and named in the complete privacy notice with its contact details. The BookIt team can receive requests at <a href="mailto:1percentrwanda@gmail.com">1percentrwanda@gmail.com</a> and route them to the responsible person. A transport operator may separately act as a data controller for passenger information it uses for its own transport operations. Payment providers and technology vendors may process information under their own roles and notices.</p>
       <p>This policy is intended to be read consistently with Rwanda's Law No. 058/2021 of 13 October 2021 relating to the Protection of Personal Data and Privacy and other applicable laws.</p>
 
       <h3>14. Information we may collect</h3>
@@ -181,7 +182,12 @@
       <h3>23. Children and bookings for another person</h3>
       <p>BookIt accounts should be created and managed by people legally able to do so. An adult making a booking for a child or another passenger is responsible for ensuring they have authority to provide the passenger information and for communicating the relevant journey details. Where applicable law requires parent or guardian involvement or consent, it must be obtained.</p>
 
-      <h3>24. Third-party services and links</h3>
+      <h3 id="cookies">24. Cookies, local storage and advertising</h3>
+      <p>The BookIt website uses browser local storage to remember your display-theme preference. This setting is stored on your device and is not needed to complete a booking; you can clear it through your browser's site-data controls.</p>
+      <p>The landing page also loads Google AdSense advertising code. In connection with ad delivery and measurement, Google and other advertising partners may use cookies, web beacons, IP addresses or similar identifiers to collect or receive information from your browser or device. Depending on the ad configuration, your settings and applicable requirements, this information may be used to provide, measure, limit or personalise advertising. Third parties may place and read cookies on your browser as a result of ad serving on this website. Their processing is governed by their own privacy information.</p>
+      <p>For information about how Google uses data when you use partner websites or apps, see <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener noreferrer">How Google uses information from sites or apps that use its services</a> and the <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>. You can manage or delete cookies and site data through your browser settings. Blocking cookies may affect advertising and some website functions. This notice should be read together with any cookie choices or consent controls presented on the website.</p>
+
+      <h3>25. Third-party services and links</h3>
       <p>BookIt may link to or integrate with transport operators, payment providers, map services, app stores or other third-party services. Those services may have separate terms and privacy notices. We encourage you to review them. We are not responsible for independent services that we do not operate.</p>
 
       <h2 id="contact">Part C — Questions, requests and complaints</h2>
@@ -191,9 +197,10 @@
       <div class="notice"><strong>Important:</strong> This page is a general statement of BookIt's intended service and privacy practices. Specific operator fare rules and payment-provider conditions may apply to individual transactions. Nothing here limits mandatory rights under Rwandan law.</div>
       <footer class="footer">
         <p><strong>BookIt</strong> · Operated under the 1percent Rwanda name</p>
-        <p>© 2026 1percent Rwanda. All rights reserved.</p>
+        <p>© <span id="policy-year">2026</span> 1percent Rwanda. All rights reserved.</p>
       </footer>
     </article>
   </main>
+<script>document.getElementById('policy-year').textContent = new Date().getFullYear();</script>
 </body>
 </html>
