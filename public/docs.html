@@ -1,190 +1,28 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Documentation - BookIt</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: { 'primary-green': '#059669' }
-                }
-            }
-        }
-    </script>
-    <style>
-        .dark body {
-            background-color: #071217;
-            color: #d1fae5;
-        }
-
-        .dark .bg-white {
-            background-color: #071715 !important;
-        }
-    </style>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="BookIt passenger guide: search buses, reserve seats, pay for tickets and prepare for boarding.">
+  <title>Passenger Guide — BookIt</title><script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>body{font-family:'Plus Jakarta Sans',sans-serif;background:#f4f8f5;color:#153328}.guide-card{background:#fff;border:1px solid #e2ece6;border-radius:18px}.step{width:34px;height:34px;display:grid;place-items:center;border-radius:11px;background:#e8f6ee;color:#087f5b;font-weight:800;flex-shrink:0}</style>
 </head>
-
-<body class="bg-gray-50 font-sans text-gray-900 transition-colors duration-200">
-
-    <nav class="sticky top-0 z-50 bg-white dark:bg-gray-900 shadow-sm border-b dark:border-gray-800">
-        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-            <a href="/" class="text-2xl font-bold text-primary-green">BookIt <span
-                    class="text-sm font-normal text-gray-500">Docs</span></a>
-            <div class="flex items-center gap-4">
-                <a href="/book"
-                    class="bg-primary-green text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 transition">Back
-                    to Booking</a>
-            </div>
-        </div>
-    </nav>
-
-    <main class="max-w-4xl mx-auto px-4 py-12">
-        <h1 class="text-4xl font-extrabold mb-4">User Documentation</h1>
-        <p class="text-xl text-gray-600 dark:text-gray-400 mb-8">Everything you need to know about using the BookIt
-            platform.</p>
-
-        <!-- Alert Box for GPS -->
-        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mb-10 dark:bg-amber-900/20">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <i class="fas fa-exclamation-triangle text-amber-500"></i>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm text-amber-700 dark:text-amber-400 font-bold">
-                        Service Notice: GPS Updates Unavailable
-                    </p>
-                    <p class="text-sm text-amber-600 dark:text-amber-500">
-                        Real-time GPS bus tracking is currently disabled for maintenance. Bus locations shown on the map
-                        reflect the last registered station and do not update in real-time as the bus moves.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <section class="space-y-12">
-            <!-- Passengers -->
-            <div>
-                <h2 class="text-2xl font-bold border-b-2 border-primary-green pb-2 mb-4"><i
-                        class="fas fa-user mr-2 text-primary-green"></i> For Passengers</h2>
-                <div class="space-y-6">
-                    <div>
-                        <h3 class="text-lg font-semibold">1. Finding a Bus</h3>
-                        <p class="text-gray-600 dark:text-gray-400">Navigate to the 'Explore' page. Select your origin
-                            and destination and pick a travel date. You will see a list of available buses, their
-                            operators, amenities (like WiFi or AC), and prices.</p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold">2. Booking your Seat</h3>
-                        <p class="text-gray-600 dark:text-gray-400">Choose a bus and click to see the seat map. Select
-                            an available seat (green). Once selected, proceed to confirm your booking.</p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold">3. Paying for your Ticket</h3>
-                        <p class="text-gray-600 dark:text-gray-400">Tickets can be paid for using Mobile Money
-                            (MTN/Airtel) or your digital wallet. Once the payment is successful, your ticket status will
-                            change to 'Paid', and a unique QR code will be generated.</p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold">4. Boarding</h3>
-                        <p class="text-gray-600 dark:text-gray-400">At the station, present your digital QR code to the
-                            driver. They will scan it using their portal to verify your booking. No paper ticket is
-                            required!</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Operators -->
-            <div>
-                <h2 class="text-2xl font-bold border-b-2 border-teal-500 pb-2 mb-4"><i
-                        class="fas fa-building mr-2 text-teal-500"></i> For Bus Operators</h2>
-                <div class="space-y-6">
-                    <div>
-                        <h3 class="text-lg font-semibold">Fleet Management</h3>
-                        <p class="text-gray-600 dark:text-gray-400">Operators can add buses to the system, assign them
-                            to specific routes, and set departure times. You can also assign drivers to specific
-                            vehicles.</p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold">Revenue Tracking</h3>
-                        <p class="text-gray-600 dark:text-gray-400">The operator dashboard provides a 'Revenue' section
-                            where you can calculate total earnings filtered by date and see which buses are generating
-                            the most income.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Drivers -->
-            <div>
-                <h2 class="text-2xl font-bold border-b-2 border-purple-500 pb-2 mb-4"><i
-                        class="fas fa-steering-wheel mr-2 text-purple-500"></i> For Drivers</h2>
-                <div class="space-y-6">
-                    <div>
-                        <h3 class="text-lg font-semibold">Passenger Manifest</h3>
-                        <p class="text-gray-600 dark:text-gray-400">Access the 'Manifest' section to see a list of all
-                            passengers booked for your current trip, including their seat numbers and destination stops.
-                        </p>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-semibold">QR Validation</h3>
-                        <p class="text-gray-600 dark:text-gray-400">Use the built-in scanner in the Driver Portal to
-                            verify passenger tickets. This ensures only paid passengers board the vehicle and prevents
-                            seat double-booking.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- FAQ -->
-            <div class="bg-gray-100 dark:bg-gray-800 p-8 rounded-2xl">
-                <h2 class="text-2xl font-bold mb-6">Frequently Asked Questions</h2>
-                <div class="space-y-4">
-                    <details class="group bg-white dark:bg-gray-900 p-4 rounded-lg shadow-sm cursor-pointer">
-                        <summary class="font-semibold flex justify-between items-center">
-                            Can I cancel my ticket?
-                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
-                        </summary>
-                        <p class="mt-2 text-gray-500">You can cancel a 'Pending' ticket anytime. However, once a ticket
-                            is 'Paid', it cannot be cancelled via the app. Please contact our support team for refund
-                            inquiries.</p>
-                    </details>
-                    <details class="group bg-white dark:bg-gray-900 p-4 rounded-lg shadow-sm cursor-pointer">
-                        <summary class="font-semibold flex justify-between items-center">
-                            What if my phone dies before boarding?
-                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
-                        </summary>
-                        <p class="mt-2 text-gray-500">The driver can validate your booking using your Ticket Number or
-                            the phone number used during registration. Carry a valid ID to prove your identity.</p>
-                    </details>
-                    <details class="group bg-white dark:bg-gray-900 p-4 rounded-lg shadow-sm cursor-pointer">
-                        <summary class="font-semibold flex justify-between items-center">
-                            Is my payment data secure?
-                            <i class="fas fa-chevron-down group-open:rotate-180 transition-transform"></i>
-                        </summary>
-                        <p class="mt-2 text-gray-500">Yes. BookIt does not store your PINs or full payment credentials.
-                            All transactions are processed through encrypted gateways.</p>
-                    </details>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer class="bg-white dark:bg-gray-900 border-t dark:border-gray-800 py-12 mt-12">
-        <div class="max-w-7xl mx-auto px-4 text-center">
-            <p class="text-gray-500">&copy; 2025 BookIt. Simplifing transport in Rwanda.</p>
-        </div>
-    </footer>
-
-    <script>
-        // Handle theme persistence
-        const storedTheme = localStorage.getItem('bookit-theme');
-        if (storedTheme === 'dark' || (!storedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        }
-    </script>
-</body>
-
-</html>
+<body>
+<header class="sticky top-0 z-10 border-b border-emerald-100 bg-white/95 backdrop-blur"><nav class="mx-auto flex h-16 max-w-6xl items-center justify-between px-5"><a href="/" class="text-2xl font-extrabold text-emerald-700">BookIt <span class="text-xs font-semibold text-slate-500">USER GUIDE</span></a><div class="flex items-center gap-4"><a href="/faq" class="text-sm font-bold text-emerald-700">FAQs</a><a href="/book" class="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white">Book a trip</a></div></nav></header>
+<main class="mx-auto max-w-4xl px-5 py-12 md:py-16">
+  <p class="text-xs font-extrabold tracking-[.18em] text-emerald-700">PASSENGER DOCUMENTATION</p><h1 class="mt-3 text-4xl font-extrabold tracking-tight md:text-5xl">Your journey, step by step.</h1><p class="mt-4 max-w-2xl leading-7 text-slate-600">Use this guide to find a trip, reserve a seat, check your ticket and prepare for boarding with BookIt.</p>
+  <div class="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5"><p class="font-extrabold text-amber-900">Service information: live passenger GPS tracking</p><p class="mt-1 text-sm leading-6 text-amber-800">Passenger-facing live bus tracking is currently coming soon. Do not rely on a map for live location or arrival estimates. Contact the bus operator for current trip information.</p></div>
+  <section class="mt-12"><h2 class="text-2xl font-extrabold">Booking a trip</h2><div class="mt-5 space-y-4">
+    <article class="guide-card flex gap-4 p-5"><span class="step">1</span><div><h3 class="font-extrabold">Sign in or create an account</h3><p class="mt-1 text-sm leading-7 text-slate-600">Open <a class="font-bold text-emerald-700 underline" href="/book">BookIt booking</a>. Sign in with your account or use Register and provide the requested details. Keep your password private.</p></div></article>
+    <article class="guide-card flex gap-4 p-5"><span class="step">2</span><div><h3 class="font-extrabold">Search your route</h3><p class="mt-1 text-sm leading-7 text-slate-600">In Explore, choose your departure location, destination and travel date. You can optionally choose a departure time. Select Find Buses to load matching trips.</p></div></article>
+    <article class="guide-card flex gap-4 p-5"><span class="step">3</span><div><h3 class="font-extrabold">Compare trips and choose a seat</h3><p class="mt-1 text-sm leading-7 text-slate-600">Review the available trip information, operator, departure details and fare. Open a trip, choose an available seat and review your selection before continuing.</p></div></article>
+    <article class="guide-card flex gap-4 p-5"><span class="step">4</span><div><h3 class="font-extrabold">Complete the payment flow</h3><p class="mt-1 text-sm leading-7 text-slate-600">Use one of the payment options shown at checkout. BookIt integrates MTN Mobile Money and Airtel Money initiation through Flutterwave when live provider credentials and approvals are configured. Follow the instructions on your phone and wait for BookIt to show the latest payment status. A payment prompt alone is not confirmation of payment.</p></div></article>
+    <article class="guide-card flex gap-4 p-5"><span class="step">5</span><div><h3 class="font-extrabold">Find your ticket</h3><p class="mt-1 text-sm leading-7 text-slate-600">Open My Tickets to review your booking. When available, the ticket includes a QR code and ticket reference. Confirm the ticket status before departure.</p></div></article>
+  </div></section>
+  <section class="mt-12"><h2 class="text-2xl font-extrabold">Boarding your bus</h2><div class="guide-card mt-5 p-6"><ul class="list-disc space-y-3 pl-5 text-sm leading-7 text-slate-600"><li>Arrive at the departure point in good time and confirm the boarding location with your operator.</li><li>Open the correct ticket in My Tickets and present its QR code to the driver for validation.</li><li>Keep your ticket number available as a backup reference.</li><li>Follow instructions from the driver and bus operator. Ticket validation is required before boarding.</li></ul></div></section>
+  <section class="mt-12"><h2 class="text-2xl font-extrabold">Your account and settings</h2><div class="guide-card mt-5 p-6"><ul class="list-disc space-y-3 pl-5 text-sm leading-7 text-slate-600"><li><strong class="text-slate-800">My Tickets:</strong> review current and previous ticket records available to your account.</li><li><strong class="text-slate-800">History:</strong> review past journeys where records are available.</li><li><strong class="text-slate-800">Notifications:</strong> review booking and service notices delivered to your account.</li><li><strong class="text-slate-800">Settings:</strong> adjust the available display and language preferences.</li></ul></div></section>
+  <section class="mt-12"><h2 class="text-2xl font-extrabold">RFID card registration</h2><div class="guide-card mt-5 p-6"><p class="text-sm leading-7 text-slate-600">Where enabled, a compatible 13.56 MHz contactless card can be linked from Profile → Settings → RFID cards. Android phones with supported NFC hardware can scan compatible cards; an external BookIt RFID reader is another supported route. Registration links the card UID to your account only. It does not confirm payment or independently authorize boarding. Compatibility varies by card and device.</p></div></section>
+  <section class="mt-12"><h2 class="text-2xl font-extrabold">Payments, cancellations and refunds</h2><div class="guide-card mt-5 p-6"><p class="text-sm leading-7 text-slate-600">Payment completion depends on the configured payment provider and its response. Check the ticket's latest status in BookIt. Cancellation and refund eligibility depend on ticket status and the applicable bus operator policy; contact support or the operator for case-specific help. Do not assume a refund has been approved until it is confirmed.</p><p class="mt-3 text-sm leading-7 text-slate-600">BookIt does not ask you to share your mobile-money PIN with support. Never disclose your password, one-time verification code, PIN or payment credentials.</p></div></section>
+  <section class="mt-12 rounded-2xl bg-emerald-950 p-7 text-white md:p-9"><h2 class="text-2xl font-extrabold">Need more help?</h2><p class="mt-2 text-emerald-100">Read the <a href="/faq" class="font-bold underline">frequently asked questions</a>, email <a href="mailto:kingaime132@gmail.com" class="font-bold underline">kingaime132@gmail.com</a> or call <a href="tel:+250791749219" class="font-bold underline">+250 791 749 219</a>.</p></section>
+</main><footer class="mt-12 border-t border-emerald-100 bg-white py-7 text-center text-sm text-slate-500">© 2026 BookIt · Simplifying transport in Rwanda</footer>
+</body></html>
