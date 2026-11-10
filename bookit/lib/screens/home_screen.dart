@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_selector/file_selector.dart';
@@ -294,7 +295,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if(mounted)setState(()=>_buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList());
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
   }
-  String _rwandaPhoneDigits(String value)=>value.replaceAll(RegExp(r'\\D'),'').replaceFirst(RegExp(r'^250'), '').replaceFirst(RegExp(r'^0'), '').substring(0, value.replaceAll(RegExp(r'\\D'),'').replaceFirst(RegExp(r'^250'), '').replaceFirst(RegExp(r'^0'), '').length.clamp(0,9));
+  String _rwandaPhoneDigits(String value) { final digits=value.replaceAll(RegExp(r'\D'),''); final local=digits.startsWith('250')?digits.substring(3):(digits.startsWith('0')?digits.substring(1):digits); return local.length>9?local.substring(local.length-9):local; }
   Future<void> _loadProfile() async {
     if(mounted)setState(()=>_loadingProfile=true);
     try {
@@ -491,7 +492,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   Future<void> _saveProfile({required String name,required String phone}) async {
     try {
-      final digits=phone.replaceAll(RegExp(r'\\D'),'');if(digits.length!=9){_msg('Enter exactly 9 digits after +250.');return;}final r=await ApiClient.patch('auth/me',auth:true,body:{'name':name.trim(),'phone':'+250$digits'});
+      final digits=phone.replaceAll(RegExp(r'\D'),'');if(digits.length!=9){_msg('Enter exactly 9 digits after +250.');return;}final r=await ApiClient.patch('auth/me',auth:true,body:{'name':name.trim(),'phone':'+250$digits'});
       if(mounted){
         final raw=r is Map&&r['user'] is Map?r['user']:r;
         setState(()=>_profileData=raw is Map?Map<String,dynamic>.from(raw):_profileData);
@@ -507,7 +508,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final name=_profileNameCtrl.text.trim();
     final phone=_profilePhoneCtrl.text.trim();
     if(name.isEmpty){ _msg('Enter your full name.'); return; }
-    if(phone.replaceAll(RegExp(r'\\D'),'').length!=9){ _msg('Enter exactly 9 digits after +250.'); return; }
+    if(phone.replaceAll(RegExp(r'\D'),'').length!=9){ _msg('Enter exactly 9 digits after +250.'); return; }
     if(mounted)setState(()=>_savingProfile=true);
     try {
       await _saveProfile(name:name,phone:phone);
@@ -520,7 +521,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final formKey=GlobalKey<FormState>();
     final save=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('Edit profile'),content:Form(key:formKey,child:Column(mainAxisSize:MainAxisSize.min,children:[
       TextFormField(controller:name,decoration:const InputDecoration(labelText:'Full name'),validator:(v)=>(v?.trim().isEmpty??true)?'Enter your name':null),
-      const SizedBox(height:10),TextFormField(controller:phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'Phone number'),inputFormatters:[FilteringTextInputFormatter.digitsOnly,LengthLimitingTextInputFormatter(9)],decoration:const InputDecoration(labelText:'Phone number',prefixText:'+250 '),validator:(v)=>(v?.trim().length??0)!=9?'Enter exactly 9 digits':null),
+      const SizedBox(height:10),TextFormField(controller:phone,keyboardType:TextInputType.phone,inputFormatters:[FilteringTextInputFormatter.digitsOnly,LengthLimitingTextInputFormatter(9)],decoration:const InputDecoration(labelText:'Phone number',prefixText:'+250 '),validator:(v)=>(v?.trim().length??0)!=9?'Enter exactly 9 digits':null),
     ])),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('Cancel')),FilledButton(onPressed:()=>Navigator.pop(c,formKey.currentState?.validate()??false),child:const Text('Save'))]));
     if(save==true)await _saveProfile(name:name.text,phone:phone.text);
     name.dispose();phone.dispose();
