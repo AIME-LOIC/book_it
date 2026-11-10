@@ -170,12 +170,14 @@ export const syncOfflineValidations = async (req, res) => {
     try {
       const outcome = await sequelize.transaction(async (transaction) => {
         const prior = await sequelize.query(
-          'SELECT manifest_id, ticket_id, scan_method, status, rejection_reason AS reason FROM offline_ticket_validations WHERE event_id = :eventId LIMIT 1',
+          'SELECT v.manifest_id, v.ticket_id, v.scan_method, v.status, v.rejection_reason AS reason, m.driver_id, m.bus_id FROM offline_ticket_validations v JOIN offline_ticket_manifests m ON m.id = v.manifest_id WHERE v.event_id = :eventId LIMIT 1',
           { replacements: { eventId }, type: QueryTypes.SELECT, transaction },
         );
         if (prior.length) {
           const sameEvent = String(prior[0].manifest_id) === manifestId
-            && String(prior[0].ticket_id) === ticketId && prior[0].scan_method === method;
+            && String(prior[0].ticket_id) === ticketId && prior[0].scan_method === method
+            && String(prior[0].driver_id) === String(req.user.id)
+            && String(prior[0].bus_id) === String(req.user.bus_id);
           return {
             accepted: sameEvent && prior[0].status === 'accepted',
             reason: sameEvent ? (prior[0].reason || 'Already synchronized.') : 'Event ID was already used for a different scan.',
