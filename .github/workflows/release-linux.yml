@@ -40,7 +40,15 @@ jobs:
             echo "Tag must look like v1.2.3." >&2
             exit 1
           fi
+          PUBSPEC_VERSION="$(sed -n 's/^version: *//p' bookit/pubspec.yaml | head -n1)"
+          PUBSPEC_NAME="${PUBSPEC_VERSION%%+*}"
+          BUILD_NUMBER="${PUBSPEC_VERSION#*+}"
+          if [[ "$PUBSPEC_NAME" != "$VERSION" || "$BUILD_NUMBER" == "$PUBSPEC_VERSION" || ! "$BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "Tag v$VERSION must match bookit/pubspec.yaml version and include a numeric build number." >&2
+            exit 1
+          fi
           echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "build_number=$BUILD_NUMBER" >> "$GITHUB_OUTPUT"
 
       - name: Install Dart dependencies
         working-directory: bookit
@@ -118,7 +126,7 @@ jobs:
         run: |
           flutter build apk --release \
             --build-name "${{ steps.version.outputs.value }}" \
-            --build-number "${{ github.run_number }}" \
+            --build-number "${{ steps.version.outputs.build_number }}" \
             --dart-define=FIREBASE_API_KEY="$FIREBASE_API_KEY" \
             --dart-define=FIREBASE_ANDROID_APP_ID="$FIREBASE_ANDROID_APP_ID" \
             --dart-define=FIREBASE_MESSAGING_SENDER_ID="$FIREBASE_MESSAGING_SENDER_ID" \

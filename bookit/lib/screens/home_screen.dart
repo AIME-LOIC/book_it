@@ -296,11 +296,50 @@ class _HomeScreenState extends State<HomeScreen> {
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
   }
   String _rwandaPhoneDigits(String value) { final digits=value.replaceAll(RegExp(r'\D'),''); final local=digits.startsWith('250')?digits.substring(3):(digits.startsWith('0')?digits.substring(1):digits); return local.length>9?local.substring(local.length-9):local; }
+  Map<String,dynamic> _profileFromResponse(dynamic response) {
+    dynamic current=response;
+    for(var depth=0;depth<4;depth++){
+      if(current is! Map)break;
+      final map=Map<String,dynamic>.from(current);
+      final nested=map['user']??map['profile']??map['data'];
+      if(nested is Map){current=nested;continue;}
+      return map;
+    }
+    return current is Map?Map<String,dynamic>.from(current):<String,dynamic>{};
+  }
+
+  String? _profileText(Map<String,dynamic> profile,List<String> keys) {
+    for(final key in keys){
+      final value=profile[key]?.toString().trim();
+      if(value!=null&&value.isNotEmpty&&value.toLowerCase()!='null')return value;
+    }
+    return null;
+  }
+
   Future<void> _loadProfile() async {
     if(mounted)setState(()=>_loadingProfile=true);
     try {
       final r=await ApiClient.get('auth/me',auth:true);
-      if(mounted){final raw=r is Map&&r['user'] is Map?r['user']:r;final profile=raw is Map?Map<String,dynamic>.from(raw):<String,dynamic>{};final registeredPhone=(profile['phone']??profile['phone_number']??profile['mobile']??'').toString().trim();setState(()=>_profileData=profile);if(!_profileNameFocus.hasFocus)_profileNameCtrl.text=profile['name']?.toString()??widget.userName;if(!_profilePhoneFocus.hasFocus)_profilePhoneCtrl.text=_rwandaPhoneDigits((profile['phone']??profile['phone_number']??profile['mobile']??'').toString());if(!_phoneManuallyEdited&&registeredPhone.isNotEmpty){_phone.value=TextEditingValue(text:registeredPhone,selection:TextSelection.collapsed(offset:registeredPhone.length));_detectPaymentNetwork(registeredPhone);}}
+      final profile=_profileFromResponse(r);
+      final prefs=await SharedPreferences.getInstance();
+      final savedIdentifier=prefs.getString('bookit_saved_profile_identifier')?.trim();
+      final name=_profileText(profile,['name','full_name','fullName'])??widget.userName;
+      final phone=_profileText(profile,['phone','phone_number','phoneNumber','mobile','mobile_number','contact'])??_profileText(_profileData,['phone','phone_number','phoneNumber','mobile','mobile_number','contact'])??'';
+      final email=_profileText(profile,['email','email_address','emailAddress'])??(savedIdentifier!=null&&savedIdentifier.contains('@')?savedIdentifier:null);
+      final createdAt=_profileText(profile,['createdAt','created_at','created']);
+      if(mounted){
+        final merged=<String,dynamic>{..._profileData,...profile,'name':name};
+        if(phone.isNotEmpty)merged['phone']=phone;
+        if(email!=null)merged['email']=email;
+        if(createdAt!=null)merged['createdAt']=createdAt;
+        setState(()=>_profileData=merged);
+        if(!_profileNameFocus.hasFocus)_profileNameCtrl.text=name;
+        if(!_profilePhoneFocus.hasFocus)_profilePhoneCtrl.text=_rwandaPhoneDigits(phone);
+        if(!_phoneManuallyEdited&&phone.isNotEmpty){
+          _phone.value=TextEditingValue(text:phone,selection:TextSelection.collapsed(offset:phone.length));
+          _detectPaymentNetwork(phone);
+        }
+      }
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
     finally { if(mounted)setState(()=>_loadingProfile=false); }
   }
@@ -494,8 +533,8 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final digits=phone.replaceAll(RegExp(r'\D'),'');if(digits.length!=9){_msg('Enter exactly 9 digits after +250.');return;}final r=await ApiClient.patch('auth/me',auth:true,body:{'name':name.trim(),'phone':'+250$digits'});
       if(mounted){
-        final raw=r is Map&&r['user'] is Map?r['user']:r;
-        setState(()=>_profileData=raw is Map?Map<String,dynamic>.from(raw):_profileData);
+        final updated=_profileFromResponse(r);
+        setState(()=>_profileData={..._profileData,...updated,'name':name.trim(),'phone':'+250$digits'});
         if(!_profileNameFocus.hasFocus)_profileNameCtrl.text=name.trim();
         if(!_profilePhoneFocus.hasFocus)_profilePhoneCtrl.text=phone.trim();
         await AuthService.updateSavedProfileName(name.trim());_msg('Profile updated.');
