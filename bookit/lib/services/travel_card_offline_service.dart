@@ -42,7 +42,7 @@ class TravelCardOfflineService {
     for(final row in rows.whereType<Map>()) {
       final item=Map<String,dynamic>.from(row);
       final matches=method=='qr'
-        ? item['cardToken']?.toString()==value
+        ? item['cardToken']?.toString()==value || item['ticketNumber']?.toString().toUpperCase()==value.toUpperCase()
         : method=='ticket_number'
           ? item['ticketNumber']?.toString().toUpperCase()==value.toUpperCase()
           : item['cardUid']?.toString().toUpperCase()==value.toUpperCase();
