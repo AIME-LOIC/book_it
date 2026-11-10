@@ -30,8 +30,8 @@ export const validateTravelCard=async(req,res)=>{
   const result=await sequelize.transaction(async transaction=>{
    const rows=await sequelize.query(`SELECT t.id,t.ticket_number,t.seat_number,t.travel_date,u.name AS "passengerName",b.plate_number AS "plateNumber"
     FROM tickets t JOIN rfid_card_tickets rct ON rct.ticket_id=t.id
-    JOIN rfid_cards c ON c.id=rct.card_id AND c.status='active'
-    JOIN users u ON u.id=t.user_id JOIN buses b ON b.id=t.bus_id
+    JOIN rfid_cards c ON c.id=rct.card_id AND c.status='active' AND c.user_id=t.user_id
+    JOIN users ON u.id=t.user_id JOIN buses b ON b.id=t.bus_id
     WHERE (:uid='' OR c.card_uid=:uid) AND (:token='' OR c.card_token::text=:token)
     AND t.bus_id=:busId AND t.travel_date=:date AND t.status='paid' AND t.is_used=FALSE
     LIMIT 1 FOR UPDATE OF t`,{replacements:{uid,token,busId:req.user.bus_id,date:todayKigali()},type:QueryTypes.SELECT,transaction});
@@ -57,7 +57,7 @@ export const getOfflineManifest=async(req,res)=>{
    const tickets=await sequelize.query(`SELECT t.id AS "ticketId",t.ticket_number AS "ticketNumber",t.seat_number AS "seatNumber",t.travel_date AS "travelDate",
     c.card_uid AS "cardUid",c.card_token AS "cardToken",u.name AS "passengerName"
     FROM tickets t JOIN rfid_card_tickets rct ON rct.ticket_id=t.id
-    JOIN rfid_cards c ON c.id=rct.card_id AND c.status='active' JOIN users u ON u.id=t.user_id
+    JOIN rfid_cards c ON c.id=rct.card_id AND c.status='active' AND c.user_id=t.user_id JOIN users ON u.id=t.user_id
     WHERE t.bus_id=:busId AND t.travel_date=:date AND t.status='paid' AND t.is_used=FALSE ORDER BY t.seat_number`,
     {replacements:{busId:req.user.bus_id,date},type:QueryTypes.SELECT,transaction});
    return {manifest,tickets};
@@ -85,7 +85,7 @@ export const syncOfflineValidations=async(req,res)=>{
      {replacements:{manifestId,driverId:req.user.id,busId:req.user.bus_id,scannedAt},type:QueryTypes.SELECT,transaction});
     if(!manifests.length)return {accepted:false,reason:'Offline manifest expired or belongs to another driver.'};
     const linked=await sequelize.query(`SELECT t.id FROM tickets t JOIN rfid_card_tickets rct ON rct.ticket_id=t.id
-     JOIN rfid_cards c ON c.id=rct.card_id AND c.status='active'
+     JOIN rfid_cards c ON c.id=rct.card_id AND c.status='active' AND c.user_id=t.user_id
      WHERE t.id=:ticketId AND t.bus_id=:busId AND t.travel_date=:date AND t.status='paid'`,
      {replacements:{ticketId,busId:req.user.bus_id,date:manifests[0].travel_date},type:QueryTypes.SELECT,transaction});
     let accepted=false,reason=null;
