@@ -21,6 +21,21 @@ CREATE TABLE IF NOT EXISTS offline_ticket_manifests (
  expires_at TIMESTAMPTZ NOT NULL,
  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS offline_ticket_manifest_items (
+ manifest_id UUID NOT NULL REFERENCES offline_ticket_manifests(id) ON DELETE CASCADE,
+ ticket_id UUID NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+ card_id UUID NOT NULL REFERENCES rfid_cards(id) ON DELETE CASCADE,
+ card_uid VARCHAR(100) NOT NULL,
+ card_token UUID NOT NULL,
+ ticket_number VARCHAR(20),
+ seat_number INTEGER NOT NULL,
+ travel_date DATE NOT NULL,
+ passenger_name VARCHAR(100) NOT NULL,
+ created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ PRIMARY KEY(manifest_id,ticket_id)
+);
+
 CREATE TABLE IF NOT EXISTS offline_ticket_validations (
  event_id VARCHAR(100) PRIMARY KEY,
  manifest_id UUID NOT NULL REFERENCES offline_ticket_manifests(id) ON DELETE CASCADE,
