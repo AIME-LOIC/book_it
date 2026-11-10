@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../services/api_client.dart';
 import '../services/nfc_card_reader.dart';
 import '../theme/app_theme.dart';
@@ -12,7 +13,7 @@ class RfidCardsScreen extends StatefulWidget {
 
 class _RfidCardsScreenState extends State<RfidCardsScreen> {
   static const String _deviceId = 'bookit-bus-reader-001';
-  List<Map<String, dynamic>> _cards = [], _users = [];
+  List<Map<String, dynamic>> _cards = [], _users = [], _tickets = [];
   bool _loading = true, _starting = false, _admin = false;
   String _search = '', _message = '';
   Timer? _poller;
@@ -37,6 +38,9 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
           ? (me['user'] is Map ? me['user']['role'] : me['role'])
           : null;
       final response = await ApiClient.get('rfid-cards', auth: true);
+      final ticketResponse = await ApiClient.get('tickets/my', auth: true);
+      final ticketRows = ticketResponse is List ? ticketResponse : (ticketResponse is Map && ticketResponse['tickets'] is List ? ticketResponse['tickets'] : const []);
+      final tickets = ticketRows.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
       final cards = response is Map && response['cards'] is List
           ? (response['cards'] as List)
                 .whereType<Map>()
@@ -47,6 +51,7 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
       setState(() {
         _admin = role == 'admin';
         _cards = cards;
+        _tickets = tickets;
         _loading = false;
       });
     } catch (e) {
@@ -56,6 +61,38 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
           _message = e.toString();
         });
     }
+  }
+
+
+  Future<void> _assignTicket(Map<String, dynamic> ticket) async {
+    if (_cards.isEmpty) { setState(() => _message = 'Register a travel card before adding a ticket.'); return; }
+    final card = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => SafeArea(child: ListView(shrinkWrap: true, padding: const EdgeInsets.all(16), children: [
+        const Text('Choose a travel card', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+        ..._cards.map((item) => ListTile(
+          leading: const Icon(Icons.contactless_rounded),
+          title: Text((item['cardUid'] ?? 'BookIt card').toString()),
+          onTap: () => Navigator.pop(context, item),
+        )),
+      ])),
+    );
+    if (card == null) return;
+    try {
+      await ApiClient.post('rfid-cards/${card['id']}/tickets', auth: true, body: {'ticketId': ticket['id']});
+      if (mounted) setState(() => _message = 'Ticket added to your travel card. The driver can scan the card or its QR code.');
+      await _load();
+    } catch (e) { if (mounted) setState(() => _message = e.toString()); }
+  }
+
+  String _cardSubtitle(Map<String, dynamic> card) {
+    final tickets = (card['tickets'] as List? ?? const []).whereType<Map>().toList();
+    if (tickets.isEmpty) {
+      return 'Linked ' + (card['registeredAt'] ?? '').toString().split('T').first;
+    }
+    return '${tickets.length} ticket(s) assigned • ' + tickets.map((ticket) =>
+      '${ticket['ticketNumber'] ?? 'Ticket'} (${ticket['travelDate'] ?? 'date pending'})'
+    ).join(', ');
   }
 
   Future<void> _scanWithPhone() async {
@@ -352,13 +389,7 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
                           (card['cardUid'] ?? 'RFID card').toString(),
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
-                        subtitle: Text(
-                          'Linked ' +
-                              (card['registeredAt'] ?? '')
-                                  .toString()
-                                  .split('T')
-                                  .first,
-                        ),
+                        subtitle: Text(_cardSubtitle(card)),
                         trailing: IconButton(
                           tooltip: 'Unlink card',
                           onPressed: () => _unlink(card),
@@ -367,6 +398,30 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
                       ),
                     ),
                   ),
+
+                  ..._cards.where((card) => (card['cardToken'] ?? '').toString().isNotEmpty).map((card) => Card(
+                    child: Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      const Text('Travel card QR code', style: TextStyle(fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 8),
+                      Center(child: QrImageView(data: 'BOOKIT-CARD:${card['cardToken']}', version: QrVersions.auto, size: 150, backgroundColor: Colors.white)),
+                      const SizedBox(height: 6),
+                      const Text('Show this QR code to the driver if NFC is unavailable.'),
+                    ])),
+                  )),
+                  const SizedBox(height: 20),
+                  const Text('Add a ticket to your card', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 8),
+                  ..._tickets.where((ticket) => !_cards.any((card) =>
+                    (card['tickets'] as List? ?? const []).whereType<Map>().any((assigned) =>
+                      assigned['ticketId']?.toString() == ticket['id']?.toString())
+                  ) && ticket['status'] == 'paid' && ticket['is_used'] != true && ticket['is_used'] != 1).map((ticket) => Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.confirmation_number_rounded, color: AppColors.primary),
+                      title: Text('Ticket ${ticket['ticket_number'] ?? ticket['id']}'),
+                      subtitle: Text('Travel date: ${ticket['travel_date'] ?? '—'} • Seat: ${ticket['seat_number'] ?? '—'}'),
+                      trailing: IconButton(tooltip: 'Add ticket to card', onPressed: () => _assignTicket(ticket), icon: const Icon(Icons.add_card_rounded)),
+                    ),
+                  )),
                   if (_admin) ...[
                     const SizedBox(height: 22),
                     const Text(

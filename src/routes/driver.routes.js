@@ -8,6 +8,7 @@ import authenticate from '../middleware/auth.js';
 import isOperator   from '../middleware/operator.js';
 import isDriver     from '../middleware/driver.js';
 import { validateDriverLocation } from '../middleware/validate.js';
+import { getOfflineManifest, validateTravelCard, syncOfflineValidations } from '../controllers/travel-card.controller.js';
 import rateLimit from 'express-rate-limit';
 
 const locationLimiter = rateLimit({ windowMs: 30 * 1000, max: 10 }); // 10 updates per 30s
@@ -24,6 +25,9 @@ router.get('/passengers',          authenticate, isDriver,   getMyPassengers);
 router.post('/notify/:ticket_id',  authenticate, isDriver,   notifyExit);
 // driver updates their current GPS location (updates assigned bus location)
 router.patch('/location',          authenticate, isDriver, locationLimiter, validateDriverLocation, updateLocation);
+router.get('/offline-manifest', authenticate, isDriver, getOfflineManifest);
+router.post('/travel-card/validate', authenticate, isDriver, validateTravelCard);
+router.post('/offline-validations/sync', authenticate, isDriver, syncOfflineValidations);
 
 // operator manages drivers
 router.get('/',                    authenticate, isOperator, getMyDrivers);
