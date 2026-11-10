@@ -60,6 +60,16 @@ class _LoginScreenState extends State<LoginScreen> {
               password: _passwordController.text,
             );
       if (!mounted) return;
+      if (await AuthService.shouldAskToSaveProfile(identifier)) {
+        final save = await showDialog<bool>(context: context, barrierDismissible: false, builder: (dialogContext) => AlertDialog(
+          title: const Text('Save your profile?'),
+          content: const Text('Would you like BookIt to remember this profile on this device for quicker sign-in next time?'),
+          actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('No')), FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Yes'))],
+        ));
+        await AuthService.markSaveProfilePrompted(identifier);
+        if (save == true) await AuthService.saveCurrentAccount(name: name, identifier: identifier, type: isDriver ? 'driver' : 'customer');
+      }
+      if (!mounted) return;
       setState(() {
         _submitting = false;
         _succeeded = true;
