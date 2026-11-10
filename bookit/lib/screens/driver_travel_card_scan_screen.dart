@@ -79,7 +79,7 @@ class _DriverTravelCardScanScreenState extends State<DriverTravelCardScanScreen>
       const SizedBox(height:12),
       if(!kIsWeb&&(Platform.isAndroid||Platform.isIOS))SizedBox(height:240,child:ClipRRect(borderRadius:BorderRadius.circular(18),child:_cameraReady?MobileScanner(controller:_camera,onDetect:_scanQr):const ColoredBox(color:Colors.black87,child:Center(child:Icon(Icons.qr_code_scanner_rounded,color:Colors.white,size:48))))),
       const SizedBox(height:12),
-      SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_busy||_nfcBusy?null:_scanNfc,icon:const Icon(Icons.nfc_rounded),label:Text(_nfcBusy?'Waiting for card…':'Tap NFC card'))),
+      SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_busy||_nfcBusy||kIsWeb||!Platform.isAndroid?null:_scanNfc,icon:const Icon(Icons.nfc_rounded),label:Text(!kIsWeb&&!Platform.isAndroid?'NFC reader currently requires Android':_nfcBusy?'Waiting for card…':'Tap NFC card'))),
       if(_busy)const Padding(padding:EdgeInsets.all(12),child:Center(child:CircularProgressIndicator())),
       Card(color:valid?Colors.green.withValues(alpha:.08):null,child:Padding(padding:const EdgeInsets.all(14),child:Row(children:[Icon(valid?Icons.check_circle_rounded:Icons.info_outline_rounded,color:valid?Colors.green:AppColors.primary),const SizedBox(width:10),Expanded(child:Text(_message))]))),
       if(provisional)const Text('Offline approval is provisional, not final. Synchronize when connectivity returns.',style:TextStyle(color:Colors.deepOrange,fontWeight:FontWeight.w700)),

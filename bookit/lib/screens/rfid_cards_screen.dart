@@ -379,13 +379,9 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
                           (card['cardUid'] ?? 'RFID card').toString(),
                           style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
-                        subtitle: Text(
-                          'Linked ' +
-                              (card['registeredAt'] ?? '')
-                                  .toString()
-                                  .split('T')
-                                  .first,
-                        ),
+                        subtitle: Text(card['ticketNumber'] != null
+                            ? 'Ticket ${card['ticketNumber']} • ${card['travelDate']}'
+                            : 'Linked ' + (card['registeredAt'] ?? '').toString().split('T').first),
                         trailing: IconButton(
                           tooltip: 'Unlink card',
                           onPressed: () => _unlink(card),
@@ -407,7 +403,7 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
                   const SizedBox(height: 20),
                   const Text('Add a ticket to your card', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 8),
-                  ..._tickets.where((ticket) => ticket['status'] == 'paid' && ticket['is_used'] != true && ticket['is_used'] != 1).map((ticket) => Card(
+                  ..._tickets.where((ticket) => !_cards.any((card) => card['ticketId']?.toString() == ticket['id']?.toString()) && ticket['status'] == 'paid' && ticket['is_used'] != true && ticket['is_used'] != 1).map((ticket) => Card(
                     child: ListTile(
                       leading: const Icon(Icons.confirmation_number_rounded, color: AppColors.primary),
                       title: Text('Ticket ${ticket['ticket_number'] ?? ticket['id']}'),
