@@ -294,11 +294,12 @@ class _HomeScreenState extends State<HomeScreen> {
       if(mounted)setState(()=>_buses=rows.whereType<Map>().map((e)=>Map<String,dynamic>.from(e)).toList());
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
   }
+  String _rwandaPhoneDigits(String value)=>value.replaceAll(RegExp(r'\\D'),'').replaceFirst(RegExp(r'^250'), '').replaceFirst(RegExp(r'^0'), '').substring(0, value.replaceAll(RegExp(r'\\D'),'').replaceFirst(RegExp(r'^250'), '').replaceFirst(RegExp(r'^0'), '').length.clamp(0,9));
   Future<void> _loadProfile() async {
     if(mounted)setState(()=>_loadingProfile=true);
     try {
       final r=await ApiClient.get('auth/me',auth:true);
-      if(mounted){final raw=r is Map&&r['user'] is Map?r['user']:r;final profile=raw is Map?Map<String,dynamic>.from(raw):<String,dynamic>{};final registeredPhone=(profile['phone']??profile['phone_number']??profile['mobile']??'').toString().trim();setState(()=>_profileData=profile);if(!_profileNameFocus.hasFocus)_profileNameCtrl.text=profile['name']?.toString()??widget.userName;if(!_profilePhoneFocus.hasFocus)_profilePhoneCtrl.text=profile['phone']?.toString()??'';if(!_phoneManuallyEdited&&registeredPhone.isNotEmpty){_phone.value=TextEditingValue(text:registeredPhone,selection:TextSelection.collapsed(offset:registeredPhone.length));_detectPaymentNetwork(registeredPhone);}}
+      if(mounted){final raw=r is Map&&r['user'] is Map?r['user']:r;final profile=raw is Map?Map<String,dynamic>.from(raw):<String,dynamic>{};final registeredPhone=(profile['phone']??profile['phone_number']??profile['mobile']??'').toString().trim();setState(()=>_profileData=profile);if(!_profileNameFocus.hasFocus)_profileNameCtrl.text=profile['name']?.toString()??widget.userName;if(!_profilePhoneFocus.hasFocus)_profilePhoneCtrl.text=_rwandaPhoneDigits((profile['phone']??profile['phone_number']??profile['mobile']??'').toString());if(!_phoneManuallyEdited&&registeredPhone.isNotEmpty){_phone.value=TextEditingValue(text:registeredPhone,selection:TextSelection.collapsed(offset:registeredPhone.length));_detectPaymentNetwork(registeredPhone);}}
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
     finally { if(mounted)setState(()=>_loadingProfile=false); }
   }
@@ -490,13 +491,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   Future<void> _saveProfile({required String name,required String phone}) async {
     try {
-      final r=await ApiClient.patch('auth/me',auth:true,body:{'name':name.trim(),'phone':phone.trim()});
+      final digits=phone.replaceAll(RegExp(r'\\D'),'');if(digits.length!=9){_msg('Enter exactly 9 digits after +250.');return;}final r=await ApiClient.patch('auth/me',auth:true,body:{'name':name.trim(),'phone':'+250$digits'});
       if(mounted){
         final raw=r is Map&&r['user'] is Map?r['user']:r;
         setState(()=>_profileData=raw is Map?Map<String,dynamic>.from(raw):_profileData);
         if(!_profileNameFocus.hasFocus)_profileNameCtrl.text=name.trim();
         if(!_profilePhoneFocus.hasFocus)_profilePhoneCtrl.text=phone.trim();
-        _msg('Profile updated.');
+        await AuthService.updateSavedProfileName(name.trim());_msg('Profile updated.');
       }
     } on ApiException catch(e) { if(mounted)_msg(e.message); }
   }
@@ -506,7 +507,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final name=_profileNameCtrl.text.trim();
     final phone=_profilePhoneCtrl.text.trim();
     if(name.isEmpty){ _msg('Enter your full name.'); return; }
-    if(phone.length<9){ _msg('Enter a valid phone number.'); return; }
+    if(phone.replaceAll(RegExp(r'\\D'),'').length!=9){ _msg('Enter exactly 9 digits after +250.'); return; }
     if(mounted)setState(()=>_savingProfile=true);
     try {
       await _saveProfile(name:name,phone:phone);
@@ -515,11 +516,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
   Future<void> _editProfile() async {
     final name=TextEditingController(text:(_profileData['name']??widget.userName).toString());
-    final phone=TextEditingController(text:(_profileData['phone']??'').toString());
+    final phone=TextEditingController(text:_rwandaPhoneDigits((_profileData['phone']??_profileData['phone_number']??_profileData['mobile']??'').toString()));
     final formKey=GlobalKey<FormState>();
     final save=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('Edit profile'),content:Form(key:formKey,child:Column(mainAxisSize:MainAxisSize.min,children:[
       TextFormField(controller:name,decoration:const InputDecoration(labelText:'Full name'),validator:(v)=>(v?.trim().isEmpty??true)?'Enter your name':null),
-      const SizedBox(height:10),TextFormField(controller:phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'Phone number'),validator:(v)=>(v?.trim().length??0)<9?'Enter a valid phone number':null),
+      const SizedBox(height:10),TextFormField(controller:phone,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'Phone number'),inputFormatters:[FilteringTextInputFormatter.digitsOnly,LengthLimitingTextInputFormatter(9)],decoration:const InputDecoration(labelText:'Phone number',prefixText:'+250 '),validator:(v)=>(v?.trim().length??0)!=9?'Enter exactly 9 digits':null),
     ])),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('Cancel')),FilledButton(onPressed:()=>Navigator.pop(c,formKey.currentState?.validate()??false),child:const Text('Save'))]));
     if(save==true)await _saveProfile(name:name.text,phone:phone.text);
     name.dispose();phone.dispose();
@@ -1754,7 +1755,7 @@ class _HomeScreenState extends State<HomeScreen> {
     const SizedBox(height:20),Text('Personal information',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800,color:Theme.of(context).colorScheme.onSurface)),const SizedBox(height:9),
     Card(child:Padding(padding:const EdgeInsets.symmetric(vertical:4),child:Column(children:[
       Padding(padding:const EdgeInsets.fromLTRB(16,8,16,8),child:TextField(controller:_profileNameCtrl,focusNode:_profileNameFocus,decoration:const InputDecoration(labelText:'Full name',prefixIcon:Icon(Icons.person_outline)))),const Divider(height:1,indent:56),
-      Padding(padding:const EdgeInsets.fromLTRB(16,8,16,8),child:TextField(controller:_profilePhoneCtrl,focusNode:_profilePhoneFocus,keyboardType:TextInputType.phone,decoration:const InputDecoration(labelText:'Phone number',prefixIcon:Icon(Icons.phone_outlined)))),const Divider(height:1,indent:56),
+      Padding(padding:const EdgeInsets.fromLTRB(16,8,16,8),child:TextField(controller:_profilePhoneCtrl,focusNode:_profilePhoneFocus,keyboardType:TextInputType.phone,inputFormatters:[FilteringTextInputFormatter.digitsOnly,LengthLimitingTextInputFormatter(9)],decoration:const InputDecoration(labelText:'Phone number',prefixIcon:Icon(Icons.phone_outlined),prefixText:'+250 '))),const Divider(height:1,indent:56),
       _profileRow(Icons.email_outlined,'Email',(_profileData['email']??'Not provided').toString()),const Divider(height:1,indent:56),
       _profileRow(Icons.calendar_today_outlined,'Member since',(_profileData['createdAt']??'—').toString().split('T').first),
     ]))),
