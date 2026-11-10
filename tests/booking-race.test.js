@@ -70,9 +70,14 @@ test('C2: two concurrent bookings for the same seat + segment → exactly one su
     bookTicket(f.u1.id, { ...base, seat_number: 10 }).then(t => ({ ok: true, id: t.id })).catch(e => ({ ok: false, message: e.message })),
     bookTicket(f.u2.id, { ...base, seat_number: 10 }).then(t => ({ ok: true, id: t.id })).catch(e => ({ ok: false, message: e.message })),
   ]);
-  assert.equal(r1.ok, true, 'first booking should succeed');
-  assert.equal(r2.ok, false, 'second overlapping booking must fail');
-  assert.match(r2.message, /taken/i);
+  // Both calls race for the same bus lock; neither request is guaranteed to win.
+  // Assert the invariant (exactly one succeeds) instead of assuming r1 wins.
+  const results = [r1, r2];
+  const winners = results.filter((result) => result.ok);
+  const losers = results.filter((result) => !result.ok);
+  assert.equal(winners.length, 1, `exactly one concurrent booking must succeed (got ${JSON.stringify(results)})`);
+  assert.equal(losers.length, 1, `exactly one concurrent booking must be rejected (got ${JSON.stringify(results)})`);
+  assert.match(losers[0].message, /taken/i, 'the losing booking must be rejected because the seat is taken');
 
   const seat10 = await Ticket.findAll({ where: { bus_id: f.bus.id, seat_number: 10, travel_date: f.tomorrow, status: { [Op.not]: 'cancelled' } } });
   assert.equal(seat10.length, 1, 'exactly one non-cancelled ticket owns seat 10');
