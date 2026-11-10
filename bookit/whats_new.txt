@@ -1,9 +1,6 @@
-BookIt 1.2.1
+BookIt 1.2.6
 
 What's new:
-• Added a dedicated App Updates screen so you can check the installed and latest versions.
-• Added in-app update notices and notification support.
-• Improved profile navigation with an easier way to access app updates.
-• Added dedicated Terms of Service and Privacy Policy screens.
-• Improved Android release builds and Firebase configuration security.
-• Included the Linux desktop release package.
+• Fixed saved profile names so updates appear on the Profiles screen.
+• Added an opt-in prompt to remember a profile after first sign-in.
+• Standardized Rwanda phone numbers with a +250 prefix and exactly 9 local digits.

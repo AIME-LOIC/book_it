@@ -15,6 +15,7 @@ class ApiClient {
   static Future<dynamic> Function(String path, {Map<String,String>? query, bool auth})? getOverride;
 
   static bool get hasToken => _token != null && _token!.isNotEmpty;
+  static String? get currentToken => _token;
   static void setToken(String? token) => _token = token;
   static Future<void> saveToken(String token) async {
     _token = token;
