@@ -70,7 +70,7 @@ test('C2: two concurrent bookings for the same seat + segment → exactly one su
     bookTicket(f.u1.id, { ...base, seat_number: 10 }).then(t => ({ ok: true, id: t.id })).catch(e => ({ ok: false, message: e.message })),
     bookTicket(f.u2.id, { ...base, seat_number: 10 }).then(t => ({ ok: true, id: t.id })).catch(e => ({ ok: false, message: e.message })),
   ]);
-  assert.equal(r1.ok, true, 'first booking should succeed');
+  assert.equal(r1.ok, true, `first booking should succeed; service error: ${r1.message || 'no error message returned'}`);
   assert.equal(r2.ok, false, 'second overlapping booking must fail');
   assert.match(r2.message, /taken/i);
 
