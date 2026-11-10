@@ -38,9 +38,16 @@ class _RfidCardsScreenState extends State<RfidCardsScreen> {
           ? (me['user'] is Map ? me['user']['role'] : me['role'])
           : null;
       final response = await ApiClient.get('rfid-cards', auth: true);
-      final ticketResponse = await ApiClient.get('tickets/my', auth: true);
-      final ticketRows = ticketResponse is List ? ticketResponse : (ticketResponse is Map && ticketResponse['tickets'] is List ? ticketResponse['tickets'] : const []);
-      final tickets = ticketRows.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      // Card registration/listing must not fail just because the optional ticket
+      // list endpoint is temporarily unavailable.
+      List<Map<String, dynamic>> tickets = [];
+      try {
+        final ticketResponse = await ApiClient.get('tickets/my', auth: true);
+        final ticketRows = ticketResponse is List ? ticketResponse : (ticketResponse is Map && ticketResponse['tickets'] is List ? ticketResponse['tickets'] : const []);
+        tickets = ticketRows.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      } catch (_) {
+        // Keep the linked-card list usable; ticket assignment can be retried later.
+      }
       final cards = response is Map && response['cards'] is List
           ? (response['cards'] as List)
                 .whereType<Map>()

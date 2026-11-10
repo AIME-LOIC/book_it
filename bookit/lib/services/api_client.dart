@@ -64,7 +64,15 @@ class ApiClient {
       dynamic data;
       try { data=res.body.isEmpty?<String,dynamic>{}:jsonDecode(res.body); } catch (_) { data=null; }
       if(res.statusCode<200||res.statusCode>=300) {
-        throw ApiException.forStatus(res.statusCode);
+        final serverMessage = data is Map
+            ? (data['message'] ?? data['error'] ?? data['detail'])?.toString().trim()
+            : null;
+        throw ApiException(
+          serverMessage == null || serverMessage.isEmpty
+              ? ApiException.forStatus(res.statusCode).message
+              : serverMessage,
+          statusCode: res.statusCode,
+        );
       }
       if (data == null && res.body.isNotEmpty) {
         throw const ApiException('BookIt received an unexpected response. Please try again.');
