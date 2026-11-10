@@ -10,6 +10,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/push_notification_service.dart';
+import 'driver_travel_card_scan_screen.dart';
 import 'policy_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_controller.dart';
@@ -868,6 +869,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       );
 
   Widget _scanTab() {
+    final travelCardButton = Padding(padding: const EdgeInsets.fromLTRB(18, 12, 18, 0), child: SizedBox(width: double.infinity, child: OutlinedButton.icon(
+      icon: const Icon(Icons.contactless_rounded), label: const Text('Scan Travel Card • NFC / QR'),
+      onPressed: () async { await _stopScanner(); if (!mounted) return; await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DriverTravelCardScanScreen())); if (mounted && _tab == 1) _startScanner(); },
+    )));
     if (!_scannerSupported) {
       return _emptyCard(
         'QR scanning requires a phone',
@@ -875,6 +880,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
       );
     }
     return Column(children: [
+      travelCardButton,
       Padding(
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 12),
         child: _heading('Scan passenger ticket', 'Point the camera at the ticket QR code'),
