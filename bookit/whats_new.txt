@@ -1,4 +1,4 @@
-BookIt 1.2.6
+BookIt 1.2.8
 
 What's new:
-• updates about the profile update and profile screen
+• What's Changed Redesign driver dashboard and show live bus location by @AIME-LOIC in fix(mobile): improve phone NFC card registration feedback by @AIME-LOIC in Full Changelog:
