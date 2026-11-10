@@ -1,6 +1,4 @@
 BookIt 1.2.6
 
 What's new:
-• Fixed saved profile names so updates appear on the Profiles screen.
-• Added an opt-in prompt to remember a profile after first sign-in.
-• Standardized Rwanda phone numbers with a +250 prefix and exactly 9 local digits.
+• updates about the profile update and profile screen
