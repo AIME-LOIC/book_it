@@ -12,12 +12,21 @@ const requireAdmin = (req, res) => {
 export const listMyCards = async (req, res) => {
   try {
     const cards = await sequelize.query(
-      `SELECT c.id, c.card_uid AS "cardUid", c.card_token AS "cardToken", c.status, c.registered_at AS "registeredAt",
-              rct.ticket_id AS "ticketId", t.ticket_number AS "ticketNumber", rct.travel_date AS "travelDate"
+      `SELECT c.id, c.card_uid AS "cardUid", c.card_token AS "cardToken",
+              c.status, c.registered_at AS "registeredAt",
+              COALESCE((
+                SELECT json_agg(json_build_object(
+                  'ticketId', rct.ticket_id,
+                  'ticketNumber', t.ticket_number,
+                  'travelDate', rct.travel_date
+                ) ORDER BY rct.travel_date)
+                FROM rfid_card_tickets rct
+                JOIN tickets t ON t.id = rct.ticket_id
+                WHERE rct.card_id = c.id
+              ), '[]'::json) AS tickets
        FROM rfid_cards c
-       LEFT JOIN rfid_card_tickets rct ON rct.card_id = c.id
-       LEFT JOIN tickets t ON t.id = rct.ticket_id
-       WHERE c.user_id = :userId AND c.status = 'active' ORDER BY c.registered_at DESC`,
+       WHERE c.user_id = :userId AND c.status = 'active'
+       ORDER BY c.registered_at DESC`,
       { replacements: { userId: req.user.id }, type: QueryTypes.SELECT },
     );
     res.json({ cards });
