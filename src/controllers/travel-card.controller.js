@@ -54,7 +54,8 @@ export const linkTicketToCard = async (req, res) => {
 export const validateTravelCard = async (req, res) => {
   const uid = String(req.body?.card_uid || '').trim().toUpperCase();
   const token = String(req.body?.card_token || '').trim();
-  if (!uid && !token) return res.status(400).json({ valid: false, message: 'Travel card identifier is required.' });
+  const ticketNumber = String(req.body?.ticket_number || '').trim();
+  if (!uid && !token && !ticketNumber) return res.status(400).json({ valid: false, message: 'Card identifier or ticket number is required.' });
   if (!req.user?.bus_id) return res.status(409).json({ valid: false, message: 'No bus is assigned to this driver.' });
 
   try {
@@ -63,16 +64,17 @@ export const validateTravelCard = async (req, res) => {
         `SELECT t.id, t.ticket_number, t.seat_number, t.travel_date,
                 u.name AS "passengerName", b.plate_number AS "plateNumber"
          FROM tickets t
-         JOIN rfid_card_tickets rct ON rct.ticket_id = t.id
-         JOIN rfid_cards c ON c.id = rct.card_id AND c.status = 'active' AND c.user_id = t.user_id
+         LEFT JOIN rfid_card_tickets rct ON rct.ticket_id = t.id
+         LEFT JOIN rfid_cards c ON c.id = rct.card_id AND c.status = 'active' AND c.user_id = t.user_id
          JOIN users u ON u.id = t.user_id
          JOIN buses b ON b.id = t.bus_id
          WHERE (:uid = '' OR c.card_uid = :uid)
            AND (:token = '' OR c.card_token::text = :token)
+           AND (:ticketNumber = '' OR UPPER(t.ticket_number) = UPPER(:ticketNumber))
            AND t.bus_id = :busId AND t.travel_date = :date
            AND t.status = 'paid' AND t.is_used = FALSE
          LIMIT 1 FOR UPDATE OF t`,
-        { replacements: { uid, token, busId: req.user.bus_id, date: todayKigali() }, type: QueryTypes.SELECT, transaction },
+        { replacements: { uid, token, ticketNumber, busId: req.user.bus_id, date: todayKigali() }, type: QueryTypes.SELECT, transaction },
       );
       if (!rows.length) return { valid: false, reason: 'No unused paid ticket for this card is assigned to your bus today.' };
 
@@ -119,8 +121,8 @@ export const getOfflineManifest = async (req, res) => {
           (manifest_id, ticket_id, card_id, card_uid, card_token, ticket_number, seat_number, travel_date, passenger_name)
          SELECT :manifestId, t.id, c.id, c.card_uid, c.card_token, t.ticket_number, t.seat_number, t.travel_date, u.name
          FROM tickets t
-         JOIN rfid_card_tickets rct ON rct.ticket_id = t.id
-         JOIN rfid_cards c ON c.id = rct.card_id AND c.status = 'active' AND c.user_id = t.user_id
+         LEFT JOIN rfid_card_tickets rct ON rct.ticket_id = t.id
+         LEFT JOIN rfid_cards c ON c.id = rct.card_id AND c.status = 'active' AND c.user_id = t.user_id
          JOIN users u ON u.id = t.user_id
          WHERE t.bus_id = :busId AND t.travel_date = :date
            AND t.status = 'paid' AND t.is_used = FALSE
@@ -161,7 +163,7 @@ export const syncOfflineValidations = async (req, res) => {
     const eventId = String(event?.event_id || '').trim();
     const ticketId = String(event?.ticket_id || '').trim();
     const scannedAt = new Date(event?.scanned_at);
-    const method = event?.scan_method === 'nfc' ? 'nfc' : event?.scan_method === 'qr' ? 'qr' : '';
+    const method = ['nfc', 'qr', 'ticket_number'].includes(event?.scan_method) ? event.scan_method : '';
     if (!eventId || !ticketId || !method || Number.isNaN(scannedAt.getTime())) {
       results.push({ event_id: eventId || null, accepted: false, reason: 'Malformed event.' });
       continue;
@@ -197,11 +199,12 @@ export const syncOfflineValidations = async (req, res) => {
         const linked = await sequelize.query(
           `SELECT t.id FROM offline_ticket_manifest_items mi
            JOIN tickets t ON t.id = mi.ticket_id
-           JOIN rfid_card_tickets rct ON rct.ticket_id = t.id AND rct.card_id = mi.card_id
-           JOIN rfid_cards c ON c.id = mi.card_id AND c.status = 'active' AND c.user_id = t.user_id
+           LEFT JOIN rfid_card_tickets rct ON rct.ticket_id = t.id AND rct.card_id = mi.card_id
+           LEFT JOIN rfid_cards c ON c.id = mi.card_id AND c.status = 'active' AND c.user_id = t.user_id
            WHERE mi.manifest_id = :manifestId AND mi.ticket_id = :ticketId
-             AND t.bus_id = :busId AND t.travel_date = :date AND t.status = 'paid'`,
-          { replacements: { manifestId, ticketId, busId: req.user.bus_id, date: manifests[0].travel_date }, type: QueryTypes.SELECT, transaction },
+             AND t.bus_id = :busId AND t.travel_date = :date AND t.status = 'paid'
+             AND (:method IN ('ticket_number', 'qr') OR (rct.ticket_id IS NOT NULL AND c.id IS NOT NULL))`,
+          { replacements: { manifestId, ticketId, busId: req.user.bus_id, date: manifests[0].travel_date, method }, type: QueryTypes.SELECT, transaction },
         );
 
         let accepted = false;
