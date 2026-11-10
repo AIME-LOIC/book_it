@@ -9,10 +9,6 @@ class TravelCardOfflineService {
   static const _key='bookit_travel_card_offline_v1';
 
   static Future<Map<String,dynamic>> refreshManifest() async {
-    final now=DateTime.now();
-    final date='${now.year}-${now.month.toString().padLeft(2,'0')}-${now.day.toString().padLeft(2,'0')}';
-    final response=await ApiClient.get('drivers/offline-manifest',query:{'date':date},auth:true);
-    if(response is! Map) throw const ApiException('Invalid offline passenger list.');
     final existingRaw=await _storage.read(key:_key);
     if(existingRaw!=null){
       final existing=jsonDecode(existingRaw);
@@ -20,6 +16,10 @@ class TravelCardOfflineService {
         throw const ApiException('Synchronize pending offline scans before downloading a new passenger list.');
       }
     }
+    final now=DateTime.now();
+    final date='${now.year}-${now.month.toString().padLeft(2,'0')}-${now.day.toString().padLeft(2,'0')}';
+    final response=await ApiClient.get('drivers/offline-manifest',query:{'date':date},auth:true);
+    if(response is! Map) throw const ApiException('Invalid offline passenger list.');
     await _storage.write(key:_key,value:jsonEncode({'manifest':response,'used_ticket_ids':<String>[],'events':<Map<String,dynamic>>[]}));
     return Map<String,dynamic>.from(response);
   }
