@@ -12,7 +12,7 @@ const requireAdmin = (req, res) => {
 export const listMyCards = async (req, res) => {
   try {
     const cards = await sequelize.query(
-      `SELECT id, card_uid AS "cardUid", status, registered_at AS "registeredAt"
+      `SELECT id, card_uid AS "cardUid", card_token AS "cardToken", status, registered_at AS "registeredAt"
        FROM rfid_cards WHERE user_id = :userId AND status = 'active' ORDER BY registered_at DESC`,
       { replacements: { userId: req.user.id }, type: QueryTypes.SELECT },
     );
@@ -171,7 +171,7 @@ export const registerFromPhone = async (req, res) => {
            SET user_id = :userId, status = 'active',
                registered_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
            WHERE id = :id
-           RETURNING id, card_uid AS "cardUid", status, registered_at AS "registeredAt"`,
+           RETURNING id, card_uid AS "cardUid", card_token AS "cardToken", status, registered_at AS "registeredAt"`,
           {
             replacements: { userId: req.user.id, id: existing[0].id },
             type: QueryTypes.SELECT,
@@ -182,7 +182,7 @@ export const registerFromPhone = async (req, res) => {
         cards = await sequelize.query(
           `INSERT INTO rfid_cards (user_id, card_uid, status)
            VALUES (:userId, :uid, 'active')
-           RETURNING id, card_uid AS "cardUid", status, registered_at AS "registeredAt"`,
+           RETURNING id, card_uid AS "cardUid", card_token AS "cardToken", status, registered_at AS "registeredAt"`,
           {
             replacements: { userId: req.user.id, uid },
             type: QueryTypes.SELECT,

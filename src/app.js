@@ -16,6 +16,7 @@ import promoRoutes from './routes/promo.routes.js';
 import internalRoutes from './routes/internal.routes.js';
 import rfidCardRoutes from './routes/rfid-card.routes.js';
 import rfidHardwareRoutes from './routes/rfid-hardware.routes.js';
+import travelCardRoutes from './routes/travel-card.routes.js';
 import cors from 'cors';
 import sequelize from './config/sequelize.js';
 
@@ -151,6 +152,7 @@ app.use(`${P}/promos`, promoRoutes);
 app.use(`${P}/internal/cron`, internalRoutes);
 app.use(`${P}/rfid-cards`, rfidCardRoutes);
 app.use(`${P}/hardware/rfid`, rfidHardwareRoutes);
+app.use(`${P}/rfid-cards`, travelCardRoutes);
 
 // Customer downloads are proxied through BookIt so passengers never leave for GitHub.
 const RELEASE_ASSETS = {
