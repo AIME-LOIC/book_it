@@ -10,7 +10,7 @@ import { encryptPassword } from '../utils/crypto.utils.js';
 
 const driverIncludes = [
   { model: Operator, as: 'operator', attributes: ['id', 'company_name'] },
-  { model: Bus,      as: 'bus',      attributes: ['id', 'plate_number', 'departure_time', 'capacity', 'is_active'],
+  { model: Bus,      as: 'bus',      attributes: ['id', 'plate_number', 'departure_time', 'capacity', 'is_active', 'last_lat', 'last_lng'],
     include: [{
       model: Route, as: 'route', attributes: ['id', 'price'],
       include: [
