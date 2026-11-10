@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -212,6 +214,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
   Future<void> _startTracking() async {
     try {
+      if (_bus.isEmpty || _driver['bus_id'] == null) {
+        _show('A bus must be assigned to your driver account before tracking can start.');
+        return;
+      }
       if (!await Geolocator.isLocationServiceEnabled()) {
         _show('Turn on your device location services to start live tracking.');
         await Geolocator.openLocationSettings();
@@ -530,6 +536,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           Text('$_company  •  $_plate', style: TextStyle(color: muted, fontSize: 12)),
           const SizedBox(height: 18),
           _heroCard(),
+          const SizedBox(height: 14),
+          _locationPreviewCard(),
           const SizedBox(height: 16),
           Row(children: [
             Expanded(child: _statCard('Passengers', _passengers.length.toString(), Icons.people_alt_rounded, const Color(0xFF1688D4))),
@@ -606,6 +614,8 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
             const SizedBox(height: 10),
             _trackingCard(),
             const SizedBox(height: 14),
+            _locationPreviewCard(),
+            const SizedBox(height: 14),
             _liveTelemetryCard(),
             const SizedBox(height: 20),
             _heading('Vehicle assignment', 'Your current shift information'),
@@ -629,10 +639,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
   Widget _heroCard() => Container(
     padding: const EdgeInsets.all(21),
     decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        colors: [Color(0xFF082B55), Color(0xFF087EC1)],
-        begin: Alignment.topLeft, end: Alignment.bottomRight,
-      ),
+      gradient: AppColors.heroGradient,
       borderRadius: BorderRadius.circular(24),
       boxShadow: [BoxShadow(color: const Color(0xFF087EC1).withValues(alpha: .18),
         blurRadius: 20, offset: const Offset(0, 9))],
@@ -708,6 +715,98 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
               style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
         ]),
       );
+
+
+  LatLng? get _busPosition {
+    final live = _position;
+    if (live != null) return LatLng(live.latitude, live.longitude);
+    final lat = double.tryParse((_bus['last_lat'] ?? '').toString());
+    final lng = double.tryParse((_bus['last_lng'] ?? '').toString());
+    if (lat == null || lng == null || !lat.isFinite || !lng.isFinite ||
+        lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    return LatLng(lat, lng);
+  }
+
+  Widget _locationPreviewCard() {
+    final point = _busPosition;
+    final hasLiveFix = _position != null;
+    final status = _tracking
+        ? (_locationServerSynced ? 'LIVE • SYNCED' : 'GPS ACTIVE • SYNC PENDING')
+        : point == null ? 'LOCATION NOT AVAILABLE' : 'LAST REPORTED POSITION';
+    final statusColor = _tracking && _locationServerSynced
+        ? AppColors.success
+        : _tracking ? const Color(0xFFCB7A16) : AppColors.textMuted;
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: _surfaceDecoration(),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Container(width: 40, height: 40,
+            decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: .10), borderRadius: BorderRadius.circular(13)),
+            child: const Icon(Icons.location_on_rounded, color: AppColors.primary)),
+          const SizedBox(width: 11),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Bus location', style: TextStyle(fontWeight: FontWeight.w900)),
+            const SizedBox(height: 3),
+            Text('$_plate • ${_routeTo.isEmpty ? _routeFrom : '$_routeFrom → $_routeTo'}',
+              maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+          ])),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            decoration: BoxDecoration(color: statusColor.withValues(alpha: .10), borderRadius: BorderRadius.circular(20)),
+            child: Text(status, style: TextStyle(color: statusColor, fontSize: 8, fontWeight: FontWeight.w900))),
+        ]),
+        const SizedBox(height: 12),
+        if (point == null)
+          Container(height: 128, width: double.infinity,
+            decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(15)),
+            child: const Center(child: Padding(padding: EdgeInsets.all(16),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.location_searching_rounded, size: 28, color: AppColors.textMuted),
+                SizedBox(height: 7),
+                Text('No GPS position has been reported yet', textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                SizedBox(height: 3),
+                Text('Start your trip to share the bus location.', textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
+              ]))))
+        else
+          ClipRRect(borderRadius: BorderRadius.circular(15),
+            child: SizedBox(height: 175,
+              child: FlutterMap(
+                key: ValueKey('${point.latitude.toStringAsFixed(5)}:${point.longitude.toStringAsFixed(5)}'),
+                options: MapOptions(initialCenter: point, initialZoom: 14),
+                children: [
+                  TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'rw.onepercent.bookit'),
+                  MarkerLayer(markers: [Marker(point: point, width: 46, height: 46,
+                    child: Container(
+                      decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3),
+                        boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, 3))]),
+                      child: const Icon(Icons.directions_bus_rounded, color: Colors.white, size: 23),
+                    ))]),
+                  RichAttributionWidget(attributions: [TextSourceAttribution('© OpenStreetMap contributors')]),
+                ],
+              ))),
+        const SizedBox(height: 9),
+        Row(children: [
+          Icon(hasLiveFix ? Icons.gps_fixed_rounded : Icons.history_rounded, size: 15, color: statusColor),
+          const SizedBox(width: 6),
+          Expanded(child: Text(
+            hasLiveFix
+              ? 'This phone GPS fix${_lastLocationSync == null ? '' : ' • synced ${_lastLocationSync!.toLocal().hour.toString().padLeft(2, '0')}:${_lastLocationSync!.toLocal().minute.toString().padLeft(2, '0')}'}'
+              : 'Showing the last position saved on the bus record. It may be outdated while the driver is offline.',
+            style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant))),
+          if (point != null)
+            IconButton(tooltip: 'Open location in Maps', visualDensity: VisualDensity.compact,
+              onPressed: () => launchUrl(Uri.parse('https://www.google.com/maps/search/?api=1&query=${point.latitude},${point.longitude}'),
+                mode: LaunchMode.externalApplication),
+              icon: const Icon(Icons.open_in_new_rounded, size: 17)),
+        ]),
+      ]),
+    );
+  }
 
   Widget _trackingCard() => Container(
     padding: const EdgeInsets.all(16),
