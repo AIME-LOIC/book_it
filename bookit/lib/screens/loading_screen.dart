@@ -5,6 +5,8 @@ import '../config/api_config.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../services/auth_service.dart';
+import '../services/app_update_service.dart';
+import '../app_navigator.dart';
 import 'home_screen.dart';
 import 'driver_dashboard_screen.dart';
 import 'login_screen.dart';
@@ -89,6 +91,15 @@ class _LoadingScreenState extends State<LoadingScreen>
         ),
       ),
     );
+    // Check after the authenticated destination is on screen so the update
+    // prompt is visible for passengers and drivers without blocking startup.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final update = await AppUpdateService.checkForUpdate();
+      final appContext = AppNavigator.key.currentContext;
+      if (update != null && appContext != null && appContext.mounted) {
+        await AppUpdateService.showUpdatePrompt(appContext, update);
+      }
+    });
   }
 
   @override

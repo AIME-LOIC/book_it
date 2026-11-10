@@ -33,45 +33,59 @@ class AppUpdateService {
   static Future<AppUpdate?> checkForUpdate({bool ignoreSkipped = false}) async {
     try {
       final info = await PackageInfo.fromPlatform();
+      // A tag can appear before its build finishes. Walk recent published
+      // releases and select the newest one that actually contains this
+      // device's installable package, rather than treating an empty release
+      // as the latest usable update.
       final response = await http.get(
-        Uri.https('api.github.com', '/repos/$_repo/releases/latest'),
+        Uri.https('api.github.com', '/repos/$_repo/releases', {'per_page': '10'}),
         headers: const {
           'Accept': 'application/vnd.github+json',
           'X-GitHub-Api-Version': '2022-11-28',
+          'Cache-Control': 'no-cache, no-store',
+          'Pragma': 'no-cache',
         },
-      ).timeout(const Duration(seconds: 12));
+      ).timeout(const Duration(seconds: 15));
       if (response.statusCode != 200) return null;
-      final release = jsonDecode(response.body);
-      if (release is! Map<String, dynamic> ||
-          release['draft'] == true ||
-          release['prerelease'] == true) return null;
-
-      final tag = (release['tag_name'] ?? '').toString().replaceFirst(RegExp(r'^[vV]'), '');
-      if (tag.isEmpty || !_isNewer(tag, info.version)) return null;
+      final decoded = jsonDecode(response.body);
+      if (decoded is! List) return null;
 
       final prefs = await SharedPreferences.getInstance();
-      if (!ignoreSkipped && prefs.getString(_skippedVersionKey) == tag) return null;
+      for (final entry in decoded) {
+        if (entry is! Map<String, dynamic> ||
+            entry['draft'] == true ||
+            entry['prerelease'] == true) continue;
+        final tag = (entry['tag_name'] ?? '').toString()
+            .replaceFirst(RegExp(r'^[vV]'), '');
+        if (tag.isEmpty || !_isNewer(tag, info.version)) continue;
+        if (!ignoreSkipped && prefs.getString(_skippedVersionKey) == tag) continue;
 
-      // Keep customers on the BookIt domain; release hosting stays behind the service.
-      final releaseUrl = Uri.https('bookit.1percent.rw', '/download');
+        final assets = (entry['assets'] is List ? entry['assets'] as List : const [])
+            .whereType<Map>()
+            .toList();
+        final asset = _assetForPlatform(assets);
+        final rawDownloadUrl = (asset?['browser_download_url'] ?? '').toString();
+        final downloadUri = Uri.tryParse(rawDownloadUrl);
+        if (downloadUri == null ||
+            downloadUri.scheme != 'https' ||
+            downloadUri.host != 'github.com') continue;
 
-      final assets = (release['assets'] is List ? release['assets'] as List : const [])
-          .whereType<Map>()
-          .toList();
-      final asset = _assetForPlatform(assets);
-      final assetUrl = asset == null ? null : Uri.https(
-        'bookit.1percent.rw',
-        Platform.isLinux ? '/downloads/linux' : '/downloads/android',
-      );
-      final notes = await _fetchPlainTextNotes(tag, (release['body'] ?? '').toString());
+        final rawReleaseUrl = (entry['html_url'] ?? '').toString();
+        final releaseUri = Uri.tryParse(rawReleaseUrl);
+        final releaseUrl = releaseUri != null && releaseUri.scheme == 'https'
+            ? releaseUri
+            : Uri.https('github.com', '$_repo/releases/tag/v$tag');
+        final notes = await _fetchPlainTextNotes(tag, (entry['body'] ?? '').toString());
 
-      return AppUpdate(
-        version: tag,
-        releaseUrl: releaseUrl,
-        downloadUrl: assetUrl,
-        hasPlatformAsset: assetUrl != null,
-        notes: notes,
-      );
+        return AppUpdate(
+          version: tag,
+          releaseUrl: releaseUrl,
+          downloadUrl: downloadUri,
+          hasPlatformAsset: true,
+          notes: notes,
+        );
+      }
+      return null;
     } catch (_) {
       // An update check must never prevent a passenger from opening BookIt.
       return null;
