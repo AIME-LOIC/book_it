@@ -54,7 +54,8 @@ export const linkTicketToCard = async (req, res) => {
 export const validateTravelCard = async (req, res) => {
   const uid = String(req.body?.card_uid || '').trim().toUpperCase();
   const token = String(req.body?.card_token || '').trim();
-  if (!uid && !token) return res.status(400).json({ valid: false, message: 'Travel card identifier is required.' });
+  const ticketNumber = String(req.body?.ticket_number || '').trim();
+  if (!uid && !token && !ticketNumber) return res.status(400).json({ valid: false, message: 'Card identifier or ticket number is required.' });
   if (!req.user?.bus_id) return res.status(409).json({ valid: false, message: 'No bus is assigned to this driver.' });
 
   try {
@@ -63,16 +64,17 @@ export const validateTravelCard = async (req, res) => {
         `SELECT t.id, t.ticket_number, t.seat_number, t.travel_date,
                 u.name AS "passengerName", b.plate_number AS "plateNumber"
          FROM tickets t
-         JOIN rfid_card_tickets rct ON rct.ticket_id = t.id
-         JOIN rfid_cards c ON c.id = rct.card_id AND c.status = 'active' AND c.user_id = t.user_id
+         LEFT JOIN rfid_card_tickets rct ON rct.ticket_id = t.id
+         LEFT JOIN rfid_cards c ON c.id = rct.card_id AND c.status = 'active' AND c.user_id = t.user_id
          JOIN users u ON u.id = t.user_id
          JOIN buses b ON b.id = t.bus_id
          WHERE (:uid = '' OR c.card_uid = :uid)
            AND (:token = '' OR c.card_token::text = :token)
+           AND (:ticketNumber = '' OR UPPER(t.ticket_number) = UPPER(:ticketNumber))
            AND t.bus_id = :busId AND t.travel_date = :date
            AND t.status = 'paid' AND t.is_used = FALSE
          LIMIT 1 FOR UPDATE OF t`,
-        { replacements: { uid, token, busId: req.user.bus_id, date: todayKigali() }, type: QueryTypes.SELECT, transaction },
+        { replacements: { uid, token, ticketNumber, busId: req.user.bus_id, date: todayKigali() }, type: QueryTypes.SELECT, transaction },
       );
       if (!rows.length) return { valid: false, reason: 'No unused paid ticket for this card is assigned to your bus today.' };
 
