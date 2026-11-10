@@ -4,6 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AuthService {
   AuthService._();
   static bool isDriverSession = false;
+  static String _promptKey(String identifier) => 'bookit_profile_prompted_${identifier.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_')}';
+  static Future<bool> shouldAskToSaveProfile(String identifier) async { final prefs=await SharedPreferences.getInstance(); return !(prefs.getBool(_promptKey(identifier)) ?? false); }
+  static Future<void> markSaveProfilePrompted(String identifier) async { final prefs=await SharedPreferences.getInstance(); await prefs.setBool(_promptKey(identifier), true); }
+  static Future<void> saveCurrentAccount({required String name, required String identifier, required String type}) async { final token=await ApiClient.loadTokenFor('bookit_access_token'); final activeToken=token ?? await _readActiveToken(); if(activeToken==null||activeToken.isEmpty)return; await _recordAccount(name:name,identifier:identifier,type:type,token:activeToken); }
+  static Future<String?> _readActiveToken() async { await ApiClient.loadToken(); return ApiClient.currentToken; }
+  static Future<void> updateSavedProfileName(String name) async { final prefs=await SharedPreferences.getInstance(); final identifier=prefs.getString('bookit_saved_profile_identifier'); final type=prefs.getString('bookit_saved_profile_type')??'customer'; if(identifier==null||identifier.isEmpty)return; final accounts=await savedAccounts(); final index=accounts.indexWhere((a)=>a['identifier']==identifier); if(index<0)return; accounts[index]['name']=name; accounts[index]['at']=DateTime.now().millisecondsSinceEpoch.toString(); await prefs.setString(_accountsKey,jsonEncode(accounts)); await prefs.setString('bookit_saved_profile_name',name); }
 
   /// Saved accounts for the post-splash profiles page: most recently used
   /// first, capped so the list stays readable. Tokens live outside this list
@@ -116,7 +122,7 @@ class AuthService {
       await prefs.setString('bookit_saved_profile_identifier', email.trim());
       await prefs.setString('bookit_saved_profile_type', 'customer');
       await prefs.setInt('bookit_saved_profile_at', DateTime.now().millisecondsSinceEpoch);
-      await _recordAccount(name: name, identifier: email.trim(), type: 'customer', token: res['token'].toString());
+      // Account persistence is now opt-in after the first successful login.
       return name;
     } on ApiException catch(e) { throw AuthException(e.message); }
   }
@@ -179,7 +185,7 @@ class AuthService {
       await prefs.setString('bookit_saved_profile_identifier', phone.trim());
       await prefs.setString('bookit_saved_profile_type', 'driver');
       await prefs.setInt('bookit_saved_profile_at', DateTime.now().millisecondsSinceEpoch);
-      await _recordAccount(name: name, identifier: phone.trim(), type: 'driver', token: res['token'].toString());
+      // Driver account persistence is also opt-in after the first login.
       return name;
     } on ApiException catch (e) { throw AuthException(e.message); }
   }
