@@ -59,7 +59,7 @@ class _DriverTravelCardScanScreenState extends State<DriverTravelCardScanScreen>
     finally{if(mounted)setState(()=>_nfcBusy=false);}
   }
   Future<void> _scanQr(BarcodeCapture capture)async{
-    if(_busy||capture.barcodes.isEmpty)return;
+    if(_busy||_nfcBusy||capture.barcodes.isEmpty)return;
     var value=capture.barcodes.first.rawValue?.trim()??'';
     if(value.startsWith('BOOKIT-CARD:'))value=value.substring('BOOKIT-CARD:'.length);
     if(value.isNotEmpty)await _scan(value,qr:true);
@@ -82,6 +82,13 @@ class _DriverTravelCardScanScreenState extends State<DriverTravelCardScanScreen>
       SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:_busy||_nfcBusy||kIsWeb||!Platform.isAndroid?null:_scanNfc,icon:const Icon(Icons.nfc_rounded),label:Text(!kIsWeb&&!Platform.isAndroid?'NFC reader currently requires Android':_nfcBusy?'Waiting for card…':'Tap NFC card'))),
       if(_busy)const Padding(padding:EdgeInsets.all(12),child:Center(child:CircularProgressIndicator())),
       Card(color:valid?Colors.green.withValues(alpha:.08):null,child:Padding(padding:const EdgeInsets.all(14),child:Row(children:[Icon(valid?Icons.check_circle_rounded:Icons.info_outline_rounded,color:valid?Colors.green:AppColors.primary),const SizedBox(width:10),Expanded(child:Text(_message))]))),
+      if(valid && _result?['ticket'] is Map) Card(child:Padding(padding:const EdgeInsets.all(14),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+        Text((_result!['ticket']['passenger'] ?? _result!['ticket']['passengerName'] ?? 'Passenger').toString(),style:const TextStyle(fontWeight:FontWeight.w800,fontSize:17)),
+        const SizedBox(height:6),
+        Text('Ticket: ${_result!['ticket']['ticket_number'] ?? _result!['ticket']['ticketNumber'] ?? '—'}'),
+        Text('Seat: ${_result!['ticket']['seat_number'] ?? _result!['ticket']['seatNumber'] ?? '—'}'),
+        Text('Bus: ${_result!['ticket']['plate_number'] ?? 'Assigned bus'}'),
+      ]))),
       if(provisional)const Text('Offline approval is provisional, not final. Synchronize when connectivity returns.',style:TextStyle(color:Colors.deepOrange,fontWeight:FontWeight.w700)),
     ])));
   }
