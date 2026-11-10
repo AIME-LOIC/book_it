@@ -47,8 +47,8 @@ class _DriverTravelCardScanScreenState extends State<DriverTravelCardScanScreen>
         if(e.statusCode!=null)rethrow;
         result=await TravelCardOfflineService.validateOffline(value,qr:qr);
       }
-      if(mounted)setState(()=>_result=result,_message=result['message']?.toString()??result['reason']?.toString()??(result['valid']==true?'Ticket validated.':'Card rejected.'));
-    }catch(e){if(mounted)setState(()=>_result={'valid':false},_message=e.toString());}
+      if(mounted)setState((){_result=result;_message=result['message']?.toString()??result['reason']?.toString()??(result['valid']==true?'Ticket validated.':'Card rejected.');});
+    }catch(e){if(mounted)setState(()=>{_result={'valid':false};_message=e.toString();});}
     finally{if(mounted){setState(()=>_busy=false);await _refreshPending();}}
   }
   Future<void> _scanNfc()async{
