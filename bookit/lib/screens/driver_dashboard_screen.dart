@@ -744,7 +744,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             const Text('Bus location', style: TextStyle(fontWeight: FontWeight.w900)),
             const SizedBox(height: 3),
-            Text('$_plate • \${_routeTo.isEmpty ? _routeFrom : '$_routeFrom → $_routeTo'}',
+            Text('$_plate • ${_routeTo.isEmpty ? _routeFrom : '$_routeFrom → $_routeTo'}',
               maxLines: 1, overflow: TextOverflow.ellipsis,
               style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant)),
           ])),
@@ -770,7 +770,7 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           ClipRRect(borderRadius: BorderRadius.circular(15),
             child: SizedBox(height: 175,
               child: FlutterMap(
-                key: ValueKey('\${point.latitude.toStringAsFixed(5)}:\${point.longitude.toStringAsFixed(5)}'),
+                key: ValueKey('${point.latitude.toStringAsFixed(5)}:${point.longitude.toStringAsFixed(5)}'),
                 options: MapOptions(initialCenter: point, initialZoom: 14),
                 children: [
                   TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -791,12 +791,12 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
           const SizedBox(width: 6),
           Expanded(child: Text(
             hasLiveFix
-              ? 'This phone GPS fix\${_lastLocationSync == null ? '' : ' • synced \${_lastLocationSync!.toLocal().hour.toString().padLeft(2, '0')}:\${_lastLocationSync!.toLocal().minute.toString().padLeft(2, '0')}'}'
+              ? 'This phone GPS fix${_lastLocationSync == null ? '' : ' • synced ${_lastLocationSync!.toLocal().hour.toString().padLeft(2, '0')}:${_lastLocationSync!.toLocal().minute.toString().padLeft(2, '0')}'}'
               : 'Showing the last position saved on the bus record. It may be outdated while the driver is offline.',
             style: TextStyle(fontSize: 10, color: Theme.of(context).colorScheme.onSurfaceVariant))),
           if (point != null)
             IconButton(tooltip: 'Open location in Maps', visualDensity: VisualDensity.compact,
-              onPressed: () => launchUrl(Uri.parse('https://www.google.com/maps/search/?api=1&query=\${point.latitude},\${point.longitude}'),
+              onPressed: () => launchUrl(Uri.parse('https://www.google.com/maps/search/?api=1&query=${point.latitude},${point.longitude}'),
                 mode: LaunchMode.externalApplication),
               icon: const Icon(Icons.open_in_new_rounded, size: 17)),
         ]),
