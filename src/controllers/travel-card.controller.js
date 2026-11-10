@@ -48,7 +48,7 @@ export const validateTravelCard=async(req,res)=>{
 export const getOfflineManifest=async(req,res)=>{
  if(!req.user?.bus_id)return res.status(409).json({message:'No bus is assigned to this driver.'});
  const date=String(req.query.date||todayKigali());
- if(!/^\\d{4}-\\d{2}-\\d{2}$/.test(date))return res.status(400).json({message:'Date must use YYYY-MM-DD.'});
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return res.status(400).json({message:'Date must use YYYY-MM-DD.'});
  try{
   const data=await sequelize.transaction(async transaction=>{
    const [manifest]=await sequelize.query(`INSERT INTO offline_ticket_manifests(driver_id,bus_id,travel_date,expires_at)
