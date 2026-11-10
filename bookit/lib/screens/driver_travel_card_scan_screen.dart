@@ -83,6 +83,6 @@ class _DriverTravelCardScanScreenState extends State<DriverTravelCardScanScreen>
       if(_busy)const Padding(padding:EdgeInsets.all(12),child:Center(child:CircularProgressIndicator())),
       Card(color:valid?Colors.green.withValues(alpha:.08):null,child:Padding(padding:const EdgeInsets.all(14),child:Row(children:[Icon(valid?Icons.check_circle_rounded:Icons.info_outline_rounded,color:valid?Colors.green:AppColors.primary),const SizedBox(width:10),Expanded(child:Text(_message))]))),
       if(provisional)const Text('Offline approval is provisional, not final. Synchronize when connectivity returns.',style:TextStyle(color:Colors.deepOrange,fontWeight:FontWeight.w700)),
-    ]))));
+    ])));
   }
 }
