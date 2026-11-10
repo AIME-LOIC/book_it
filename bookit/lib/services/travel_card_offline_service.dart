@@ -32,7 +32,7 @@ class TravelCardOfflineService {
     return Map<String,dynamic>.from(decoded);
   }
 
-  static Future<Map<String,dynamic>> validateOffline(String value,{required bool qr}) async {
+  static Future<Map<String,dynamic>> validateOffline(String value,{required String method}) async {
     final state=await _state();
     final manifest=Map<String,dynamic>.from(state['manifest'] as Map);
     final expiry=DateTime.tryParse(manifest['expires_at']?.toString()??'');
@@ -41,9 +41,11 @@ class TravelCardOfflineService {
     Map<String,dynamic>? ticket;
     for(final row in rows.whereType<Map>()) {
       final item=Map<String,dynamic>.from(row);
-      final matches=qr
+      final matches=method=='qr'
         ? item['cardToken']?.toString()==value
-        : item['cardUid']?.toString().toUpperCase()==value.toUpperCase();
+        : method=='ticket_number'
+          ? item['ticketNumber']?.toString().toUpperCase()==value.toUpperCase()
+          : item['cardUid']?.toString().toUpperCase()==value.toUpperCase();
       if(matches){ticket=item;break;}
     }
     if(ticket==null) throw const ApiException('No unused paid ticket for this card is assigned to your bus today.');
@@ -53,7 +55,7 @@ class TravelCardOfflineService {
     used.add(id);
     final event={
       'event_id':'${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1<<32)}',
-      'ticket_id':id,'scan_method':qr?'qr':'nfc',
+      'ticket_id':id,'scan_method':method,
       'scanned_at':DateTime.now().toUtc().toIso8601String(),
     };
     final events=(state['events'] as List? ?? const []).whereType<Map>().map((x)=>Map<String,dynamic>.from(x)).toList()..add(event);
