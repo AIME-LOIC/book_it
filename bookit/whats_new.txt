@@ -1,4 +1,4 @@
-BookIt 1.2.2
+BookIt 1.2.6
 
 What's new:
 • Fixed saved profile names so updates appear on the Profiles screen.
