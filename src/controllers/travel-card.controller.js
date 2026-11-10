@@ -163,7 +163,7 @@ export const syncOfflineValidations = async (req, res) => {
     const eventId = String(event?.event_id || '').trim();
     const ticketId = String(event?.ticket_id || '').trim();
     const scannedAt = new Date(event?.scanned_at);
-    const method = event?.scan_method === 'nfc' ? 'nfc' : event?.scan_method === 'qr' ? 'qr' : '';
+    const method = ['nfc', 'qr', 'ticket_number'].includes(event?.scan_method) ? event.scan_method : '';
     if (!eventId || !ticketId || !method || Number.isNaN(scannedAt.getTime())) {
       results.push({ event_id: eventId || null, accepted: false, reason: 'Malformed event.' });
       continue;
