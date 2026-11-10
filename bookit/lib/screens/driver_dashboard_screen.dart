@@ -214,6 +214,10 @@ class _DriverDashboardScreenState extends State<DriverDashboardScreen> {
 
   Future<void> _startTracking() async {
     try {
+      if (_bus.isEmpty || _driver['bus_id'] == null) {
+        _show('A bus must be assigned to your driver account before tracking can start.');
+        return;
+      }
       if (!await Geolocator.isLocationServiceEnabled()) {
         _show('Turn on your device location services to start live tracking.');
         await Geolocator.openLocationSettings();
