@@ -19,6 +19,17 @@ class _SignupScreenState extends State<SignupScreen> {
     try {
       final name=await AuthService.register(name:_name.text,email:_email.text,phone:_phone.text,password:_password.text);
       if(!mounted)return;
+      final identifier=_email.text.trim();
+      if(await AuthService.shouldAskToSaveProfile(identifier)){
+        final save=await showDialog<bool>(context:context,barrierDismissible:false,builder:(dialogContext)=>AlertDialog(
+          title:const Text('Save your profile?'),
+          content:const Text('Would you like BookIt to remember this profile on this device for quicker sign-in next time?'),
+          actions:[TextButton(onPressed:()=>Navigator.pop(dialogContext,false),child:const Text('No')),FilledButton(onPressed:()=>Navigator.pop(dialogContext,true),child:const Text('Yes'))],
+        ));
+        await AuthService.markSaveProfilePrompted(identifier);
+        if(save==true)await AuthService.saveCurrentAccount(name:name,identifier:identifier,type:'customer');
+      }
+      if(!mounted)return;
       Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute<void>(builder:(_)=>HomeScreen(userName:name)),(_)=>false);
     } on AuthException catch(e) {
       if(mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.message)));
