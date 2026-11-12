@@ -69,10 +69,10 @@
           <article class="platform-card rounded-2xl p-5 shadow-sm">
             <div class="flex items-center gap-3">
               <i class="fa-brands fa-android text-3xl text-emerald-700"></i>
-              <div><h4 class="text-lg font-bold text-gray-900">Android</h4><p class="text-xs text-gray-500">APK installer · Version 1.2.6</p></div>
+              <div><h4 class="text-lg font-bold text-gray-900">Android</h4><p id="android-version" class="text-xs text-gray-500">APK installer · Latest version</p></div>
             </div>
             <p class="mt-4 text-sm text-gray-600">For Android phones and tablets. Allow installation from this source if Android asks.</p>
-            <a href="https://github.com/AIME-LOIC/book_it/releases/download/v1.2.6/app-release.apk" class="download-btn mt-5 flex justify-center gap-2 rounded-lg py-3 font-semibold">
+            <a href="/downloads/android" class="download-btn mt-5 flex justify-center gap-2 rounded-lg py-3 font-semibold">
               <i class="fa-solid fa-download"></i> Download APK
             </a>
           </article>
@@ -103,6 +103,24 @@
   <script>
     (() => {
       document.getElementById('download-year').textContent = new Date().getFullYear();
+      const androidVersion = document.getElementById('android-version');
+      if (androidVersion) {
+        fetch('https://api.github.com/repos/AIME-LOIC/book_it/releases/latest', {
+          headers: { Accept: 'application/vnd.github+json' },
+          cache: 'no-store'
+        })
+          .then(response => {
+            if (!response.ok) throw new Error('Latest release could not be loaded');
+            return response.json();
+          })
+          .then(release => {
+            const version = String(release.tag_name || '').replace(/^v/i, '');
+            if (version) androidVersion.textContent = 'APK installer · Version ' + version;
+          })
+          .catch(() => {
+            androidVersion.textContent = 'APK installer · Latest version';
+          });
+      }
       const ua = navigator.userAgent || '';
       const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
       const android = /Android/i.test(ua);
@@ -123,7 +141,7 @@
       if (android) {
         title.textContent = 'BookIt for Android';
         copy.textContent = 'Download the Android APK and open it on your phone to install BookIt.';
-        link.href = 'https://github.com/AIME-LOIC/book_it/releases/download/v1.2.6/app-release.apk';
+        link.href = '/downloads/android';
         label.textContent = 'Download Android APK';
       } else if (linux) {
         title.textContent = 'BookIt for Linux';
